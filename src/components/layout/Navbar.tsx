@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, X, User, Settings, LogOut, CreditCard } from "lucide-react";
+import { Moon, Sun, Menu, X, User, Settings, LogOut, CreditCard, Bot } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 
@@ -131,6 +131,15 @@ export function Navbar() {
               >
                 My Collections
               </Link>
+              {profile?.username && (
+                <Link
+                  href={`/${profile.username}/agent`}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Bot className="h-3.5 w-3.5" />
+                  My Agent
+                </Link>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer transition-transform hover:scale-105">
                   <Avatar className="h-8 w-8 border-2 border-transparent hover:border-violet-500/50 transition-colors">
@@ -176,6 +185,15 @@ export function Navbar() {
                       >
                         <User className="h-4 w-4 text-muted-foreground" />
                         My Profile
+                      </DropdownMenuItem>
+                    )}
+                    {profile?.username && (
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/${profile.username}/agent`)}
+                        className="gap-2"
+                      >
+                        <Bot className="h-4 w-4 text-muted-foreground" />
+                        My Agent
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
@@ -307,6 +325,16 @@ export function Navbar() {
               className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               My Collections
+            </Link>
+          )}
+          {user && profile?.username && (
+            <Link
+              href={`/${profile.username}/agent`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <Bot className="h-4 w-4" />
+              My Agent
             </Link>
           )}
 

@@ -5,6 +5,11 @@ const supabaseHost = "*.supabase.co";
 
 
 const nextConfig: NextConfig = {
+  // Include agent markdown files in the serverless function bundle.
+  // Required because fs.readFileSync is used at request time in route handlers.
+  outputFileTracingIncludes: {
+    "/api/agent/**": ["./src/lib/agent/*.md"],
+  },
   // Bake server-only env vars into the bundle at build time.
   // Amplify's Lambda@Edge runtime has no process.env — values must come from the build.
   env: {
