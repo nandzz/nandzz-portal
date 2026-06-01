@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { SpaceCard } from "./SpaceCard";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, LayoutGrid, Grid3X3, ChevronDown } from "lucide-react";
+import { Plus, LayoutGrid, Grid3X3 } from "lucide-react";
 import type { SpaceWithProfile, Space } from "@/lib/types";
-
-type FilterValue = "all" | `tag:${string}`;
 
 interface SpaceGridProps {
   spaces: SpaceWithProfile[] | Space[];
@@ -33,21 +31,6 @@ export function SpaceGrid({
   ownerUsername,
 }: SpaceGridProps) {
   const [compact, setCompact] = useState(false);
-  const [filter, setFilter] = useState<FilterValue>("all");
-
-  const availableHashtags = useMemo(() => {
-    const seen = new Set<string>();
-    for (const space of spaces) {
-      for (const tag of space.hashtags ?? []) seen.add(tag);
-    }
-    return Array.from(seen).sort();
-  }, [spaces]);
-
-  const filtered = useMemo(() => {
-    if (filter === "all") return spaces;
-    const slug = filter.slice(4);
-    return spaces.filter((s) => (s.hashtags ?? []).includes(slug));
-  }, [filter, spaces]);
 
   return (
     <div className="space-y-4">
@@ -71,26 +54,6 @@ export function SpaceGrid({
           )}
         </button>
 
-        <div className="h-4 w-px bg-border/60" />
-
-        <div className="relative flex items-center">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as FilterValue)}
-            className="appearance-none rounded-md border border-border/60 bg-background pl-2.5 pr-7 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground focus:outline-none focus:ring-1 focus:ring-violet-500/50 cursor-pointer"
-          >
-            <option value="all">All ({spaces.length})</option>
-            {availableHashtags.map((tag) => {
-              const count = spaces.filter((s) => (s.hashtags ?? []).includes(tag)).length;
-              return (
-                <option key={tag} value={`tag:${tag}`}>
-                  #{tag} ({count})
-                </option>
-              );
-            })}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2 h-3 w-3 text-muted-foreground" />
-        </div>
       </div>
 
       {/* Grid */}
@@ -101,7 +64,7 @@ export function SpaceGrid({
             : "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
         }
       >
-        {filtered.map((space) => {
+        {spaces.map((space) => {
           const profileUsername = "profiles" in space
             ? (space as SpaceWithProfile).profiles?.username
             : undefined;
@@ -129,7 +92,7 @@ export function SpaceGrid({
             />
           );
         })}
-        {showCreateCard && filter === "all" && (
+        {showCreateCard && (
           <Link href={collectionId ? `/dashboard/create-space?collectionId=${collectionId}` : "/dashboard/create-space"}>
             <Card
               className={
@@ -161,7 +124,7 @@ export function SpaceGrid({
             </Card>
           </Link>
         )}
-        {filtered.length === 0 && !(showCreateCard && filter === "all") && (
+        {spaces.length === 0 && !showCreateCard && (
           <p className="col-span-full py-12 text-center text-muted-foreground text-sm">
             No spaces match this filter.
           </p>

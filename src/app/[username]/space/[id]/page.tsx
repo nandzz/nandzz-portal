@@ -8,14 +8,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LikeButton } from "@/components/spaces/LikeButton";
-import { ShareButton } from "@/components/spaces/ShareButton";
+import { ShareMenu } from "@/components/spaces/ShareMenu";
 import { StarButton } from "@/components/spaces/StarButton";
-import { ExternalLink, Lock, Pencil, Smartphone } from "lucide-react";
+import { SpaceOwnerMenu } from "@/components/spaces/SpaceOwnerMenu";
+import { ExternalLink, Lock, Smartphone } from "lucide-react";
 import { HtmlSpaceEditor } from "@/components/spaces/HtmlSpaceEditor";
 import { PdfViewerWrapper } from "@/components/spaces/PdfViewerWrapper";
 import { IframeLoader } from "@/components/spaces/IframeLoader";
 import { BackButton } from "@/components/ui/BackButton";
-import { DeleteSpaceButton } from "@/components/spaces/DeleteSpaceButton";
 
 function hasDownloadableContent(html: string): boolean {
   return (
@@ -197,7 +197,7 @@ export default async function SpaceViewPage({
           {!isOwner && (
             <StarButton spaceId={space.id} initialSaved={saved} size="md" />
           )}
-          <ShareButton url={`/${username}/space/${space.id}`} title={space.title} size="md" />
+          <ShareMenu url={`/${username}/space/${space.id}`} title={space.title} size="md" />
           {profile && (
             <Link
               href={`/${profile.username}`}
@@ -243,19 +243,11 @@ export default async function SpaceViewPage({
             </a>
           )}
           {isOwner && (
-            <Link href={`/dashboard/edit-space/${space.id}`}>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5 border-border/60 hover:border-violet-500/50 transition-colors"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-            </Link>
-          )}
-          {isOwner && (
-            <DeleteSpaceButton spaceId={space.id} redirectTo={`/${username}`} />
+            <SpaceOwnerMenu
+              spaceId={space.id}
+              editHref={`/dashboard/edit-space/${space.id}`}
+              redirectTo={`/${username}`}
+            />
           )}
         </div>
       </div>
