@@ -282,7 +282,7 @@ export default async function SpaceViewPage({
             <IframeLoader
               src={`/sandbox/${space.id}`}
               title={space.title}
-              sandbox="allow-scripts allow-forms allow-downloads"
+              sandbox="allow-scripts allow-forms allow-downloads allow-popups"
             />
           )
         ) : space.pdf_url ? (

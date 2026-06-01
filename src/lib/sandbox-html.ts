@@ -1,5 +1,6 @@
 const SANDBOX_CSP =
-  `<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; worker-src 'none'; child-src 'none';">`;
+  `<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; worker-src 'none'; child-src 'none';">` +
+  `<base target="_blank" rel="noopener noreferrer">`;
 
 /**
  * Inject a restrictive CSP into user-supplied HTML before rendering in an iframe.

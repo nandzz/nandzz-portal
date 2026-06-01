@@ -293,7 +293,7 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
       <iframe
         src={`/sandbox/${spaceId}?v=${iframeVersion}`}
         className="h-full w-full border-0"
-        sandbox="allow-scripts allow-forms allow-downloads"
+        sandbox="allow-scripts allow-forms allow-downloads allow-popups"
         title={spaceTitle}
         style={{ opacity: iframeLoaded ? 1 : 0 }}
         onLoad={() => setIframeLoaded(true)}
