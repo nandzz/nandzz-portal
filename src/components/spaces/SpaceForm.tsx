@@ -114,7 +114,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   );
   const [previewTitle, setPreviewTitle] = useState(space?.preview_title || "");
   const [clearExistingImage, setClearExistingImage] = useState(false);
-  const [htmlAreaCollapsed, setHtmlAreaCollapsed] = useState(false);
+  const [htmlAreaCollapsed, setHtmlAreaCollapsed] = useState(true);
 
   useEffect(() => {
     supabase

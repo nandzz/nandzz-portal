@@ -219,7 +219,7 @@ export default async function SpaceViewPage({
             </Link>
           )}
           {space.url && !space.html_url && (
-            <a href={space.url} target="_blank" rel="noopener noreferrer">
+            <Link href={`/go?url=${encodeURIComponent(space.url)}`}>
               <Button
                 size="sm"
                 variant="outline"
@@ -228,7 +228,7 @@ export default async function SpaceViewPage({
                 <ExternalLink className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Open Original</span>
               </Button>
-            </a>
+            </Link>
           )}
           {space.pdf_url && (
             <a href={space.pdf_url} target="_blank" rel="noopener noreferrer" download>
