@@ -5,7 +5,7 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-[calc(100dvh-8rem)] items-center justify-center px-4 py-8">
       {/* Background decoration */}
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-violet-100/50 blur-3xl dark:bg-violet-950/25" />
         <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] rounded-full bg-fuchsia-100/30 blur-3xl dark:bg-fuchsia-950/15" />
       </div>

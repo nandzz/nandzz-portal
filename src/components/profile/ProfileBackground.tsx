@@ -234,7 +234,7 @@ export function ProfileBackground({
   return (
     <>
       {/* ── Decorative background — kept at -z-10, never interactive ── */}
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 -z-10 overflow-hidden">
         {localUrl ? (
           <>
             <div

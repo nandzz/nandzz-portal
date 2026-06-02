@@ -56,7 +56,7 @@ export default async function BillingPage({
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-violet-100/30 blur-3xl dark:bg-violet-950/15" />
       </div>
 

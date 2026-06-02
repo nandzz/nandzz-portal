@@ -73,7 +73,7 @@ export default function SetupUsernamePage() {
 
   return (
     <div className="relative flex min-h-[calc(100vh-8rem)] items-center justify-center px-4">
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-violet-100/50 blur-3xl dark:bg-violet-950/25" />
       </div>
 

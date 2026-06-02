@@ -88,7 +88,7 @@ export default async function ExplorePage({
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
       {/* Subtle background gradient */}
-      <div className="absolute inset-0 -z-10">
+      <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-violet-100/40 blur-3xl dark:bg-violet-950/20" />
         <div className="absolute left-0 bottom-0 h-[300px] w-[300px] rounded-full bg-fuchsia-100/30 blur-3xl dark:bg-fuchsia-950/15" />
       </div>
