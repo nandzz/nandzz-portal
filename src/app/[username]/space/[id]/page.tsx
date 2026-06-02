@@ -178,9 +178,9 @@ export default async function SpaceViewPage({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)]">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       {/* Top bar */}
-      <div className="border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <div className="shrink-0 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
           <BackButton />
@@ -255,14 +255,14 @@ export default async function SpaceViewPage({
 
       {/* Mobile download warning — only for HTML spaces with download patterns */}
       {htmlContent && !isOwner && hasDownloadableContent(htmlContent) && (
-        <div className="sm:hidden flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs">
+        <div className="sm:hidden shrink-0 flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs">
           <Smartphone className="h-3.5 w-3.5 shrink-0" />
           <span>Downloads may not work on mobile. Open on desktop for the full experience.</span>
         </div>
       )}
 
       {/* Content */}
-      <div className="flex-1 bg-muted/50 min-h-0">
+      <div className="flex-1 bg-muted/50 min-h-0 overscroll-contain">
         {htmlContent ? (
           isOwner ? (
             <HtmlSpaceEditor

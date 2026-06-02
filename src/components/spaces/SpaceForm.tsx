@@ -486,100 +486,47 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           {/* Space Type Toggle */}
           <div className="space-y-2">
             <Label>Space Type</Label>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setSpaceType("html")}
-                className={`flex-1 rounded-xl border-2 px-4 py-4 text-left transition-all ${
-                  spaceType === "html"
-                    ? "border-violet-600 bg-violet-50 dark:bg-violet-950/50 shadow-sm shadow-violet-600/10"
-                    : "border-border/60 hover:border-violet-500/30 hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Code
-                    className={`h-4 w-4 ${
-                      spaceType === "html"
-                        ? "text-violet-600 dark:text-violet-400"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                  <span
-                    className={`font-semibold text-sm ${
-                      spaceType === "html"
-                        ? "text-violet-700 dark:text-violet-300"
-                        : ""
-                    }`}
-                  >
-                    HTML Upload
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Paste or upload HTML from AI tools
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSpaceType("pdf")}
-                className={`flex-1 rounded-xl border-2 px-4 py-4 text-left transition-all ${
-                  spaceType === "pdf"
-                    ? "border-violet-600 bg-violet-50 dark:bg-violet-950/50 shadow-sm shadow-violet-600/10"
-                    : "border-border/60 hover:border-violet-500/30 hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText
-                    className={`h-4 w-4 ${
-                      spaceType === "pdf"
-                        ? "text-violet-600 dark:text-violet-400"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                  <span
-                    className={`font-semibold text-sm ${
-                      spaceType === "pdf"
-                        ? "text-violet-700 dark:text-violet-300"
-                        : ""
-                    }`}
-                  >
-                    PDF Upload
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Upload a PDF document
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSpaceType("url")}
-                className={`flex-1 rounded-xl border-2 px-4 py-4 text-left transition-all ${
-                  spaceType === "url"
-                    ? "border-violet-600 bg-violet-50 dark:bg-violet-950/50 shadow-sm shadow-violet-600/10"
-                    : "border-border/60 hover:border-violet-500/30 hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Globe
-                    className={`h-4 w-4 ${
-                      spaceType === "url"
-                        ? "text-violet-600 dark:text-violet-400"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                  <span
-                    className={`font-semibold text-sm ${
-                      spaceType === "url"
-                        ? "text-violet-700 dark:text-violet-300"
-                        : ""
-                    }`}
-                  >
-                    Website URL
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Link to an external website
-                </div>
-              </button>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+              {(
+                [
+                  { type: "html" as SpaceMode, icon: Code, label: "HTML Upload", description: "Paste or upload HTML from AI tools" },
+                  { type: "pdf" as SpaceMode, icon: FileText, label: "PDF Upload", description: "Upload a PDF document" },
+                  { type: "url" as SpaceMode, icon: Globe, label: "Website URL", description: "Link to an external website" },
+                ] as const
+              ).map(({ type, icon: Icon, label, description }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSpaceType(type)}
+                  className={`shrink-0 min-w-[130px] flex-1 rounded-xl border-2 px-3 py-3 text-left transition-all ${
+                    spaceType === type
+                      ? "border-violet-600 bg-violet-50 dark:bg-violet-950/50 shadow-sm shadow-violet-600/10"
+                      : "border-border/60 hover:border-violet-500/30 hover:bg-muted/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon
+                      className={`h-4 w-4 shrink-0 ${
+                        spaceType === type
+                          ? "text-violet-600 dark:text-violet-400"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                    <span
+                      className={`font-semibold text-sm whitespace-nowrap ${
+                        spaceType === type
+                          ? "text-violet-700 dark:text-violet-300"
+                          : ""
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-snug">
+                    {description}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 

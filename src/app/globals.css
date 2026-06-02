@@ -133,6 +133,12 @@
   .text-balance {
     text-wrap: balance;
   }
+  .scrollbar-hide {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 @keyframes hero-gradient {

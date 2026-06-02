@@ -194,7 +194,7 @@ export default async function HomePage() {
       {/* Recent Spaces */}
       {spaces && spaces.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-20">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">
                 Recent Spaces

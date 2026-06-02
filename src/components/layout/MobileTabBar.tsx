@@ -116,7 +116,7 @@ export function MobileTabBar() {
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex h-16 items-center justify-around px-2">
+      <div className="flex h-16 items-center justify-around px-1">
         {tabs.map((tab) => {
           const active = tab.isActive(pathname);
           const Icon = tab.icon;
@@ -126,7 +126,7 @@ export function MobileTabBar() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1"
+                className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30 transition-transform active:scale-95">
                   <Icon className="h-5 w-5" />
@@ -139,18 +139,18 @@ export function MobileTabBar() {
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex flex-col items-center justify-center gap-0.5 flex-1 py-2"
+              className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2"
             >
               <Icon
                 className={cn(
-                  "h-5 w-5 transition-colors",
+                  "h-5 w-5 shrink-0 transition-colors",
                   active ? "text-violet-600" : "text-muted-foreground"
                 )}
                 strokeWidth={active ? 2.5 : 1.75}
               />
               <span
                 className={cn(
-                  "text-[10px] font-medium transition-colors",
+                  "text-[10px] font-medium transition-colors w-full text-center truncate px-0.5",
                   active ? "text-violet-600" : "text-muted-foreground"
                 )}
               >

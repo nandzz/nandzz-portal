@@ -10,12 +10,12 @@ export default function ProfileLoading() {
         {/* Profile header skeleton — centered, matching ProfileHeader layout */}
         <div className="flex flex-col items-center text-center">
           <div className="h-28 w-28 rounded-full bg-muted animate-pulse border-4 border-background shadow-xl" />
-          <div className="mt-5 h-7 w-44 rounded bg-muted animate-pulse" />
-          <div className="mt-1.5 h-4 w-28 rounded bg-muted animate-pulse" />
-          <div className="mt-2 h-4 w-52 rounded bg-muted animate-pulse" />
-          <div className="mt-3 space-y-2 flex flex-col items-center">
-            <div className="h-4 w-72 rounded bg-muted animate-pulse" />
-            <div className="h-4 w-56 rounded bg-muted animate-pulse" />
+          <div className="mt-5 h-7 w-44 max-w-[80vw] rounded bg-muted animate-pulse" />
+          <div className="mt-1.5 h-4 w-28 max-w-[60vw] rounded bg-muted animate-pulse" />
+          <div className="mt-2 h-4 w-52 max-w-[75vw] rounded bg-muted animate-pulse" />
+          <div className="mt-3 space-y-2 flex flex-col items-center w-full px-4">
+            <div className="h-4 w-72 max-w-full rounded bg-muted animate-pulse" />
+            <div className="h-4 w-56 max-w-[90%] rounded bg-muted animate-pulse" />
           </div>
           <div className="mt-5 flex items-center gap-2">
             {Array.from({ length: 4 }).map((_, i) => (
