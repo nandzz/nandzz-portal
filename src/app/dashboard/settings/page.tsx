@@ -82,6 +82,16 @@ export default function SettingsPage() {
     loadProfile();
   }, [supabase, router]);
 
+  const LIMITS = {
+    displayName: 50,
+    tagline: 100,
+    bio: 500,
+    bioLines: 5,
+    websiteUrl: 300,
+    socialUsername: 50,
+    socialEmail: 254,
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -93,6 +103,32 @@ export default function SettingsPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+
+      if (displayName.length > LIMITS.displayName) {
+        setError(`Display name must be ${LIMITS.displayName} characters or less`);
+        setLoading(false);
+        return;
+      }
+      if (tagline.length > LIMITS.tagline) {
+        setError(`Tagline must be ${LIMITS.tagline} characters or less`);
+        setLoading(false);
+        return;
+      }
+      if (bio.length > LIMITS.bio) {
+        setError(`Bio must be ${LIMITS.bio} characters or less`);
+        setLoading(false);
+        return;
+      }
+      if (websiteUrl && websiteUrl.length > LIMITS.websiteUrl) {
+        setError(`Website URL must be ${LIMITS.websiteUrl} characters or less`);
+        setLoading(false);
+        return;
+      }
+      if (websiteUrl && !/^https?:\/\//i.test(websiteUrl)) {
+        setError("Website URL must start with http:// or https://");
+        setLoading(false);
+        return;
+      }
 
       let avatar_url = profile?.avatar_url || null;
 
@@ -110,7 +146,7 @@ export default function SettingsPage() {
         const { data: publicUrlData } = supabase.storage
           .from("avatars")
           .getPublicUrl(filePath);
-        avatar_url = publicUrlData.publicUrl;
+        avatar_url = `${publicUrlData.publicUrl}?t=${Date.now()}`;
       }
 
       const { error } = await supabase
@@ -126,6 +162,12 @@ export default function SettingsPage() {
         .eq("id", user.id);
 
       if (error) throw error;
+
+      await fetch("/api/profile/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: profile?.username }),
+      });
 
       setSuccess(true);
       window.dispatchEvent(new CustomEvent("profile-updated"));
@@ -281,32 +323,48 @@ export default function SettingsPage() {
                   id="displayName"
                   placeholder="Your display name"
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={(e) => setDisplayName(e.target.value.slice(0, LIMITS.displayName))}
+                  maxLength={LIMITS.displayName}
                   className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tagline">Tagline</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="tagline">Tagline</Label>
+                  <span className="text-xs text-muted-foreground">{tagline.length}/{LIMITS.tagline}</span>
+                </div>
                 <Input
                   id="tagline"
                   placeholder="e.g. Full-Stack Developer"
                   value={tagline}
-                  onChange={(e) => setTagline(e.target.value)}
+                  onChange={(e) => setTagline(e.target.value.slice(0, LIMITS.tagline))}
+                  maxLength={LIMITS.tagline}
                   className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="bio">Bio</Label>
+                  <span className={`text-xs ${bio.length >= LIMITS.bio ? "text-destructive" : "text-muted-foreground"}`}>
+                    {bio.length}/{LIMITS.bio}
+                  </span>
+                </div>
                 <Textarea
                   id="bio"
                   placeholder="Tell the world about yourself..."
                   value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.split("\n").length > LIMITS.bioLines) return;
+                    if (val.length > LIMITS.bio) return;
+                    setBio(val);
+                  }}
                   rows={4}
                   className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
                 />
+                <p className="text-xs text-muted-foreground">Max {LIMITS.bio} characters, {LIMITS.bioLines} lines</p>
               </div>
 
               <div className="space-y-2">
@@ -316,7 +374,8 @@ export default function SettingsPage() {
                   type="url"
                   placeholder="https://yourwebsite.com"
                   value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  onChange={(e) => setWebsiteUrl(e.target.value.slice(0, LIMITS.websiteUrl))}
+                  maxLength={LIMITS.websiteUrl}
                   className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
                 />
               </div>
@@ -338,9 +397,10 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setSocialLinks({
                             ...socialLinks,
-                            instagram: e.target.value,
+                            instagram: e.target.value.slice(0, LIMITS.socialUsername),
                           })
                         }
+                        maxLength={LIMITS.socialUsername}
                         className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                     </div>
@@ -358,9 +418,10 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setSocialLinks({
                             ...socialLinks,
-                            linkedin: e.target.value,
+                            linkedin: e.target.value.slice(0, LIMITS.socialUsername),
                           })
                         }
+                        maxLength={LIMITS.socialUsername}
                         className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                     </div>
@@ -378,9 +439,10 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setSocialLinks({
                             ...socialLinks,
-                            twitter: e.target.value,
+                            twitter: e.target.value.slice(0, LIMITS.socialUsername),
                           })
                         }
+                        maxLength={LIMITS.socialUsername}
                         className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                     </div>
@@ -398,9 +460,10 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setSocialLinks({
                             ...socialLinks,
-                            github: e.target.value,
+                            github: e.target.value.slice(0, LIMITS.socialUsername),
                           })
                         }
+                        maxLength={LIMITS.socialUsername}
                         className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                     </div>
@@ -417,9 +480,10 @@ export default function SettingsPage() {
                       onChange={(e) =>
                         setSocialLinks({
                           ...socialLinks,
-                          email: e.target.value,
+                          email: e.target.value.slice(0, LIMITS.socialEmail),
                         })
                       }
+                      maxLength={LIMITS.socialEmail}
                       className="bg-background border-border/60 focus:border-violet-500/50 transition-colors"
                     />
                   </div>
@@ -436,9 +500,10 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setSocialLinks({
                             ...socialLinks,
-                            youtube: e.target.value,
+                            youtube: e.target.value.slice(0, LIMITS.socialUsername),
                           })
                         }
+                        maxLength={LIMITS.socialUsername}
                         className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       />
                     </div>

@@ -19,11 +19,24 @@ export function NewCollectionForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const LIMITS = { name: 80, description: 300, descriptionLines: 5 };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     setError("");
     setLoading(true);
+
+    if (name.length > LIMITS.name) {
+      setError(`Name must be ${LIMITS.name} characters or less`);
+      setLoading(false);
+      return;
+    }
+    if (description.length > LIMITS.description) {
+      setError(`Description must be ${LIMITS.description} characters or less`);
+      setLoading(false);
+      return;
+    }
 
     const {
       data: { user },
@@ -65,24 +78,38 @@ export function NewCollectionForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="name">Name *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="name">Name *</Label>
+              <span className="text-xs text-muted-foreground">{name.length}/{LIMITS.name}</span>
+            </div>
             <Input
               id="name"
               placeholder="e.g. Design Tools"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value.slice(0, LIMITS.name))}
+              maxLength={LIMITS.name}
               required
               className="bg-muted/50 border-border/60"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description">Description</Label>
+              <span className={`text-xs ${description.length >= LIMITS.description ? "text-destructive" : "text-muted-foreground"}`}>
+                {description.length}/{LIMITS.description}
+              </span>
+            </div>
             <Textarea
               id="description"
               placeholder="What's this collection about?"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val.split("\n").length > LIMITS.descriptionLines) return;
+                if (val.length > LIMITS.description) return;
+                setDescription(val);
+              }}
               rows={3}
               className="bg-muted/50 border-border/60 text-sm"
             />

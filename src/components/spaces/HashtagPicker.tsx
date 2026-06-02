@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { X, Hash } from "lucide-react";
 
 const MAX_HASHTAGS = 3;
+const MAX_HASHTAG_LENGTH = 30;
 
 function toSlug(input: string): string {
   return input
@@ -36,6 +37,7 @@ export function HashtagPicker({ suggestions, selectedHashtags, onChange }: Hasht
   const exactMatch = suggestions.includes(slug);
   const canCreate =
     slug.length >= 2 &&
+    slug.length <= MAX_HASHTAG_LENGTH &&
     !exactMatch &&
     !selectedHashtags.includes(slug);
 
@@ -91,7 +93,7 @@ export function HashtagPicker({ suggestions, selectedHashtags, onChange }: Hasht
               type="text"
               value={inputValue}
               onChange={(e) => {
-                setInputValue(e.target.value);
+                setInputValue(e.target.value.slice(0, MAX_HASHTAG_LENGTH + 1));
                 setOpen(true);
               }}
               onFocus={() => setOpen(true)}

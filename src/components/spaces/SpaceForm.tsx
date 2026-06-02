@@ -283,6 +283,15 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const MAX_CONTENT_IMAGE_SIZE = 5 * 1024 * 1024;
   const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
+  const LIMITS = {
+    title: 100,
+    description: 300,
+    descriptionLines: 5,
+    url: 500,
+    videoUrl: 500,
+    markdownContent: 100_000,
+  };
+
   const extractStoragePath = (publicUrl: string, bucket: string): string | null => {
     const marker = `/object/public/${bucket}/`;
     const idx = publicUrl.indexOf(marker);
@@ -399,6 +408,27 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
 
       if (spaceType === "markdown" && !markdownContent.trim() && !space?.markdown_content) {
         setError("Markdown content is required.");
+        setLoading(false);
+        return;
+      }
+
+      if (!title.trim()) {
+        setError("Title is required.");
+        setLoading(false);
+        return;
+      }
+      if (title.length > LIMITS.title) {
+        setError(`Title must be ${LIMITS.title} characters or less`);
+        setLoading(false);
+        return;
+      }
+      if (description.length > LIMITS.description) {
+        setError(`Description must be ${LIMITS.description} characters or less`);
+        setLoading(false);
+        return;
+      }
+      if (markdownContent.length > LIMITS.markdownContent) {
+        setError(`Markdown content must be ${LIMITS.markdownContent.toLocaleString()} characters or less`);
         setLoading(false);
         return;
       }
@@ -668,12 +698,16 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="title">Title *</Label>
+              <span className="text-xs text-muted-foreground">{title.length}/{LIMITS.title}</span>
+            </div>
             <Input
               id="title"
               placeholder="My Awesome App"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value.slice(0, LIMITS.title))}
+              maxLength={LIMITS.title}
               required
               className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
             />
@@ -756,7 +790,8 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                 type="text"
                 placeholder="example.com"
                 value={url}
-                onChange={(e) => { setUrl(e.target.value); setScreenshotError(null); }}
+                onChange={(e) => { setUrl(e.target.value.slice(0, LIMITS.url)); setScreenshotError(null); }}
+                maxLength={LIMITS.url}
                 required
                 className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
               />
@@ -982,7 +1017,8 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                   type="text"
                   placeholder="https://www.youtube.com/watch?v=..."
                   value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
+                  onChange={(e) => setVideoUrl(e.target.value.slice(0, LIMITS.videoUrl))}
+                  maxLength={LIMITS.videoUrl}
                   className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -1051,13 +1087,20 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                   <Textarea
                     placeholder={"# My Note\n\nWrite your markdown here...\n\n- Bullet points\n- **Bold** and *italic*\n- `inline code`"}
                     value={markdownContent}
-                    onChange={(e) => setMarkdownContent(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= LIMITS.markdownContent) setMarkdownContent(e.target.value);
+                    }}
                     rows={12}
                     className="font-mono text-sm bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors resize-y"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Supports GitHub Flavored Markdown — headings, bold, lists, code blocks, tables
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Supports GitHub Flavored Markdown — headings, bold, lists, code blocks, tables
+                    </p>
+                    <span className={`text-xs ${markdownContent.length >= LIMITS.markdownContent ? "text-destructive" : "text-muted-foreground"}`}>
+                      {markdownContent.length.toLocaleString()}/{LIMITS.markdownContent.toLocaleString()}
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <div className="min-h-48 rounded-xl border border-border/60 bg-background px-5 py-4 overflow-auto">
@@ -1074,12 +1117,22 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description">Description</Label>
+              <span className={`text-xs ${description.length >= LIMITS.description ? "text-destructive" : "text-muted-foreground"}`}>
+                {description.length}/{LIMITS.description}
+              </span>
+            </div>
             <Textarea
               id="description"
               placeholder="A short description..."
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val.split("\n").length > LIMITS.descriptionLines) return;
+                if (val.length > LIMITS.description) return;
+                setDescription(val);
+              }}
               rows={3}
               className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
             />

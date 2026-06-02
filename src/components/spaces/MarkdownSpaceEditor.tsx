@@ -40,7 +40,13 @@ export function MarkdownSpaceEditor({ spaceId, initialContent }: MarkdownSpaceEd
     setMode("preview");
   };
 
+  const MAX_MARKDOWN = 100_000;
+
   const handleSave = async () => {
+    if (draft.length > MAX_MARKDOWN) {
+      setError(`Content must be ${MAX_MARKDOWN.toLocaleString()} characters or less`);
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
@@ -124,14 +130,21 @@ export function MarkdownSpaceEditor({ spaceId, initialContent }: MarkdownSpaceEd
         {mode === "preview" ? (
           <MarkdownViewer content={content} />
         ) : (
-          <textarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            className="h-full w-full resize-none bg-background px-6 py-6 font-mono text-sm leading-relaxed focus:outline-none"
-            placeholder="Write your markdown here…"
-            spellCheck={false}
-          />
+          <div className="relative h-full">
+            <textarea
+              ref={textareaRef}
+              value={draft}
+              onChange={(e) => {
+                if (e.target.value.length <= MAX_MARKDOWN) setDraft(e.target.value);
+              }}
+              className="h-full w-full resize-none bg-background px-6 py-6 font-mono text-sm leading-relaxed focus:outline-none"
+              placeholder="Write your markdown here…"
+              spellCheck={false}
+            />
+            <span className={`absolute bottom-3 right-4 text-xs pointer-events-none ${draft.length >= MAX_MARKDOWN ? "text-destructive" : "text-muted-foreground/50"}`}>
+              {draft.length.toLocaleString()}/{MAX_MARKDOWN.toLocaleString()}
+            </span>
+          </div>
         )}
       </div>
     </div>
