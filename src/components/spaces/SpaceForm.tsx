@@ -14,14 +14,32 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Code, Globe, Rocket, UploadCloud, FileCode2, FileText, X, Download, Wand2, ImageIcon, Check, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Code,
+  Globe,
+  Rocket,
+  UploadCloud,
+  FileCode2,
+  FileText,
+  X,
+  Wand2,
+  ImageIcon,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Video,
+  AlignLeft,
+} from "lucide-react";
 import { PREVIEW_GRADIENTS, GRADIENT_KEYS, DEFAULT_GRADIENT, type GradientKey } from "@/lib/preview-gradients";
 import { HashtagPicker } from "./HashtagPicker";
 import { PreviewCropper } from "./PreviewCropper";
 import type { Space } from "@/lib/types";
 import { sandboxHtml } from "@/lib/sandbox-html";
+import { detectVideo, getYoutubeThumbnail, getVimeoThumbnail } from "./VideoEmbed";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-type SpaceMode = "html" | "url" | "pdf";
+type SpaceMode = "html" | "url" | "pdf" | "image" | "video" | "markdown";
 
 /** Render HTML in a hidden iframe and capture a screenshot using html2canvas */
 async function captureHtmlScreenshot(
@@ -81,9 +99,17 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const supabase = useMemo(() => createClient(), []);
   const isEditing = !!space;
 
-  const [spaceType, setSpaceType] = useState<SpaceMode>(
-    space?.pdf_url ? "pdf" : space?.html_url ? "html" : space?.url ? "url" : "html"
-  );
+  const detectInitialMode = (): SpaceMode => {
+    if (space?.markdown_content) return "markdown";
+    if (space?.video_url) return "video";
+    if (space?.image_url) return "image";
+    if (space?.pdf_url) return "pdf";
+    if (space?.html_url) return "html";
+    if (space?.url) return "url";
+    return "html";
+  };
+
+  const [spaceType, setSpaceType] = useState<SpaceMode>(detectInitialMode);
   const [title, setTitle] = useState(space?.title || "");
   const [description, setDescription] = useState(space?.description || "");
   const [url, setUrl] = useState(space?.url || "");
@@ -98,6 +124,19 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDragOver, setPdfDragOver] = useState(false);
   const pdfFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Image type state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageDragOver, setImageDragOver] = useState(false);
+  const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Video type state
+  const [videoUrl, setVideoUrl] = useState(space?.video_url || "");
+
+  // Markdown type state
+  const [markdownContent, setMarkdownContent] = useState(space?.markdown_content || "");
+  const [markdownTab, setMarkdownTab] = useState<"write" | "preview">("write");
 
   const [hashtagSuggestions, setHashtagSuggestions] = useState<string[]>([]);
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>(space?.hashtags ?? []);
@@ -142,8 +181,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [space?.html_url]);
 
-
-
   // Track object URL for preview image thumbnail
   useEffect(() => {
     if (!previewImage) { setPreviewObjectUrl(null); return; }
@@ -151,6 +188,14 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     setPreviewObjectUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [previewImage]);
+
+  // Track object URL for content image
+  useEffect(() => {
+    if (!imageFile) { setImageObjectUrl(null); return; }
+    const url = URL.createObjectURL(imageFile);
+    setImageObjectUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   // Cleanup generated blob URL on unmount
   useEffect(() => {
@@ -233,7 +278,10 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     }
   };
 
-  const MAX_HTML_SIZE = 1.5 * 1024 * 1024; // 1.5 MB
+  const MAX_HTML_SIZE = 1.5 * 1024 * 1024;
+  const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024;
+  const MAX_CONTENT_IMAGE_SIZE = 5 * 1024 * 1024;
+  const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
   const extractStoragePath = (publicUrl: string, bucket: string): string | null => {
     const marker = `/object/public/${bucket}/`;
@@ -241,8 +289,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     if (idx === -1) return null;
     return publicUrl.slice(idx + marker.length).split("?")[0];
   };
-  const MAX_IMAGE_SIZE = 1.5 * 1024 * 1024; // 1.5 MB
-  const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10 MB
 
   const handlePdfFileUpload = (file: File) => {
     if (file.type !== "application/pdf") {
@@ -270,6 +316,18 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     reader.readAsText(file);
   };
 
+  const handleImageFileUpload = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("Only image files are accepted");
+      return;
+    }
+    if (file.size > MAX_CONTENT_IMAGE_SIZE) {
+      setError("Image file must be under 5 MB");
+      return;
+    }
+    setImageFile(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -290,7 +348,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         return;
       }
 
-      // Auto-prepend https:// if no protocol is provided
       let normalizedUrl = url.trim();
       if (
         spaceType === "url" &&
@@ -300,7 +357,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         normalizedUrl = `https://${normalizedUrl}`;
       }
 
-      // Block javascript: and data: URL schemes
       if (
         spaceType === "url" &&
         /^(javascript|data|vbscript):/i.test(normalizedUrl)
@@ -322,18 +378,43 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         return;
       }
 
+      if (spaceType === "image" && !imageFile && !space?.image_url) {
+        setError("An image file is required.");
+        setLoading(false);
+        return;
+      }
+
+      if (spaceType === "video") {
+        if (!videoUrl.trim()) {
+          setError("A video URL is required.");
+          setLoading(false);
+          return;
+        }
+        if (!detectVideo(videoUrl.trim())) {
+          setError("Unsupported video URL. Please use a YouTube, Vimeo, or Loom link.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (spaceType === "markdown" && !markdownContent.trim() && !space?.markdown_content) {
+        setError("Markdown content is required.");
+        setLoading(false);
+        return;
+      }
+
       let preview_image_url = (clearExistingImage && !previewImage) ? null : (space?.preview_image_url || null);
       let html_url = space?.html_url || null;
       let pdf_url = space?.pdf_url || null;
+      let image_url = space?.image_url || null;
 
-      // Validate preview image size
       if (previewImage && previewImage.size > MAX_IMAGE_SIZE) {
         setError("Preview image must be under 1.5 MB");
         setLoading(false);
         return;
       }
 
-      // Delete old preview image from bucket when replacing or removing it
+      // Delete old preview image when replacing or removing
       if (space?.preview_image_url && (previewImage || clearExistingImage)) {
         const oldPath = extractStoragePath(space.preview_image_url, "space-previews");
         if (oldPath) {
@@ -360,16 +441,13 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         preview_image_url = publicUrlData.publicUrl;
       }
 
-      // Upload HTML content to storage bucket
+      // Upload HTML content
       if (spaceType === "html" && htmlContent) {
         const htmlBlob = new Blob([htmlContent], { type: "text/html" });
         const filePath = `${user.id}/${Date.now()}.html`;
         const { error: uploadError } = await supabase.storage
           .from("space-html")
-          .upload(filePath, htmlBlob, {
-            contentType: "text/html",
-            upsert: false,
-          });
+          .upload(filePath, htmlBlob, { contentType: "text/html", upsert: false });
 
         if (uploadError) {
           setError("Failed to upload HTML: " + uploadError.message);
@@ -380,18 +458,14 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           .from("space-html")
           .getPublicUrl(filePath);
         html_url = publicUrlData.publicUrl;
-
       }
 
-      // Upload PDF to storage bucket
+      // Upload PDF
       if (spaceType === "pdf" && pdfFile) {
         const filePath = `${user.id}/${Date.now()}.pdf`;
         const { error: uploadError } = await supabase.storage
           .from("space-pdfs")
-          .upload(filePath, pdfFile, {
-            contentType: "application/pdf",
-            upsert: false,
-          });
+          .upload(filePath, pdfFile, { contentType: "application/pdf", upsert: false });
 
         if (uploadError) {
           setError("Failed to upload PDF: " + uploadError.message);
@@ -404,12 +478,54 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         pdf_url = publicUrlData.publicUrl;
       }
 
+      // Upload content image
+      if (spaceType === "image" && imageFile) {
+        const fileExt = imageFile.name.split(".").pop();
+        const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("space-images")
+          .upload(filePath, imageFile, { contentType: imageFile.type, upsert: false });
+
+        if (uploadError) {
+          setError("Failed to upload image: " + uploadError.message);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("space-images")
+          .getPublicUrl(filePath);
+        image_url = publicUrlData.publicUrl;
+
+        // Auto-use the uploaded image as the preview if none was manually set
+        if (!previewImage && !space?.preview_image_url) {
+          preview_image_url = image_url;
+        }
+      }
+
+      // For video: auto-use YouTube or Vimeo thumbnail as preview if none set
+      let finalVideoUrl: string | null = null;
+      if (spaceType === "video") {
+        finalVideoUrl = videoUrl.trim();
+        if (!previewImage && !space?.preview_image_url && finalVideoUrl) {
+          const ytThumb = getYoutubeThumbnail(finalVideoUrl);
+          if (ytThumb) {
+            preview_image_url = ytThumb;
+          } else {
+            const vimeoThumb = await getVimeoThumbnail(finalVideoUrl);
+            if (vimeoThumb) preview_image_url = vimeoThumb;
+          }
+        }
+      }
+
       const spaceData = {
         title,
         description: description || null,
         url: spaceType === "url" ? normalizedUrl : null,
         html_url: spaceType === "html" ? html_url : null,
         pdf_url: spaceType === "pdf" ? pdf_url : null,
+        image_url: spaceType === "image" ? image_url : null,
+        video_url: spaceType === "video" ? finalVideoUrl : null,
+        markdown_content: spaceType === "markdown" ? (markdownContent.trim() || null) : null,
         preview_image_url,
         preview_gradient: previewGradient,
         preview_title: previewTitle.trim() || null,
@@ -437,7 +553,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         spaceId = inserted.id;
       }
 
-      // Link to collection if creating from a collection page
       if (!isEditing && collectionId) {
         await supabase
           .from("collection_spaces")
@@ -463,6 +578,25 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     }
   };
 
+  const typeButtons = [
+    { type: "html" as SpaceMode, icon: Code, label: "HTML", description: "Paste or upload HTML" },
+    { type: "image" as SpaceMode, icon: ImageIcon, label: "Image", description: "Upload a photo or graphic" },
+    { type: "video" as SpaceMode, icon: Video, label: "Video", description: "YouTube, Vimeo, or Loom" },
+    { type: "markdown" as SpaceMode, icon: AlignLeft, label: "Note", description: "Write with Markdown" },
+    { type: "pdf" as SpaceMode, icon: FileText, label: "PDF", description: "Upload a PDF document" },
+    { type: "url" as SpaceMode, icon: Globe, label: "Website", description: "Link to an external site" },
+  ] as const;
+
+  const isSubmitDisabled =
+    loading ||
+    !title.trim() ||
+    (spaceType === "url" && !url.trim()) ||
+    (spaceType === "html" && !htmlContent && !space?.html_url) ||
+    (spaceType === "pdf" && !pdfFile && !space?.pdf_url) ||
+    (spaceType === "image" && !imageFile && !space?.image_url) ||
+    (spaceType === "video" && !videoUrl.trim()) ||
+    (spaceType === "markdown" && !markdownContent.trim() && !space?.markdown_content);
+
   return (
     <Card className="w-full max-w-2xl shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
       <CardHeader className="pb-4">
@@ -475,8 +609,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
               {isEditing ? "Edit Space" : "Create a New Space"}
             </CardTitle>
             <CardDescription>
-              Save a website URL or upload HTML generated by AI tools like
-              Claude or ChatGPT.
+              Share a website, image, video, note, HTML, or PDF.
             </CardDescription>
           </div>
         </div>
@@ -486,19 +619,13 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           {/* Space Type Toggle */}
           <div className="space-y-2">
             <Label>Space Type</Label>
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-              {(
-                [
-                  { type: "html" as SpaceMode, icon: Code, label: "HTML Upload", description: "Paste or upload HTML from AI tools" },
-                  { type: "pdf" as SpaceMode, icon: FileText, label: "PDF Upload", description: "Upload a PDF document" },
-                  { type: "url" as SpaceMode, icon: Globe, label: "Website URL", description: "Link to an external website" },
-                ] as const
-              ).map(({ type, icon: Icon, label, description }) => (
+            <div className="grid grid-cols-3 gap-2">
+              {typeButtons.map(({ type, icon: Icon, label, description }) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setSpaceType(type)}
-                  className={`shrink-0 min-w-[130px] flex-1 rounded-xl border-2 px-3 py-3 text-left transition-all ${
+                  className={`rounded-xl border-2 px-3 py-3 text-left transition-all ${
                     spaceType === type
                       ? "border-violet-600 bg-violet-50 dark:bg-violet-950/50 shadow-sm shadow-violet-600/10"
                       : "border-border/60 hover:border-violet-500/30 hover:bg-muted/50"
@@ -513,7 +640,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                       }`}
                     />
                     <span
-                      className={`font-semibold text-sm whitespace-nowrap ${
+                      className={`font-semibold text-sm ${
                         spaceType === type
                           ? "text-violet-700 dark:text-violet-300"
                           : ""
@@ -605,9 +732,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                   }`}
                 >
                   <UploadCloud className={`mx-auto h-8 w-8 mb-3 ${pdfDragOver ? "text-violet-500" : "text-muted-foreground"}`} />
-                  <p className="text-sm font-medium text-foreground">
-                    Drop your PDF here
-                  </p>
+                  <p className="text-sm font-medium text-foreground">Drop your PDF here</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     or <span className="text-violet-600 dark:text-violet-400 underline underline-offset-2">browse</span> — .pdf, up to 10 MB
                   </p>
@@ -644,7 +769,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           {/* HTML input */}
           {spaceType === "html" && (
             <div className="space-y-4">
-              {/* Drop zone */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -693,9 +817,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                   }`}
                 >
                   <UploadCloud className={`mx-auto h-8 w-8 mb-3 ${dragOver ? "text-violet-500" : "text-muted-foreground"}`} />
-                  <p className="text-sm font-medium text-foreground">
-                    Drop your HTML file here
-                  </p>
+                  <p className="text-sm font-medium text-foreground">Drop your HTML file here</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     or <span className="text-violet-600 dark:text-violet-400 underline underline-offset-2">browse</span> — .html / .htm, up to 1.5 MB
                   </p>
@@ -736,7 +858,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                 </div>
               )}
 
-              {/* Live Preview */}
               {htmlContent && (
                 <div className="space-y-2">
                   <Label>Preview</Label>
@@ -759,11 +880,204 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
             </div>
           )}
 
+          {/* Image input */}
+          {spaceType === "image" && (
+            <div className="space-y-4">
+              <input
+                ref={imageFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageFileUpload(file);
+                }}
+              />
+
+              {imageFile && imageObjectUrl ? (
+                <div className="space-y-3">
+                  <div className="relative rounded-xl overflow-hidden border border-violet-400/50 bg-black aspect-video">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageObjectUrl}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 rounded-xl border border-violet-400/50 bg-violet-50 dark:bg-violet-950/30 px-4 py-3">
+                    <ImageIcon className="h-5 w-5 shrink-0 text-violet-500" />
+                    <span className="flex-1 text-sm font-medium text-violet-700 dark:text-violet-300 truncate">
+                      {imageFile.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {(imageFile.size / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null);
+                        if (imageFileInputRef.current) imageFileInputRef.current.value = "";
+                      }}
+                      className="rounded-full p-1 hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors"
+                    >
+                      <X className="h-4 w-4 text-violet-500" />
+                    </button>
+                  </div>
+                </div>
+              ) : isEditing && space?.image_url ? (
+                <div className="space-y-3">
+                  <div className="relative rounded-xl overflow-hidden border border-border/60 bg-black aspect-video">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={space.image_url} alt="Current image" className="w-full h-full object-contain" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">Current image</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => imageFileInputRef.current?.click()}
+                      className="gap-1.5 text-xs"
+                    >
+                      <UploadCloud className="h-3.5 w-3.5" />
+                      Replace
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => imageFileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setImageDragOver(true); }}
+                  onDragLeave={() => setImageDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setImageDragOver(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleImageFileUpload(file);
+                  }}
+                  className={`w-full rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
+                    imageDragOver
+                      ? "border-violet-500 bg-violet-50 dark:bg-violet-950/30"
+                      : "border-border/60 hover:border-violet-400/60 hover:bg-muted/40"
+                  }`}
+                >
+                  <ImageIcon className={`mx-auto h-8 w-8 mb-3 ${imageDragOver ? "text-violet-500" : "text-muted-foreground"}`} />
+                  <p className="text-sm font-medium text-foreground">Drop your image here</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    or <span className="text-violet-600 dark:text-violet-400 underline underline-offset-2">browse</span> — JPG, PNG, GIF, WebP, up to 5 MB
+                  </p>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Video input */}
+          {spaceType === "video" && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="videoUrl">Video URL *</Label>
+                <Input
+                  id="videoUrl"
+                  type="text"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Supports YouTube, Vimeo, and Loom links
+                </p>
+              </div>
+
+              {/* Video preview */}
+              {videoUrl.trim() && (() => {
+                const info = detectVideo(videoUrl.trim());
+                if (!info) {
+                  return (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      URL not recognized. Please use a YouTube, Vimeo, or Loom link.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="rounded-xl overflow-hidden border border-border/60 bg-black aspect-video">
+                    <iframe
+                      src={info.embedUrl}
+                      title="Video preview"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Markdown input */}
+          {spaceType === "markdown" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Content *</Label>
+                <div className="flex rounded-lg border border-border/60 overflow-hidden text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setMarkdownTab("write")}
+                    className={`px-3 py-1.5 transition-colors ${
+                      markdownTab === "write"
+                        ? "bg-violet-600 text-white"
+                        : "bg-muted/50 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Write
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMarkdownTab("preview")}
+                    className={`px-3 py-1.5 transition-colors ${
+                      markdownTab === "preview"
+                        ? "bg-violet-600 text-white"
+                        : "bg-muted/50 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
+
+              {markdownTab === "write" ? (
+                <div className="space-y-1.5">
+                  <Textarea
+                    placeholder={"# My Note\n\nWrite your markdown here...\n\n- Bullet points\n- **Bold** and *italic*\n- `inline code`"}
+                    value={markdownContent}
+                    onChange={(e) => setMarkdownContent(e.target.value)}
+                    rows={12}
+                    className="font-mono text-sm bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors resize-y"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Supports GitHub Flavored Markdown — headings, bold, lists, code blocks, tables
+                  </p>
+                </div>
+              ) : (
+                <div className="min-h-48 rounded-xl border border-border/60 bg-background px-5 py-4 overflow-auto">
+                  {markdownContent.trim() ? (
+                    <div className="prose-sm [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-3 [&_h1]:mt-6 [&_h1:first-child]:mt-0 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:mt-5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_p]:mb-3 [&_p]:leading-6 [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-0.5 [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-3 [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_a]:text-violet-600 dark:[&_a]:text-violet-400 [&_a]:underline [&_hr]:border-border [&_hr]:my-4 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1.5 [&_th]:bg-muted [&_th]:text-left [&_th]:text-sm [&_th]:font-semibold [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1.5 [&_td]:text-sm">
+                      <Markdown remarkPlugins={[remarkGfm]}>{markdownContent}</Markdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nothing to preview yet.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="A short description of what this app does..."
+              placeholder="A short description..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -771,206 +1085,200 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
             />
           </div>
 
-          {/* Preview Image / Gradient */}
-          <div className="space-y-3">
-            <Label>Preview</Label>
+          {/* Preview Image / Gradient — hidden for image type (auto-set from content) */}
+          {spaceType !== "image" && (
+            <div className="space-y-3">
+              <Label>Preview</Label>
 
-            {showCropper && generatedPreviewSrc ? (
-              <PreviewCropper
-                imageSrc={generatedPreviewSrc}
-                onConfirm={handleCropConfirm}
-                onCancel={cleanupGeneratedPreview}
-              />
-            ) : (() => {
-              const hasNewImage = !!previewImage && !!previewObjectUrl;
-              const hasExistingImage = !!space?.preview_image_url && !clearExistingImage;
-              const hasImage = hasNewImage || hasExistingImage;
-              const gradient = PREVIEW_GRADIENTS[previewGradient];
+              {showCropper && generatedPreviewSrc ? (
+                <PreviewCropper
+                  imageSrc={generatedPreviewSrc}
+                  onConfirm={handleCropConfirm}
+                  onCancel={cleanupGeneratedPreview}
+                />
+              ) : (() => {
+                const hasNewImage = !!previewImage && !!previewObjectUrl;
+                const hasExistingImage = !!space?.preview_image_url && !clearExistingImage;
+                const hasImage = hasNewImage || hasExistingImage;
+                const gradient = PREVIEW_GRADIENTS[previewGradient];
 
-              return (
-                <>
-                  {/* Active image */}
-                  {hasNewImage ? (
-                    <div className="flex items-center gap-3 rounded-xl border border-violet-400/50 bg-violet-50 dark:bg-violet-950/30 px-4 py-3">
-                      <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 border border-violet-300/50">
-                        <img src={previewObjectUrl!} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-violet-700 dark:text-violet-300 truncate">{previewImage!.name}</p>
-                        <p className="text-xs text-muted-foreground">{(previewImage!.size / 1024).toFixed(0)} KB</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { setPreviewImage(null); setClearExistingImage(true); }}
-                        className="rounded-full p-1 hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors shrink-0"
-                        title="Remove image"
-                      >
-                        <X className="h-4 w-4 text-violet-500" />
-                      </button>
-                    </div>
-                  ) : hasExistingImage ? (
-                    <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
-                      <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 border border-border/60">
-                        <img src={space!.preview_image_url!} alt="Current preview" className="w-full h-full object-cover" />
-                      </div>
-                      <span className="flex-1 text-xs text-muted-foreground">Current preview image</span>
-                      <button
-                        type="button"
-                        onClick={() => setClearExistingImage(true)}
-                        className="rounded-full p-1 hover:bg-muted transition-colors shrink-0"
-                        title="Remove image"
-                      >
-                        <X className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                  ) : null}
-
-                  {/* Upload / generate buttons */}
-                  <div className="flex flex-wrap gap-2">
-                    {spaceType === "html" && (htmlContent || space?.html_url) && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGeneratePreview}
-                        disabled={isGenerating}
-                        className="gap-1.5 border-violet-400/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                            Generating…
-                          </>
-                        ) : (
-                          <>
-                            <Wand2 className="h-3.5 w-3.5" />
-                            Generate from content
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    {spaceType === "url" && url.trim() && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleGenerateFromUrl()}
-                        disabled={isGenerating}
-                        className="gap-1.5 border-violet-400/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                            Capturing…
-                          </>
-                        ) : (
-                          <>
-                            <Wand2 className="h-3.5 w-3.5" />
-                            Capture from URL
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => previewFileInputRef.current?.click()}
-                      className="gap-1.5 border-border/60"
-                    >
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      {hasImage ? "Replace image" : "Upload image"}
-                    </Button>
-                    <input
-                      ref={previewFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) { setPreviewImage(f); setClearExistingImage(false); }
-                      }}
-                    />
-                  </div>
-                  {screenshotError && (
-                    <p className="text-xs text-muted-foreground">{screenshotError}</p>
-                  )}
-
-                  {/* Gradient section — shown when no image */}
-                  {!hasImage && (
-                    <div className="space-y-3 rounded-xl border border-border/60 bg-muted/20 p-4">
-                      <p className="text-xs font-medium text-foreground/70">Background color</p>
-
-                      {/* Swatch picker */}
-                      <div className="flex gap-2 flex-wrap">
-                        {GRADIENT_KEYS.map((key) => {
-                          const g = PREVIEW_GRADIENTS[key];
-                          const selected = previewGradient === key;
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              title={g.label}
-                              onClick={() => setPreviewGradient(key)}
-                              className="relative h-7 w-7 rounded-full transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              style={{ background: g.swatch }}
-                            >
-                              {selected && (
-                                <span className="absolute inset-0 flex items-center justify-center">
-                                  <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />
-                                </span>
-                              )}
-                              {selected && (
-                                <span className="absolute -inset-0.5 rounded-full ring-2 ring-offset-1 ring-offset-background ring-foreground/30" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Optional title */}
-                      <div className="space-y-1.5">
-                        <p className="text-xs font-medium text-foreground/70">
-                          Preview title <span className="font-normal text-muted-foreground">(optional)</span>
-                        </p>
-                        <input
-                          type="text"
-                          placeholder="e.g. My Portfolio"
-                          value={previewTitle}
-                          maxLength={64}
-                          onChange={(e) => setPreviewTitle(e.target.value)}
-                          className="w-full rounded-lg border border-border/60 bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-background transition-colors placeholder:text-muted-foreground/50"
-                        />
-                      </div>
-
-                      {/* Mini preview */}
-                      <div className="overflow-hidden rounded-lg aspect-video border border-border/40">
-                        <div
-                          className={`flex h-full w-full items-center justify-center ${gradient.bg}`}
+                return (
+                  <>
+                    {hasNewImage ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-violet-400/50 bg-violet-50 dark:bg-violet-950/30 px-4 py-3">
+                        <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 border border-violet-300/50">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={previewObjectUrl!} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-violet-700 dark:text-violet-300 truncate">{previewImage!.name}</p>
+                          <p className="text-xs text-muted-foreground">{(previewImage!.size / 1024).toFixed(0)} KB</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setPreviewImage(null); setClearExistingImage(true); }}
+                          className="rounded-full p-1 hover:bg-violet-100 dark:hover:bg-violet-900 transition-colors shrink-0"
+                          title="Remove image"
                         >
-                          {previewTitle.trim() ? (
-                            <span className={`text-center text-2xl font-bold leading-tight px-3 line-clamp-3 ${gradient.text}`}>
-                              {previewTitle}
-                            </span>
+                          <X className="h-4 w-4 text-violet-500" />
+                        </button>
+                      </div>
+                    ) : hasExistingImage ? (
+                      <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+                        <div className="relative w-16 h-10 rounded overflow-hidden shrink-0 border border-border/60">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={space!.preview_image_url!} alt="Current preview" className="w-full h-full object-cover" />
+                        </div>
+                        <span className="flex-1 text-xs text-muted-foreground">Current preview image</span>
+                        <button
+                          type="button"
+                          onClick={() => setClearExistingImage(true)}
+                          className="rounded-full p-1 hover:bg-muted transition-colors shrink-0"
+                          title="Remove image"
+                        >
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-wrap gap-2">
+                      {spaceType === "html" && (htmlContent || space?.html_url) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGeneratePreview}
+                          disabled={isGenerating}
+                          className="gap-1.5 border-violet-400/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                              Generating…
+                            </>
                           ) : (
-                            <span className={`text-2xl font-bold ${gradient.text}`}>
-                              {title[0]?.toUpperCase() || "?"}
-                            </span>
+                            <>
+                              <Wand2 className="h-3.5 w-3.5" />
+                              Generate from content
+                            </>
                           )}
+                        </Button>
+                      )}
+                      {spaceType === "url" && url.trim() && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleGenerateFromUrl()}
+                          disabled={isGenerating}
+                          className="gap-1.5 border-violet-400/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                              Capturing…
+                            </>
+                          ) : (
+                            <>
+                              <Wand2 className="h-3.5 w-3.5" />
+                              Capture from URL
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => previewFileInputRef.current?.click()}
+                        className="gap-1.5 border-border/60"
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        {hasImage ? "Replace image" : "Upload image"}
+                      </Button>
+                      <input
+                        ref={previewFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) { setPreviewImage(f); setClearExistingImage(false); }
+                        }}
+                      />
+                    </div>
+                    {screenshotError && (
+                      <p className="text-xs text-muted-foreground">{screenshotError}</p>
+                    )}
+
+                    {!hasImage && (
+                      <div className="space-y-3 rounded-xl border border-border/60 bg-muted/20 p-4">
+                        <p className="text-xs font-medium text-foreground/70">Background color</p>
+
+                        <div className="flex gap-2 flex-wrap">
+                          {GRADIENT_KEYS.map((key) => {
+                            const g = PREVIEW_GRADIENTS[key];
+                            const selected = previewGradient === key;
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                title={g.label}
+                                onClick={() => setPreviewGradient(key)}
+                                className="relative h-7 w-7 rounded-full transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                style={{ background: g.swatch }}
+                              >
+                                {selected && (
+                                  <span className="absolute inset-0 flex items-center justify-center">
+                                    <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />
+                                  </span>
+                                )}
+                                {selected && (
+                                  <span className="absolute -inset-0.5 rounded-full ring-2 ring-offset-1 ring-offset-background ring-foreground/30" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-foreground/70">
+                            Preview title <span className="font-normal text-muted-foreground">(optional)</span>
+                          </p>
+                          <input
+                            type="text"
+                            placeholder="e.g. My Portfolio"
+                            value={previewTitle}
+                            maxLength={64}
+                            onChange={(e) => setPreviewTitle(e.target.value)}
+                            className="w-full rounded-lg border border-border/60 bg-muted/50 px-3 py-2 text-sm focus:outline-none focus:border-violet-500/50 focus:bg-background transition-colors placeholder:text-muted-foreground/50"
+                          />
+                        </div>
+
+                        <div className="overflow-hidden rounded-lg aspect-video border border-border/40">
+                          <div className={`flex h-full w-full items-center justify-center ${gradient.bg}`}>
+                            {previewTitle.trim() ? (
+                              <span className={`text-center text-2xl font-bold leading-tight px-3 line-clamp-3 ${gradient.text}`}>
+                                {previewTitle}
+                              </span>
+                            ) : (
+                              <span className={`text-2xl font-bold ${gradient.text}`}>
+                                {title[0]?.toUpperCase() || "?"}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {hasImage && (
-                    <p className="text-xs text-muted-foreground">
-                      Shown as the space thumbnail
-                    </p>
-                  )}
-                </>
-              );
-            })()}
-          </div>
+                    {hasImage && (
+                      <p className="text-xs text-muted-foreground">Shown as the space thumbnail</p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 p-3 rounded-lg bg-muted/40 border border-border/50">
@@ -1002,21 +1310,8 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           )}
 
           <div className="flex gap-3 pt-2">
-            <Button
-              type="submit"
-              disabled={
-                loading ||
-                !title.trim() ||
-                (spaceType === "url" && !url.trim()) ||
-                (spaceType === "html" && !htmlContent && !space?.html_url) ||
-                (spaceType === "pdf" && !pdfFile && !space?.pdf_url)
-              }
-            >
-              {loading
-                ? "Saving..."
-                : isEditing
-                ? "Save Changes"
-                : "Create Space"}
+            <Button type="submit" disabled={isSubmitDisabled}>
+              {loading ? "Saving..." : isEditing ? "Save Changes" : "Create Space"}
             </Button>
             <Button
               type="button"

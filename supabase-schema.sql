@@ -43,6 +43,12 @@ alter table public.spaces add column if not exists pdf_url text;
 alter table public.spaces add column if not exists preview_gradient text default 'violet';
 alter table public.spaces add column if not exists preview_title text;
 alter table public.spaces add column if not exists hashtags text[] not null default '{}';
+alter table public.spaces add column if not exists image_url text;
+alter table public.spaces add column if not exists video_url text;
+alter table public.spaces add column if not exists markdown_content text;
+
+-- Storage buckets (create manually in Supabase dashboard or via CLI):
+-- space-images  : content images for image-type spaces (public, 5 MB limit)
 
 -- GIN index for fast hashtag filtering (WHERE 'react' = ANY(hashtags))
 create index if not exists spaces_hashtags_gin
@@ -503,3 +509,65 @@ create trigger on_follow_change
 create index if not exists idx_spaces_user_id_public_created
   on public.spaces(user_id, created_at desc)
   where is_public = true;
+
+-- =====================================================
+-- Space Views / Analytics
+-- =====================================================
+
+-- Denormalized view counter on spaces
+alter table public.spaces add column if not exists views_count integer default 0;
+
+-- Raw view events
+-- viewed_date is a plain date column (not generated) so the unique index is IMMUTABLE-safe.
+-- The server action populates it at insert time using UTC date.
+create table if not exists public.space_views (
+  id          uuid default gen_random_uuid() primary key,
+  space_id    uuid references public.spaces(id) on delete cascade not null,
+  viewer_id   uuid references public.profiles(id) on delete set null,
+  viewed_at   timestamptz default now() not null,
+  viewed_date date not null default current_date
+);
+
+-- Performance indexes
+create index if not exists idx_space_views_space_id
+  on public.space_views(space_id);
+create index if not exists idx_space_views_space_viewed_at
+  on public.space_views(space_id, viewed_at desc);
+
+-- One view per logged-in user per space per day (prevents self-inflation)
+create unique index if not exists idx_space_views_unique_user_day
+  on public.space_views(space_id, viewer_id, viewed_date)
+  where viewer_id is not null;
+
+alter table public.space_views enable row level security;
+
+-- Anyone (including anon) can insert a view
+drop policy if exists "Anyone can record a space view" on public.space_views;
+create policy "Anyone can record a space view"
+  on public.space_views for insert
+  with check (true);
+
+-- Only the space owner can read their space's view data
+drop policy if exists "Space owners can read their own space views" on public.space_views;
+create policy "Space owners can read their own space views"
+  on public.space_views for select
+  using (
+    exists (
+      select 1 from public.spaces s
+      where s.id = space_id and s.user_id = auth.uid()
+    )
+  );
+
+-- Trigger: keep views_count in sync
+create or replace function public.update_views_count()
+returns trigger as $$
+begin
+  update public.spaces set views_count = views_count + 1 where id = NEW.space_id;
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_space_view on public.space_views;
+create trigger on_space_view
+  after insert on public.space_views
+  for each row execute procedure public.update_views_count();

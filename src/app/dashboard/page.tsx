@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SpaceGrid } from "@/components/spaces/SpaceGrid";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Layers, Plus, Rocket, Zap, AlertTriangle } from "lucide-react";
+import { LayoutGrid, Layers, Plus, Rocket, Zap, AlertTriangle, BarChart2 } from "lucide-react";
 import type { Space } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 
@@ -64,6 +64,12 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/dashboard/analytics">
+              <Button variant="outline" className="border-border/60 gap-2">
+                <BarChart2 className="h-4 w-4" />
+                Analytics
+              </Button>
+            </Link>
             <Link href="/dashboard/collections">
               <Button variant="outline" className="border-border/60 gap-2">
                 <Layers className="h-4 w-4" />
@@ -72,7 +78,7 @@ export default async function DashboardPage() {
             </Link>
             <Link href="/dashboard/create-space">
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4" />
                 Create Space
               </Button>
             </Link>

@@ -15,7 +15,11 @@ import { ExternalLink, Lock, Smartphone } from "lucide-react";
 import { HtmlSpaceEditor } from "@/components/spaces/HtmlSpaceEditor";
 import { PdfViewerWrapper } from "@/components/spaces/PdfViewerWrapper";
 import { IframeLoader } from "@/components/spaces/IframeLoader";
+import { VideoEmbed } from "@/components/spaces/VideoEmbed";
+import { MarkdownViewer } from "@/components/spaces/MarkdownViewer";
+import { MarkdownSpaceEditor } from "@/components/spaces/MarkdownSpaceEditor";
 import { BackButton } from "@/components/ui/BackButton";
+import { ViewTracker } from "@/components/spaces/ViewTracker";
 
 function hasDownloadableContent(html: string): boolean {
   return (
@@ -178,7 +182,8 @@ export default async function SpaceViewPage({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] overflow-hidden">
+      <ViewTracker spaceId={space.id} ownerId={space.user_id} />
       {/* Top bar */}
       <div className="shrink-0 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5">
@@ -230,6 +235,18 @@ export default async function SpaceViewPage({
               </Button>
             </Link>
           )}
+          {space.video_url && (
+            <a href={space.video_url} target="_blank" rel="noopener noreferrer">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-border/60 hover:border-violet-500/50 transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Open Video</span>
+              </Button>
+            </a>
+          )}
           {space.pdf_url && (
             <a href={space.pdf_url} target="_blank" rel="noopener noreferrer" download>
               <Button
@@ -279,6 +296,21 @@ export default async function SpaceViewPage({
           )
         ) : space.pdf_url ? (
           <PdfViewerWrapper url={space.pdf_url} title={space.title} />
+        ) : space.image_url ? (
+          <div className="flex h-full items-center justify-center bg-black/90 p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={space.image_url}
+              alt={space.title}
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+        ) : space.video_url ? (
+          <VideoEmbed url={space.video_url} />
+        ) : space.markdown_content ? (
+          isOwner
+            ? <MarkdownSpaceEditor spaceId={space.id} initialContent={space.markdown_content} />
+            : <MarkdownViewer content={space.markdown_content} />
         ) : space.url ? (
           <IframeLoader
             src={space.url}

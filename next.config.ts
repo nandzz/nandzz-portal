@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
         hostname: "**.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "img.youtube.com",
+      },
+      {
+        protocol: "https",
+        hostname: "i.vimeocdn.com",
+      },
     ],
   },
   async headers() {
@@ -59,9 +67,9 @@ const nextConfig: NextConfig = {
               `default-src 'self'`,
               `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
               `style-src 'self' 'unsafe-inline'`,
-              `img-src 'self' data: blob: https://${supabaseHost} https://api.producthunt.com https://cdn.buymeacoffee.com`,
+              `img-src 'self' data: blob: https://${supabaseHost} https://api.producthunt.com https://cdn.buymeacoffee.com https://img.youtube.com https://i.vimeocdn.com`,
               `font-src 'self'`,
-              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://api.web3forms.com`,
+              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://api.web3forms.com https://vimeo.com`,
               `worker-src 'self'`,
               `frame-src *`,
               `object-src 'none'`,

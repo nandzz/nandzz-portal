@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t bg-muted/20 dark:bg-muted/10">
+    <footer className="border-t bg-muted/20 dark:bg-muted/10 pb-16 md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           {/* Brand */}

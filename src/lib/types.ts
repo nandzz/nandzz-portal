@@ -35,11 +35,15 @@ export type Space = {
   url: string | null;
   html_url: string | null;
   pdf_url: string | null;
+  image_url: string | null;
+  video_url: string | null;
+  markdown_content: string | null;
   preview_image_url: string | null;
   preview_gradient: string | null;
   preview_title: string | null;
   is_public: boolean;
   likes_count: number;
+  views_count: number;
   hashtags: string[];
   created_at: string;
 };
@@ -74,6 +78,27 @@ export type CollectionWithSpaces = Collection & {
     space_id: string;
     spaces: Space;
   }[];
+};
+
+export type SpaceView = {
+  id: string;
+  space_id: string;
+  viewer_id: string | null;
+  viewed_at: string;
+};
+
+export type DailyViews = {
+  date: string;
+  views: number;
+};
+
+export type SpaceAnalytics = {
+  spaceId: string;
+  totalViews: number;
+  views7d: number;
+  views30d: number;
+  dailyViews: DailyViews[];
+  likesCount: number;
 };
 
 export type CollectionSpace = {
