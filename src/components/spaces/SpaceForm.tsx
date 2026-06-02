@@ -109,6 +109,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const previewFileInputRef = useRef<HTMLInputElement>(null);
   const generatedBlobUrlRef = useRef<string | null>(null);
+  const screenshotDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [previewGradient, setPreviewGradient] = useState<GradientKey>(
     (space?.preview_gradient as GradientKey) || DEFAULT_GRADIENT
@@ -155,8 +156,27 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   useEffect(() => {
     return () => {
       if (generatedBlobUrlRef.current) URL.revokeObjectURL(generatedBlobUrlRef.current);
+      if (screenshotDebounceRef.current) clearTimeout(screenshotDebounceRef.current);
     };
   }, []);
+
+  // Auto-fetch preview when URL is entered (debounced, only when no image already set)
+  useEffect(() => {
+    if (spaceType !== "url") return;
+    const trimmed = url.trim();
+    const hasImage = !!previewImage || (!!space?.preview_image_url && !clearExistingImage);
+    if (!trimmed || hasImage || showCropper) return;
+
+    if (screenshotDebounceRef.current) clearTimeout(screenshotDebounceRef.current);
+    screenshotDebounceRef.current = setTimeout(() => {
+      handleGenerateFromUrl(trimmed);
+    }, 900);
+
+    return () => {
+      if (screenshotDebounceRef.current) clearTimeout(screenshotDebounceRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, spaceType]);
 
   const cleanupGeneratedPreview = () => {
     if (generatedBlobUrlRef.current) {
@@ -190,8 +210,8 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     setScreenshotError(null);
   };
 
-  const handleGenerateFromUrl = async () => {
-    const target = url.trim();
+  const handleGenerateFromUrl = async (overrideUrl?: string) => {
+    const target = (overrideUrl ?? url).trim();
     if (!target) return;
     const normalized = /^https?:\/\//i.test(target) ? target : `https://${target}`;
     setIsGenerating(true);
@@ -200,13 +220,14 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
       const res = await fetch(`/api/screenshot?url=${encodeURIComponent(normalized)}`);
       if (!res.ok) throw new Error("Could not capture screenshot");
       const blob = await res.blob();
+      if (blob.size < 1000) throw new Error("Empty response");
       if (generatedBlobUrlRef.current) URL.revokeObjectURL(generatedBlobUrlRef.current);
       const src = URL.createObjectURL(blob);
       generatedBlobUrlRef.current = src;
       setGeneratedPreviewSrc(src);
       setShowCropper(true);
     } catch {
-      setScreenshotError("Couldn't screenshot this URL. Try uploading an image manually.");
+      setScreenshotError("Couldn't fetch a preview for this URL. You can upload one manually.");
     } finally {
       setIsGenerating(false);
     }
@@ -925,7 +946,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                     />
                   </div>
                   {screenshotError && (
-                    <p className="text-xs text-destructive">{screenshotError}</p>
+                    <p className="text-xs text-muted-foreground">{screenshotError}</p>
                   )}
 
                   {/* Gradient section — shown when no image */}

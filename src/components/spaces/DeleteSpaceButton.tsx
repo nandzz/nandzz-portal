@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { deleteSpaceWithCleanup } from "@/lib/delete-space";
 
 interface DeleteSpaceButtonProps {
   spaceId: string;
@@ -16,7 +17,7 @@ export function DeleteSpaceButton({ spaceId, redirectTo }: DeleteSpaceButtonProp
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this space? This cannot be undone.")) return;
     const supabase = createClient();
-    await supabase.from("spaces").delete().eq("id", spaceId);
+    await deleteSpaceWithCleanup(supabase, spaceId);
     router.push(redirectTo);
   };
 

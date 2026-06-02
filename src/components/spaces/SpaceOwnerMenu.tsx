@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
+import { deleteSpaceWithCleanup } from "@/lib/delete-space";
 
 interface SpaceOwnerMenuProps {
   spaceId: string;
@@ -24,7 +25,7 @@ export function SpaceOwnerMenu({ spaceId, editHref, redirectTo }: SpaceOwnerMenu
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this space? This cannot be undone.")) return;
     const supabase = createClient();
-    await supabase.from("spaces").delete().eq("id", spaceId);
+    await deleteSpaceWithCleanup(supabase, spaceId);
     router.push(redirectTo);
   };
 
