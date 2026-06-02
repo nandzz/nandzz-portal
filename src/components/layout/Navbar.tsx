@@ -252,10 +252,8 @@ export function Navbar() {
 
           {/* Mobile menu button */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
+            <DropdownMenuTrigger className="h-9 w-9 md:hidden inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+              <Menu className="h-5 w-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {user ? (
