@@ -13,7 +13,7 @@ export async function deleteSpaceWithCleanup(
 ): Promise<void> {
   const { data: space } = await supabase
     .from("spaces")
-    .select("preview_image_url, html_url, pdf_url")
+    .select("preview_image_url, html_url, pdf_url, image_url")
     .eq("id", spaceId)
     .single();
 
@@ -31,6 +31,10 @@ export async function deleteSpaceWithCleanup(
     if (space.pdf_url) {
       const path = extractStoragePath(space.pdf_url, "space-pdfs");
       if (path) removals.push(supabase.storage.from("space-pdfs").remove([path]));
+    }
+    if (space.image_url) {
+      const path = extractStoragePath(space.image_url, "space-images");
+      if (path) removals.push(supabase.storage.from("space-images").remove([path]));
     }
 
     await Promise.all(removals);

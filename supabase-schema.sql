@@ -47,9 +47,6 @@ alter table public.spaces add column if not exists image_url text;
 alter table public.spaces add column if not exists video_url text;
 alter table public.spaces add column if not exists markdown_content text;
 
--- Storage buckets (create manually in Supabase dashboard or via CLI):
--- space-images  : content images for image-type spaces (public, 5 MB limit)
-
 -- GIN index for fast hashtag filtering (WHERE 'react' = ANY(hashtags))
 create index if not exists spaces_hashtags_gin
   on public.spaces using gin(hashtags);
@@ -138,6 +135,9 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- 7. Storage buckets
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values ('space-images', 'space-images', true, 5242880, array['image/jpeg','image/png','image/gif','image/webp'])
+  on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('space-previews', 'space-previews', true) on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('space-html', 'space-html', true) on conflict (id) do nothing;
@@ -285,7 +285,7 @@ create trigger on_like_change
   after insert or delete on public.space_likes
   for each row execute procedure public.update_likes_count();
 
--- 9. Collections
+-- 10. Collections
 
 create table if not exists public.collections (
   id uuid default gen_random_uuid() primary key,
@@ -410,6 +410,27 @@ drop policy if exists "Users can delete their own background" on storage.objects
 create policy "Users can delete their own background"
   on storage.objects for delete
   using (bucket_id = 'profile-backgrounds' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Storage policies for space images (image-type spaces)
+drop policy if exists "Space images are publicly accessible" on storage.objects;
+create policy "Space images are publicly accessible"
+  on storage.objects for select
+  using (bucket_id = 'space-images');
+
+drop policy if exists "Users can upload space images" on storage.objects;
+create policy "Users can upload space images"
+  on storage.objects for insert
+  with check (bucket_id = 'space-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users can update space images" on storage.objects;
+create policy "Users can update space images"
+  on storage.objects for update
+  using (bucket_id = 'space-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users can delete space images" on storage.objects;
+create policy "Users can delete space images"
+  on storage.objects for delete
+  using (bucket_id = 'space-images' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ============================================================
 -- Billing / Stripe (run after Stripe integration is set up)

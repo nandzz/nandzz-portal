@@ -182,7 +182,10 @@ export default async function SpaceViewPage({
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] overflow-hidden">
+    <div
+      className="fixed left-0 right-0 flex flex-col overflow-hidden md:static md:h-[calc(100dvh-4rem)]"
+      style={{ top: '4rem', bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+    >
       <ViewTracker spaceId={space.id} ownerId={space.user_id} />
       {/* Top bar */}
       <div className="shrink-0 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">

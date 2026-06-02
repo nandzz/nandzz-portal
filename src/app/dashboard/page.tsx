@@ -63,23 +63,23 @@ export default async function DashboardPage() {
               Welcome back, {greeting}. Manage your web app collection.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard/analytics">
-              <Button variant="outline" className="border-border/60 gap-2">
-                <BarChart2 className="h-4 w-4" />
-                Analytics
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <Link href="/dashboard/create-space" className="shrink-0">
+              <Button>
+                <Plus className="h-4 w-4" />
+                Create Space
               </Button>
             </Link>
-            <Link href="/dashboard/collections">
+            <Link href="/dashboard/collections" className="shrink-0">
               <Button variant="outline" className="border-border/60 gap-2">
                 <Layers className="h-4 w-4" />
                 Collections
               </Button>
             </Link>
-            <Link href="/dashboard/create-space">
-              <Button>
-                <Plus className="h-4 w-4" />
-                Create Space
+            <Link href="/dashboard/analytics" className="shrink-0">
+              <Button variant="outline" className="border-border/60 gap-2">
+                <BarChart2 className="h-4 w-4" />
+                Analytics
               </Button>
             </Link>
           </div>

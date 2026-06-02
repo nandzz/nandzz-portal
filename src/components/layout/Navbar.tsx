@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, X, User, Settings, LogOut, CreditCard } from "lucide-react";
+import { Moon, Sun, Menu, User, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 
@@ -26,7 +26,6 @@ export function Navbar() {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -252,147 +251,130 @@ export function Navbar() {
           )}
 
           {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-      </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {user ? (
+                <>
+                  {/* User info */}
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="font-normal px-3 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarImage src={profile?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300 text-xs font-semibold">
+                            {profile?.display_name?.[0]?.toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-none truncate">
+                            {profile?.display_name || profile?.username || "User"}
+                          </p>
+                          {profile?.username && (
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                              @{profile.username}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
 
-      {/* Mobile menu */}
-      <div
-        className={`md:hidden border-t bg-background/95 backdrop-blur-xl overflow-hidden transition-all duration-300 ease-in-out ${
-          mobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="space-y-1 px-4 py-3">
-          <Link
-            href="/explore"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            Explore
-          </Link>
-          {FEATURES.monetization && (
-            <Link
-              href="/pricing"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              Pricing
-            </Link>
-          )}
-          {user && (
-            <Link
-              href="/dashboard/feed"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              Feed
-            </Link>
-          )}
-          {user && (
-            <Link
-              href="/dashboard/create-space"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              Create
-            </Link>
-          )}
-          {user && (
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              My Spaces
-            </Link>
-          )}
-          {user && (
-            <Link
-              href="/dashboard/collections"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              My Collections
-            </Link>
-          )}
+                  <DropdownMenuSeparator />
 
-          <div className="border-t my-2" />
+                  {/* Navigation */}
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => router.push("/explore")} className="gap-2">
+                      <Compass className="h-4 w-4 text-muted-foreground" />
+                      Explore
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/feed")} className="gap-2">
+                      <Rss className="h-4 w-4 text-muted-foreground" />
+                      Feed
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/create-space")} className="gap-2">
+                      <Plus className="h-4 w-4 text-muted-foreground" />
+                      Create Space
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard")} className="gap-2">
+                      <LayoutGrid className="h-4 w-4 text-muted-foreground" />
+                      My Spaces
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/collections")} className="gap-2">
+                      <Layers className="h-4 w-4 text-muted-foreground" />
+                      My Collections
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
 
-          {user ? (
-            <>
-              {profile?.username && (
-                <Link
-                  href={`/${profile.username}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                >
-                  My Profile
-                </Link>
+                  <DropdownMenuSeparator />
+
+                  {/* Account */}
+                  <DropdownMenuGroup>
+                    {profile?.username && (
+                      <DropdownMenuItem onClick={() => router.push(`/${profile.username}`)} className="gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        My Profile
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="gap-2">
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      Settings
+                    </DropdownMenuItem>
+                    {FEATURES.monetization && (
+                      <DropdownMenuItem onClick={() => router.push("/dashboard/billing")} className="gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        Billing & Plans
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuGroup>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-2">
+                    {theme === "dark" ? (
+                      <Sun className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Moon className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    {theme === "dark" ? "Switch to Light" : "Switch to Dark"}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={handleLogout} className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => router.push("/explore")} className="gap-2">
+                      <Compass className="h-4 w-4 text-muted-foreground" />
+                      Explore
+                    </DropdownMenuItem>
+                    {FEATURES.monetization && (
+                      <DropdownMenuItem onClick={() => router.push("/pricing")} className="gap-2">
+                        Pricing
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push("/login")} className="gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    Log in
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/login?tab=signup")} className="gap-2">
+                    Sign up
+                  </DropdownMenuItem>
+                </>
               )}
-              <Link
-                href="/dashboard/settings"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                Settings
-              </Link>
-              <button
-                onClick={() => {
-                  setTheme(theme === "dark" ? "light" : "dark");
-                  setMobileMenuOpen(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                {theme === "dark" ? (
-                  <>
-                    <Sun className="h-4 w-4" />
-                    Switch to Light
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4" />
-                    Switch to Dark
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setMobileMenuOpen(false);
-                }}
-                className="block w-full text-left rounded-md px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                Log out
-              </button>
-            </>
-          ) : (
-            <div className="flex gap-2 px-3 py-2">
-              <Link href="/login" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/login?tab=signup" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                <Button
-                  size="sm"
-                  className="w-full"
-                >
-                  Sign up
-                </Button>
-              </Link>
-            </div>
-          )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>
