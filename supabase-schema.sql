@@ -443,3 +443,63 @@ create index if not exists idx_collections_user_default
 -- Spaces inside a collection
 create index if not exists idx_collection_spaces_collection_id
   on public.collection_spaces(collection_id);
+
+-- =====================================================
+-- Follows
+-- =====================================================
+
+-- Add follower/following counters to profiles
+alter table public.profiles add column if not exists followers_count integer default 0;
+alter table public.profiles add column if not exists following_count integer default 0;
+
+-- Follows join table
+create table if not exists public.user_follows (
+  id          uuid default gen_random_uuid() primary key,
+  follower_id uuid references public.profiles(id) on delete cascade not null,
+  following_id uuid references public.profiles(id) on delete cascade not null,
+  created_at  timestamptz default now(),
+  unique(follower_id, following_id),
+  check (follower_id != following_id)
+);
+
+create index if not exists user_follows_follower_id_idx on public.user_follows(follower_id);
+create index if not exists user_follows_following_id_idx on public.user_follows(following_id);
+
+alter table public.user_follows enable row level security;
+
+drop policy if exists "Follows are viewable by everyone" on public.user_follows;
+create policy "Follows are viewable by everyone"
+  on public.user_follows for select using (true);
+
+drop policy if exists "Users can follow others" on public.user_follows;
+create policy "Users can follow others"
+  on public.user_follows for insert with check (auth.uid() = follower_id);
+
+drop policy if exists "Users can unfollow" on public.user_follows;
+create policy "Users can unfollow"
+  on public.user_follows for delete using (auth.uid() = follower_id);
+
+-- Trigger: keep followers_count / following_count in sync
+create or replace function public.update_follow_counts()
+returns trigger as $$
+begin
+  if TG_OP = 'INSERT' then
+    update public.profiles set followers_count = followers_count + 1 where id = NEW.following_id;
+    update public.profiles set following_count  = following_count  + 1 where id = NEW.follower_id;
+  elsif TG_OP = 'DELETE' then
+    update public.profiles set followers_count = greatest(0, followers_count - 1) where id = OLD.following_id;
+    update public.profiles set following_count  = greatest(0, following_count  - 1) where id = OLD.follower_id;
+  end if;
+  return null;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_follow_change on public.user_follows;
+create trigger on_follow_change
+  after insert or delete on public.user_follows
+  for each row execute function public.update_follow_counts();
+
+-- Feed index: quickly fetch public spaces for a set of user_ids
+create index if not exists idx_spaces_user_id_public_created
+  on public.spaces(user_id, created_at desc)
+  where is_public = true;

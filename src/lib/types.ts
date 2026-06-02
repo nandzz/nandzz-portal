@@ -23,6 +23,8 @@ export type Profile = {
   created_at: string;
   plan_tier?: PlanTier | null;
   stripe_customer_id?: string | null;
+  followers_count?: number | null;
+  following_count?: number | null;
 };
 
 export type Space = {

@@ -104,6 +104,7 @@ export default async function ProfilePage({
 
   let likedSpaceIds: string[] = [];
   let savedSpaceIds: string[] = [];
+  let isFollowing = false;
 
   if (user) {
     // Collect all space IDs visible on this profile: owner's spaces + collection spaces
@@ -111,6 +112,16 @@ export default async function ProfilePage({
     const collectionSpaceIds = (collections ?? [])
       .flatMap(c => c.collection_spaces.map((cs: { space_id: string }) => cs.space_id));
     const allSpaceIds = [...new Set([...ownerSpaceIds, ...collectionSpaceIds])];
+
+    if (user.id !== profile.id) {
+      const { data: followRow } = await supabase
+        .from("user_follows")
+        .select("id")
+        .eq("follower_id", user.id)
+        .eq("following_id", profile.id)
+        .maybeSingle();
+      isFollowing = !!followRow;
+    }
 
     if (allSpaceIds.length > 0) {
       const [{ data: likes }, { data: starredCol }] = await Promise.all([
@@ -153,7 +164,12 @@ export default async function ProfilePage({
       />
 
       <div className="mx-auto max-w-7xl px-4 py-12">
-        <ProfileHeader profile={profile} />
+        <ProfileHeader
+          profile={profile}
+          isOwner={isOwner}
+          currentUserId={user?.id ?? null}
+          isFollowing={isFollowing}
+        />
         <div className="mt-12">
           <ProfileTabs
             spaces={spaces || []}

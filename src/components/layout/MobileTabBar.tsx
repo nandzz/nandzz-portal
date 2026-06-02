@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Home, Compass, Plus, LayoutGrid, User, LogIn } from "lucide-react";
+import { Home, Compass, Plus, LayoutGrid, User, LogIn, Rss } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -40,10 +40,10 @@ const UNAUTH_TABS: Tab[] = [
 function getAuthTabs(username: string | null): Tab[] {
   return [
     {
-      href: "/",
-      label: "Home",
-      icon: Home,
-      isActive: (p) => p === "/",
+      href: "/dashboard/feed",
+      label: "Feed",
+      icon: Rss,
+      isActive: (p) => p.startsWith("/dashboard/feed"),
     },
     {
       href: "/explore",

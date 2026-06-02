@@ -907,7 +907,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={handleGenerateFromUrl}
+                        onClick={() => handleGenerateFromUrl()}
                         disabled={isGenerating}
                         className="gap-1.5 border-violet-400/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                       >

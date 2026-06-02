@@ -9,9 +9,14 @@ import {
   Globe,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
+import { FollowButton } from "./FollowButton";
+import { FollowersDialog } from "./FollowersDialog";
 
 interface ProfileHeaderProps {
   profile: Profile;
+  isOwner?: boolean;
+  currentUserId?: string | null;
+  isFollowing?: boolean;
 }
 
 function buildUrl(key: string, value: string): string {
@@ -31,7 +36,7 @@ function buildUrl(key: string, value: string): string {
   return `${baseUrls[key]}${v.replace(/^@/, "")}`;
 }
 
-export function ProfileHeader({ profile }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false }: ProfileHeaderProps) {
   const socialLinks = profile.social_links || {};
 
   const links = [
@@ -111,6 +116,25 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           {profile.bio}
         </p>
       )}
+
+      <div className="mt-4 flex items-center gap-5">
+        <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="font-semibold">{profile.followers_count ?? 0}</span>
+            <span className="text-muted-foreground">followers</span>
+          </div>
+        </FollowersDialog>
+        <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="font-semibold">{profile.following_count ?? 0}</span>
+            <span className="text-muted-foreground">following</span>
+          </div>
+        </FollowersDialog>
+        {!isOwner && currentUserId && (
+          <FollowButton profileId={profile.id} initialIsFollowing={isFollowing} />
+        )}
+      </div>
+
       {links.length > 0 && (
         <div className="mt-5 flex items-center gap-2">
           {links.map((link) => {

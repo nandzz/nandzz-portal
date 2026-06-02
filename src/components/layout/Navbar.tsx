@@ -107,6 +107,14 @@ export function Navbar() {
             )}
             {user && (
               <Link
+                href="/dashboard/feed"
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                Feed
+              </Link>
+            )}
+            {user && (
+              <Link
                 href="/dashboard/create-space"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
@@ -280,6 +288,15 @@ export function Navbar() {
               className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               Pricing
+            </Link>
+          )}
+          {user && (
+            <Link
+              href="/dashboard/feed"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              Feed
             </Link>
           )}
           {user && (
