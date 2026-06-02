@@ -105,6 +105,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const [generatedPreviewSrc, setGeneratedPreviewSrc] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [screenshotError, setScreenshotError] = useState<string | null>(null);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const previewFileInputRef = useRef<HTMLInputElement>(null);
   const generatedBlobUrlRef = useRef<string | null>(null);
@@ -186,6 +187,29 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     const file = new File([blob], "preview.jpg", { type: "image/jpeg" });
     setPreviewImage(file);
     cleanupGeneratedPreview();
+    setScreenshotError(null);
+  };
+
+  const handleGenerateFromUrl = async () => {
+    const target = url.trim();
+    if (!target) return;
+    const normalized = /^https?:\/\//i.test(target) ? target : `https://${target}`;
+    setIsGenerating(true);
+    setScreenshotError(null);
+    try {
+      const res = await fetch(`/api/screenshot?url=${encodeURIComponent(normalized)}`);
+      if (!res.ok) throw new Error("Could not capture screenshot");
+      const blob = await res.blob();
+      if (generatedBlobUrlRef.current) URL.revokeObjectURL(generatedBlobUrlRef.current);
+      const src = URL.createObjectURL(blob);
+      generatedBlobUrlRef.current = src;
+      setGeneratedPreviewSrc(src);
+      setShowCropper(true);
+    } catch {
+      setScreenshotError("Couldn't screenshot this URL. Try uploading an image manually.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const MAX_HTML_SIZE = 1.5 * 1024 * 1024; // 1.5 MB
@@ -639,7 +663,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                 type="text"
                 placeholder="example.com"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => { setUrl(e.target.value); setScreenshotError(null); }}
                 required
                 className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
               />
@@ -857,6 +881,28 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                         )}
                       </Button>
                     )}
+                    {spaceType === "url" && url.trim() && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateFromUrl}
+                        disabled={isGenerating}
+                        className="gap-1.5 border-violet-400/50 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <div className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                            Capturing…
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="h-3.5 w-3.5" />
+                            Capture from URL
+                          </>
+                        )}
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
@@ -878,6 +924,9 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                       }}
                     />
                   </div>
+                  {screenshotError && (
+                    <p className="text-xs text-destructive">{screenshotError}</p>
+                  )}
 
                   {/* Gradient section — shown when no image */}
                   {!hasImage && (
