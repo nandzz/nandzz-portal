@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid URL scheme" }, { status: 400 });
   }
 
-  const screenshotUrl = `https://screenshot.microlink.io/?url=${encodeURIComponent(url)}&meta=false&type=jpeg&quality=80&viewport.width=1280&viewport.height=720`;
+  // thum.io: width=1280, crop height=720 (16:9) — returns PNG directly
+  const screenshotUrl = `https://image.thum.io/get/width/1280/crop/720/${encodeURIComponent(url)}`;
 
   const res = await fetch(screenshotUrl, {
     headers: { "User-Agent": "nandzz/1.0" },
