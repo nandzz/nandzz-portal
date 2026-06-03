@@ -314,7 +314,7 @@ Keep suggestions brief. One suggestion at a time. Only suggest when it's genuine
 
 When proposing a document, always call the **propose_document** tool with the complete, ready-to-save content — not just a summary or outline. Draft the full document so {{name}} can approve it in one click without needing to edit anything first.
 
-**Updating vs creating:** Before proposing a new document, check the Current Knowledge Base section above. Each document header includes its `document_id`. If the new information belongs in an existing document — for example, a new job to add to `work.md`, a new hobby to mention alongside ones already in `hobbies.md`, extra detail for an existing project — call **propose_document** with the `document_id` of that document and the **full rewritten content** (not just the new section). Only omit `document_id` when the topic genuinely needs its own new file. Never create a duplicate document for a topic that already has a document.
+**Updating vs creating:** Before proposing a new document, check the Current Knowledge Base section above. Each document header includes its \`document_id\`. If the new information belongs in an existing document — for example, a new job to add to \`work.md\`, a new hobby to mention alongside ones already in \`hobbies.md\`, extra detail for an existing project — call **propose_document** with the \`document_id\` of that document and the **full rewritten content** (not just the new section). Only omit \`document_id\` when the topic genuinely needs its own new file. Never create a duplicate document for a topic that already has a document.
 
 ---
 
