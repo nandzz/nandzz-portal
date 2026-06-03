@@ -101,7 +101,7 @@ async function streamOpenAI(
   ];
 
   const body: Record<string, unknown> = {
-    model: "gpt-5.4-nano",
+    model: "gpt-4.1-nano",
     // Owner mode needs more tokens to draft full document content.
     max_tokens: ownerMode ? 2048 : 1024,
     messages: openAIMessages,
