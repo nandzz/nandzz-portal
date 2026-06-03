@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AgentPublic } from "@/components/agent/AgentPublic";
+import { FEATURES } from "@/lib/flags";
 
 export default async function AgentPreviewPage({
   params,
@@ -17,7 +18,7 @@ export default async function AgentPreviewPage({
     .eq("username", username)
     .single();
 
-  if (!profile) notFound();
+  if (!FEATURES.agent || !profile) notFound();
 
   const supabase = await createClient();
   const {

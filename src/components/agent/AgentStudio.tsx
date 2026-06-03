@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import type { AgentDocument, AgentDocStatus, AgentDocVisibility, Profile } from "@/lib/types";
 import { SetupAssistant } from "./SetupAssistant";
+import { AgentChat } from "./AgentChat";
 
 interface AgentStudioProps {
   profile: Profile;
@@ -78,6 +79,7 @@ const emptyDraft = (): DraftDoc => ({
 });
 
 type MobileTab = "knowledge" | "guide";
+type GuideTab = "templates" | "advisor";
 
 export function AgentStudio({ profile }: AgentStudioProps) {
   const [docs, setDocs] = useState<AgentDocument[]>([]);
@@ -85,6 +87,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
   const [draft, setDraft] = useState<DraftDoc | null>(null);
   const [saving, setSaving] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("knowledge");
+  const [guideTab, setGuideTab] = useState<GuideTab>("advisor");
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -362,14 +365,35 @@ export function AgentStudio({ profile }: AgentStudioProps) {
     </div>
   );
 
+  const displayName = profile.display_name || profile.username;
+
   const guidePanel = (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
-        <div>
-          <h2 className="text-sm font-semibold">Agent Guide</h2>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            Build your knowledge base step by step
-          </p>
+        <div className="flex gap-1 p-0.5 rounded-lg bg-muted">
+          <button
+            onClick={() => setGuideTab("advisor")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
+              guideTab === "advisor"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            Advisor
+          </button>
+          <button
+            onClick={() => setGuideTab("templates")}
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
+              guideTab === "templates"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileText className="w-3 h-3" />
+            Templates
+          </button>
         </div>
         <a
           href={`/${profile.username}/agent/preview`}
@@ -381,8 +405,20 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           Preview
         </a>
       </div>
+
+      {/* Tab content */}
       <div className="flex-1 overflow-hidden">
-        <SetupAssistant docs={docs} onUseTemplate={openFromTemplate} />
+        {guideTab === "advisor" ? (
+          <AgentChat
+            username={profile.username}
+            displayName={displayName}
+            onDocumentCreated={(doc) => {
+              setDocs((prev) => [doc, ...prev]);
+            }}
+          />
+        ) : (
+          <SetupAssistant docs={docs} onUseTemplate={openFromTemplate} hideChatUI />
+        )}
       </div>
     </div>
   );

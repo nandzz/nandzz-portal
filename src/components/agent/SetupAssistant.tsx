@@ -8,6 +8,8 @@ import type { AgentDocument } from "@/lib/types";
 interface SetupAssistantProps {
   docs: AgentDocument[];
   onUseTemplate: (title: string, content: string) => void;
+  /** When true, only render the template checklist — no chat UI. */
+  hideChatUI?: boolean;
 }
 
 interface Message {
@@ -62,12 +64,14 @@ function TemplateCard({
   );
 }
 
-export function SetupAssistant({ docs, onUseTemplate }: SetupAssistantProps) {
+export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [started, setStarted] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isAtBottom = useRef(true);
+  const prevMessageCount = useRef(0);
 
   const coreTemplates = AGENT_TEMPLATES.filter((t) =>
     (CORE_TEMPLATES as string[]).includes(t.key)
@@ -76,8 +80,25 @@ export function SetupAssistant({ docs, onUseTemplate }: SetupAssistantProps) {
     (t) => !(CORE_TEMPLATES as string[]).includes(t.key)
   );
 
+  function handleScroll() {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    isAtBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const newMessageAdded = messages.length > prevMessageCount.current;
+    prevMessageCount.current = messages.length;
+
+    if (newMessageAdded) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      isAtBottom.current = true;
+    } else if (isAtBottom.current) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages]);
 
   async function send(text: string) {
@@ -167,7 +188,11 @@ export function SetupAssistant({ docs, onUseTemplate }: SetupAssistantProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Messages / initial panel */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0"
+      >
         {/* Checklist — always visible at top */}
         <div className="space-y-3">
           {/* Progress */}
@@ -227,7 +252,7 @@ export function SetupAssistant({ docs, onUseTemplate }: SetupAssistantProps) {
         </div>
 
         {/* Chat messages */}
-        {messages.length > 0 && (
+        {!hideChatUI && messages.length > 0 && (
           <div className="pt-2 border-t border-border space-y-3">
             {messages.map((msg) => (
               <div
@@ -261,7 +286,7 @@ export function SetupAssistant({ docs, onUseTemplate }: SetupAssistantProps) {
         )}
 
         {/* Suggested questions when chat is empty */}
-        {!started && (
+        {!hideChatUI && !started && (
           <div className="pt-2 border-t border-border">
             <p className="text-[11px] text-muted-foreground mb-2">Ask me anything about setup</p>
             <div className="flex flex-wrap gap-1.5">
@@ -283,31 +308,32 @@ export function SetupAssistant({ docs, onUseTemplate }: SetupAssistantProps) {
           </div>
         )}
 
-        <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="flex-shrink-0 border-t border-border px-4 py-3">
-        <div className="flex gap-2 items-end">
-          <textarea
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask about setup, formatting, or content…"
-            disabled={isStreaming}
-            className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-50 max-h-24 overflow-y-auto"
-            style={{ minHeight: "40px" }}
-          />
-          <button
-            onClick={() => send(input)}
-            disabled={!input.trim() || isStreaming}
-            className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+      {/* Input — hidden when chat UI is disabled */}
+      {!hideChatUI && (
+        <div className="flex-shrink-0 border-t border-border px-4 py-3">
+          <div className="flex gap-2 items-end">
+            <textarea
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about setup, formatting, or content…"
+              disabled={isStreaming}
+              className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-50 max-h-24 overflow-y-auto"
+              style={{ minHeight: "40px" }}
+            />
+            <button
+              onClick={() => send(input)}
+              disabled={!input.trim() || isStreaming}
+              className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

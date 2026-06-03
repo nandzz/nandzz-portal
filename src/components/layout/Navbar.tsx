@@ -131,7 +131,7 @@ export function Navbar() {
               >
                 My Collections
               </Link>
-              {profile?.username && (
+              {FEATURES.agent && profile?.username && (
                 <Link
                   href={`/${profile.username}/agent`}
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -187,7 +187,7 @@ export function Navbar() {
                         My Profile
                       </DropdownMenuItem>
                     )}
-                    {profile?.username && (
+                    {FEATURES.agent && profile?.username && (
                       <DropdownMenuItem
                         onClick={() => router.push(`/${profile.username}/agent`)}
                         className="gap-2"
@@ -327,7 +327,7 @@ export function Navbar() {
               My Collections
             </Link>
           )}
-          {user && profile?.username && (
+          {FEATURES.agent && user && profile?.username && (
             <Link
               href={`/${profile.username}/agent`}
               onClick={() => setMobileMenuOpen(false)}

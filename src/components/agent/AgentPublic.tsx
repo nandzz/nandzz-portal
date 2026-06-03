@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye } from "lucide-react";
+import { Eye, Bot } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { AgentChat } from "./AgentChat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,9 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface AgentPublicProps {
   profile: Profile;
   isPreview?: boolean;
+  hasDocuments?: boolean;
 }
 
-export function AgentPublic({ profile, isPreview }: AgentPublicProps) {
+export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPublicProps) {
   const displayName = profile.display_name || profile.username;
 
   return (
@@ -39,13 +40,29 @@ export function AgentPublic({ profile, isPreview }: AgentPublicProps) {
             </p>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
-            Ask anything — powered by {displayName}&apos;s public knowledge
+            {hasDocuments
+              ? `Ask anything — powered by ${displayName}'s public knowledge`
+              : `${displayName}'s agent`}
           </p>
         </div>
 
-        {/* Chat */}
+        {/* Chat or not-ready state */}
         <div className="flex-1 border border-border rounded-t-2xl overflow-hidden bg-background/60 backdrop-blur-sm shadow-sm mx-4">
-          <AgentChat username={profile.username} displayName={displayName} />
+          {hasDocuments ? (
+            <AgentChat username={profile.username} displayName={displayName} preview={isPreview} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-muted">
+                <Bot className="w-6 h-6 text-muted-foreground/50" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{displayName}&apos;s agent isn&apos;t ready yet</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  They haven&apos;t published any knowledge for their agent yet.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
