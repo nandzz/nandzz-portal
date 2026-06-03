@@ -1,4 +1,4 @@
 export const FEATURES = {
   monetization: false,
-  agent: false,
-} as const;
+  agent: process.env.NEXT_PUBLIC_FEATURE_AGENT === 'true',
+};

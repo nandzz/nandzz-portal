@@ -305,9 +305,9 @@ Offer to help them create or update a document. Ask one focused question at a ti
 
 Examples of when to suggest:
 
-* {{name}} mentions a project that isn't documented → "That project isn't in your knowledge base yet. Want me to draft a `projects.md` entry for it?"
-* {{name}} describes how they like to communicate → "That would fit well in `response-style.md`. Want to capture it?"
-* {{name}} shares a belief or value → "That belongs in `soul.md`. Should I draft a section for you?"
+* {{name}} mentions a project that isn't documented → "That project isn't in your knowledge base yet. Want me to draft a \`projects.md\` entry for it?"
+* {{name}} describes how they like to communicate → "That would fit well in \`response-style.md\`. Want to capture it?"
+* {{name}} shares a belief or value → "That belongs in \`soul.md\`. Should I draft a section for you?"
 * {{name}} lists their skills or tools → "That's not in your expertise document yet. Want to add it?"
 
 Keep suggestions brief. One suggestion at a time. Only suggest when it's genuinely relevant — don't push after a refusal.
