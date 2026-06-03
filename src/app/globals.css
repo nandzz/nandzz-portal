@@ -142,6 +142,46 @@
   }
 }
 
+/* Custom scrollbar — matches design system */
+:root {
+  --scrollbar-thumb: oklch(0.75 0.005 280 / 0.5);
+  --scrollbar-thumb-hover: oklch(0.60 0.008 280 / 0.7);
+  --scrollbar-track: transparent;
+}
+
+.dark {
+  --scrollbar-thumb: oklch(0.45 0.01 280 / 0.5);
+  --scrollbar-thumb-hover: oklch(0.55 0.01 280 / 0.75);
+  --scrollbar-track: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @keyframes hero-gradient {
   0%, 100% {
     opacity: 0.6;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Camera,
@@ -7,10 +8,12 @@ import {
   Mail,
   Play,
   Globe,
+  Bot,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FollowButton } from "./FollowButton";
 import { FollowersDialog } from "./FollowersDialog";
+import { FEATURES } from "@/lib/flags";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -156,6 +159,16 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
             );
           })}
         </div>
+      )}
+
+      {FEATURES.agent && (
+        <Link
+          href={`/${profile.username}/agent`}
+          className="mt-5 inline-flex items-center gap-2 rounded-full border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30 px-4 py-2 text-sm font-medium text-violet-700 dark:text-violet-300 transition-all hover:bg-violet-100 dark:hover:bg-violet-900/40 hover:shadow-sm hover:-translate-y-0.5"
+        >
+          <Bot className="h-4 w-4" />
+          Talk to Agent
+        </Link>
       )}
     </div>
   );

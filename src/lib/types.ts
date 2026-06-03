@@ -107,3 +107,20 @@ export type CollectionSpace = {
   space_id: string;
   created_at: string;
 };
+
+export type AgentDocVisibility = 'public' | 'private';
+export type AgentDocStatus = 'active' | 'outdated' | 'needs_review';
+
+export type AgentDocument = {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  visibility: AgentDocVisibility;
+  status: AgentDocStatus;
+  is_sensitive: boolean;
+  sort_order: number;
+  char_count: number;
+  created_at: string;
+  updated_at: string;
+};

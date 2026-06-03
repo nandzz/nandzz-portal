@@ -446,6 +446,135 @@ create index if not exists idx_profiles_stripe_customer
   where stripe_customer_id is not null;
 
 -- ============================================================
+-- Agents: knowledge documents + RAG chunks per profile
+-- ============================================================
+
+-- pgvector: required for embeddings. Enable once per project.
+create extension if not exists vector;
+
+drop table if exists public.agent_document_chunks cascade;
+drop table if exists public.agent_documents cascade;
+create table public.agent_documents (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  title text not null,
+  content text not null default '',
+  visibility text not null default 'public' check (visibility in ('public', 'private')),
+  status text not null default 'active' check (status in ('active', 'outdated', 'needs_review')),
+  is_sensitive boolean not null default false,
+  -- Controls injection order into the system prompt (lower = earlier).
+  -- Identity docs (me.md, soul.md) should have low values; supplementary docs higher.
+  sort_order integer not null default 100,
+  -- Automatically maintained by Postgres — shows content size without a query.
+  char_count integer generated always as (char_length(content)) stored,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.agent_documents enable row level security;
+
+create policy "owner_all_agent_docs" on public.agent_documents
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Auto-update updated_at on every row modification.
+create or replace function public.agent_documents_set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger agent_documents_updated_at
+  before update on public.agent_documents
+  for each row execute function public.agent_documents_set_updated_at();
+
+create index if not exists idx_agent_documents_user_id
+  on public.agent_documents(user_id);
+
+-- Prompt-build query: public active docs ordered by sort_order then created_at.
+create index if not exists idx_agent_documents_prompt
+  on public.agent_documents(user_id, sort_order, created_at)
+  where visibility = 'public' and status = 'active';
+
+-- ── Chunks ──────────────────────────────────────────────────────────────────
+-- Each document is split into chunks for RAG retrieval.
+-- Embeddings use OpenAI text-embedding-3-small (1536 dims).
+-- chat route does: embed(query) → cosine similarity → top-k chunks → system prompt.
+
+create table public.agent_document_chunks (
+  id           uuid    primary key default gen_random_uuid(),
+  document_id  uuid    references public.agent_documents(id) on delete cascade not null,
+  user_id      uuid    references auth.users(id) on delete cascade not null,
+  chunk_index  integer not null,
+  content      text    not null,
+  embedding    vector(1536),        -- null until OPENAI_API_KEY is set
+  created_at   timestamptz default now()
+);
+
+alter table public.agent_document_chunks enable row level security;
+
+create policy "owner_all_chunks" on public.agent_document_chunks
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists idx_chunks_document_id
+  on public.agent_document_chunks(document_id);
+
+create index if not exists idx_chunks_user_id
+  on public.agent_document_chunks(user_id);
+
+-- HNSW index: approximate nearest-neighbor, no need to tune lists size.
+-- Will be empty until rows have embeddings — that is fine.
+create index if not exists idx_chunks_embedding_hnsw
+  on public.agent_document_chunks
+  using hnsw (embedding vector_cosine_ops);
+
+-- ── RPC: similarity search ───────────────────────────────────────────────────
+-- Called by the chat route to retrieve the most relevant chunks for a query.
+create or replace function match_agent_chunks(
+  p_user_id  uuid,
+  p_embedding vector(1536),
+  p_top_k    integer default 6
+)
+returns table (content text, similarity float)
+language sql stable
+as $$
+  select
+    content,
+    1 - (embedding <=> p_embedding) as similarity
+  from public.agent_document_chunks
+  where user_id  = p_user_id
+    and embedding is not null
+  order by embedding <=> p_embedding
+  limit p_top_k;
+$$;
+
+-- ── Agent requests (quota tracking, analytics, billing) ─────────────────────
+-- Logged by the Edge Function on every chat request.
+-- Service role only — RLS blocks all direct client access.
+
+create table if not exists public.agent_requests (
+  id             uuid        primary key default gen_random_uuid(),
+  profile_id     uuid        references public.profiles(id) on delete cascade not null,
+  messages_count integer     not null default 1,
+  tokens_used    integer,                    -- populated once Claude reports usage
+  model          text,
+  created_at     timestamptz default now()
+);
+
+alter table public.agent_requests enable row level security;
+
+-- Deny all direct client access; only the service-role key (Edge Function) can write.
+drop policy if exists "no_direct_client_access_agent_requests" on public.agent_requests;
+create policy "no_direct_client_access_agent_requests"
+  on public.agent_requests for all
+  using (false) with check (false);
+
+-- Rolling 24-hour quota check: count by profile + recency.
+create index if not exists idx_agent_requests_quota
+  on public.agent_requests(profile_id, created_at desc);
+
+-- ============================================================
 -- Performance indexes (critical for scale)
 -- Run these once; all are idempotent via CREATE INDEX IF NOT EXISTS
 -- ============================================================
