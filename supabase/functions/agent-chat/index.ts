@@ -15,10 +15,14 @@ const PROPOSE_DOCUMENT_TOOL = {
   function: {
     name: "propose_document",
     description:
-      "Propose creating a new knowledge document for the owner's agent. Use this when the owner shares information in conversation that would be valuable to capture as a permanent document. Always draft the full document content — not just a suggestion — so the owner can approve it in one click.",
+      "Propose creating a new knowledge document OR updating an existing one. Use this when the owner shares information that should be saved. If the information belongs in an existing document (e.g. adding a hobby to an existing hobbies.md, extending work experience already in work.md), pass the document_id of that document and rewrite its full content — never create a duplicate. Only omit document_id when the topic genuinely needs its own new file.",
     parameters: {
       type: "object",
       properties: {
+        document_id: {
+          type: "string",
+          description: "The ID of an existing document to update. Omit entirely when creating a new document.",
+        },
         title: {
           type: "string",
           description: "Document filename with .md extension, e.g. 'me.md' or 'projects.md'",
@@ -97,7 +101,7 @@ async function streamOpenAI(
   ];
 
   const body: Record<string, unknown> = {
-    model: "gpt-4o-mini",
+    model: "gpt-5.4-nano",
     // Owner mode needs more tokens to draft full document content.
     max_tokens: ownerMode ? 2048 : 1024,
     messages: openAIMessages,
@@ -299,7 +303,7 @@ serve(async (req: Request) => {
   if (mode === "owner") {
     const { data: docs } = await admin
       .from("agent_documents")
-      .select("title, content")
+      .select("id, title, content")
       .eq("user_id", profile.id)
       .eq("visibility", "public")
       .eq("status", "active")

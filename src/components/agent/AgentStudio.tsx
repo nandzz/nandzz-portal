@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
-  ExternalLink,
   Trash2,
   X,
   Save,
@@ -142,7 +141,6 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           isNew ? [saved, ...prev] : prev.map((d) => (d.id === saved.id ? saved : d))
         );
         setDraft(null);
-        // Fire-and-forget: chunk + embed in the background.
         fetch(`/api/agent/documents/${saved.id}/embed`, { method: "POST" }).catch(() => {});
       }
     } finally {
@@ -172,7 +170,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
         </div>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
+          className="cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
         >
           <Plus className="w-3 h-3" />
           New
@@ -187,7 +185,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             <span className="text-xs font-medium text-muted-foreground">
               {draft.id ? "Edit document" : "New document"}
             </span>
-            <button onClick={closeEditor} className="text-muted-foreground hover:text-foreground">
+            <button onClick={closeEditor} className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -276,7 +274,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                 onChange={(e) => setDraft((d) => d && { ...d, content: e.target.value })}
                 placeholder="Write the document content in Markdown…"
                 rows={12}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/40 resize-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/40 resize-none min-h-[160px]"
               />
             </div>
           </div>
@@ -286,7 +284,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             {draft.id ? (
               <button
                 onClick={() => deleteDoc(draft.id!)}
-                className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete
@@ -297,14 +295,14 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             <div className="flex gap-2">
               <button
                 onClick={closeEditor}
-                className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
+                className="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={saveDoc}
                 disabled={saving || !draft.title.trim()}
-                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="w-3 h-3" />
                 {saving ? "Saving…" : "Save"}
@@ -334,7 +332,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                 <li key={doc.id}>
                   <button
                     onClick={() => openEdit(doc)}
-                    className="w-full text-left px-4 py-3.5 hover:bg-muted/50 transition-colors group"
+                    className="cursor-pointer w-full text-left px-4 py-3.5 hover:bg-muted/50 transition-colors group"
                   >
                     <div className="flex items-start gap-3">
                       <FileText className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
@@ -353,7 +351,6 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                           <DocBadge doc={doc} />
                         </div>
                       </div>
-                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/0 group-hover:text-muted-foreground/60 flex-shrink-0 mt-0.5 transition-all" />
                     </div>
                   </button>
                 </li>
@@ -374,7 +371,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
         <div className="flex gap-1 p-0.5 rounded-lg bg-muted">
           <button
             onClick={() => setGuideTab("advisor")}
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
+            className={`cursor-pointer flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
               guideTab === "advisor"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -385,7 +382,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           </button>
           <button
             onClick={() => setGuideTab("templates")}
-            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
+            className={`cursor-pointer flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
               guideTab === "templates"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -407,13 +404,21 @@ export function AgentStudio({ profile }: AgentStudioProps) {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0">
         {guideTab === "advisor" ? (
           <AgentChat
             username={profile.username}
             displayName={displayName}
             onDocumentCreated={(doc) => {
-              setDocs((prev) => [doc, ...prev]);
+              setDocs((prev) => {
+                const exists = prev.some((d) => d.id === doc.id);
+                return exists
+                  ? prev.map((d) => (d.id === doc.id ? doc : d))
+                  : [doc, ...prev];
+              });
+              // If the owner has this exact document open in the editor, close it so
+              // they can't accidentally overwrite the AI's update with a stale draft.
+              setDraft((d) => (d?.id === doc.id ? null : d));
             }}
           />
         ) : (
@@ -426,45 +431,46 @@ export function AgentStudio({ profile }: AgentStudioProps) {
   // ─── Layout ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
 
       {/* Mobile tab bar — hidden on md+ */}
       <div className="md:hidden flex-shrink-0 flex border-b border-border bg-background">
-        <button
-          onClick={() => setMobileTab("knowledge")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            mobileTab === "knowledge"
-              ? "border-violet-600 text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Knowledge
-          {docs.length > 0 && (
-            <span className="text-xs tabular-nums text-muted-foreground">{docs.length}</span>
-          )}
-        </button>
-        <button
-          onClick={() => setMobileTab("guide")}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            mobileTab === "guide"
-              ? "border-violet-600 text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          Guide
-        </button>
+        {(["knowledge", "guide"] as MobileTab[]).map((tab) => {
+          const isActive = mobileTab === tab;
+          const Icon = tab === "knowledge" ? FileText : Sparkles;
+          const label = tab === "knowledge" ? "Knowledge" : "Guide";
+          const badge = tab === "knowledge" && docs.length > 0 ? docs.length : null;
+          return (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              className={`cursor-pointer flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors relative ${
+                isActive
+                  ? "text-violet-600 dark:text-violet-400"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+              {badge !== null && (
+                <span className="text-xs tabular-nums text-muted-foreground/70">{badge}</span>
+              )}
+              {isActive && (
+                <span className="absolute bottom-0 left-6 right-6 h-0.5 rounded-full bg-violet-600 dark:bg-violet-400" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Panel area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
 
         {/* Left / Knowledge panel */}
         <div
           className={`
             flex-col overflow-hidden bg-background
-            md:flex md:w-[42%] md:border-r md:border-border
+            md:flex md:w-[45%] md:border-r md:border-border
             ${mobileTab === "knowledge" ? "flex w-full" : "hidden"}
           `}
         >
