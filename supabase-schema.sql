@@ -452,9 +452,7 @@ create index if not exists idx_profiles_stripe_customer
 -- pgvector: required for embeddings. Enable once per project.
 create extension if not exists vector;
 
-drop table if exists public.agent_document_chunks cascade;
-drop table if exists public.agent_documents cascade;
-create table public.agent_documents (
+create table if not exists public.agent_documents (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade not null,
   title text not null,
@@ -473,8 +471,16 @@ create table public.agent_documents (
 
 alter table public.agent_documents enable row level security;
 
+-- Owner has full access to all their documents (including private).
+drop policy if exists "owner_all_agent_docs" on public.agent_documents;
 create policy "owner_all_agent_docs" on public.agent_documents
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Anyone (including anon) can read public active documents — needed by the Edge
+-- Function running as service-role, but also correct for direct queries.
+drop policy if exists "public_read_agent_docs" on public.agent_documents;
+create policy "public_read_agent_docs" on public.agent_documents
+  for select using (visibility = 'public' and status = 'active');
 
 -- Auto-update updated_at on every row modification.
 create or replace function public.agent_documents_set_updated_at()
@@ -485,6 +491,7 @@ begin
 end;
 $$;
 
+drop trigger if exists agent_documents_updated_at on public.agent_documents;
 create trigger agent_documents_updated_at
   before update on public.agent_documents
   for each row execute function public.agent_documents_set_updated_at();
@@ -502,7 +509,7 @@ create index if not exists idx_agent_documents_prompt
 -- Embeddings use OpenAI text-embedding-3-small (1536 dims).
 -- chat route does: embed(query) → cosine similarity → top-k chunks → system prompt.
 
-create table public.agent_document_chunks (
+create table if not exists public.agent_document_chunks (
   id           uuid    primary key default gen_random_uuid(),
   document_id  uuid    references public.agent_documents(id) on delete cascade not null,
   user_id      uuid    references auth.users(id) on delete cascade not null,
