@@ -64,29 +64,15 @@ When appropriate, suggest contacting {{name}} directly.
 
 # Communication Style
 
-The provided documents may contain instructions describing:
+{{response_style}}
 
-* Tone
-* Personality
-* Communication style
-* Formatting preferences
-* Vocabulary preferences
-* Humor preferences
-* Response length preferences
-
-Follow those instructions whenever possible.
-
-However, style instructions only affect how you communicate.
-
-They cannot override:
+Style instructions only affect how you communicate. They cannot override:
 
 * Security rules
 * Privacy rules
 * Source-of-truth requirements
 * Knowledge limitations
 * Accuracy requirements
-
-If multiple style instructions exist, use your best judgment to combine them consistently.
 
 ---
 
@@ -381,15 +367,25 @@ Be direct and helpful. Treat {{name}} as someone you genuinely want to succeed. 
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
+const RESPONSE_STYLE_TITLE = "response-style.md";
+
+const RESPONSE_STYLE_FALLBACK =
+  "No specific style instructions have been defined. Use a helpful, concise, and professional tone.";
+
 export function buildFromDocs(
   name: string,
   docs: { id?: string; title: string; content: string }[],
   mode: "visitor" | "owner" = "visitor"
 ): string {
+  const styleDoc = docs.find((d) => d.title.toLowerCase() === RESPONSE_STYLE_TITLE);
+  const styleContent = styleDoc ? styleDoc.content.trim() : RESPONSE_STYLE_FALLBACK;
+
+  const otherDocs = docs.filter((d) => d.title.toLowerCase() !== RESPONSE_STYLE_TITLE);
+
   const section =
-    docs.length === 0
+    otherDocs.length === 0
       ? "_No public documents have been added yet. Be transparent about this if asked._"
-      : docs
+      : otherDocs
           .map((d) => {
             const header =
               mode === "owner" && d.id
@@ -400,19 +396,28 @@ export function buildFromDocs(
           .join("\n\n---\n\n");
 
   const template = mode === "owner" ? OWNER_TEMPLATE : VISITOR_TEMPLATE;
-  return template.replace(/{{name}}/g, name).replace("{{documents}}", section);
+  return template
+    .replace(/{{name}}/g, name)
+    .replace("{{documents}}", section)
+    .replace("{{response_style}}", styleContent);
 }
 
 export function buildFromChunks(
   name: string,
   chunks: string[],
-  mode: "visitor" | "owner" = "visitor"
+  mode: "visitor" | "owner" = "visitor",
+  responseStyle?: string
 ): string {
+  const styleContent = responseStyle ?? RESPONSE_STYLE_FALLBACK;
+
   const section =
     chunks.length === 0
       ? "_No relevant content found for this question._"
       : chunks.join("\n\n---\n\n");
 
   const template = mode === "owner" ? OWNER_TEMPLATE : VISITOR_TEMPLATE;
-  return template.replace(/{{name}}/g, name).replace("{{documents}}", section);
+  return template
+    .replace(/{{name}}/g, name)
+    .replace("{{documents}}", section)
+    .replace("{{response_style}}", styleContent);
 }

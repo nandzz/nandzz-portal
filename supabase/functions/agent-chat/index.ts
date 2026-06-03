@@ -315,18 +315,31 @@ serve(async (req: Request) => {
     const queryEmbedding = await embedText(lastUserMessage, openAIKey);
 
     if (queryEmbedding) {
-      const { data: chunks, error: rpcError } = await admin.rpc("match_agent_chunks", {
-        p_user_id: profile.id,
-        p_embedding: queryEmbedding,
-        p_top_k: 6,
-      });
+      // Always fetch response-style.md so it's guaranteed in the system prompt,
+      // even when content comes from RAG chunks rather than full documents.
+      const [chunksResult, styleResult] = await Promise.all([
+        admin.rpc("match_agent_chunks", {
+          p_user_id: profile.id,
+          p_embedding: queryEmbedding,
+          p_top_k: 6,
+        }),
+        admin
+          .from("agent_documents")
+          .select("content")
+          .eq("user_id", profile.id)
+          .eq("title", "response-style.md")
+          .eq("visibility", "public")
+          .eq("status", "active")
+          .maybeSingle(),
+      ]);
 
-      const chunkTexts: string[] = rpcError
+      const chunkTexts: string[] = chunksResult.error
         ? []
-        : (chunks as { content: string; similarity: number }[]).map((c) => c.content);
+        : (chunksResult.data as { content: string; similarity: number }[]).map((c) => c.content);
+      const responseStyle: string | undefined = styleResult.data?.content ?? undefined;
 
       if (chunkTexts.length > 0) {
-        systemPrompt = buildFromChunks(displayName, chunkTexts, "visitor");
+        systemPrompt = buildFromChunks(displayName, chunkTexts, "visitor", responseStyle);
       } else {
         const { data: docs } = await admin
           .from("agent_documents")
