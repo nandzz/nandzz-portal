@@ -32,6 +32,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { FEATURES } from "@/lib/flags";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
+import { PhoneVerificationForm } from "@/components/auth/PhoneVerificationForm";
 import type { Profile, SocialLinks } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -536,15 +537,29 @@ export default function SettingsPage() {
             </TabsContent>
 
             <TabsContent value="security">
-              <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl">Security</CardTitle>
-                  <CardDescription>Manage your password and account security</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChangePasswordForm />
-                </CardContent>
-              </Card>
+              <div className="space-y-6">
+                <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl">Password</CardTitle>
+                    <CardDescription>Change your account password</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChangePasswordForm />
+                  </CardContent>
+                </Card>
+
+                <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl">Phone number</CardTitle>
+                    <CardDescription>
+                      Link a phone number for account recovery and extra security
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <PhoneVerificationForm />
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {FEATURES.monetization && (

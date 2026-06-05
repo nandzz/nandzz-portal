@@ -7,10 +7,12 @@ interface SpacePreviewProps {
 }
 
 export function SpacePreview({ space }: SpacePreviewProps) {
-  if (space.preview_image_url) {
+  const previewSrc = space.preview_image_url ?? space.image_url;
+
+  if (previewSrc) {
     return (
       <Image
-        src={space.preview_image_url}
+        src={previewSrc}
         alt={space.title}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

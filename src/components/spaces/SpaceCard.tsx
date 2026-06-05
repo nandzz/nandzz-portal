@@ -157,7 +157,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
           )}
         </div>
         <CardContent className="p-4 flex flex-col">
-          <div className="flex items-center flex-wrap gap-1.5">
+          <div className="flex items-center flex-wrap gap-1.5 h-[22px] overflow-hidden">
             {hashtags.map((tag) => (
               <button
                 key={tag}

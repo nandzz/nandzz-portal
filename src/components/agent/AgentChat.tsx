@@ -1,10 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Bot, FilePlus, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Send, Bot, FilePlus, FileText, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { AgentDocument } from "@/lib/types";
+
+const SENSITIVE_PATTERNS: RegExp[] = [
+  /\b(?:password|passwd|pwd)\s*[:=]/i,
+  /\b(?:api[_-]?key|secret[_-]?key|client[_-]?secret)\s*[:=]/i,
+  /\b(?:auth[_-]?token|access[_-]?token|refresh[_-]?token)\s*[:=]/i,
+  /\bsk-[a-zA-Z0-9]{20,}/,
+  /\bghp_[a-zA-Z0-9]{36,}/,
+  /\bgho_[a-zA-Z0-9]{36,}/,
+  /\bAKIA[A-Z0-9]{16}/,
+  /Bearer\s+[a-zA-Z0-9._-]{20,}/i,
+  /eyJ[a-zA-Z0-9_-]{20,}\.[a-zA-Z0-9_-]{20,}/,
+  /\bxox[baprs]-[a-zA-Z0-9-]{20,}/,
+];
+
+function containsSensitive(text: string): boolean {
+  return SENSITIVE_PATTERNS.some((p) => p.test(text));
+}
 
 const MAX_CHARS = 1000;
 
@@ -41,8 +58,10 @@ interface AgentChatProps {
   displayName: string;
   /** Force visitor mode even when the session user is the profile owner (used on preview page). */
   preview?: boolean;
-  /** Called after a proposed document is successfully created and saved. */
+  /** Called after a proposed document is successfully created or updated. */
   onDocumentCreated?: (doc: AgentDocument) => void;
+  /** Existing documents — used to resolve update vs create when the LLM omits document_id. Only provided in owner (studio) mode. */
+  docs?: AgentDocument[];
 }
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
@@ -194,7 +213,7 @@ function ProposalCard({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function AgentChat({ username, displayName, preview, onDocumentCreated }: AgentChatProps) {
+export function AgentChat({ username, displayName, preview, onDocumentCreated, docs }: AgentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -287,10 +306,20 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated }:
                 )
               );
             } else if (chunk.action?.type === "propose_document") {
+              const incoming = chunk.action as ActionProposal;
+              // Resolve missing document_id by matching title against known docs.
+              // This handles the case where the LLM omits the ID even though the
+              // document already exists (e.g. the file was open in the editor).
+              if (!incoming.document_id && docs) {
+                const match = docs.find(
+                  (d) => d.title.toLowerCase() === incoming.title.toLowerCase()
+                );
+                if (match) incoming.document_id = match.id;
+              }
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId
-                    ? { ...m, action: chunk.action, actionStatus: "pending" }
+                    ? { ...m, action: incoming, actionStatus: "pending" }
                     : m
                 )
               );
@@ -367,6 +396,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated }:
   const charsLeft = MAX_CHARS - input.length;
   const nearLimit = charsLeft <= 150;
   const showSuggested = messages.length === 0;
+  const showSecurityWarning = docs !== undefined && containsSensitive(input);
 
   return (
     <div className="flex flex-col h-full">
@@ -451,6 +481,12 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated }:
 
       {/* Input — unified floating container, no divider line */}
       <div className="flex-shrink-0 px-4 pb-4 pt-2">
+        {showSecurityWarning && (
+          <div className="flex items-start gap-2 mb-2 px-3 py-2 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/30 text-[11px] text-amber-700 dark:text-amber-400">
+            <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+            <span>Your message may contain a password, token, or secret. Anything saved to a public document can be read by anyone visiting your agent.</span>
+          </div>
+        )}
         <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-background shadow-sm px-3 py-2 focus-within:ring-2 focus-within:ring-violet-500/25 focus-within:border-violet-300 dark:focus-within:border-violet-700 transition-all">
           <textarea
             ref={textareaRef}

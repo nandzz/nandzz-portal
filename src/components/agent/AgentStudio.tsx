@@ -409,6 +409,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           <AgentChat
             username={profile.username}
             displayName={displayName}
+            docs={docs}
             onDocumentCreated={(doc) => {
               setDocs((prev) => {
                 const exists = prev.some((d) => d.id === doc.id);
