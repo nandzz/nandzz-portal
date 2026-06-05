@@ -35,6 +35,7 @@ const makeSpace = (id: string, title: string, hashtags: string[] = []): Space =>
   is_public: true,
   likes_count: 0,
   views_count: 0,
+  comments_count: 0,
   hashtags,
   created_at: new Date().toISOString(),
 });

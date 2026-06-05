@@ -12,6 +12,8 @@ import { ShareMenu } from "@/components/spaces/ShareMenu";
 import { StarButton } from "@/components/spaces/StarButton";
 import { SpaceOwnerMenu } from "@/components/spaces/SpaceOwnerMenu";
 import { ExternalLink, Lock, Smartphone } from "lucide-react";
+import { CommentsController } from "@/components/spaces/comments/CommentsController";
+import type { CommentWithLike } from "@/lib/types";
 import { HtmlSpaceEditor } from "@/components/spaces/HtmlSpaceEditor";
 import { PdfViewerWrapper } from "@/components/spaces/PdfViewerWrapper";
 import { IframeLoader } from "@/components/spaces/IframeLoader";
@@ -171,6 +173,47 @@ export default async function SpaceViewPage({
     }
   }
 
+  // Comments: first page + current user profile for the input avatar
+  const PAGE_SIZE = 20;
+  const { data: rawComments } = await supabase
+    .from("space_comments")
+    .select("*, profiles:user_id(username, display_name, avatar_url)")
+    .eq("space_id", id)
+    .is("parent_id", null)
+    .order("created_at", { ascending: true })
+    .limit(PAGE_SIZE);
+
+  let likedCommentIds = new Set<string>();
+  let currentProfile: { username: string; display_name: string | null; avatar_url: string | null } | null = null;
+
+  if (user) {
+    const [{ data: profileData }, ..._] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("username, display_name, avatar_url")
+        .eq("id", user.id)
+        .single(),
+      rawComments?.length
+        ? supabase
+            .from("comment_likes")
+            .select("comment_id")
+            .eq("user_id", user.id)
+            .in("comment_id", rawComments.map((c) => c.id))
+            .then(({ data }) => {
+              likedCommentIds = new Set(data?.map((l) => l.comment_id));
+            })
+        : Promise.resolve(null),
+    ]);
+    currentProfile = profileData;
+  }
+
+  const initialComments: CommentWithLike[] = (rawComments ?? []).map((c) => ({
+    ...c,
+    profiles: c.profiles as CommentWithLike["profiles"],
+    liked: likedCommentIds.has(c.id),
+  }));
+  const initialHasMore = (rawComments?.length ?? 0) === PAGE_SIZE;
+
   let htmlContent: string | null = null;
   if (space.html_url) {
     try {
@@ -201,6 +244,14 @@ export default async function SpaceViewPage({
             initialLikesCount={space.likes_count ?? 0}
             initialLiked={liked}
             size="md"
+          />
+          <CommentsController
+            spaceId={space.id}
+            commentsCount={space.comments_count ?? 0}
+            userId={user?.id ?? null}
+            currentProfile={currentProfile}
+            initialComments={initialComments}
+            initialHasMore={initialHasMore}
           />
           {!isOwner && (
             <StarButton spaceId={space.id} initialSaved={saved} size="md" />

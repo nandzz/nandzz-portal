@@ -44,6 +44,7 @@ export type Space = {
   is_public: boolean;
   likes_count: number;
   views_count: number;
+  comments_count: number;
   hashtags: string[];
   created_at: string;
 };
@@ -107,6 +108,23 @@ export type CollectionSpace = {
   space_id: string;
   created_at: string;
 };
+
+export type SpaceComment = {
+  id: string;
+  space_id: string;
+  user_id: string;
+  parent_id: string | null;
+  content: string;
+  likes_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SpaceCommentWithProfile = SpaceComment & {
+  profiles: Pick<Profile, 'username' | 'display_name' | 'avatar_url'>;
+};
+
+export type CommentWithLike = SpaceCommentWithProfile & { liked: boolean };
 
 export type AgentDocVisibility = 'public' | 'private';
 export type AgentDocStatus = 'active' | 'outdated' | 'needs_review';

@@ -521,6 +521,7 @@ create table if not exists public.agent_document_chunks (
 
 alter table public.agent_document_chunks enable row level security;
 
+drop policy if exists "owner_all_chunks" on public.agent_document_chunks;
 create policy "owner_all_chunks" on public.agent_document_chunks
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
@@ -666,6 +667,137 @@ create trigger on_follow_change
 create index if not exists idx_spaces_user_id_public_created
   on public.spaces(user_id, created_at desc)
   where is_public = true;
+
+-- =====================================================
+-- Comments
+-- =====================================================
+
+alter table public.spaces add column if not exists comments_count integer default 0;
+
+create table if not exists public.space_comments (
+  id         uuid default gen_random_uuid() primary key,
+  space_id   uuid references public.spaces(id) on delete cascade not null,
+  user_id    uuid references public.profiles(id) on delete cascade not null,
+  parent_id  uuid references public.space_comments(id) on delete cascade,
+  content    text not null check (char_length(content) between 1 and 1000),
+  likes_count integer default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists public.comment_likes (
+  id         uuid default gen_random_uuid() primary key,
+  user_id    uuid references public.profiles(id) on delete cascade not null,
+  comment_id uuid references public.space_comments(id) on delete cascade not null,
+  created_at timestamptz default now(),
+  unique(user_id, comment_id)
+);
+
+-- comment_mentions: indexed for future notifications, populated at insert time
+create table if not exists public.comment_mentions (
+  id                  uuid default gen_random_uuid() primary key,
+  comment_id          uuid references public.space_comments(id) on delete cascade not null,
+  mentioned_user_id   uuid references public.profiles(id) on delete cascade not null
+);
+
+-- Indexes
+create index if not exists idx_space_comments_space_toplevel
+  on public.space_comments(space_id, created_at asc)
+  where parent_id is null;
+
+create index if not exists idx_space_comments_parent_id
+  on public.space_comments(parent_id, created_at asc)
+  where parent_id is not null;
+
+create index if not exists idx_comment_likes_user_id
+  on public.comment_likes(user_id);
+
+create index if not exists idx_comment_mentions_user
+  on public.comment_mentions(mentioned_user_id);
+
+-- RLS
+alter table public.space_comments enable row level security;
+alter table public.comment_likes enable row level security;
+alter table public.comment_mentions enable row level security;
+
+drop policy if exists "Comments are viewable by everyone" on public.space_comments;
+create policy "Comments are viewable by everyone"
+  on public.space_comments for select using (true);
+
+drop policy if exists "Authenticated users can comment" on public.space_comments;
+create policy "Authenticated users can comment"
+  on public.space_comments for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete their own comments" on public.space_comments;
+create policy "Users can delete their own comments"
+  on public.space_comments for delete
+  using (auth.uid() = user_id);
+
+drop policy if exists "Comment likes are viewable by everyone" on public.comment_likes;
+create policy "Comment likes are viewable by everyone"
+  on public.comment_likes for select using (true);
+
+drop policy if exists "Users can like comments" on public.comment_likes;
+create policy "Users can like comments"
+  on public.comment_likes for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can unlike comments" on public.comment_likes;
+create policy "Users can unlike comments"
+  on public.comment_likes for delete
+  using (auth.uid() = user_id);
+
+drop policy if exists "Comment mentions are viewable by everyone" on public.comment_mentions;
+create policy "Comment mentions are viewable by everyone"
+  on public.comment_mentions for select using (true);
+
+drop policy if exists "System can insert mentions" on public.comment_mentions;
+create policy "System can insert mentions"
+  on public.comment_mentions for insert
+  with check (
+    exists (
+      select 1 from public.space_comments c
+      where c.id = comment_id and c.user_id = auth.uid()
+    )
+  );
+
+-- Trigger: keep comment likes_count in sync
+create or replace function public.update_comment_likes_count()
+returns trigger as $$
+begin
+  if TG_OP = 'INSERT' then
+    update public.space_comments set likes_count = likes_count + 1 where id = NEW.comment_id;
+    return NEW;
+  elsif TG_OP = 'DELETE' then
+    update public.space_comments set likes_count = greatest(0, likes_count - 1) where id = OLD.comment_id;
+    return OLD;
+  end if;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_comment_like_change on public.comment_likes;
+create trigger on_comment_like_change
+  after insert or delete on public.comment_likes
+  for each row execute procedure public.update_comment_likes_count();
+
+-- Trigger: keep spaces.comments_count in sync (counts all comments + replies)
+create or replace function public.update_space_comments_count()
+returns trigger as $$
+begin
+  if TG_OP = 'INSERT' then
+    update public.spaces set comments_count = comments_count + 1 where id = NEW.space_id;
+  elsif TG_OP = 'DELETE' then
+    update public.spaces set comments_count = greatest(0, comments_count - 1) where id = OLD.space_id;
+  end if;
+  return null;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_comment_change on public.space_comments;
+create trigger on_comment_change
+  after insert or delete on public.space_comments
+  for each row execute function public.update_space_comments_count();
 
 -- =====================================================
 -- Space Views / Analytics
