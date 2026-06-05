@@ -303,10 +303,8 @@ serve(async (req: Request) => {
   if (mode === "owner") {
     const { data: docs } = await admin
       .from("agent_documents")
-      .select("id, title, content")
+      .select("id, title, content, visibility, status")
       .eq("user_id", profile.id)
-      .eq("visibility", "public")
-      .eq("status", "active")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });
     systemPrompt = buildFromDocs(displayName, docs ?? [], "owner");
@@ -364,12 +362,12 @@ serve(async (req: Request) => {
     }
   }
 
-  // 4. Log request (owner sessions are not counted toward quota)
+  // 4. Log request before streaming. Awaited so concurrent requests can't both
+  //    pass the quota check before either write lands.
   if (mode === "visitor") {
-    admin
+    await admin
       .from("agent_requests")
       .insert({ profile_id: profile.id, messages_count: messages.length })
-      .then(() => {})
       .catch(() => {});
   }
 

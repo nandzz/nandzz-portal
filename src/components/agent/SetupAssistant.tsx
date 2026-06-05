@@ -169,6 +169,13 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
         )
       );
     } finally {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId && m.content === ""
+            ? { ...m, content: "Something went wrong. Please try again." }
+            : m
+        )
+      );
       setIsStreaming(false);
     }
   }

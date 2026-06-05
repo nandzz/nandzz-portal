@@ -45,12 +45,19 @@ interface Message {
   actionStatus?: ActionStatus;
 }
 
-const SUGGESTED = [
+const VISITOR_SUGGESTED = [
   "Who are you?",
   "What are you building?",
   "What technologies do you use?",
   "Tell me about your projects",
   "What are your interests?",
+];
+
+const OWNER_SUGGESTED = [
+  "What should I add first?",
+  "Help me write my me.md",
+  "What am I missing?",
+  "Review what I have so far",
 ];
 
 interface AgentChatProps {
@@ -336,6 +343,14 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
         )
       );
     } finally {
+      // If the stream ended without content or an action proposal, show a fallback.
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId && m.content === "" && !m.action
+            ? { ...m, content: "Something went wrong. Please try again." }
+            : m
+        )
+      );
       setIsStreaming(false);
     }
   }
@@ -396,7 +411,8 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
   const charsLeft = MAX_CHARS - input.length;
   const nearLimit = charsLeft <= 150;
   const showSuggested = messages.length === 0;
-  const showSecurityWarning = docs !== undefined && containsSensitive(input);
+  const isOwnerMode = docs !== undefined;
+  const showSecurityWarning = isOwnerMode && containsSensitive(input);
 
   return (
     <div className="flex flex-col h-full">
@@ -413,11 +429,20 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
               <Bot className="w-7 h-7 text-violet-600 dark:text-violet-400" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-semibold text-foreground">Ask {displayName} anything</p>
-              <p className="text-xs text-muted-foreground mt-1">Powered by their public knowledge</p>
+              {isOwnerMode ? (
+                <>
+                  <p className="text-sm font-semibold text-foreground">Your knowledge advisor</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tell me about yourself and I'll help you build your knowledge base</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-foreground">Ask {displayName} anything</p>
+                  <p className="text-xs text-muted-foreground mt-1">Powered by their public knowledge</p>
+                </>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 justify-center max-w-xs">
-              {SUGGESTED.map((q) => (
+              {(isOwnerMode ? OWNER_SUGGESTED : VISITOR_SUGGESTED).map((q) => (
                 <button
                   key={q}
                   onClick={() => send(q)}
@@ -494,7 +519,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={`Ask ${displayName} anything…`}
+            placeholder={isOwnerMode ? "Tell me about yourself…" : `Ask ${displayName} anything…`}
             disabled={isStreaming}
             className="flex-1 resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 overflow-hidden"
             style={{ minHeight: "36px", maxHeight: "160px" }}

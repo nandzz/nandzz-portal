@@ -83,16 +83,29 @@ type GuideTab = "templates" | "advisor";
 export function AgentStudio({ profile }: AgentStudioProps) {
   const [docs, setDocs] = useState<AgentDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [draft, setDraft] = useState<DraftDoc | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("knowledge");
   const [guideTab, setGuideTab] = useState<GuideTab>("advisor");
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/agent/documents");
-    if (res.ok) setDocs(await res.json());
-    setLoading(false);
+    setFetchError(false);
+    try {
+      const res = await fetch("/api/agent/documents");
+      if (res.ok) {
+        setDocs(await res.json());
+      } else {
+        setFetchError(true);
+      }
+    } catch {
+      setFetchError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
@@ -121,11 +134,14 @@ export function AgentStudio({ profile }: AgentStudioProps) {
 
   function closeEditor() {
     setDraft(null);
+    setSaveError(null);
+    setDeleteError(null);
   }
 
   async function saveDoc() {
     if (!draft || !draft.title.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const isNew = !draft.id;
       const url = isNew ? "/api/agent/documents" : `/api/agent/documents/${draft.id}`;
@@ -142,17 +158,29 @@ export function AgentStudio({ profile }: AgentStudioProps) {
         );
         setDraft(null);
         fetch(`/api/agent/documents/${saved.id}/embed`, { method: "POST" }).catch(() => {});
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setSaveError(body.error ?? "Failed to save. Please try again.");
       }
+    } catch {
+      setSaveError("Network error. Please try again.");
     } finally {
       setSaving(false);
     }
   }
 
   async function deleteDoc(id: string) {
-    const res = await fetch(`/api/agent/documents/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setDocs((prev) => prev.filter((d) => d.id !== id));
-      if (draft?.id === id) setDraft(null);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/agent/documents/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setDocs((prev) => prev.filter((d) => d.id !== id));
+        if (draft?.id === id) setDraft(null);
+      } else {
+        setDeleteError("Failed to delete. Please try again.");
+      }
+    } catch {
+      setDeleteError("Network error. Please try again.");
     }
   }
 
@@ -280,33 +308,41 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           </div>
 
           {/* Editor footer */}
-          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-border bg-background">
-            {draft.id ? (
-              <button
-                onClick={() => deleteDoc(draft.id!)}
-                className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete
-              </button>
-            ) : (
-              <div />
+          <div className="flex-shrink-0 border-t border-border bg-background">
+            {(saveError || deleteError) && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-950/30 text-xs text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-800/50">
+                <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                {saveError ?? deleteError}
+              </div>
             )}
-            <div className="flex gap-2">
-              <button
-                onClick={closeEditor}
-                className="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveDoc}
-                disabled={saving || !draft.title.trim()}
-                className="cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Save className="w-3 h-3" />
-                {saving ? "Saving…" : "Save"}
-              </button>
+            <div className="flex items-center justify-between px-4 py-3">
+              {draft.id ? (
+                <button
+                  onClick={() => deleteDoc(draft.id!)}
+                  className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={closeEditor}
+                  className="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveDoc}
+                  disabled={saving || !draft.title.trim()}
+                  className="cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save className="w-3 h-3" />
+                  {saving ? "Saving…" : "Save"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -315,6 +351,20 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           {loading ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-5 h-5 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
+            </div>
+          ) : fetchError ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-6">
+              <AlertTriangle className="w-8 h-8 text-red-400/70" />
+              <div>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">Failed to load documents</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Check your connection and</p>
+                <button
+                  onClick={fetchDocs}
+                  className="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:underline mt-1"
+                >
+                  try again
+                </button>
+              </div>
             </div>
           ) : docs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-6">

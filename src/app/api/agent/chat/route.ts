@@ -57,12 +57,25 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({ messages, username, mode }),
   });
 
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
-      "X-Accel-Buffering": "no",
-    },
-  });
+  const streamHeaders = {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "no-cache",
+    "X-Accel-Buffering": "no",
+  };
+
+  if (!upstream.ok) {
+    const enc = new TextEncoder();
+    return new Response(
+      new ReadableStream({
+        start(c) {
+          c.enqueue(enc.encode(JSON.stringify({ content: "Something went wrong. Please try again." }) + "\n"));
+          c.enqueue(enc.encode(JSON.stringify({ done: true }) + "\n"));
+          c.close();
+        },
+      }),
+      { headers: streamHeaders }
+    );
+  }
+
+  return new Response(upstream.body, { headers: streamHeaders });
 }

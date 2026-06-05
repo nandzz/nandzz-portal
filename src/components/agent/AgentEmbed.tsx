@@ -35,17 +35,10 @@ export function AgentEmbed({ profile, isAuthenticated }: AgentEmbedProps) {
 
   return (
     <>
-      {isAuthenticated ? (
-        <button onClick={() => setOpen(true)} className={triggerClass}>
-          <Bot className="h-4 w-4" />
-          Talk to {firstName}&apos;s Agent
-        </button>
-      ) : (
-        <a href={`/login?next=${encodeURIComponent(`/${profile.username}/agent`)}`} className={triggerClass}>
-          <Bot className="h-4 w-4" />
-          Talk to {firstName}&apos;s Agent
-        </a>
-      )}
+      <button onClick={() => setOpen(true)} className={triggerClass}>
+        <Bot className="h-4 w-4" />
+        Talk to {firstName}&apos;s Agent
+      </button>
 
       {open && (
         <div
