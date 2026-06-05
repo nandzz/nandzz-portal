@@ -43,6 +43,7 @@ export function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
+  const next = searchParams.get("next") ?? "/dashboard";
 
   const [mode, setMode] = useState<"login" | "signup">(defaultTab);
 
@@ -65,7 +66,7 @@ export function AuthForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
     if (error) {
@@ -109,7 +110,7 @@ export function AuthForm() {
         if (error) {
           setError(error.message);
         } else {
-          router.push("/dashboard");
+          router.push(next);
           router.refresh();
         }
       } else {
@@ -121,7 +122,7 @@ export function AuthForm() {
         if (error) {
           setError(error.message);
         } else {
-          router.push("/dashboard");
+          router.push(next);
           router.refresh();
         }
       }
