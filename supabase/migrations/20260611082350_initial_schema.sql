@@ -165,6 +165,8 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+revoke execute on function public.handle_new_user() from anon, authenticated;
+
 -- 7. Storage buckets
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
   values ('space-images', 'space-images', true, 5242880, array['image/jpeg','image/png','image/gif','image/webp'])
@@ -298,7 +300,9 @@ create policy "Users can unlike spaces"
 
 -- Function to update likes_count
 create or replace function public.update_likes_count()
-returns trigger as $$
+returns trigger
+language plpgsql security definer set search_path = ''
+as $$
 begin
   if TG_OP = 'INSERT' then
     update public.spaces set likes_count = likes_count + 1 where id = NEW.space_id;
@@ -317,6 +321,8 @@ drop trigger if exists on_like_change on public.space_likes;
 create trigger on_like_change
   after insert or delete on public.space_likes
   for each row execute procedure public.update_likes_count();
+
+revoke execute on function public.update_likes_count() from anon, authenticated;
 
 -- 10. Collections
 
@@ -531,6 +537,8 @@ create trigger agent_documents_updated_at
   before update on public.agent_documents
   for each row execute function public.agent_documents_set_updated_at();
 
+revoke execute on function public.agent_documents_set_updated_at() from anon, authenticated;
+
 create index if not exists idx_agent_documents_user_id
   on public.agent_documents(user_id);
 
@@ -583,14 +591,17 @@ returns table (content text, similarity float)
 language sql stable
 set search_path = public
 as $$
+begin
+  return query
   select
-    content,
-    1 - (embedding <=> p_embedding) as similarity
-  from public.agent_document_chunks
-  where user_id  = p_user_id
-    and embedding is not null
-  order by embedding <=> p_embedding
+    c.content,
+    1 - (c.embedding <=> p_embedding) as similarity
+  from public.agent_document_chunks c
+  where c.user_id = p_user_id
+    and c.embedding is not null
+  order by c.embedding <=> p_embedding
   limit p_top_k;
+end;
 $$;
 
 -- ── Agent requests (quota tracking, analytics, billing) ─────────────────────
@@ -700,6 +711,8 @@ drop trigger if exists on_follow_change on public.user_follows;
 create trigger on_follow_change
   after insert or delete on public.user_follows
   for each row execute function public.update_follow_counts();
+
+revoke execute on function public.update_follow_counts() from anon, authenticated;
 
 -- Feed index: quickly fetch public spaces for a set of user_ids
 create index if not exists idx_spaces_user_id_public_created
@@ -821,6 +834,8 @@ create trigger on_comment_like_change
   after insert or delete on public.comment_likes
   for each row execute procedure public.update_comment_likes_count();
 
+revoke execute on function public.update_comment_likes_count() from anon, authenticated;
+
 -- Trigger: keep spaces.comments_count in sync (counts all comments + replies)
 create or replace function public.update_space_comments_count()
 returns trigger as $$
@@ -840,6 +855,8 @@ drop trigger if exists on_comment_change on public.space_comments;
 create trigger on_comment_change
   after insert or delete on public.space_comments
   for each row execute function public.update_space_comments_count();
+
+revoke execute on function public.update_space_comments_count() from anon, authenticated;
 
 -- =====================================================
 -- Space Views / Analytics
@@ -904,6 +921,8 @@ drop trigger if exists on_space_view on public.space_views;
 create trigger on_space_view
   after insert on public.space_views
   for each row execute procedure public.update_views_count();
+
+revoke execute on function public.update_views_count() from anon, authenticated;
 
 -- =====================================================
 -- Notifications

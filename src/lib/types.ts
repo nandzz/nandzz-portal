@@ -156,7 +156,7 @@ export type SpaceCommentWithProfile = SpaceComment & {
 
 export type CommentWithLike = SpaceCommentWithProfile & { liked: boolean };
 
-export type NotificationType = 'new_comment' | 'new_reply' | 'comment_mention';
+export type NotificationType = 'new_comment' | 'new_reply' | 'comment_mention' | 'ai_edit_ready';
 
 export type NotificationPayload = {
   space_id: string;
@@ -165,6 +165,12 @@ export type NotificationPayload = {
   commenter_username: string;
   commenter_display_name: string | null;
   comment_preview: string;
+} | {
+  space_id: string;
+  space_title: string;
+  space_owner_username: string;
+  job_id: string;
+  instruction: string;
 };
 
 export type Notification = {

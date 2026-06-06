@@ -20,6 +20,7 @@ import { Moon, Sun, Menu, User, Settings, LogOut, CreditCard, Compass, Rss, Plus
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
+import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Navbar() {
@@ -166,7 +167,8 @@ export function Navbar() {
             </div>
           )}
 
-          {/* Notification bell — visible on all screen sizes for authenticated users */}
+          {/* AI jobs indicator + notification bell */}
+          {user && <AiJobsIndicator userId={user.id} />}
           {user && <NotificationBell userId={user.id} />}
 
           {/* Avatar dropdown — desktop only, after the bell */}

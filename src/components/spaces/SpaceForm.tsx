@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -31,6 +31,7 @@ import {
   ChevronUp,
   Video,
   AlignLeft,
+  Sparkles,
 } from "lucide-react";
 import { PREVIEW_GRADIENTS, GRADIENT_KEYS, DEFAULT_GRADIENT, type GradientKey } from "@/lib/preview-gradients";
 import { HashtagPicker } from "./HashtagPicker";
@@ -41,7 +42,7 @@ import { detectVideo, getYoutubeThumbnail, getVimeoThumbnail } from "./VideoEmbe
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-type SpaceMode = "html" | "url" | "pdf" | "image" | "video" | "markdown";
+type SpaceMode = "html" | "url" | "pdf" | "image" | "video" | "markdown" | "ai";
 
 /** Render HTML in a hidden iframe and capture a screenshot using html2canvas */
 async function captureHtmlScreenshot(
@@ -108,7 +109,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     if (space?.pdf_url) return "pdf";
     if (space?.html_url) return "html";
     if (space?.url) return "url";
-    return "html";
+    return "ai";
   };
 
   const [spaceType, setSpaceType] = useState<SpaceMode>(detectInitialMode);
@@ -388,6 +389,8 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         return;
       }
 
+      // "ai" type: nothing to validate — we upload a placeholder stub
+
       if (spaceType === "pdf" && !pdfFile && !space?.pdf_url) {
         setError("A PDF file is required.");
         setLoading(false);
@@ -478,6 +481,34 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         preview_image_url = publicUrlData.publicUrl;
       }
 
+      // AI Generated type: upload a minimal placeholder HTML
+      if (spaceType === "ai" && !space?.html_url) {
+        const stub = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+<style>
+  body { margin: 0; background: #09090b; color: #ffffff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  p { opacity: 0.35; font-size: 14px; letter-spacing: 0.01em; }
+</style>
+</head>
+<body><p>Use the AI assistant to generate content ✦</p></body>
+</html>`;
+        const stubBlob = new Blob([stub], { type: "text/html" });
+        const filePath = `${user.id}/${Date.now()}.html`;
+        const { error: uploadError } = await supabase.storage
+          .from("space-html")
+          .upload(filePath, stubBlob, { contentType: "text/html", upsert: false });
+        if (uploadError) {
+          setError("Failed to create space: " + uploadError.message);
+          return;
+        }
+        const { data: publicUrlData } = supabase.storage.from("space-html").getPublicUrl(filePath);
+        html_url = publicUrlData.publicUrl;
+      }
+
       // Upload HTML content
       if (spaceType === "html" && htmlContent) {
         const htmlBlob = new Blob([htmlContent], { type: "text/html" });
@@ -558,7 +589,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         title,
         description: description || null,
         url: spaceType === "url" ? normalizedUrl : null,
-        html_url: spaceType === "html" ? html_url : null,
+        html_url: (spaceType === "html" || spaceType === "ai") ? html_url : null,
         pdf_url: spaceType === "pdf" ? pdf_url : null,
         image_url: spaceType === "image" ? image_url : null,
         video_url: spaceType === "video" ? finalVideoUrl : null,
@@ -624,14 +655,15 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     }
   };
 
-  const typeButtons = [
-    { type: "html" as SpaceMode, icon: Code, label: "HTML", description: "Paste or upload HTML" },
-    { type: "image" as SpaceMode, icon: ImageIcon, label: "Image", description: "Upload a photo or graphic" },
-    { type: "video" as SpaceMode, icon: Video, label: "Video", description: "YouTube, Vimeo, or Loom" },
-    { type: "markdown" as SpaceMode, icon: AlignLeft, label: "Note", description: "Write with Markdown" },
-    { type: "pdf" as SpaceMode, icon: FileText, label: "PDF", description: "Upload a PDF document" },
-    { type: "url" as SpaceMode, icon: Globe, label: "Website", description: "Link to an external site" },
-  ] as const;
+  const typeButtons: { type: SpaceMode; icon: React.ElementType; label: string; description: string; beta?: boolean }[] = [
+    { type: "ai", icon: Sparkles, label: "AI Generated", description: "Generate with AI", beta: true },
+    { type: "html", icon: Code, label: "HTML", description: "Paste or upload HTML" },
+    { type: "image", icon: ImageIcon, label: "Image", description: "Upload a photo or graphic" },
+    { type: "video", icon: Video, label: "Video", description: "YouTube, Vimeo, or Loom" },
+    { type: "markdown", icon: AlignLeft, label: "Note", description: "Write with Markdown" },
+    { type: "pdf", icon: FileText, label: "PDF", description: "Upload a PDF document" },
+    { type: "url", icon: Globe, label: "Website", description: "Link to an external site" },
+  ];
 
   const isSubmitDisabled =
     loading ||
@@ -642,6 +674,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
     (spaceType === "image" && !imageFile && !space?.image_url) ||
     (spaceType === "video" && !videoUrl.trim()) ||
     (spaceType === "markdown" && !markdownContent.trim() && !space?.markdown_content);
+  // "ai" type only requires a title — no additional validation
 
   return (
     <Card className="w-full max-w-2xl shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
@@ -666,17 +699,22 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           <div className="space-y-2">
             <Label>Space Type</Label>
             <div className="grid grid-cols-3 gap-2">
-              {typeButtons.map(({ type, icon: Icon, label, description }) => (
+              {typeButtons.map(({ type, icon: Icon, label, description, beta }) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setSpaceType(type)}
-                  className={`rounded-xl border-2 px-3 py-3 text-left transition-all ${
+                  className={`relative rounded-xl border-2 px-3 py-3 text-left transition-all ${
                     spaceType === type
                       ? "border-violet-600 bg-violet-50 dark:bg-violet-950/50 shadow-sm shadow-violet-600/10"
                       : "border-border/60 hover:border-violet-500/30 hover:bg-muted/50"
                   }`}
                 >
+                  {beta && (
+                    <span className="absolute top-1.5 right-1.5 rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-violet-100 dark:bg-violet-900/60 text-violet-600 dark:text-violet-400 leading-none">
+                      Beta
+                    </span>
+                  )}
                   <div className="flex items-center gap-2 mb-1">
                     <Icon
                       className={`h-4 w-4 shrink-0 ${
@@ -702,6 +740,21 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
               ))}
             </div>
           </div>
+
+          {/* AI Generated info */}
+          {spaceType === "ai" && (
+            <div className="flex gap-3 rounded-xl border border-violet-300/60 dark:border-violet-700/50 bg-violet-50/50 dark:bg-violet-950/20 px-4 py-4">
+              <Sparkles className="h-5 w-5 shrink-0 text-violet-500 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-violet-700 dark:text-violet-300">
+                  Generate content after creating
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Give your space a title, then create it. Once inside, use the <span className="font-medium text-foreground">AI Edit</span> button to describe what you want and AI will build it for you.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Hashtags</Label>

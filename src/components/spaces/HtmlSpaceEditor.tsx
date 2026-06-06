@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Pencil, X, Save, Loader2 } from "lucide-react";
+import { Pencil, X, Save, Loader2, Sparkles, Check } from "lucide-react";
 import { sandboxHtml } from "@/lib/sandbox-html";
+import { AiAssistantPanel } from "@/components/spaces/AiAssistantPanel";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Extract the Supabase Storage path from the public URL.
 // URL format: https://<ref>.supabase.co/storage/v1/object/public/space-html/<path>
@@ -56,17 +58,90 @@ interface HtmlSpaceEditorProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GrapesjsEditor = any;
 
+type PendingJob = { id: string; instruction: string; result_html: string };
+
 export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEditorProps) {
+  const { t } = useLanguage();
+  const ai = t.aiAssistant;
+
   const [isEditing, setIsEditing] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
-  // Incremented after each save to force the sandbox iframe to reload
   const [iframeVersion, setIframeVersion] = useState(0);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [proposedLoaded, setProposedLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAssistant, setShowAssistant] = useState(false);
+  const [pendingJob, setPendingJob] = useState<PendingJob | null>(null);
+  const [showingProposed, setShowingProposed] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const grapesjsRef = useRef<GrapesjsEditor>(null);
   const htmlAtEditStartRef = useRef("");
+
+  // Check for pending AI edit jobs on mount and subscribe to new completions via Realtime
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase
+      .from("ai_edit_jobs")
+      .select("id, instruction, result_html")
+      .eq("space_id", spaceId)
+      .eq("status", "done")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => { if (data?.result_html) setPendingJob(data as PendingJob); });
+
+    const channel = supabase
+      .channel(`ai-edit-approval-${spaceId}`)
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "ai_edit_jobs",
+        filter: `space_id=eq.${spaceId}`,
+      }, (payload) => {
+        const job = payload.new as { id: string; status: string; instruction: string; result_html?: string };
+        if (job.status === "done" && job.result_html) {
+          setPendingJob({ id: job.id, instruction: job.instruction, result_html: job.result_html });
+        }
+      })
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
+  }, [spaceId]);
+
+  const handleApproveAiEdit = useCallback(async () => {
+    if (!pendingJob) return;
+    setIsApplying(true);
+    try {
+      const supabase = createClient();
+      const storagePath = extractStoragePath(htmlUrl);
+      const blob = new Blob([pendingJob.result_html], { type: "text/html" });
+      const { error: uploadErr } = await supabase.storage
+        .from("space-html")
+        .upload(storagePath, blob, { contentType: "text/html", upsert: true });
+      if (uploadErr) throw uploadErr;
+      await supabase.from("ai_edit_jobs").delete().eq("id", pendingJob.id);
+      setPendingJob(null);
+      setShowingProposed(false);
+      setIframeLoaded(false);
+      setIframeVersion((v) => v + 1);
+    } catch (err) {
+      console.error("[ai-edit] approve failed", err);
+    } finally {
+      setIsApplying(false);
+    }
+  }, [pendingJob, htmlUrl]);
+
+  const handleDismissAiEdit = useCallback(async () => {
+    if (!pendingJob) return;
+    const supabase = createClient();
+    await supabase.from("ai_edit_jobs").delete().eq("id", pendingJob.id);
+    setPendingJob(null);
+    setShowingProposed(false);
+  }, [pendingJob]);
+
+  // Reset proposed-iframe loaded flag whenever a new job arrives
+  useEffect(() => { setProposedLoaded(false); }, [pendingJob?.id]);
 
   // Inject GrapeJS CSS once on mount
   useEffect(() => {
@@ -285,20 +360,80 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
 
   return (
     <div className="relative h-full w-full">
-      {!iframeLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+      {/* AI edit approval banner */}
+      {pendingJob && (
+        <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 bg-background/95 backdrop-blur border-b px-3 py-2 shadow-sm">
+          <Sparkles className="size-4 text-primary shrink-0" />
+          <p className="text-xs flex-1 min-w-0">
+            <span className="font-semibold">{ai.approvalTitle}:</span>{" "}
+            <span className="text-muted-foreground truncate">"{pendingJob.instruction}"</span>
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs px-2 shrink-0"
+            onClick={() => setShowingProposed((v) => !v)}
+          >
+            {showingProposed ? ai.approvalShowOriginal : ai.approvalPreview}
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs px-2 gap-1 shrink-0"
+            onClick={handleApproveAiEdit}
+            disabled={isApplying}
+          >
+            {isApplying ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+            {ai.approvalApply}
+          </Button>
+          <button
+            onClick={handleDismissAiEdit}
+            className="text-muted-foreground hover:text-foreground shrink-0"
+            aria-label={ai.approvalDismiss}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {((!showingProposed && !iframeLoaded) || (showingProposed && !proposedLoaded)) && (
+        <div className="absolute flex items-center justify-center bg-background z-10" style={{ inset: 0, top: pendingJob ? "42px" : 0 }}>
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
+      {/* Original — always mounted so it stays ready when toggling back */}
       <iframe
+        key={`original-${iframeVersion}`}
         src={`/sandbox/${spaceId}?v=${iframeVersion}`}
-        className="h-full w-full border-0"
+        className="absolute inset-0 h-full w-full border-0"
         sandbox="allow-scripts allow-forms allow-downloads allow-popups"
         title={spaceTitle}
-        style={{ opacity: iframeLoaded ? 1 : 0 }}
+        style={{ opacity: !showingProposed && iframeLoaded ? 1 : 0, paddingTop: pendingJob ? "42px" : 0, pointerEvents: showingProposed ? "none" : "auto" }}
         onLoad={() => setIframeLoaded(true)}
       />
-      <div className="absolute bottom-4 right-4 hidden lg:flex">
+      {/* Proposed — pre-loads in background while showing original */}
+      {pendingJob && (
+        <iframe
+          key={`proposed-${pendingJob.id}`}
+          srcDoc={sandboxHtml(pendingJob.result_html)}
+          className="absolute inset-0 h-full w-full border-0"
+          sandbox="allow-scripts allow-forms allow-downloads allow-popups"
+          title={`${spaceTitle} – proposed`}
+          style={{ opacity: showingProposed && proposedLoaded ? 1 : 0, paddingTop: "42px", pointerEvents: !showingProposed ? "none" : "auto" }}
+          onLoad={() => setProposedLoaded(true)}
+        />
+      )}
+
+      {/* Desktop buttons */}
+      <div className="absolute bottom-4 right-4 hidden lg:flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowAssistant(true)}
+          className="gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          AI Edit
+        </Button>
         <Button
           size="sm"
           onClick={handleEdit}
@@ -313,6 +448,23 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
           Edit Page
         </Button>
       </div>
+
+      {/* Mobile FAB */}
+      <Button
+        size="icon"
+        className="absolute bottom-4 right-4 lg:hidden rounded-full h-12 w-12 shadow-lg"
+        onClick={() => setShowAssistant(true)}
+        aria-label="AI Edit"
+      >
+        <Sparkles className="h-5 w-5" />
+      </Button>
+
+      <AiAssistantPanel
+        spaceId={spaceId}
+        htmlUrl={htmlUrl}
+        isOpen={showAssistant}
+        onClose={() => setShowAssistant(false)}
+      />
     </div>
   );
 }
