@@ -18,20 +18,22 @@ import {
 import type { AgentDocument, AgentDocStatus, AgentDocVisibility, Profile } from "@/lib/types";
 import { SetupAssistant } from "./SetupAssistant";
 import { AgentChat } from "./AgentChat";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AgentStudioProps {
   profile: Profile;
 }
 
-const STATUS_META: Record<AgentDocStatus, { label: string; icon: typeof CheckCircle; className: string }> = {
-  active: { label: "Active", icon: CheckCircle, className: "text-emerald-600 dark:text-emerald-400" },
-  outdated: { label: "Outdated", icon: Clock, className: "text-amber-600 dark:text-amber-400" },
-  needs_review: { label: "Needs Review", icon: AlertTriangle, className: "text-orange-600 dark:text-orange-400" },
+const STATUS_META: Record<AgentDocStatus, { icon: typeof CheckCircle; className: string }> = {
+  active: { icon: CheckCircle, className: "text-emerald-600 dark:text-emerald-400" },
+  outdated: { icon: Clock, className: "text-amber-600 dark:text-amber-400" },
+  needs_review: { icon: AlertTriangle, className: "text-orange-600 dark:text-orange-400" },
 };
 
-function DocBadge({ doc }: { doc: AgentDocument }) {
+function DocBadge({ doc, labels }: { doc: AgentDocument; labels: { publicViz: string; privateViz: string; activeStatus: string; outdatedStatus: string; needsReviewStatus: string; sensitiveLabel: string } }) {
   const statusMeta = STATUS_META[doc.status];
   const StatusIcon = statusMeta.icon;
+  const statusLabel = doc.status === "active" ? labels.activeStatus : doc.status === "outdated" ? labels.outdatedStatus : labels.needsReviewStatus;
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
       <span
@@ -42,16 +44,16 @@ function DocBadge({ doc }: { doc: AgentDocument }) {
         }`}
       >
         {doc.visibility === "public" ? <Globe className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
-        {doc.visibility === "public" ? "Public" : "Private"}
+        {doc.visibility === "public" ? labels.publicViz : labels.privateViz}
       </span>
       <span className={`inline-flex items-center gap-1 text-[10px] font-medium ${statusMeta.className}`}>
         <StatusIcon className="w-2.5 h-2.5" />
-        {statusMeta.label}
+        {statusLabel}
       </span>
       {doc.is_sensitive && (
         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-red-600 dark:text-red-400">
           <AlertTriangle className="w-2.5 h-2.5" />
-          Sensitive
+          {labels.sensitiveLabel}
         </span>
       )}
     </div>
@@ -81,6 +83,15 @@ type MobileTab = "knowledge" | "guide";
 type GuideTab = "templates" | "advisor";
 
 export function AgentStudio({ profile }: AgentStudioProps) {
+  const { t } = useLanguage();
+  const docBadgeLabels = {
+    publicViz: t.agent.publicViz,
+    privateViz: t.agent.privateViz,
+    activeStatus: t.agent.activeStatus,
+    outdatedStatus: t.agent.outdatedStatus,
+    needsReviewStatus: t.agent.needsReviewStatus,
+    sensitiveLabel: t.agent.sensitiveLabel,
+  };
   const [docs, setDocs] = useState<AgentDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -160,10 +171,10 @@ export function AgentStudio({ profile }: AgentStudioProps) {
         fetch(`/api/agent/documents/${saved.id}/embed`, { method: "POST" }).catch(() => {});
       } else {
         const body = await res.json().catch(() => ({}));
-        setSaveError(body.error ?? "Failed to save. Please try again.");
+        setSaveError(body.error ?? t.agent.failedSave);
       }
     } catch {
-      setSaveError("Network error. Please try again.");
+      setSaveError(t.agent.networkError);
     } finally {
       setSaving(false);
     }
@@ -177,10 +188,10 @@ export function AgentStudio({ profile }: AgentStudioProps) {
         setDocs((prev) => prev.filter((d) => d.id !== id));
         if (draft?.id === id) setDraft(null);
       } else {
-        setDeleteError("Failed to delete. Please try again.");
+        setDeleteError(t.agent.failedDelete);
       }
     } catch {
-      setDeleteError("Network error. Please try again.");
+      setDeleteError(t.agent.networkError);
     }
   }
 
@@ -191,9 +202,9 @@ export function AgentStudio({ profile }: AgentStudioProps) {
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
         <div>
-          <h2 className="text-sm font-semibold">Knowledge</h2>
+          <h2 className="text-sm font-semibold">{t.agent.knowledge}</h2>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            {docs.length} document{docs.length !== 1 ? "s" : ""}
+            {docs.length} {docs.length === 1 ? t.agent.documentSingular : t.agent.documentPlural}
           </p>
         </div>
         <button
@@ -201,7 +212,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           className="cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
         >
           <Plus className="w-3 h-3" />
-          New
+          {t.agent.new}
         </button>
       </div>
 
@@ -211,7 +222,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           {/* Editor header */}
           <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
             <span className="text-xs font-medium text-muted-foreground">
-              {draft.id ? "Edit document" : "New document"}
+              {draft.id ? t.agent.editDocument : t.agent.newDocument}
             </span>
             <button onClick={closeEditor} className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
@@ -221,12 +232,12 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             {/* Title */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Title</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t.agent.titleLabel}</label>
               <input
                 type="text"
                 value={draft.title}
                 onChange={(e) => setDraft((d) => d && { ...d, title: e.target.value })}
-                placeholder="e.g. about-me.md"
+                placeholder={t.agent.titlePlaceholder}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40"
               />
             </div>
@@ -234,7 +245,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             {/* Visibility + Status */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Visibility</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t.agent.visibilityLabel}</label>
                 <select
                   value={draft.visibility}
                   onChange={(e) =>
@@ -242,12 +253,12 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                   }
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40"
                 >
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
+                  <option value="public">{t.agent.publicViz}</option>
+                  <option value="private">{t.agent.privateViz}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t.agent.statusLabel}</label>
                 <select
                   value={draft.status}
                   onChange={(e) =>
@@ -255,9 +266,9 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                   }
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40"
                 >
-                  <option value="active">Active</option>
-                  <option value="outdated">Outdated</option>
-                  <option value="needs_review">Needs Review</option>
+                  <option value="active">{t.agent.activeStatus}</option>
+                  <option value="outdated">{t.agent.outdatedStatus}</option>
+                  <option value="needs_review">{t.agent.needsReviewStatus}</option>
                 </select>
               </div>
             </div>
@@ -265,8 +276,8 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             {/* Sort order */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Prompt order
-                <span className="font-normal ml-1 text-muted-foreground/60">— lower = injected first</span>
+                {t.agent.promptOrder}
+                <span className="font-normal ml-1 text-muted-foreground/60">— {t.agent.promptOrderHint}</span>
               </label>
               <input
                 type="number"
@@ -287,20 +298,20 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                 className="w-4 h-4 accent-red-500 cursor-pointer"
               />
               <span className="text-xs text-muted-foreground">
-                <span className="font-medium text-red-600 dark:text-red-400">Sensitive</span>
-                {" "}— contains personal or restricted information
+                <span className="font-medium text-red-600 dark:text-red-400">{t.agent.sensitiveLabel}</span>
+                {" "}— {t.agent.sensitiveDesc}
               </span>
             </label>
 
             {/* Content */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Content <span className="font-normal">(Markdown)</span>
+                {t.agent.contentLabel} <span className="font-normal">{t.agent.contentMarkdown}</span>
               </label>
               <textarea
                 value={draft.content}
                 onChange={(e) => setDraft((d) => d && { ...d, content: e.target.value })}
-                placeholder="Write the document content in Markdown…"
+                placeholder={t.agent.contentPlaceholder}
                 rows={12}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500/40 resize-none min-h-[160px]"
               />
@@ -322,7 +333,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                   className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Delete
+                  {t.agent.delete}
                 </button>
               ) : (
                 <div />
@@ -332,7 +343,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                   onClick={closeEditor}
                   className="cursor-pointer text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
                 >
-                  Cancel
+                  {t.agent.cancel}
                 </button>
                 <button
                   onClick={saveDoc}
@@ -340,7 +351,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                   className="cursor-pointer inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Save className="w-3 h-3" />
-                  {saving ? "Saving…" : "Save"}
+                  {saving ? t.agent.saving : t.agent.save}
                 </button>
               </div>
             </div>
@@ -356,13 +367,13 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-6">
               <AlertTriangle className="w-8 h-8 text-red-400/70" />
               <div>
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">Failed to load documents</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Check your connection and</p>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">{t.agent.failedLoad}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t.agent.checkConnection}</p>
                 <button
                   onClick={fetchDocs}
                   className="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:underline mt-1"
                 >
-                  try again
+                  {t.agent.tryAgain}
                 </button>
               </div>
             </div>
@@ -370,9 +381,9 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-6">
               <FileText className="w-8 h-8 text-muted-foreground/40" />
               <div>
-                <p className="text-sm font-medium">No documents yet</p>
+                <p className="text-sm font-medium">{t.agent.noDocuments}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Add documents to teach your agent
+                  {t.agent.noDocumentsDesc}
                 </p>
               </div>
             </div>
@@ -398,7 +409,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                           </span>
                         </div>
                         <div className="mt-1">
-                          <DocBadge doc={doc} />
+                          <DocBadge doc={doc} labels={docBadgeLabels} />
                         </div>
                       </div>
                     </div>
@@ -428,7 +439,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             }`}
           >
             <Sparkles className="w-3 h-3" />
-            Advisor
+            {t.agent.advisor}
           </button>
           <button
             onClick={() => setGuideTab("templates")}
@@ -439,7 +450,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             }`}
           >
             <FileText className="w-3 h-3" />
-            Templates
+            {t.agent.templates}
           </button>
         </div>
         <a
@@ -449,7 +460,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
           className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
           <Eye className="w-3 h-3" />
-          Preview
+          {t.agent.preview}
         </a>
       </div>
 
@@ -489,7 +500,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
         {(["knowledge", "guide"] as MobileTab[]).map((tab) => {
           const isActive = mobileTab === tab;
           const Icon = tab === "knowledge" ? FileText : Sparkles;
-          const label = tab === "knowledge" ? "Knowledge" : "Guide";
+          const label = tab === "knowledge" ? t.agent.knowledge : t.agent.guide;
           const badge = tab === "knowledge" && docs.length > 0 ? docs.length : null;
           return (
             <button

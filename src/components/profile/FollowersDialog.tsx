@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type UserRow = {
   id: string;
@@ -24,6 +25,7 @@ interface FollowersDialogProps {
 const PAGE_SIZE = 20;
 
 export function FollowersDialog({ profileId, type, count, children }: FollowersDialogProps) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -80,11 +82,11 @@ export function FollowersDialog({ profileId, type, count, children }: FollowersD
         {children}
       </button>
 
-      <Dialog open={open} onClose={() => setOpen(false)} title={type.charAt(0).toUpperCase() + type.slice(1)}>
+      <Dialog open={open} onClose={() => setOpen(false)} title={type === "followers" ? t.profile.followersTitle : t.profile.followingTitle}>
         {loading ? (
-          <div className="flex justify-center py-8 text-sm text-muted-foreground">Loading…</div>
+          <div className="flex justify-center py-8 text-sm text-muted-foreground">{t.profile.loadingUsers}</div>
         ) : users.length === 0 ? (
-          <div className="flex justify-center py-8 text-sm text-muted-foreground">No {type} yet.</div>
+          <div className="flex justify-center py-8 text-sm text-muted-foreground">{type === "followers" ? t.profile.noFollowers : t.profile.noFollowing}</div>
         ) : (
           <div className="flex flex-col gap-0">
             <ul className="max-h-80 overflow-y-auto divide-y divide-border -mx-2">
@@ -118,7 +120,7 @@ export function FollowersDialog({ profileId, type, count, children }: FollowersD
                   disabled={loadingMore}
                   className="w-full border-border/60 text-muted-foreground"
                 >
-                  {loadingMore ? "Loading…" : "Load more"}
+                  {loadingMore ? t.profile.loadingUsers : t.profile.loadMore}
                 </Button>
               </div>
             )}

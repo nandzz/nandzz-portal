@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, CheckCircle2, Circle, ChevronRight } from "lucide-react";
 import { AGENT_TEMPLATES, CORE_TEMPLATES, type Template } from "@/lib/agent/templates";
 import type { AgentDocument } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SetupAssistantProps {
   docs: AgentDocument[];
@@ -26,10 +27,12 @@ function TemplateCard({
   template,
   covered,
   onUse,
+  useTemplateLabel,
 }: {
   template: Template;
   covered: boolean;
   onUse: () => void;
+  useTemplateLabel: string;
 }) {
   return (
     <div
@@ -56,7 +59,7 @@ function TemplateCard({
           onClick={onUse}
           className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 mt-0.5 whitespace-nowrap transition-colors"
         >
-          Use template
+          {useTemplateLabel}
           <ChevronRight className="w-3 h-3" />
         </button>
       )}
@@ -65,6 +68,7 @@ function TemplateCard({
 }
 
 export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssistantProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -73,11 +77,11 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
   const isAtBottom = useRef(true);
   const prevMessageCount = useRef(0);
 
-  const coreTemplates = AGENT_TEMPLATES.filter((t) =>
-    (CORE_TEMPLATES as string[]).includes(t.key)
+  const coreTemplates = AGENT_TEMPLATES.filter((tmpl) =>
+    (CORE_TEMPLATES as string[]).includes(tmpl.key)
   );
   const extraTemplates = AGENT_TEMPLATES.filter(
-    (t) => !(CORE_TEMPLATES as string[]).includes(t.key)
+    (tmpl) => !(CORE_TEMPLATES as string[]).includes(tmpl.key)
   );
 
   function handleScroll() {
@@ -164,7 +168,7 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: "Something went wrong. Please try again." }
+            ? { ...m, content: t.agent.error }
             : m
         )
       );
@@ -172,7 +176,7 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId && m.content === ""
-            ? { ...m, content: "Something went wrong. Please try again." }
+            ? { ...m, content: t.agent.error }
             : m
         )
       );
@@ -205,7 +209,7 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
           {/* Progress */}
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-              Core documents
+              {t.agent.coreDocuments}
             </span>
             <span className="text-[11px] text-muted-foreground">
               {completedCore}/{CORE_TEMPLATES.length}
@@ -219,17 +223,18 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
           </div>
 
           <div className="space-y-2 pt-1">
-            {coreTemplates.map((t) => {
+            {coreTemplates.map((tmpl) => {
               const covered = hasCoreDoc(
                 docs,
-                t.key === "response-style" ? "response" : t.key
+                tmpl.key === "response-style" ? "response" : tmpl.key
               );
               return (
                 <TemplateCard
-                  key={t.key}
-                  template={t}
+                  key={tmpl.key}
+                  template={tmpl}
                   covered={covered}
-                  onUse={() => onUseTemplate(t.title, t.content)}
+                  onUse={() => onUseTemplate(tmpl.title, tmpl.content)}
+                  useTemplateLabel={t.agent.useTemplate}
                 />
               );
             })}
@@ -239,17 +244,18 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
           {extraTemplates.length > 0 && (
             <div className="pt-2">
               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                Optional
+                {t.agent.optional}
               </p>
               <div className="space-y-2">
-                {extraTemplates.map((t) => {
-                  const covered = hasCoreDoc(docs, t.key);
+                {extraTemplates.map((tmpl) => {
+                  const covered = hasCoreDoc(docs, tmpl.key);
                   return (
                     <TemplateCard
-                      key={t.key}
-                      template={t}
+                      key={tmpl.key}
+                      template={tmpl}
                       covered={covered}
-                      onUse={() => onUseTemplate(t.title, t.content)}
+                      onUse={() => onUseTemplate(tmpl.title, tmpl.content)}
+                      useTemplateLabel={t.agent.useTemplate}
                     />
                   );
                 })}
@@ -295,13 +301,13 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
         {/* Suggested questions when chat is empty */}
         {!hideChatUI && !started && (
           <div className="pt-2 border-t border-border">
-            <p className="text-[11px] text-muted-foreground mb-2">Ask me anything about setup</p>
+            <p className="text-[11px] text-muted-foreground mb-2">{t.agent.setupAskAnything}</p>
             <div className="flex flex-wrap gap-1.5">
               {[
-                "Where should I start?",
-                "What makes a good soul.md?",
-                "What should be private?",
-                "Help me write my me.md",
+                t.agent.setupSuggest1,
+                t.agent.setupSuggest2,
+                t.agent.setupSuggest3,
+                t.agent.setupSuggest4,
               ].map((q) => (
                 <button
                   key={q}
@@ -326,7 +332,7 @@ export function SetupAssistant({ docs, onUseTemplate, hideChatUI }: SetupAssista
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about setup, formatting, or content…"
+              placeholder={t.agent.setupPlaceholder}
               disabled={isStreaming}
               className="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-50 max-h-24 overflow-y-auto"
               style={{ minHeight: "40px" }}

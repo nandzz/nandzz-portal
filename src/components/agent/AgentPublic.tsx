@@ -4,6 +4,7 @@ import { Eye, Bot } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { AgentChat } from "./AgentChat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AgentPublicProps {
   profile: Profile;
@@ -12,6 +13,7 @@ interface AgentPublicProps {
 }
 
 export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPublicProps) {
+  const { t } = useLanguage();
   const displayName = profile.display_name || profile.username;
 
   return (
@@ -19,7 +21,7 @@ export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPu
       {isPreview && (
         <div className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 bg-violet-50 dark:bg-violet-950/30 border-b border-violet-200 dark:border-violet-800 text-xs text-violet-700 dark:text-violet-300 font-medium">
           <Eye className="w-3.5 h-3.5" />
-          Preview mode — this is how visitors see your agent
+          {t.agent.previewMode}
         </div>
       )}
 
@@ -41,8 +43,8 @@ export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPu
           )}
           <p className="mt-2 text-xs text-muted-foreground">
             {hasDocuments
-              ? `Ask anything — powered by ${displayName}'s public knowledge`
-              : `${displayName}'s agent`}
+              ? t.agent.askAnything.replace("{name}", displayName)
+              : displayName}
           </p>
         </div>
 
@@ -56,9 +58,9 @@ export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPu
                 <Bot className="w-6 h-6 text-muted-foreground/50" />
               </div>
               <div>
-                <p className="text-sm font-medium">{displayName}&apos;s agent isn&apos;t ready yet</p>
+                <p className="text-sm font-medium">{t.agent.notReady.replace("{name}", displayName)}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  They haven&apos;t published any knowledge for their agent yet.
+                  {t.agent.notReadyDesc}
                 </p>
               </div>
             </div>

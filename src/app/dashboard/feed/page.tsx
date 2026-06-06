@@ -8,6 +8,7 @@ import { SpaceGrid } from "@/components/spaces/SpaceGrid";
 import { Button } from "@/components/ui/button";
 import { Compass, Rss } from "lucide-react";
 import type { SpaceWithProfile } from "@/lib/types";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "Feed — Nandzz",
@@ -22,6 +23,7 @@ export default async function FeedPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const supabase = await createClient();
+  const t = await getServerTranslations();
   const { page } = await searchParams;
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -74,8 +76,8 @@ export default async function FeedPage({
             <Rss className="h-5 w-5 text-violet-600 dark:text-violet-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Feed</h1>
-            <p className="text-muted-foreground">Latest spaces from people you follow.</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t.feed.title}</h1>
+            <p className="text-muted-foreground">{t.feed.subtitle}</p>
           </div>
         </div>
 
@@ -84,21 +86,21 @@ export default async function FeedPage({
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-violet-100/80 dark:bg-violet-900/40 border border-violet-200 dark:border-violet-800">
               <Compass className="h-10 w-10 text-violet-400 dark:text-violet-500" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Your feed is empty</h2>
+            <h2 className="text-xl font-semibold mb-2">{t.feed.emptyTitle}</h2>
             <p className="text-muted-foreground max-w-sm mb-6">
-              Follow creators to see their latest spaces here.
+              {t.feed.emptyDesc}
             </p>
             <Link href="/explore">
               <Button>
                 <Compass className="h-4 w-4 mr-2" />
-                Explore creators
+                {t.feed.exploreCreators}
               </Button>
             </Link>
           </div>
         ) : spaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="text-muted-foreground">
-              No public spaces yet from the people you follow.
+              {t.feed.noPublic}
             </p>
           </div>
         ) : (
@@ -114,17 +116,17 @@ export default async function FeedPage({
                 {currentPage > 1 && (
                   <Link href={`/dashboard/feed?page=${currentPage - 1}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
-                      Previous
+                      {t.feed.previous}
                     </Button>
                   </Link>
                 )}
                 <span className="px-3 text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  {t.feed.pageOf.replace("{current}", String(currentPage)).replace("{total}", String(totalPages))}
                 </span>
                 {currentPage < totalPages && (
                   <Link href={`/dashboard/feed?page=${currentPage + 1}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
-                      Next
+                      {t.feed.next}
                     </Button>
                   </Link>
                 )}

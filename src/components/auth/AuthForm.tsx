@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function GoogleIcon() {
   return (
@@ -46,6 +47,7 @@ export function AuthForm() {
   const next = searchParams.get("next") ?? "/dashboard";
 
   const [mode, setMode] = useState<"login" | "signup">(defaultTab);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setMode(searchParams.get("tab") === "signup" ? "signup" : "login");
@@ -84,14 +86,12 @@ export function AuthForm() {
       if (mode === "signup") {
         const trimmedUsername = username.trim().toLowerCase();
         if (!trimmedUsername) {
-          setError("Username is required");
+          setError(t.auth.usernameRequired);
           setLoading(false);
           return;
         }
         if (!/^[a-z0-9_-]{3,30}$/.test(trimmedUsername)) {
-          setError(
-            "Username must be 3–30 characters and can only contain lowercase letters, numbers, hyphens, and underscores"
-          );
+          setError(t.auth.usernameInvalid);
           setLoading(false);
           return;
         }
@@ -140,12 +140,10 @@ export function AuthForm() {
           <Sparkles className="h-6 w-6 text-violet-600 dark:text-violet-400" />
         </div>
         <CardTitle className="text-2xl font-bold">
-          {mode === "login" ? "Welcome back" : "Create your account"}
+          {mode === "login" ? t.auth.welcomeBack : t.auth.createAccount}
         </CardTitle>
         <CardDescription className="text-base">
-          {mode === "login"
-            ? "Log in to manage your Spaces"
-            : "Sign up to start creating and sharing Spaces"}
+          {mode === "login" ? t.auth.loginDesc : t.auth.signupDesc}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
@@ -153,7 +151,7 @@ export function AuthForm() {
           {mode === "signup" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t.auth.username}</Label>
                 <Input
                   id="username"
                   placeholder="johndoe"
@@ -164,7 +162,7 @@ export function AuthForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
+                <Label htmlFor="displayName">{t.auth.displayName}</Label>
                 <Input
                   id="displayName"
                   placeholder="John Doe"
@@ -176,7 +174,7 @@ export function AuthForm() {
             </>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t.auth.email}</Label>
             <Input
               id="email"
               type="email"
@@ -189,13 +187,13 @@ export function AuthForm() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.auth.password}</Label>
               {mode === "login" && (
                 <Link
                   href="/forgot-password"
                   className="text-xs text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 hover:underline transition-colors"
                 >
-                  Forgot password?
+                  {t.auth.forgotPassword}
                 </Link>
               )}
             </div>
@@ -222,11 +220,7 @@ export function AuthForm() {
             className="w-full"
             disabled={loading}
           >
-            {loading
-              ? "Loading..."
-              : mode === "login"
-              ? "Log in"
-              : "Sign up"}
+            {loading ? t.auth.loading : mode === "login" ? t.auth.login : t.auth.signup}
           </Button>
         </form>
 
@@ -235,7 +229,7 @@ export function AuthForm() {
             <span className="w-full border-t border-border/60" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">or</span>
+            <span className="bg-card px-2 text-muted-foreground">{t.auth.or}</span>
           </div>
         </div>
 
@@ -247,13 +241,13 @@ export function AuthForm() {
           disabled={loading}
         >
           <GoogleIcon />
-          <span className="ml-2">Continue with Google</span>
+          <span className="ml-2">{t.auth.continueGoogle}</span>
         </Button>
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
           {mode === "login" ? (
             <>
-              Don&apos;t have an account?{" "}
+              {t.auth.noAccount}{" "}
               <button
                 onClick={() => {
                   setMode("signup");
@@ -261,12 +255,12 @@ export function AuthForm() {
                 }}
                 className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 hover:underline font-medium transition-colors"
               >
-                Sign up
+                {t.auth.signup}
               </button>
             </>
           ) : (
             <>
-              Already have an account?{" "}
+              {t.auth.hasAccount}{" "}
               <button
                 onClick={() => {
                   setMode("login");
@@ -274,7 +268,7 @@ export function AuthForm() {
                 }}
                 className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 hover:underline font-medium transition-colors"
               >
-                Log in
+                {t.auth.login}
               </button>
             </>
           )}

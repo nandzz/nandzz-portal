@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications";
 import { CommentItem } from "./CommentItem";
 import { CommentInput } from "./CommentInput";
 import type { CommentWithLike } from "@/lib/types";
@@ -11,6 +12,9 @@ const PAGE_SIZE = 20;
 
 interface CommentsListProps {
   spaceId: string;
+  spaceOwnerId: string;
+  spaceOwnerUsername: string;
+  spaceTitle: string;
   initialComments: CommentWithLike[];
   initialHasMore: boolean;
   userId: string | null;
@@ -19,14 +23,19 @@ interface CommentsListProps {
     display_name: string | null;
     avatar_url: string | null;
   } | null;
+  onCountChange: (delta: number) => void;
 }
 
 export function CommentsList({
   spaceId,
+  spaceOwnerId,
+  spaceOwnerUsername,
+  spaceTitle,
   initialComments,
   initialHasMore,
   userId,
   currentProfile,
+  onCountChange,
 }: CommentsListProps) {
   const [comments, setComments] = useState<CommentWithLike[]>(initialComments);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -91,8 +100,24 @@ export function CommentsList({
       liked: false,
     };
     setComments((prev) => [...prev, newComment]);
+    onCountChange(+1);
 
-    // insert @mentions
+    const notificationPayload = {
+      space_id: spaceId,
+      space_title: spaceTitle,
+      space_owner_username: spaceOwnerUsername,
+      commenter_username: currentProfile.username,
+      commenter_display_name: currentProfile.display_name,
+      comment_preview: content.slice(0, 100),
+    };
+
+    // notify space owner (skip if commenter is the owner)
+    const mentionedSet = new Set<string>();
+    if (spaceOwnerId !== userId) {
+      await createNotification(supabase, spaceOwnerId, "new_comment", notificationPayload);
+    }
+
+    // insert @mentions + notify mentioned users
     const mentioned = [...content.matchAll(/@(\w+)/g)].map((m) => m[1]);
     if (mentioned.length) {
       const { data: profiles } = await supabase
@@ -103,12 +128,20 @@ export function CommentsList({
         await supabase.from("comment_mentions").insert(
           profiles.map((p) => ({ comment_id: data.id, mentioned_user_id: p.id }))
         );
+        const toNotify = profiles.filter(
+          (p) => p.id !== userId && p.id !== spaceOwnerId && !mentionedSet.has(p.id)
+        );
+        for (const p of toNotify) {
+          mentionedSet.add(p.id);
+          await createNotification(supabase, p.id, "comment_mention", notificationPayload);
+        }
       }
     }
   };
 
   const handleDeleteComment = (commentId: string) => {
     setComments((prev) => prev.filter((c) => c.id !== commentId));
+    onCountChange(-1);
   };
 
   return (
@@ -129,6 +162,8 @@ export function CommentsList({
                 userId={userId}
                 currentProfile={currentProfile}
                 spaceId={spaceId}
+                spaceOwnerUsername={spaceOwnerUsername}
+                spaceTitle={spaceTitle}
                 onDelete={handleDeleteComment}
               />
             ))}

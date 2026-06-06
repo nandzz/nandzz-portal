@@ -6,6 +6,7 @@ import { SpaceCard } from "./SpaceCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, LayoutGrid, Grid3X3 } from "lucide-react";
 import type { SpaceWithProfile, Space } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SpaceGridProps {
   spaces: SpaceWithProfile[] | Space[];
@@ -30,6 +31,7 @@ export function SpaceGrid({
   currentUserId,
   ownerUsername,
 }: SpaceGridProps) {
+  const { t } = useLanguage();
   const [compact, setCompact] = useState(false);
 
   return (
@@ -39,17 +41,17 @@ export function SpaceGrid({
         <button
           onClick={() => setCompact((v) => !v)}
           className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          title={compact ? "Comfortable view" : "Compact view"}
+          title={compact ? t.spaceGrid.comfortableView : t.spaceGrid.compactView}
         >
           {compact ? (
             <>
               <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Comfortable</span>
+              <span className="hidden sm:inline">{t.spaceGrid.comfortable}</span>
             </>
           ) : (
             <>
               <Grid3X3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Compact</span>
+              <span className="hidden sm:inline">{t.spaceGrid.compact}</span>
             </>
           )}
         </button>
@@ -107,7 +109,7 @@ export function SpaceGrid({
                     <Plus className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                   </div>
                   <span className="text-[10px] font-medium leading-tight text-center text-muted-foreground">
-                    New
+                    {t.spaceGrid.addNew}
                   </span>
                 </div>
               ) : (
@@ -115,9 +117,9 @@ export function SpaceGrid({
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100/80 dark:bg-violet-900/40 border border-violet-200 dark:border-violet-800 group-hover:bg-violet-200/80 dark:group-hover:bg-violet-800/50 transition-colors">
                     <Plus className="h-6 w-6 text-violet-600 dark:text-violet-400" />
                   </div>
-                  <span className="font-medium">Create New Space</span>
+                  <span className="font-medium">{t.spaceGrid.createNew}</span>
                   <span className="text-sm text-muted-foreground text-center">
-                    Add a new web app to your collection
+                    {t.spaceGrid.createNewDesc}
                   </span>
                 </CardContent>
               )}
@@ -126,7 +128,7 @@ export function SpaceGrid({
         )}
         {spaces.length === 0 && !showCreateCard && (
           <p className="col-span-full py-12 text-center text-muted-foreground text-sm">
-            No spaces match this filter.
+            {t.spaceGrid.noFilter}
           </p>
         )}
       </div>

@@ -5,6 +5,7 @@ import { Send, Bot, FilePlus, FileText, CheckCircle, AlertCircle, AlertTriangle 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { AgentDocument } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const SENSITIVE_PATTERNS: RegExp[] = [
   /\b(?:password|passwd|pwd)\s*[:=]/i,
@@ -45,20 +46,6 @@ interface Message {
   actionStatus?: ActionStatus;
 }
 
-const VISITOR_SUGGESTED = [
-  "Who are you?",
-  "What are you building?",
-  "What technologies do you use?",
-  "Tell me about your projects",
-  "What are your interests?",
-];
-
-const OWNER_SUGGESTED = [
-  "What should I add first?",
-  "Help me write my me.md",
-  "What am I missing?",
-  "Review what I have so far",
-];
 
 interface AgentChatProps {
   username: string;
@@ -130,12 +117,18 @@ function ProposalCard({
   status,
   onApprove,
   onDismiss,
+  labels,
 }: {
   messageId: string;
   action: ActionProposal;
   status: ActionStatus;
   onApprove: (messageId: string, action: ActionProposal) => void;
   onDismiss: (messageId: string) => void;
+  labels: {
+    updateDoc: string; createDoc: string; updatingDoc: string; creatingDoc: string;
+    docUpdated: string; docCreated: string; failedUpdate: string; failedCreate: string;
+    retry: string; dismissed: string;
+  };
 }) {
   const preview = action.content.slice(0, 280);
   const truncated = action.content.length > 280;
@@ -146,7 +139,7 @@ function ProposalCard({
       <div className="flex items-center gap-1.5">
         <FilePlus className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 flex-shrink-0" />
         <span className="text-xs font-semibold text-violet-700 dark:text-violet-300">
-          {action.document_id ? "Update document" : "Create document"}
+          {action.document_id ? labels.updateDoc : labels.createDoc}
         </span>
       </div>
 
@@ -171,13 +164,13 @@ function ProposalCard({
             onClick={() => onApprove(messageId, action)}
             className="cursor-pointer flex-1 text-xs py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors font-medium"
           >
-            {action.document_id ? "Update" : "Create"}
+            {action.document_id ? labels.updateDoc : labels.createDoc}
           </button>
           <button
             onClick={() => onDismiss(messageId)}
             className="cursor-pointer flex-1 text-xs py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors"
           >
-            Dismiss
+            {labels.dismissed}
           </button>
         </div>
       )}
@@ -185,14 +178,14 @@ function ProposalCard({
       {status === "creating" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground pt-0.5">
           <div className="w-3 h-3 rounded-full border-2 border-violet-400 border-t-transparent animate-spin flex-shrink-0" />
-          {action.document_id ? "Updating document…" : "Creating document…"}
+          {action.document_id ? labels.updatingDoc : labels.creatingDoc}
         </div>
       )}
 
       {status === "done" && (
         <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 pt-0.5 font-medium">
           <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-          {action.document_id ? "Document updated" : "Document created"}
+          {action.document_id ? labels.docUpdated : labels.docCreated}
         </div>
       )}
 
@@ -200,19 +193,19 @@ function ProposalCard({
         <div className="space-y-1.5 pt-0.5">
           <div className="flex items-center gap-1.5 text-xs text-red-500">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-            {action.document_id ? "Failed to update. Try again?" : "Failed to create. Try again?"}
+            {action.document_id ? labels.failedUpdate : labels.failedCreate}
           </div>
           <button
             onClick={() => onApprove(messageId, action)}
             className="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:underline"
           >
-            Retry
+            {labels.retry}
           </button>
         </div>
       )}
 
       {status === "dismissed" && (
-        <p className="text-xs text-muted-foreground/50 pt-0.5">Dismissed</p>
+        <p className="text-xs text-muted-foreground/50 pt-0.5">{labels.dismissed}</p>
       )}
     </div>
   );
@@ -221,6 +214,20 @@ function ProposalCard({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AgentChat({ username, displayName, preview, onDocumentCreated, docs }: AgentChatProps) {
+  const { t } = useLanguage();
+  const VISITOR_SUGGESTED = [
+    t.agent.suggestWhoAreYou,
+    t.agent.suggestWhatBuilding,
+    t.agent.suggestTechnologies,
+    t.agent.suggestProjects,
+    t.agent.suggestInterests,
+  ];
+  const OWNER_SUGGESTED = [
+    t.agent.suggestAddFirst,
+    t.agent.suggestWriteMeMd,
+    t.agent.suggestWhatMissing,
+    t.agent.suggestReview,
+  ];
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -338,16 +345,15 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: "Something went wrong. Please try again." }
+            ? { ...m, content: t.agent.error }
             : m
         )
       );
     } finally {
-      // If the stream ended without content or an action proposal, show a fallback.
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId && m.content === "" && !m.action
-            ? { ...m, content: "Something went wrong. Please try again." }
+            ? { ...m, content: t.agent.error }
             : m
         )
       );
@@ -431,13 +437,13 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
             <div className="text-center">
               {isOwnerMode ? (
                 <>
-                  <p className="text-sm font-semibold text-foreground">Your knowledge advisor</p>
-                  <p className="text-xs text-muted-foreground mt-1">Tell me about yourself and I'll help you build your knowledge base</p>
+                  <p className="text-sm font-semibold text-foreground">{t.agent.advisorTitle}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t.agent.advisorDesc}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-semibold text-foreground">Ask {displayName} anything</p>
-                  <p className="text-xs text-muted-foreground mt-1">Powered by their public knowledge</p>
+                  <p className="text-sm font-semibold text-foreground">{t.agent.askDisplayName.replace("{name}", displayName)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t.agent.poweredBy}</p>
                 </>
               )}
             </div>
@@ -490,6 +496,18 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
                             status={msg.actionStatus}
                             onApprove={approveAction}
                             onDismiss={dismissAction}
+                            labels={{
+                              updateDoc: t.agent.updateDoc,
+                              createDoc: t.agent.createDoc,
+                              updatingDoc: t.agent.updatingDoc,
+                              creatingDoc: t.agent.creatingDoc,
+                              docUpdated: t.agent.docUpdated,
+                              docCreated: t.agent.docCreated,
+                              failedUpdate: t.agent.failedUpdate,
+                              failedCreate: t.agent.failedCreate,
+                              retry: t.agent.retry,
+                              dismissed: t.agent.dismissed,
+                            }}
                           />
                         )}
                       </>
@@ -509,7 +527,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
         {showSecurityWarning && (
           <div className="flex items-start gap-2 mb-2 px-3 py-2 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/30 text-[11px] text-amber-700 dark:text-amber-400">
             <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-            <span>Your message may contain a password, token, or secret. Anything saved to a public document can be read by anyone visiting your agent.</span>
+            <span>{t.agent.sensitiveWarning}</span>
           </div>
         )}
         <div className="flex items-end gap-2 rounded-2xl border border-border/70 bg-background shadow-sm px-3 py-2 focus-within:ring-2 focus-within:ring-violet-500/25 focus-within:border-violet-300 dark:focus-within:border-violet-700 transition-all">
@@ -519,7 +537,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
             value={input}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={isOwnerMode ? "Tell me about yourself…" : `Ask ${displayName} anything…`}
+            placeholder={isOwnerMode ? t.agent.ownerPlaceholder : t.agent.visitorPlaceholder.replace("{name}", displayName)}
             disabled={isStreaming}
             className="flex-1 resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 overflow-hidden"
             style={{ minHeight: "36px", maxHeight: "160px" }}

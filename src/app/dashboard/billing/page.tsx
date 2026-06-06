@@ -6,10 +6,12 @@ import { createClient } from "@/lib/supabase/server";
 import { CheckoutPanel } from "./CheckoutPanel";
 import { CreditCard, Zap, Check, ArrowRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n/translations";
 
 const FREE_SPACES_LIMIT = 5;
 
-const PRO_FEATURES = [
+const PRO_FEATURE_KEYS = [
   "Unlimited Spaces",
   "Private spaces",
   "Pro badge on profile",
@@ -33,6 +35,8 @@ export default async function BillingPage({
   if (!user) {
     redirect("/login?redirect=/dashboard/billing");
   }
+
+  const t = await getServerTranslations();
 
   const [{ data: profile }, { count: spacesCount }] = await Promise.all([
     supabase
@@ -67,8 +71,8 @@ export default async function BillingPage({
             <CreditCard className="h-5 w-5 text-violet-600 dark:text-violet-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Billing & Plans</h1>
-            <p className="text-muted-foreground mt-0.5">Manage your subscription</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t.billing.title}</h1>
+            <p className="text-muted-foreground mt-0.5">{t.billing.subtitle}</p>
           </div>
         </div>
 
@@ -77,13 +81,13 @@ export default async function BillingPage({
           <div className="mb-6 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 flex items-center gap-3">
             <Check className="h-5 w-5 text-green-600 shrink-0" />
             <p className="text-sm font-medium text-green-700 dark:text-green-400">
-              You&apos;re now on Pro! Welcome to the club.
+              {t.billing.successMsg}
             </p>
           </div>
         )}
         {showCanceled && (
           <div className="mb-6 rounded-xl bg-muted border border-border/60 px-4 py-3">
-            <p className="text-sm text-muted-foreground">Checkout was canceled. Your plan has not changed.</p>
+            <p className="text-sm text-muted-foreground">{t.billing.canceledMsg}</p>
           </div>
         )}
 
@@ -101,20 +105,20 @@ export default async function BillingPage({
                     }`}
                   >
                     {isPro && <Zap className="h-3 w-3" />}
-                    {isPro ? "Pro Plan" : "Free Plan"}
+                    {isPro ? t.billing.proPlan : t.billing.freePlan}
                   </span>
                 </div>
                 <h2 className="text-lg font-semibold">
-                  {isPro ? "You're on Pro" : "You're on the Free plan"}
+                  {isPro ? t.billing.onPro : t.billing.onFree}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   {isPro
-                    ? "Unlimited Spaces and all Pro features are active."
-                    : `${spaceCount} of ${FREE_SPACES_LIMIT} Spaces used. Upgrade to remove limits.`}
+                    ? t.billing.proDesc
+                    : t.billing.freeDesc.replace("{count}", String(spaceCount)).replace("{limit}", String(FREE_SPACES_LIMIT))}
                 </p>
               </div>
               {isPro && (
-                <ManageBillingButton />
+                <ManageBillingButton label={t.billing.manageBilling} />
               )}
             </div>
 
@@ -122,7 +126,7 @@ export default async function BillingPage({
             {!isPro && (
               <div className="mt-5">
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                  <span>Spaces used</span>
+                  <span>{t.billing.spacesUsed}</span>
                   <span className={spaceCount >= FREE_SPACES_LIMIT ? "text-orange-500 font-medium" : ""}>
                     {spaceCount} / {FREE_SPACES_LIMIT}
                   </span>
@@ -156,14 +160,14 @@ export default async function BillingPage({
                   <Zap className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                 </div>
                 <h2 className="font-semibold text-violet-900 dark:text-violet-100">
-                  Upgrade to Pro
+                  {t.billing.upgradeTo}
                 </h2>
               </div>
               <p className="text-sm text-violet-700/80 dark:text-violet-300/80 mb-4">
-                Unlock unlimited Spaces, private publishing, and more.
+                {t.billing.upgradeDesc}
               </p>
               <ul className="space-y-2 mb-5">
-                {PRO_FEATURES.map((f) => (
+                {PRO_FEATURE_KEYS.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-violet-800 dark:text-violet-200">
                     <Check className="h-3.5 w-3.5 text-violet-500 shrink-0" />
                     {f}
@@ -173,14 +177,14 @@ export default async function BillingPage({
               <div className="flex flex-wrap gap-3">
                 <Link href="/dashboard/billing?checkout=pro&billing=monthly">
                   <Button>
-                    Upgrade — $9/mo
+                    {t.billing.upgradeMonthly}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/dashboard/billing?checkout=pro&billing=annual">
                   <Button variant="outline" className="border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300">
-                    Annual — $79/yr
-                    <span className="ml-1.5 text-xs text-green-600 font-semibold">Save 27%</span>
+                    {t.billing.upgradeAnnual}
+                    <span className="ml-1.5 text-xs text-green-600 font-semibold">{t.billing.save27}</span>
                   </Button>
                 </Link>
               </div>
@@ -192,7 +196,7 @@ export default async function BillingPage({
             <Link href="/dashboard">
               <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
                 <LayoutGrid className="h-4 w-4" />
-                Back to My Spaces
+                {t.billing.backToSpaces}
               </Button>
             </Link>
           </div>
@@ -202,12 +206,12 @@ export default async function BillingPage({
   );
 }
 
-function ManageBillingButton() {
+function ManageBillingButton({ label }: { label: string }) {
   return (
     <form action="/api/stripe/portal" method="POST">
       <Button type="submit" variant="outline" size="sm" className="shrink-0 gap-2 border-border/60">
         <CreditCard className="h-4 w-4" />
-        Manage Billing
+        {label}
       </Button>
     </form>
   );

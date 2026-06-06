@@ -8,6 +8,9 @@ import type { CommentWithLike } from "@/lib/types";
 
 interface CommentsControllerProps {
   spaceId: string;
+  spaceOwnerId: string;
+  spaceOwnerUsername: string;
+  spaceTitle: string;
   commentsCount: number;
   userId: string | null;
   currentProfile: {
@@ -21,6 +24,9 @@ interface CommentsControllerProps {
 
 export function CommentsController({
   spaceId,
+  spaceOwnerId,
+  spaceOwnerUsername,
+  spaceTitle,
   commentsCount,
   userId,
   currentProfile,
@@ -28,6 +34,7 @@ export function CommentsController({
   initialHasMore,
 }: CommentsControllerProps) {
   const [open, setOpen] = useState(false);
+  const [count, setCount] = useState(commentsCount);
 
   return (
     <>
@@ -42,17 +49,21 @@ export function CommentsController({
         aria-expanded={open}
       >
         <MessageCircle className={cn("size-5", open && "fill-current opacity-20")} />
-        {commentsCount > 0 && <span>{commentsCount}</span>}
+        {count > 0 && <span>{count}</span>}
       </button>
 
       <CommentsPanel
         open={open}
         onClose={() => setOpen(false)}
         spaceId={spaceId}
+        spaceOwnerId={spaceOwnerId}
+        spaceOwnerUsername={spaceOwnerUsername}
+        spaceTitle={spaceTitle}
         userId={userId}
         currentProfile={currentProfile}
         initialComments={initialComments}
         initialHasMore={initialHasMore}
+        onCountChange={(delta) => setCount((c) => Math.max(0, c + delta))}
       />
     </>
   );

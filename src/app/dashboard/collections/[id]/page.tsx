@@ -7,6 +7,7 @@ import { SpaceGrid } from "@/components/spaces/SpaceGrid";
 import { ArrowLeft, FolderOpen } from "lucide-react";
 import { CollectionActions } from "./CollectionActions";
 import type { Space } from "@/lib/types";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export default async function CollectionDetailPage({
   params,
@@ -23,6 +24,8 @@ export default async function CollectionDetailPage({
   if (!user) {
     redirect("/login");
   }
+
+  const t = await getServerTranslations();
 
   const { data: collection } = await supabase
     .from("collections")
@@ -65,7 +68,7 @@ export default async function CollectionDetailPage({
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          All Collections
+          {t.collectionsDetail.allCollections}
         </Link>
 
         {/* Header */}
@@ -81,8 +84,8 @@ export default async function CollectionDetailPage({
               <p className="mt-2 text-muted-foreground text-lg">{collection.description}</p>
             )}
             <p className="mt-1 text-sm text-muted-foreground">
-              {spaces.length} {spaces.length === 1 ? "space" : "spaces"} ·{" "}
-              {collection.is_public ? "Public" : "Private"}
+              {spaces.length} {spaces.length === 1 ? t.collectionsDetail.spaceSingular : t.collectionsDetail.spacePlural} ·{" "}
+              {collection.is_public ? t.collectionsDetail.public : t.collectionsDetail.private}
             </p>
           </div>
           <CollectionActions collection={collection} />

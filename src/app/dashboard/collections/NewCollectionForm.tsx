@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function NewCollectionForm() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -28,12 +30,12 @@ export function NewCollectionForm() {
     setLoading(true);
 
     if (name.length > LIMITS.name) {
-      setError(`Name must be ${LIMITS.name} characters or less`);
+      setError(t.collections.nameTooLong.replace("{n}", String(LIMITS.name)));
       setLoading(false);
       return;
     }
     if (description.length > LIMITS.description) {
-      setError(`Description must be ${LIMITS.description} characters or less`);
+      setError(t.collections.descTooLong.replace("{n}", String(LIMITS.description)));
       setLoading(false);
       return;
     }
@@ -43,7 +45,7 @@ export function NewCollectionForm() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setError("You must be logged in");
+      setError(t.collections.mustBeLoggedIn);
       setLoading(false);
       return;
     }
@@ -72,19 +74,19 @@ export function NewCollectionForm() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Plus className="h-4 w-4 text-violet-600" />
-          New Collection
+          {t.collections.newCollection}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t.collections.nameLabel} *</Label>
               <span className="text-xs text-muted-foreground">{name.length}/{LIMITS.name}</span>
             </div>
             <Input
               id="name"
-              placeholder="e.g. Design Tools"
+              placeholder={t.collections.namePlaceholder}
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, LIMITS.name))}
               maxLength={LIMITS.name}
@@ -95,14 +97,14 @@ export function NewCollectionForm() {
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t.collections.descLabel}</Label>
               <span className={`text-xs ${description.length >= LIMITS.description ? "text-destructive" : "text-muted-foreground"}`}>
                 {description.length}/{LIMITS.description}
               </span>
             </div>
             <Textarea
               id="description"
-              placeholder="What's this collection about?"
+              placeholder={t.collections.descPlaceholder}
               value={description}
               onChange={(e) => {
                 const val = e.target.value;
@@ -124,7 +126,7 @@ export function NewCollectionForm() {
               className="h-4 w-4 rounded border-input accent-violet-600"
             />
             <Label htmlFor="isPublic" className="font-normal cursor-pointer text-sm">
-              Make this collection public
+              {t.collections.makePublic}
             </Label>
           </div>
 
@@ -137,7 +139,7 @@ export function NewCollectionForm() {
             disabled={loading || !name.trim()}
             className="w-full"
           >
-            {loading ? "Creating..." : "Create Collection"}
+            {loading ? t.collections.creating : t.collections.create}
           </Button>
         </form>
       </CardContent>

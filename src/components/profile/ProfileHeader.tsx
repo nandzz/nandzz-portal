@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Camera,
@@ -13,6 +15,7 @@ import { FollowButton } from "./FollowButton";
 import { FollowersDialog } from "./FollowersDialog";
 import { AgentEmbed } from "@/components/agent/AgentEmbed";
 import { FEATURES } from "@/lib/flags";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -39,6 +42,7 @@ function buildUrl(key: string, value: string): string {
 }
 
 export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false }: ProfileHeaderProps) {
+  const { t } = useLanguage();
   const socialLinks = profile.social_links || {};
 
   const links = [
@@ -123,13 +127,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
         <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
           <div className="flex items-center gap-1.5 text-sm">
             <span className="font-semibold">{profile.followers_count ?? 0}</span>
-            <span className="text-muted-foreground">followers</span>
+            <span className="text-muted-foreground">{t.profile.followers}</span>
           </div>
         </FollowersDialog>
         <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
           <div className="flex items-center gap-1.5 text-sm">
             <span className="font-semibold">{profile.following_count ?? 0}</span>
-            <span className="text-muted-foreground">following</span>
+            <span className="text-muted-foreground">{t.profile.following}</span>
           </div>
         </FollowersDialog>
         {!isOwner && currentUserId && (

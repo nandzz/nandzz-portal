@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { cookies, headers } from "next/headers";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
+import { type Locale, SUPPORTED_LOCALES, detectLocale } from "@/lib/i18n/translations";
 import "./globals.css";
 
 const inter = Inter({
@@ -77,14 +80,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const rawLang = cookieStore.get("nandzz-lang")?.value;
+
+  let initialLocale: Locale;
+  if (rawLang && SUPPORTED_LOCALES.includes(rawLang as Locale)) {
+    initialLocale = rawLang as Locale;
+  } else {
+    // First visit: no cookie yet — detect from the Accept-Language request header
+    const headersList = await headers();
+    const acceptLang = headersList.get("accept-language") ?? "en";
+    initialLocale = detectLocale(acceptLang);
+  }
+
   return (
     <html
-      lang="en"
+      lang={initialLocale}
       className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       suppressHydrationWarning
     >
@@ -95,10 +111,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          <main className="flex-1 pb-16 md:pb-0">{children}</main>
-          <ConditionalFooter />
-          <MobileTabBar />
+          <LanguageProvider initialLocale={initialLocale}>
+            <Navbar />
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
+            <ConditionalFooter />
+            <MobileTabBar />
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

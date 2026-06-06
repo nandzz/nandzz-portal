@@ -1,10 +1,26 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { detectLocale, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/translations";
+
+const LANG_COOKIE = "nandzz-lang";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  // Set language cookie from Accept-Language header if not already set
+  const existingLang = request.cookies.get(LANG_COOKIE)?.value;
+  if (!existingLang || !SUPPORTED_LOCALES.includes(existingLang as Locale)) {
+    const acceptLang = request.headers.get("accept-language") || "en";
+    const detectedLang = detectLocale(acceptLang);
+    supabaseResponse.cookies.set(LANG_COOKIE, detectedLang, {
+      path: "/",
+      maxAge: COOKIE_MAX_AGE,
+      sameSite: "lax",
+    });
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Zap, HelpCircle, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const FREE_SPACES_LIMIT = 5;
 
@@ -51,11 +52,12 @@ const FAQS = [
 
 export function PricingClient() {
   const [annual, setAnnual] = useState(false);
+  const { t } = useLanguage();
 
   const proMonthly = 9;
   const proAnnual = 79;
   const displayPrice = annual ? proAnnual : proMonthly;
-  const billingLabel = annual ? "/year" : "/month";
+  const billingLabel = annual ? t.pricing.perYear : t.pricing.perMonth;
   const monthlyEquiv = (proAnnual / 12).toFixed(2);
 
   return (
@@ -69,17 +71,16 @@ export function PricingClient() {
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/60 bg-violet-50/80 px-4 py-1.5 dark:border-violet-800/60 dark:bg-violet-950/40">
           <Zap className="h-3.5 w-3.5 text-violet-500" />
           <span className="text-xs font-medium text-violet-700 dark:text-violet-300">
-            Simple, transparent pricing
+            {t.pricing.badge}
           </span>
         </div>
 
         <h1 className="text-[clamp(2.5rem,6vw,4rem)] font-bold tracking-tight leading-[1.1]">
-          Start free.{" "}
-          <span className="text-violet-600">Scale when ready.</span>
+          {t.pricing.heroLine1}{" "}
+          <span className="text-violet-600">{t.pricing.heroLine2}</span>
         </h1>
         <p className="mt-5 text-lg text-muted-foreground max-w-md mx-auto">
-          Everything you need to share your work. No credit card required to
-          get started.
+          {t.pricing.heroDesc}
         </p>
 
         {/* Billing toggle */}
@@ -92,7 +93,7 @@ export function PricingClient() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Monthly
+            {t.pricing.monthly}
           </button>
           <button
             onClick={() => setAnnual(true)}
@@ -102,9 +103,9 @@ export function PricingClient() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Annual
+            {t.pricing.annual}
             <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:bg-green-900/50 dark:text-green-400">
-              Save 27%
+              {t.pricing.save27}
             </span>
           </button>
         </div>
@@ -118,14 +119,14 @@ export function PricingClient() {
           <div className="rounded-2xl border border-border/60 bg-card p-8 flex flex-col">
             <div className="mb-6">
               <div className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground mb-3">
-                Free
+                {t.pricing.freeTier}
               </div>
               <p className="text-sm text-muted-foreground">
-                Perfect for getting started
+                {t.pricing.freeTagline}
               </p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-4xl font-bold tracking-tight">$0</span>
-                <span className="text-muted-foreground text-sm">/month</span>
+                <span className="text-muted-foreground text-sm">{t.pricing.perMonth}</span>
               </div>
             </div>
 
@@ -142,7 +143,7 @@ export function PricingClient() {
 
             <Link href="/login?tab=signup">
               <Button variant="outline" className="w-full border-border/60">
-                Get started free
+                {t.pricing.getStartedFree}
               </Button>
             </Link>
           </div>
@@ -152,15 +153,15 @@ export function PricingClient() {
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-1 text-xs font-semibold text-white shadow-sm shadow-violet-600/40">
                 <Sparkles className="h-3 w-3" />
-                Most Popular
+                {t.pricing.mostPopular}
               </span>
             </div>
 
             <div className="mb-6">
               <div className="inline-flex items-center gap-1.5 rounded-md bg-violet-100 dark:bg-violet-900/40 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:text-violet-300 mb-3">
-                Pro
+                {t.pricing.proTier}
               </div>
-              <p className="text-sm text-muted-foreground">For serious creators</p>
+              <p className="text-sm text-muted-foreground">{t.pricing.proTagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-4xl font-bold tracking-tight">
                   ${displayPrice}
@@ -169,7 +170,7 @@ export function PricingClient() {
               </div>
               {annual && (
                 <p className="mt-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
-                  Just ${monthlyEquiv}/mo — 2 months free
+                  {t.pricing.monthlyEquiv.replace("{price}", monthlyEquiv)}
                 </p>
               )}
             </div>
@@ -203,7 +204,7 @@ export function PricingClient() {
               href={`/dashboard/billing?checkout=pro&billing=${annual ? "annual" : "monthly"}`}
             >
               <Button className="w-full">
-                Upgrade to Pro
+                {t.pricing.upgradePro}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -212,9 +213,7 @@ export function PricingClient() {
 
         {/* Trust note */}
         <p className="text-center text-xs text-muted-foreground mt-8">
-          Payments processed securely by{" "}
-          <span className="font-medium text-foreground">Stripe</span>. Cancel
-          anytime.
+          {t.pricing.trustNote}
         </p>
       </section>
 
@@ -225,7 +224,7 @@ export function PricingClient() {
             <HelpCircle className="h-5 w-5 text-violet-600 dark:text-violet-400" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight">
-            Frequently asked questions
+            {t.pricing.faqTitle}
           </h2>
         </div>
         <div className="divide-y divide-border/50">

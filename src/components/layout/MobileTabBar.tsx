@@ -7,75 +7,36 @@ import { Home, Compass, Plus, LayoutGrid, User, LogIn, Rss } from "lucide-react"
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-type Tab = {
+type TabDef = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ElementType;
   isActive: (pathname: string) => boolean;
   highlight?: boolean;
 };
 
-const UNAUTH_TABS: Tab[] = [
-  {
-    href: "/",
-    label: "Home",
-    icon: Home,
-    isActive: (p) => p === "/",
-  },
-  {
-    href: "/explore",
-    label: "Explore",
-    icon: Compass,
-    isActive: (p) => p.startsWith("/explore"),
-  },
-  {
-    href: "/login",
-    label: "Sign in",
-    icon: LogIn,
-    isActive: (p) => p.startsWith("/login"),
-  },
+const UNAUTH_TAB_DEFS: TabDef[] = [
+  { href: "/", labelKey: "home", icon: Home, isActive: (p) => p === "/" },
+  { href: "/explore", labelKey: "explore", icon: Compass, isActive: (p) => p.startsWith("/explore") },
+  { href: "/login", labelKey: "signIn", icon: LogIn, isActive: (p) => p.startsWith("/login") },
 ];
 
-function getAuthTabs(username: string | null): Tab[] {
+function getAuthTabDefs(username: string | null): TabDef[] {
   return [
-    {
-      href: "/dashboard/feed",
-      label: "Feed",
-      icon: Rss,
-      isActive: (p) => p.startsWith("/dashboard/feed"),
-    },
-    {
-      href: "/explore",
-      label: "Explore",
-      icon: Compass,
-      isActive: (p) => p.startsWith("/explore"),
-    },
-    {
-      href: "/dashboard/create-space",
-      label: "Create",
-      icon: Plus,
-      isActive: (p) => p.startsWith("/dashboard/create-space"),
-      highlight: true,
-    },
-    {
-      href: "/dashboard",
-      label: "Spaces",
-      icon: LayoutGrid,
-      isActive: (p) => p === "/dashboard" || (p.startsWith("/dashboard") && !p.startsWith("/dashboard/create-space")),
-    },
-    {
-      href: username ? `/${username}` : "/dashboard/settings",
-      label: "Profile",
-      icon: User,
-      isActive: (p) => username ? p === `/${username}` : false,
-    },
+    { href: "/dashboard/feed", labelKey: "feed", icon: Rss, isActive: (p) => p.startsWith("/dashboard/feed") },
+    { href: "/explore", labelKey: "explore", icon: Compass, isActive: (p) => p.startsWith("/explore") },
+    { href: "/dashboard/create-space", labelKey: "create", icon: Plus, isActive: (p) => p.startsWith("/dashboard/create-space"), highlight: true },
+    { href: "/dashboard", labelKey: "spaces", icon: LayoutGrid, isActive: (p) => p === "/dashboard" || (p.startsWith("/dashboard") && !p.startsWith("/dashboard/create-space")) },
+    { href: username ? `/${username}` : "/dashboard/settings", labelKey: "profile", icon: User, isActive: (p) => username ? p === `/${username}` : false },
   ];
 }
 
 export function MobileTabBar() {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
+  const { t } = useLanguage();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
@@ -109,7 +70,7 @@ export function MobileTabBar() {
     return () => subscription.unsubscribe();
   }, [supabase, fetchProfile]);
 
-  const tabs = user ? getAuthTabs(profile?.username ?? null) : UNAUTH_TABS;
+  const tabDefs = user ? getAuthTabDefs(profile?.username ?? null) : UNAUTH_TAB_DEFS;
 
   return (
     <nav
@@ -117,9 +78,10 @@ export function MobileTabBar() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex h-16 items-center justify-around px-1">
-        {tabs.map((tab) => {
+        {tabDefs.map((tab) => {
           const active = tab.isActive(pathname);
           const Icon = tab.icon;
+          const label = t.mobileTab[tab.labelKey as keyof typeof t.mobileTab];
 
           if (tab.highlight) {
             return (
@@ -154,7 +116,7 @@ export function MobileTabBar() {
                   active ? "text-violet-600" : "text-muted-foreground"
                 )}
               >
-                {tab.label}
+                {label}
               </span>
             </Link>
           );

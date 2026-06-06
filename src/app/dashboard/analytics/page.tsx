@@ -8,6 +8,7 @@ import { ViewsChart } from "@/components/analytics/ViewsChart";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { BarChart2, Eye, Heart, TrendingUp, ExternalLink } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export default async function AnalyticsDashboardPage() {
   const supabase = await createClient();
@@ -16,7 +17,10 @@ export default async function AnalyticsDashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const analytics = await getDashboardAnalytics(user.id);
+  const [analytics, t] = await Promise.all([
+    getDashboardAnalytics(user.id),
+    getServerTranslations(),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
@@ -26,7 +30,7 @@ export default async function AnalyticsDashboardPage() {
         <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-2">
           <BarChart2 className="h-5 w-5 text-violet-500" />
-          <h1 className="text-xl font-bold">Analytics</h1>
+          <h1 className="text-xl font-bold">{t.analytics.title}</h1>
         </div>
       </div>
 
@@ -34,31 +38,15 @@ export default async function AnalyticsDashboardPage() {
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard
-              icon={<Eye className="h-4 w-4" />}
-              label="Total views"
-              value={analytics.totalViews}
-            />
-            <StatCard
-              icon={<TrendingUp className="h-4 w-4" />}
-              label="Views (30d)"
-              value={analytics.views30d}
-            />
-            <StatCard
-              icon={<TrendingUp className="h-4 w-4" />}
-              label="Views (7d)"
-              value={analytics.views7d}
-            />
-            <StatCard
-              icon={<Heart className="h-4 w-4" />}
-              label="Total likes"
-              value={analytics.totalLikes}
-            />
+            <StatCard icon={<Eye className="h-4 w-4" />} label={t.analytics.totalViews} value={analytics.totalViews} />
+            <StatCard icon={<TrendingUp className="h-4 w-4" />} label={t.analytics.views30d} value={analytics.views30d} />
+            <StatCard icon={<TrendingUp className="h-4 w-4" />} label={t.analytics.views7d} value={analytics.views7d} />
+            <StatCard icon={<Heart className="h-4 w-4" />} label={t.analytics.totalLikes} value={analytics.totalLikes} />
           </div>
 
           {/* Daily chart */}
           <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground">Views — last 30 days</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">{t.analytics.chart30d}</h2>
             <ViewsChart data={analytics.dailyViews} />
           </div>
 
@@ -66,7 +54,7 @@ export default async function AnalyticsDashboardPage() {
           {analytics.spaces.length > 0 && (
             <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
               <div className="px-5 py-3 border-b border-border/60">
-                <h2 className="text-sm font-medium">Spaces</h2>
+                <h2 className="text-sm font-medium">{t.analytics.spacesTable}</h2>
               </div>
               <div className="divide-y divide-border/40">
                 {analytics.spaces

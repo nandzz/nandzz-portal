@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SpaceGrid } from "@/components/spaces/SpaceGrid";
 import { Button } from "@/components/ui/button";
 import { Hash } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export async function generateMetadata({
   params,
@@ -70,7 +71,7 @@ export default async function HashtagPage({
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const supabase = await createClient();
+  const [supabase, t] = await Promise.all([createClient(), getServerTranslations()]);
 
   const { data: spaces, count } = await supabase
     .from("spaces")
@@ -134,7 +135,9 @@ export default async function HashtagPage({
             <h1 className="text-3xl font-bold tracking-tight">#{tag}</h1>
           </div>
           <p className="mt-2 text-muted-foreground text-lg">
-            {count ?? 0} space{count !== 1 ? "s" : ""} tagged with this hashtag
+            {(count ?? 0) === 1
+              ? t.hashtag.spacesSingular.replace("{count}", String(count ?? 0))
+              : t.hashtag.spacesPlural.replace("{count}", String(count ?? 0))}
           </p>
         </div>
 
@@ -152,17 +155,17 @@ export default async function HashtagPage({
                 {currentPage > 1 && (
                   <Link href={`/hashtag/${tag}?page=${currentPage - 1}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
-                      Previous
+                      {t.hashtag.previous}
                     </Button>
                   </Link>
                 )}
                 <span className="px-3 text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  {t.hashtag.pageOf.replace("{current}", String(currentPage)).replace("{total}", String(totalPages))}
                 </span>
                 {currentPage < totalPages && (
                   <Link href={`/hashtag/${tag}?page=${currentPage + 1}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
-                      Next
+                      {t.hashtag.next}
                     </Button>
                   </Link>
                 )}
@@ -174,12 +177,12 @@ export default async function HashtagPage({
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-violet-100/80 dark:bg-violet-900/40 border border-violet-200 dark:border-violet-800">
               <Hash className="h-10 w-10 text-violet-400 dark:text-violet-500" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">No spaces yet</h2>
+            <h2 className="text-xl font-semibold mb-2">{t.hashtag.noTitle}</h2>
             <p className="text-muted-foreground max-w-sm mb-6">
-              No public spaces have been tagged with <strong>#{tag}</strong> yet.
+              {t.hashtag.noDesc.replace("{tag}", tag)}
             </p>
             <Link href="/explore">
-              <Button variant="outline">Browse all spaces</Button>
+              <Button variant="outline">{t.hashtag.browse}</Button>
             </Link>
           </div>
         )}

@@ -232,7 +232,7 @@ export default async function SpaceViewPage({
       <ViewTracker spaceId={space.id} ownerId={space.user_id} />
       {/* Top bar */}
       <div className="shrink-0 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 pl-4 pr-6 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
           <BackButton />
           <div className="h-4 w-px bg-border shrink-0" />
@@ -247,6 +247,9 @@ export default async function SpaceViewPage({
           />
           <CommentsController
             spaceId={space.id}
+            spaceOwnerId={space.user_id}
+            spaceOwnerUsername={profile?.username ?? ""}
+            spaceTitle={space.title}
             commentsCount={space.comments_count ?? 0}
             userId={user?.id ?? null}
             currentProfile={currentProfile}

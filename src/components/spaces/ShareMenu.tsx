@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Share2, Link2, QrCode, Check, Download } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -22,6 +23,7 @@ interface ShareMenuProps {
 export function ShareMenu({ url, title, size = "sm" }: ShareMenuProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const { t } = useLanguage();
 
   const fullUrl =
     typeof window !== "undefined"
@@ -58,10 +60,10 @@ export function ShareMenu({ url, title, size = "sm" }: ShareMenuProps) {
       <DropdownMenu>
         <DropdownMenuTrigger
           className={buttonVariants({ variant: "ghost", size: "sm" })}
-          aria-label="Share"
+          aria-label={t.share.share}
         >
           <Share2 className={iconClass} />
-          {size === "md" && <span className="hidden sm:inline">Share</span>}
+          {size === "md" && <span className="hidden sm:inline">{t.share.share}</span>}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={copyLink}>
@@ -70,17 +72,17 @@ export function ShareMenu({ url, title, size = "sm" }: ShareMenuProps) {
             ) : (
               <Link2 className="h-4 w-4" />
             )}
-            {copied ? "Copied!" : "Copy Link"}
+            {copied ? t.share.copied : t.share.copyLink}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setQrOpen(true)}>
             <QrCode className="h-4 w-4" />
-            QR Code
+            {t.share.qrCode}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={qrOpen} onClose={() => setQrOpen(false)} title="QR Code">
+      <Dialog open={qrOpen} onClose={() => setQrOpen(false)} title={t.share.qrTitle}>
         <div className="flex flex-col items-center gap-4">
           <div className="bg-white p-4 rounded-lg">
             <QRCode id="space-qr-svg" value={fullUrl} size={200} />
@@ -93,7 +95,7 @@ export function ShareMenu({ url, title, size = "sm" }: ShareMenuProps) {
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             <Download className="h-3.5 w-3.5" />
-            Download SVG
+            {t.share.downloadSvg}
           </button>
         </div>
       </Dialog>

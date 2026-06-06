@@ -14,12 +14,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Mail } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const { t } = useLanguage();
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -40,7 +42,7 @@ export function ForgotPasswordForm() {
         setSuccess(true);
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(t.common.error);
     } finally {
       setLoading(false);
     }
@@ -52,18 +54,15 @@ export function ForgotPasswordForm() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
           <Mail className="h-6 w-6 text-violet-600 dark:text-violet-400" />
         </div>
-        <CardTitle className="text-2xl font-bold">Forgot your password?</CardTitle>
-        <CardDescription className="text-base">
-          Enter your email and we&apos;ll send you a reset link
-        </CardDescription>
+        <CardTitle className="text-2xl font-bold">{t.passwordForm.forgotTitle}</CardTitle>
+        <CardDescription className="text-base">{t.passwordForm.forgotDesc}</CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
         {success ? (
           <div className="space-y-4">
             <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3">
               <p className="text-sm text-green-700 dark:text-green-400">
-                Check your email — we&apos;ve sent a reset link to{" "}
-                <span className="font-medium">{email}</span>.
+                {t.passwordForm.checkEmail.replace("{email}", email)}
               </p>
             </div>
             <div className="text-center text-sm text-muted-foreground">
@@ -71,7 +70,7 @@ export function ForgotPasswordForm() {
                 href="/login"
                 className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 hover:underline font-medium transition-colors"
               >
-                Back to login
+                {t.passwordForm.backToLogin}
               </Link>
             </div>
           </div>
@@ -79,7 +78,7 @@ export function ForgotPasswordForm() {
           <>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t.passwordForm.email}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -97,22 +96,18 @@ export function ForgotPasswordForm() {
                 </div>
               )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loading}
-              >
-                {loading ? "Sending..." : "Send reset link"}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? t.passwordForm.sending : t.passwordForm.sendResetLink}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              Remember your password?{" "}
+              {t.passwordForm.rememberPassword}{" "}
               <Link
                 href="/login"
                 className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 hover:underline font-medium transition-colors"
               >
-                Log in
+                {t.passwordForm.login}
               </Link>
             </div>
           </>

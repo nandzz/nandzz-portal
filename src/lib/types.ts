@@ -126,6 +126,26 @@ export type SpaceCommentWithProfile = SpaceComment & {
 
 export type CommentWithLike = SpaceCommentWithProfile & { liked: boolean };
 
+export type NotificationType = 'new_comment' | 'new_reply' | 'comment_mention';
+
+export type NotificationPayload = {
+  space_id: string;
+  space_title: string;
+  space_owner_username: string;
+  commenter_username: string;
+  commenter_display_name: string | null;
+  comment_preview: string;
+};
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  payload: NotificationPayload;
+  read_at: string | null;
+  created_at: string;
+};
+
 export type AgentDocVisibility = 'public' | 'private';
 export type AgentDocStatus = 'active' | 'outdated' | 'needs_review';
 

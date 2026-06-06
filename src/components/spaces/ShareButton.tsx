@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ShareButtonProps {
   url: string;
@@ -12,6 +13,7 @@ interface ShareButtonProps {
 
 export function ShareButton({ url, title, size = "sm" }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
+  const { t } = useLanguage();
 
   const fullUrl = typeof window !== "undefined"
     ? new URL(url, window.location.origin).href
@@ -44,7 +46,7 @@ export function ShareButton({ url, title, size = "sm" }: ShareButtonProps) {
       variant="ghost"
       onClick={handleShare}
       className={copied ? "text-green-500 hover:text-green-500" : ""}
-      aria-label="Share"
+      aria-label={t.share.share}
     >
       {copied ? (
         <Check className={iconClass} />
@@ -52,7 +54,7 @@ export function ShareButton({ url, title, size = "sm" }: ShareButtonProps) {
         <Share2 className={iconClass} />
       )}
       {size === "md" && (
-        <span className="hidden sm:inline">{copied ? "Copied!" : "Share"}</span>
+        <span className="hidden sm:inline">{copied ? t.share.copied : t.share.share}</span>
       )}
     </Button>
   );

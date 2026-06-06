@@ -7,6 +7,7 @@ import { getSpaceAnalytics } from "@/lib/analytics";
 import { ViewsChart } from "@/components/analytics/ViewsChart";
 import { BackButton } from "@/components/ui/BackButton";
 import { Eye, Heart, TrendingUp, BarChart2 } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export default async function SpaceAnalyticsPage({
   params,
@@ -29,7 +30,10 @@ export default async function SpaceAnalyticsPage({
 
   if (!space || space.user_id !== user.id) notFound();
 
-  const analytics = await getSpaceAnalytics(spaceId);
+  const [analytics, t] = await Promise.all([
+    getSpaceAnalytics(spaceId),
+    getServerTranslations(),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-8">
@@ -44,7 +48,7 @@ export default async function SpaceAnalyticsPage({
             href="/dashboard/analytics"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← All spaces
+            {t.go.allSpaces}
           </Link>
         </div>
       </div>
@@ -53,15 +57,15 @@ export default async function SpaceAnalyticsPage({
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard icon={<Eye className="h-4 w-4" />} label="Total views" value={analytics.totalViews} />
-            <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Views (30d)" value={analytics.views30d} />
-            <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Views (7d)" value={analytics.views7d} />
-            <StatCard icon={<Heart className="h-4 w-4" />} label="Likes" value={analytics.likesCount} />
+            <StatCard icon={<Eye className="h-4 w-4" />} label={t.analytics.totalViews} value={analytics.totalViews} />
+            <StatCard icon={<TrendingUp className="h-4 w-4" />} label={t.analytics.views30d} value={analytics.views30d} />
+            <StatCard icon={<TrendingUp className="h-4 w-4" />} label={t.analytics.views7d} value={analytics.views7d} />
+            <StatCard icon={<Heart className="h-4 w-4" />} label={t.analytics.totalLikes} value={analytics.likesCount} />
           </div>
 
           {/* Chart */}
           <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground">Views — last 30 days</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">{t.analytics.chart30d}</h2>
             <ViewsChart data={analytics.dailyViews} />
           </div>
         </>

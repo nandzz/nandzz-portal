@@ -19,6 +19,7 @@ import { ShareButton } from "./ShareButton";
 import { StarButton } from "./StarButton";
 import { AddToCollectionDialog } from "@/components/collections/AddToCollectionDialog";
 import type { Space } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SpaceCardProps {
   space: Space;
@@ -36,12 +37,13 @@ interface SpaceCardProps {
 export function SpaceCard({ space, username, routeUsername, editable, liked, saved, compact, collectionId, isOwn, hashtags = [] }: SpaceCardProps) {
   const spaceUrl = routeUsername ? `/${routeUsername}/space/${space.id}` : `/space/${space.id}`;
   const router = useRouter();
+  const { t } = useLanguage();
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(saved ?? false);
 
   const handleRemoveFromCollection = async () => {
     if (!collectionId) return;
-    if (!confirm("Remove this space from the collection?")) return;
+    if (!confirm(t.space.confirmRemoveFromCollection)) return;
     const supabase = createClient();
     await supabase
       .from("collection_spaces")
@@ -86,7 +88,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this space?")) return;
+    if (!confirm(t.space.confirmDelete)) return;
     const supabase = createClient();
     await supabase.from("spaces").delete().eq("id", space.id);
     router.refresh();
@@ -109,12 +111,12 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
               {space.is_public ? (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-black/55 backdrop-blur-sm px-1.5 py-0.5 text-[7px] @[120px]:text-[9px] font-medium text-white">
                   <Globe className="h-2 w-2" />
-                  Public
+                  {t.space.public}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-black/55 backdrop-blur-sm px-1.5 py-0.5 text-[7px] @[120px]:text-[9px] font-medium text-white">
                   <Lock className="h-2 w-2" />
-                  Private
+                  {t.space.private}
                 </span>
               )}
             </div>
@@ -145,12 +147,12 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
               {space.is_public ? (
                 <span className="inline-flex items-center gap-0.5 @[280px]:gap-1 rounded-full bg-black/55 backdrop-blur-sm px-1.5 @[280px]:px-2 py-0.5 text-[8px] @[280px]:text-[10px] font-medium text-white">
                   <Globe className="h-2 w-2 @[280px]:h-2.5 @[280px]:w-2.5" />
-                  Public
+                  {t.space.public}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-0.5 @[280px]:gap-1 rounded-full bg-black/55 backdrop-blur-sm px-1.5 @[280px]:px-2 py-0.5 text-[8px] @[280px]:text-[10px] font-medium text-white">
                   <Lock className="h-2 w-2 @[280px]:h-2.5 @[280px]:w-2.5" />
-                  Private
+                  {t.space.private}
                 </span>
               )}
             </div>
@@ -211,12 +213,12 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
         <ContextMenuContent>
           <ContextMenuItem onClick={() => router.push(spaceUrl)}>
             <ExternalLink className="size-4" />
-            Open
+            {t.space.open}
           </ContextMenuItem>
           {!editable && !isOwn && (
             <ContextMenuItem onClick={handleToggleStar}>
               <Bookmark className={`size-4 ${isSaved ? "fill-violet-500 text-violet-500" : ""}`} />
-              {isSaved ? "Remove from Starred" : "Save to Starred"}
+              {isSaved ? t.space.removeFromStarred : t.space.saveToStarred}
             </ContextMenuItem>
           )}
           {editable && (
@@ -224,12 +226,12 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
               <ContextMenuSeparator />
               <ContextMenuItem onClick={() => setCollectionDialogOpen(true)}>
                 <FolderPlus className="size-4" />
-                Add to Collection
+                {t.space.addToCollection}
               </ContextMenuItem>
               {collectionId && (
                 <ContextMenuItem variant="destructive" onClick={handleRemoveFromCollection}>
                   <Trash2 className="size-4" />
-                  Remove from Collection
+                  {t.space.removeFromCollection}
                 </ContextMenuItem>
               )}
               {isOwn && (
@@ -239,11 +241,11 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
                     onClick={() => router.push(`/dashboard/edit-space/${space.id}`)}
                   >
                     <Pencil className="size-4" />
-                    Edit
+                    {t.space.edit}
                   </ContextMenuItem>
                   <ContextMenuItem variant="destructive" onClick={handleDelete}>
                     <Trash2 className="size-4" />
-                    Delete Space
+                    {t.space.deleteSpace}
                   </ContextMenuItem>
                 </>
               )}

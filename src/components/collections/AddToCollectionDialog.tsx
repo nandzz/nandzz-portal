@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FolderOpen, Plus, Check } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Collection {
   id: string;
@@ -26,6 +27,7 @@ export function AddToCollectionDialog({
   spaceId,
   spaceTitle,
 }: AddToCollectionDialogProps) {
+  const { t } = useLanguage();
   const supabase = useMemo(() => createClient(), []);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [memberOf, setMemberOf] = useState<Set<string>>(new Set());
@@ -121,21 +123,21 @@ export function AddToCollectionDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} title="Add to Collection">
+    <Dialog open={open} onClose={onClose} title={t.addCollection.title}>
       <p className="text-sm text-muted-foreground mb-4 -mt-1 truncate">
         {spaceTitle}
       </p>
 
       {loading ? (
         <div className="py-8 text-center text-sm text-muted-foreground">
-          Loading collections...
+          {t.addCollection.loading}
         </div>
       ) : (
         <div className="space-y-4">
           {collections.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
               <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              No collections yet. Create one below.
+              {t.addCollection.noCollections}
             </div>
           ) : (
             <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -167,11 +169,11 @@ export function AddToCollectionDialog({
           {/* New collection inline */}
           <div className="border-t border-border/50 pt-3">
             <Label className="text-xs text-muted-foreground mb-1.5 block">
-              New collection
+              {t.addCollection.newLabel}
             </Label>
             <div className="flex gap-2">
               <Input
-                placeholder="Collection name"
+                placeholder={t.addCollection.namePlaceholder}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => {
@@ -203,7 +205,7 @@ export function AddToCollectionDialog({
               onClick={onClose}
               className="border-border/60"
             >
-              Cancel
+              {t.addCollection.cancel}
             </Button>
             <Button
               type="button"
@@ -211,7 +213,7 @@ export function AddToCollectionDialog({
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? t.addCollection.saving : t.addCollection.save}
             </Button>
           </div>
         </div>

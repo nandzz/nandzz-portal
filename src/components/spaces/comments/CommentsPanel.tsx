@@ -6,11 +6,15 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CommentsList } from "./CommentsList";
 import type { CommentWithLike } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CommentsPanelProps {
   open: boolean;
   onClose: () => void;
   spaceId: string;
+  spaceOwnerId: string;
+  spaceOwnerUsername: string;
+  spaceTitle: string;
   userId: string | null;
   currentProfile: {
     username: string;
@@ -19,6 +23,7 @@ interface CommentsPanelProps {
   } | null;
   initialComments: CommentWithLike[];
   initialHasMore: boolean;
+  onCountChange: (delta: number) => void;
 }
 
 function PanelHeader({ title, onClose }: { title: string; onClose: () => void }) {
@@ -41,11 +46,16 @@ export function CommentsPanel({
   open,
   onClose,
   spaceId,
+  spaceOwnerId,
+  spaceOwnerUsername,
+  spaceTitle,
   userId,
   currentProfile,
   initialComments,
   initialHasMore,
+  onCountChange,
 }: CommentsPanelProps) {
+  const { t } = useLanguage();
   // Mount the portal when open, unmount after the exit transition finishes.
   const [mounted, setMounted] = useState(false);
   // Flip visible on the next paint so CSS transitions play on entry and exit.
@@ -60,8 +70,8 @@ export function CommentsPanel({
       return () => cancelAnimationFrame(id);
     } else {
       setVisible(false);
-      const t = setTimeout(() => setMounted(false), 300);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setMounted(false), 300);
+      return () => clearTimeout(timer);
     }
   }, [open]);
 
@@ -76,7 +86,7 @@ export function CommentsPanel({
 
   if (!mounted) return null;
 
-  const listProps = { spaceId, userId, currentProfile, initialComments, initialHasMore };
+  const listProps = { spaceId, spaceOwnerId, spaceOwnerUsername, spaceTitle, userId, currentProfile, initialComments, initialHasMore, onCountChange };
 
   return createPortal(
     <>
@@ -94,7 +104,7 @@ export function CommentsPanel({
           visible ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <PanelHeader title="Comments" onClose={onClose} />
+        <PanelHeader title={t.comment.panelTitle} onClose={onClose} />
         <CommentsList key="desktop" {...listProps} />
       </div>
 
@@ -117,12 +127,12 @@ export function CommentsPanel({
         style={{ height: "85dvh" }}
         role="dialog"
         aria-modal="true"
-        aria-label="Comments"
+        aria-label={t.comment.panelTitle}
       >
         <div className="flex justify-center pt-3 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-border" />
         </div>
-        <PanelHeader title="Comments" onClose={onClose} />
+        <PanelHeader title={t.comment.panelTitle} onClose={onClose} />
         <CommentsList key="mobile" {...listProps} />
       </div>
     </>,

@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Status = "idle" | "sending" | "success" | "error";
 
 export function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
+  const { t } = useLanguage();
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,12 +40,12 @@ export function ContactForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div className="space-y-1.5">
-        <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" placeholder="Your name" required />
+        <Label htmlFor="name">{t.contact.nameLabel}</Label>
+        <Input id="name" name="name" placeholder={t.contact.namePlaceholder} required />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t.contact.emailLabel}</Label>
         <Input
           id="email"
           name="email"
@@ -54,11 +56,11 @@ export function ContactForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="message">Message</Label>
+        <Label htmlFor="message">{t.contact.messageLabel}</Label>
         <Textarea
           id="message"
           name="message"
-          placeholder="How can we help?"
+          placeholder={t.contact.messagePlaceholder}
           rows={5}
           required
         />
@@ -69,17 +71,17 @@ export function ContactForm() {
         className="w-full bg-violet-600 hover:bg-violet-700 text-white"
         disabled={status === "sending"}
       >
-        {status === "sending" ? "Sending…" : "Send Message"}
+        {status === "sending" ? t.contact.sending : t.contact.send}
       </Button>
 
       {status === "success" && (
         <p className="text-sm text-center text-green-600 dark:text-green-400">
-          Message sent! We&apos;ll get back to you soon.
+          {t.contact.successMsg}
         </p>
       )}
       {status === "error" && (
         <p className="text-sm text-center text-destructive">
-          Something went wrong. Please try again.
+          {t.contact.errorMsg}
         </p>
       )}
     </form>

@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Lock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ProGate() {
+  const { t } = useLanguage();
   return (
     <div className="relative rounded-xl border border-border/60 overflow-hidden">
       {/* Blurred preview */}
@@ -24,15 +28,15 @@ export function ProGate() {
           <Lock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
         </div>
         <div className="space-y-1">
-          <h3 className="font-semibold">Analytics is a Pro feature</h3>
+          <h3 className="font-semibold">{t.proGate.title}</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            Upgrade to Pro to see views, trends, and per-space insights.
+            {t.proGate.desc}
           </p>
         </div>
         <Link href="/dashboard/billing?checkout=pro">
           <Button size="sm" className="gap-1.5">
             <Zap className="h-3.5 w-3.5" />
-            Upgrade to Pro
+            {t.proGate.upgradePro}
           </Button>
         </Link>
       </div>

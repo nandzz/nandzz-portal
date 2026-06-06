@@ -5,6 +5,7 @@ import { SpaceGrid } from "@/components/spaces/SpaceGrid";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/explore/SearchBar";
 import { Compass, Plus } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
   title: "Explore Spaces",
@@ -36,7 +37,7 @@ export default async function ExplorePage({
   const from = (currentPage - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const supabase = await createClient();
+  const [supabase, t] = await Promise.all([createClient(), getServerTranslations()]);
 
   let dbQuery = supabase
     .from("spaces")
@@ -85,9 +86,11 @@ export default async function ExplorePage({
     }
   }
 
+  const resultCount = count ?? 0;
+  const resultLabel = resultCount === 1 ? t.explore.resultSingular : t.explore.resultPlural;
+
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
-      {/* Subtle background gradient */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-violet-100/40 blur-3xl dark:bg-violet-950/20" />
         <div className="absolute left-0 bottom-0 h-[300px] w-[300px] rounded-full bg-fuchsia-100/30 blur-3xl dark:bg-fuchsia-950/15" />
@@ -101,11 +104,11 @@ export default async function ExplorePage({
               <Compass className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Explore Spaces
+              {t.explore.title}
             </h1>
           </div>
           <p className="mt-2 text-muted-foreground text-lg">
-            Discover web apps shared by the community
+            {t.explore.subtitle}
           </p>
         </div>
 
@@ -114,7 +117,7 @@ export default async function ExplorePage({
           <SearchBar />
           {query && (
             <p className="text-sm text-muted-foreground shrink-0">
-              {count ?? 0} result{count !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
+              {resultCount} {resultLabel} {t.explore.resultFor} &ldquo;{query}&rdquo;
             </p>
           )}
         </div>
@@ -127,17 +130,17 @@ export default async function ExplorePage({
                 {currentPage > 1 && (
                   <Link href={`/explore?${query ? `q=${encodeURIComponent(query)}&` : ""}page=${currentPage - 1}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
-                      Previous
+                      {t.explore.previous}
                     </Button>
                   </Link>
                 )}
                 <span className="px-3 text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
+                  {t.explore.pageOf.replace("{current}", String(currentPage)).replace("{total}", String(totalPages))}
                 </span>
                 {currentPage < totalPages && (
                   <Link href={`/explore?${query ? `q=${encodeURIComponent(query)}&` : ""}page=${currentPage + 1}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
-                      Next
+                      {t.explore.next}
                     </Button>
                   </Link>
                 )}
@@ -151,21 +154,21 @@ export default async function ExplorePage({
             </div>
             {query ? (
               <>
-                <h2 className="text-xl font-semibold mb-2">No results found</h2>
+                <h2 className="text-xl font-semibold mb-2">{t.explore.noResultsTitle}</h2>
                 <p className="text-muted-foreground max-w-sm">
-                  No spaces matched &ldquo;{query}&rdquo;. Try a different search.
+                  {t.explore.noResultsDesc.replace("{query}", query)}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-semibold mb-2">No spaces yet</h2>
+                <h2 className="text-xl font-semibold mb-2">{t.explore.noSpacesTitle}</h2>
                 <p className="text-muted-foreground max-w-sm mb-6">
-                  Be the first to share an AI-generated web app with the community.
+                  {t.explore.noSpacesDesc}
                 </p>
                 <Link href={user ? "/dashboard/create-space" : "/login?tab=signup"}>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Create the First Space
+                    {t.explore.createFirst}
                   </Button>
                 </Link>
               </>

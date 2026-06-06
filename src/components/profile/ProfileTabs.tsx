@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SpaceGrid } from "@/components/spaces/SpaceGrid";
 import { Bookmark, FolderOpen, LayoutGrid } from "lucide-react";
 import type { Space, Profile, CollectionWithSpaces } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProfileTabsProps {
   spaces: Space[];
@@ -29,6 +30,7 @@ export function ProfileTabs({
     return 0;
   });
 
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>("all");
 
   const displayName = profile.display_name || profile.username;
@@ -44,8 +46,8 @@ export function ProfileTabs({
 
   const emptyMessage =
     activeTab === "all"
-      ? "No public spaces yet."
-      : `No spaces in this collection yet.`;
+      ? t.profile.noPublicSpaces
+      : t.profile.noCollectionSpaces;
 
   return (
     <div className="w-full">
@@ -61,7 +63,7 @@ export function ProfileTabs({
           }`}
         >
           <LayoutGrid className="h-3.5 w-3.5" />
-          All
+          {t.profile.allTab}
           <span className="ml-0.5 text-xs text-muted-foreground tabular-nums">
             {spaces.length}
           </span>

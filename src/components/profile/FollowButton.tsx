@@ -6,6 +6,7 @@ import { UserPlus, UserCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface FollowButtonProps {
   profileId: string;
@@ -16,6 +17,7 @@ export function FollowButton({ profileId, initialIsFollowing }: FollowButtonProp
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleClick = async () => {
     const supabase = createClient();
@@ -65,7 +67,7 @@ export function FollowButton({ profileId, initialIsFollowing }: FollowButtonProp
       ) : (
         <UserPlus className="h-3.5 w-3.5" />
       )}
-      {isFollowing ? "Following" : "Follow"}
+      {isFollowing ? t.profile.followingBtn : t.profile.follow}
     </Button>
   );
 }

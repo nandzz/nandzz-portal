@@ -14,9 +14,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function SetupUsernamePage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
@@ -31,9 +33,7 @@ export default function SetupUsernamePage() {
 
     const trimmed = username.trim().toLowerCase();
     if (!/^[a-z0-9_-]{3,30}$/.test(trimmed)) {
-      setError(
-        "Username must be 3–30 characters: lowercase letters, numbers, hyphens, underscores"
-      );
+      setError(t.setup.usernameInvalid);
       setLoading(false);
       return;
     }
@@ -56,7 +56,7 @@ export default function SetupUsernamePage() {
 
       if (insertError) {
         if (insertError.code === "23505") {
-          setError("That username is already taken. Try another.");
+          setError(t.setup.usernameTaken);
         } else {
           setError(insertError.message);
         }
@@ -65,7 +65,7 @@ export default function SetupUsernamePage() {
         router.refresh();
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(t.common.error);
     } finally {
       setLoading(false);
     }
@@ -82,15 +82,13 @@ export default function SetupUsernamePage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
             <Sparkles className="h-6 w-6 text-violet-600 dark:text-violet-400" />
           </div>
-          <CardTitle className="text-2xl font-bold">One last step</CardTitle>
-          <CardDescription className="text-base">
-            Choose a username for your profile
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold">{t.setup.title}</CardTitle>
+          <CardDescription className="text-base">{t.setup.desc}</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t.setup.usernameLabel}</Label>
               <Input
                 id="username"
                 placeholder="johndoe"
@@ -100,15 +98,13 @@ export default function SetupUsernamePage() {
                 autoFocus
                 className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
               />
-              <p className="text-xs text-muted-foreground">
-                3–30 characters. Letters, numbers, hyphens, underscores only.
-              </p>
+              <p className="text-xs text-muted-foreground">{t.setup.usernameHint}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="displayName">
-                Display Name{" "}
+                {t.setup.displayNameLabel}{" "}
                 <span className="text-muted-foreground font-normal">
-                  (optional)
+                  {t.setup.displayNameOptional}
                 </span>
               </Label>
               <Input
@@ -126,12 +122,8 @@ export default function SetupUsernamePage() {
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? "Setting up..." : "Get started"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? t.setup.settingUp : t.setup.getStarted}
             </Button>
           </form>
         </CardContent>

@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="border-t bg-muted/20 dark:bg-muted/10 pb-16 md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-10">
@@ -13,7 +18,7 @@ export function Footer() {
               <span className="font-semibold">nandzz</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs">
-              A gallery for web pages, PDFs, tools, and interactive creations.
+              {t.footer.description}
             </p>
           </div>
 
@@ -21,53 +26,53 @@ export function Footer() {
           <div className="flex flex-col sm:flex-row gap-6 sm:gap-10">
             <div className="flex flex-col gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Platform
+                {t.footer.platform}
               </span>
               <Link
                 href="/explore"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Explore
+                {t.footer.explore}
               </Link>
               <Link
                 href="/login?tab=signup"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Get Started
+                {t.footer.getStarted}
               </Link>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Legal
+                {t.footer.legal}
               </span>
               <Link
                 href="/terms"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Terms & Conditions
+                {t.footer.terms}
               </Link>
               <Link
                 href="/privacy"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Privacy Policy
+                {t.footer.privacy}
               </Link>
               <Link
                 href="/cookies"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Cookie Policy
+                {t.footer.cookies}
               </Link>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                Support
+                {t.footer.support}
               </span>
               <Link
                 href="/contact"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                Contact Us
+                {t.footer.contact}
               </Link>
             </div>
           </div>
@@ -76,7 +81,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground/70">
-            &copy; {new Date().getFullYear()} nandzz. All rights reserved.
+            &copy; {new Date().getFullYear()} nandzz. {t.footer.rights}
           </p>
           <div className="flex items-center gap-3">
             <a

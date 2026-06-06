@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Phone, AlertTriangle } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type PhoneState = "loading" | "none" | "unverified" | "verified";
 type Step = "input" | "otp";
@@ -20,6 +21,7 @@ export function PhoneVerificationForm() {
   const [error, setError] = useState("");
   const [justVerified, setJustVerified] = useState(false);
 
+  const { t } = useLanguage();
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export function PhoneVerificationForm() {
       }
       return true;
     } catch {
-      setError("An unexpected error occurred");
+      setError(t.phone.unexpectedError);
       return false;
     } finally {
       setLoading(false);
@@ -58,7 +60,7 @@ export function PhoneVerificationForm() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\+[1-9]\d{6,14}$/.test(phone)) {
-      setError("Enter a valid phone number with country code (e.g. +15551234567)");
+      setError(t.phone.invalidPhone);
       return;
     }
     const ok = await sendOtp(phone);
@@ -75,7 +77,7 @@ export function PhoneVerificationForm() {
     e.preventDefault();
     setError("");
     if (otp.length !== 6) {
-      setError("Enter the 6-digit code");
+      setError(t.phone.invalidCode);
       return;
     }
     setLoading(true);
@@ -95,7 +97,7 @@ export function PhoneVerificationForm() {
         setStep("input");
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(t.phone.unexpectedError);
     } finally {
       setLoading(false);
     }
@@ -110,7 +112,7 @@ export function PhoneVerificationForm() {
         <div className="flex items-center gap-2 rounded-lg bg-muted/50 border border-border/50 px-3 py-2">
           <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
           <p className="text-sm text-muted-foreground">
-            Verified:{" "}
+            {t.phone.verified}{" "}
             <span className="font-mono text-foreground">{currentPhone}</span>
           </p>
         </div>
@@ -122,7 +124,7 @@ export function PhoneVerificationForm() {
           <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
           <div className="space-y-1.5">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              <span className="font-mono">{currentPhone}</span> is not verified yet.
+              {t.phone.unverifiedWarning.replace("{phone}", currentPhone ?? "")}
             </p>
             <Button
               size="sm"
@@ -131,7 +133,7 @@ export function PhoneVerificationForm() {
               disabled={loading}
               className="h-7 text-xs border-yellow-300 dark:border-yellow-700"
             >
-              {loading ? "Sending..." : "Send verification code"}
+              {loading ? t.phone.sending : t.phone.sendCode}
             </Button>
           </div>
         </div>
@@ -141,7 +143,7 @@ export function PhoneVerificationForm() {
       {justVerified && (
         <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2">
           <p className="text-sm text-green-700 dark:text-green-400">
-            Phone number verified successfully!
+            {t.phone.justVerified}
           </p>
         </div>
       )}
@@ -150,11 +152,10 @@ export function PhoneVerificationForm() {
       {step === "otp" && (
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            A 6-digit code was sent to{" "}
-            <span className="font-mono text-foreground">{phone}</span>.
+            {t.phone.otpSent.replace("{phone}", phone)}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="otp">Verification code</Label>
+            <Label htmlFor="otp">{t.phone.otpLabel}</Label>
             <Input
               id="otp"
               type="text"
@@ -178,7 +179,7 @@ export function PhoneVerificationForm() {
 
           <div className="flex gap-3">
             <Button type="submit" disabled={loading}>
-              {loading ? "Verifying..." : "Verify code"}
+              {loading ? t.phone.verifying : t.phone.verifyCode}
             </Button>
             <Button
               type="button"
@@ -189,7 +190,7 @@ export function PhoneVerificationForm() {
                 setError("");
               }}
             >
-              Back
+              {t.phone.back}
             </Button>
           </div>
         </form>
@@ -200,7 +201,7 @@ export function PhoneVerificationForm() {
         <form onSubmit={handleSendOtp} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="phone">
-              {phoneState === "verified" ? "Update phone number" : "Phone number"}
+              {phoneState === "verified" ? t.phone.updatePhone : t.phone.addPhone}
             </Label>
             <div className="flex items-center gap-0 rounded-md border border-border/60 bg-background overflow-hidden focus-within:border-violet-500/50 transition-colors">
               <span className="px-3 h-9 flex items-center border-r border-border/60 bg-muted/50">
@@ -217,7 +218,7 @@ export function PhoneVerificationForm() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Include country code (e.g. +1 for US, +44 for UK)
+              {t.phone.countryCodeHint}
             </p>
           </div>
 
@@ -228,7 +229,7 @@ export function PhoneVerificationForm() {
           )}
 
           <Button type="submit" disabled={loading}>
-            {loading ? "Sending..." : "Send verification code"}
+            {loading ? t.phone.sending : t.phone.sendCode}
           </Button>
         </form>
       )}

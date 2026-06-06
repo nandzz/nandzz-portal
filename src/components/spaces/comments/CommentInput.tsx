@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MentionPopover } from "./MentionPopover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CommentInputProps {
   userId: string | null;
@@ -37,6 +38,7 @@ export function CommentInput({
   autoFocus = false,
   onCancel,
 }: CommentInputProps) {
+  const { t } = useLanguage();
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -47,9 +49,9 @@ export function CommentInput({
       <div className="px-4 py-3 border-t">
         <p className="text-center text-sm text-muted-foreground">
           <Link href="/login" className="text-violet-600 hover:underline font-medium">
-            Log in
+            {t.comment.logIn}
           </Link>{" "}
-          to join the conversation
+          {t.comment.joinConversation}
         </p>
       </div>
     );
@@ -159,7 +161,7 @@ export function CommentInput({
                   onClick={onCancel}
                   className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded transition-colors"
                 >
-                  Cancel
+                  {t.comment.cancel}
                 </button>
               )}
               <button
@@ -168,7 +170,7 @@ export function CommentInput({
                 onClick={() => void handleSubmit()}
                 className="text-xs font-medium bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1 rounded-md transition-colors"
               >
-                {submitting ? "Posting…" : "Post"}
+                {submitting ? t.comment.posting : t.comment.post}
               </button>
             </div>
           </div>

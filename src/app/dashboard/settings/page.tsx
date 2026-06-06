@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   CreditCard,
   Trash2,
+  Globe,
 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { FEATURES } from "@/lib/flags";
@@ -34,10 +35,13 @@ import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 import { PhoneVerificationForm } from "@/components/auth/PhoneVerificationForm";
 import type { Profile, SocialLinks } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { SUPPORTED_LOCALES, LOCALE_LABELS } from "@/lib/i18n/translations";
 
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { t, locale, setLocale } = useLanguage();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -54,6 +58,7 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -206,7 +211,7 @@ export default function SettingsPage() {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
-          <p className="text-muted-foreground text-sm">Loading settings...</p>
+          <p className="text-muted-foreground text-sm">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -224,26 +229,30 @@ export default function SettingsPage() {
             <TabsList className="w-full">
               <TabsTrigger value="profile" className="flex-1 gap-2">
                 <User className="h-4 w-4" />
-                Profile
+                {t.settings.tabProfile}
               </TabsTrigger>
               <TabsTrigger value="security" className="flex-1 gap-2">
                 <ShieldCheck className="h-4 w-4" />
-                Security
+                {t.settings.tabSecurity}
               </TabsTrigger>
               {FEATURES.monetization && (
                 <TabsTrigger value="billing" className="flex-1 gap-2">
                   <CreditCard className="h-4 w-4" />
-                  Billing
+                  {t.settings.tabBilling}
                 </TabsTrigger>
               )}
+              <TabsTrigger value="preferences" className="flex-1 gap-2">
+                <Globe className="h-4 w-4" />
+                {t.settings.tabPreferences}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile">
             <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Profile</CardTitle>
+            <CardTitle className="text-xl">{t.settings.profileTitle}</CardTitle>
             <CardDescription>
-              Manage your profile and social links
+              {t.settings.profileDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -264,13 +273,14 @@ export default function SettingsPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-1.5 flex-1">
-                  <Label htmlFor="avatar" className="font-medium">
-                    Profile Picture
+                  <Label className="font-medium">
+                    {t.settings.profilePicture}
                   </Label>
-                  <Input
-                    id="avatar"
+                  <input
+                    ref={avatarInputRef}
                     type="file"
                     accept="image/png, image/jpeg"
+                    className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
@@ -285,11 +295,17 @@ export default function SettingsPage() {
                       // reset so re-selecting same file re-triggers
                       e.target.value = "";
                     }}
-                    className="bg-background"
                   />
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                  >
+                    {t.settings.chooseImage}
+                  </button>
                   {avatarFile && (
                     <p className="text-xs text-violet-600 dark:text-violet-400">
-                      New picture ready — save to apply.
+                      {t.settings.newPictureReady}
                     </p>
                   )}
                 </div>
@@ -307,19 +323,19 @@ export default function SettingsPage() {
               )}
 
               <div className="space-y-2">
-                <Label>Username</Label>
+                <Label>{t.settings.username}</Label>
                 <Input
                   value={profile.username}
                   disabled
                   className="bg-muted/50"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Username cannot be changed
+                  {t.settings.usernameHint}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
+                <Label htmlFor="displayName">{t.settings.displayName}</Label>
                 <Input
                   id="displayName"
                   placeholder="Your display name"
@@ -332,7 +348,7 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="tagline">Tagline</Label>
+                  <Label htmlFor="tagline">{t.settings.tagline}</Label>
                   <span className="text-xs text-muted-foreground">{tagline.length}/{LIMITS.tagline}</span>
                 </div>
                 <Input
@@ -347,7 +363,7 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="bio">Bio</Label>
+                  <Label htmlFor="bio">{t.settings.bio}</Label>
                   <span className={`text-xs ${bio.length >= LIMITS.bio ? "text-destructive" : "text-muted-foreground"}`}>
                     {bio.length}/{LIMITS.bio}
                   </span>
@@ -365,11 +381,13 @@ export default function SettingsPage() {
                   rows={4}
                   className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
                 />
-                <p className="text-xs text-muted-foreground">Max {LIMITS.bio} characters, {LIMITS.bioLines} lines</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.settings.bioHint.replace("{bio}", String(LIMITS.bio)).replace("{lines}", String(LIMITS.bioLines))}
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="websiteUrl">Website URL</Label>
+                <Label htmlFor="websiteUrl">{t.settings.websiteUrl}</Label>
                 <Input
                   id="websiteUrl"
                   type="url"
@@ -383,7 +401,7 @@ export default function SettingsPage() {
 
               {/* Social Links */}
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Social Links</Label>
+                <Label className="text-base font-semibold">{t.settings.socialLinks}</Label>
 
                 <div className="space-y-3 rounded-xl border border-border/50 bg-muted/20 p-4">
                   <div className="flex items-center gap-3">
@@ -520,7 +538,7 @@ export default function SettingsPage() {
               {success && (
                 <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2">
                   <p className="text-sm text-green-700 dark:text-green-400">
-                    Profile updated successfully!
+                    {t.settings.savedSuccess}
                   </p>
                 </div>
               )}
@@ -529,7 +547,7 @@ export default function SettingsPage() {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? "Saving..." : "Save Changes"}
+                {loading ? t.settings.saving : t.settings.saveChanges}
               </Button>
             </form>
           </CardContent>
@@ -540,8 +558,8 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-xl">Password</CardTitle>
-                    <CardDescription>Change your account password</CardDescription>
+                    <CardTitle className="text-xl">{t.settings.securityPasswordTitle}</CardTitle>
+                    <CardDescription>{t.settings.securityPasswordDesc}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ChangePasswordForm />
@@ -550,9 +568,9 @@ export default function SettingsPage() {
 
                 <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-xl">Phone number</CardTitle>
+                    <CardTitle className="text-xl">{t.settings.securityPhoneTitle}</CardTitle>
                     <CardDescription>
-                      Link a phone number for account recovery and extra security
+                      {t.settings.securityPhoneDesc}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -566,23 +584,23 @@ export default function SettingsPage() {
               <TabsContent value="billing">
                 <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-xl">Billing & Plans</CardTitle>
-                    <CardDescription>Manage your subscription and payment details</CardDescription>
+                    <CardTitle className="text-xl">{t.settings.billingTitle}</CardTitle>
+                    <CardDescription>{t.settings.billingDesc}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      View your current plan, upgrade, or manage your billing on the dedicated billing page.
+                      {t.settings.billingPageDesc}
                     </p>
                     <div className="flex gap-3">
                       <a href="/dashboard/billing">
                         <button className="inline-flex items-center gap-2 rounded-md bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 text-sm font-medium shadow-sm shadow-violet-600/25 transition-colors">
                           <CreditCard className="h-4 w-4" />
-                          Go to Billing
+                          {t.settings.billingViewPage}
                         </button>
                       </a>
                       <a href="/pricing">
                         <button className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-background hover:bg-accent px-4 py-2 text-sm font-medium transition-colors">
-                          View Plans
+                          {t.settings.billingViewPlans}
                         </button>
                       </a>
                     </div>
@@ -590,15 +608,57 @@ export default function SettingsPage() {
                 </Card>
               </TabsContent>
             )}
+
+            <TabsContent value="preferences">
+              <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl">{t.settings.preferencesTitle}</CardTitle>
+                  <CardDescription>{t.settings.preferencesDesc}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium">{t.settings.languageLabel}</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{t.settings.languageHint}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {SUPPORTED_LOCALES.map((lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => setLocale(lang)}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all ${
+                            locale === lang
+                              ? "border-violet-500 bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-500/70"
+                              : "border-border/60 bg-background hover:bg-accent hover:border-border text-foreground"
+                          }`}
+                        >
+                          <span className="text-base leading-none">
+                            {lang === "en" && "🇬🇧"}
+                            {lang === "pt" && "🇧🇷"}
+                            {lang === "fr" && "🇫🇷"}
+                            {lang === "es" && "🇪🇸"}
+                            {lang === "ja" && "🇯🇵"}
+                            {lang === "de" && "🇩🇪"}
+                            {lang === "it" && "🇮🇹"}
+                          </span>
+                          {LOCALE_LABELS[lang]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
 
           {/* Danger Zone */}
           <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-semibold text-destructive">Delete Account</h3>
+                <h3 className="font-semibold text-destructive">{t.settings.deleteAccountTitle}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Permanently delete your account and all your spaces. This cannot be undone.
+                  {t.settings.deleteAccountDesc}
                 </p>
               </div>
               <Button
@@ -612,7 +672,7 @@ export default function SettingsPage() {
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Account
+                {t.settings.deleteAccountButton}
               </Button>
             </div>
           </div>
@@ -620,12 +680,14 @@ export default function SettingsPage() {
           <Dialog
             open={deleteDialogOpen}
             onClose={() => setDeleteDialogOpen(false)}
-            title="Delete Account"
+            title={t.settings.deleteDialogTitle}
           >
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                This will permanently delete your account, all your spaces, and all associated data.
-                Type <span className="font-mono font-semibold text-foreground">{profile.username}</span> to confirm.
+                {(() => {
+                  const [before, after] = t.settings.deleteDialogDesc.split("{username}");
+                  return <>{before}<span className="font-mono font-semibold text-foreground">{profile.username}</span>{after}</>;
+                })()}
               </p>
               <input
                 type="text"
@@ -644,7 +706,7 @@ export default function SettingsPage() {
                   onClick={() => setDeleteDialogOpen(false)}
                   disabled={deleteLoading}
                 >
-                  Cancel
+                  {t.settings.deleteDialogCancel}
                 </Button>
                 <Button
                   variant="destructive"
@@ -652,7 +714,7 @@ export default function SettingsPage() {
                   disabled={deleteConfirm !== profile.username || deleteLoading}
                   onClick={handleDeleteAccount}
                 >
-                  {deleteLoading ? "Deleting..." : "Delete my account"}
+                  {deleteLoading ? t.settings.deleting : t.settings.deleteDialogConfirm}
                 </Button>
               </div>
             </div>

@@ -7,7 +7,9 @@ import { CommentLikeButton } from "./CommentLikeButton";
 import { CommentInput } from "./CommentInput";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/client";
+import { createNotification } from "@/lib/notifications";
 import type { CommentWithLike } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CommentItemProps {
   comment: CommentWithLike;
@@ -18,6 +20,8 @@ interface CommentItemProps {
     avatar_url: string | null;
   } | null;
   spaceId: string;
+  spaceOwnerUsername: string;
+  spaceTitle: string;
   onDelete: (commentId: string) => void;
   isReply?: boolean;
 }
@@ -59,6 +63,8 @@ export function CommentItem({
   userId,
   currentProfile,
   spaceId,
+  spaceOwnerUsername,
+  spaceTitle,
   onDelete,
   isReply = false,
 }: CommentItemProps) {
@@ -69,6 +75,7 @@ export function CommentItem({
   const [replyCount, setReplyCount] = useState(0);
   const [repliesLoaded, setRepliesLoaded] = useState(false);
 
+  const { t } = useLanguage();
   const isOwnComment = userId === comment.user_id;
   const displayName =
     comment.profiles.display_name || comment.profiles.username || "User";
@@ -114,7 +121,11 @@ export function CommentItem({
       .from("space_comments")
       .delete()
       .eq("id", comment.id);
-    if (!error) onDelete(comment.id);
+    if (error) {
+      console.error("Delete comment failed:", error.message);
+      return;
+    }
+    onDelete(comment.id);
   };
 
   const handleReplySubmit = async (content: string) => {
@@ -144,7 +155,23 @@ export function CommentItem({
     setRepliesOpen(true);
     setShowReplyInput(false);
 
-    // insert mentions
+    const notificationPayload = {
+      space_id: spaceId,
+      space_title: spaceTitle,
+      space_owner_username: spaceOwnerUsername,
+      commenter_username: currentProfile.username,
+      commenter_display_name: currentProfile.display_name,
+      comment_preview: content.slice(0, 100),
+    };
+
+    // notify the parent comment author (if not self)
+    const notifiedIds = new Set<string>([userId]);
+    if (comment.user_id !== userId) {
+      notifiedIds.add(comment.user_id);
+      await createNotification(supabase, comment.user_id, "new_reply", notificationPayload);
+    }
+
+    // insert mentions + notify mentioned users
     const mentioned = [...content.matchAll(/@(\w+)/g)].map((m) => m[1]);
     if (mentioned.length) {
       const { data: profiles } = await supabase
@@ -155,6 +182,12 @@ export function CommentItem({
         await supabase.from("comment_mentions").insert(
           profiles.map((p) => ({ comment_id: data.id, mentioned_user_id: p.id }))
         );
+        for (const p of profiles) {
+          if (!notifiedIds.has(p.id)) {
+            notifiedIds.add(p.id);
+            await createNotification(supabase, p.id, "comment_mention", notificationPayload);
+          }
+        }
       }
     }
   };
@@ -206,7 +239,7 @@ export function CommentItem({
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <CornerDownRight className="size-3.5" />
-                Reply
+                {t.comment.reply}
               </button>
             )}
             {isOwnComment && (
@@ -235,10 +268,10 @@ export function CommentItem({
                 <ChevronDown className="size-3.5" />
               )}
               {repliesLoading
-                ? "Loading…"
+                ? t.comment.loading
                 : repliesOpen
-                ? "Hide replies"
-                : `${replyCount || replies.length} ${(replyCount || replies.length) === 1 ? "reply" : "replies"}`}
+                ? t.comment.hideReplies
+                : `${replyCount || replies.length} ${(replyCount || replies.length) === 1 ? t.comment.replySingular : t.comment.replyPlural}`}
             </button>
           )}
         </div>
@@ -268,6 +301,8 @@ export function CommentItem({
               userId={userId}
               currentProfile={currentProfile}
               spaceId={spaceId}
+              spaceOwnerUsername={spaceOwnerUsername}
+              spaceTitle={spaceTitle}
               onDelete={handleDeleteReply}
               isReply
             />

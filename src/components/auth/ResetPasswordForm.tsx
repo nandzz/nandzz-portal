@@ -15,9 +15,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { KeyRound } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,11 +43,11 @@ export function ResetPasswordForm() {
     setError("");
 
     if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError(t.passwordForm.passwordMinLength);
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t.passwordForm.passwordMismatch);
       return;
     }
 
@@ -59,7 +61,7 @@ export function ResetPasswordForm() {
         router.refresh();
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(t.common.error);
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ export function ResetPasswordForm() {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <p className="text-muted-foreground text-sm">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -82,15 +84,15 @@ export function ResetPasswordForm() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
           <KeyRound className="h-6 w-6 text-violet-600 dark:text-violet-400" />
         </div>
-        <CardTitle className="text-2xl font-bold">Set new password</CardTitle>
+        <CardTitle className="text-2xl font-bold">{t.passwordForm.updatePassword}</CardTitle>
         <CardDescription className="text-base">
-          Enter and confirm your new password
+          {t.passwordForm.confirmPassword}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="newPassword">New password</Label>
+            <Label htmlFor="newPassword">{t.passwordForm.newPassword}</Label>
             <Input
               id="newPassword"
               type="password"
@@ -103,7 +105,7 @@ export function ResetPasswordForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <Label htmlFor="confirmPassword">{t.passwordForm.confirmPassword}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -126,7 +128,7 @@ export function ResetPasswordForm() {
             className="w-full"
             disabled={loading}
           >
-            {loading ? "Updating..." : "Update password"}
+            {loading ? t.passwordForm.updating : t.passwordForm.updatePassword}
           </Button>
         </form>
 
@@ -135,7 +137,7 @@ export function ResetPasswordForm() {
             href="/login"
             className="text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300 hover:underline font-medium transition-colors"
           >
-            Back to login
+            {t.passwordForm.backToLogin}
           </Link>
         </div>
       </CardContent>

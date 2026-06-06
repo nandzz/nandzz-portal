@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ChangePasswordForm() {
   const [newPassword, setNewPassword] = useState("");
@@ -12,6 +13,7 @@ export function ChangePasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const { t } = useLanguage();
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -21,11 +23,11 @@ export function ChangePasswordForm() {
     setSuccess(false);
 
     if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError(t.passwordForm.passwordMinLength);
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t.passwordForm.passwordMismatch);
       return;
     }
 
@@ -40,7 +42,7 @@ export function ChangePasswordForm() {
         setConfirmPassword("");
       }
     } catch {
-      setError("An unexpected error occurred");
+      setError(t.common.error);
     } finally {
       setLoading(false);
     }
@@ -49,7 +51,7 @@ export function ChangePasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="newPassword">New password</Label>
+        <Label htmlFor="newPassword">{t.passwordForm.newPassword}</Label>
         <Input
           id="newPassword"
           type="password"
@@ -62,7 +64,7 @@ export function ChangePasswordForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Label htmlFor="confirmPassword">{t.passwordForm.confirmPassword}</Label>
         <Input
           id="confirmPassword"
           type="password"
@@ -82,16 +84,13 @@ export function ChangePasswordForm() {
       {success && (
         <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2">
           <p className="text-sm text-green-700 dark:text-green-400">
-            Password updated successfully!
+            {t.passwordForm.passwordUpdated}
           </p>
         </div>
       )}
 
-      <Button
-        type="submit"
-        disabled={loading}
-      >
-        {loading ? "Updating..." : "Update password"}
+      <Button type="submit" disabled={loading}>
+        {loading ? t.passwordForm.updating : t.passwordForm.updatePassword}
       </Button>
     </form>
   );

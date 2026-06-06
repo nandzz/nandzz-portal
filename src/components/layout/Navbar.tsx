@@ -19,10 +19,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Moon, Sun, Menu, User, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers, Bot } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
+import { NotificationBell } from "./NotificationBell";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Navbar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -94,14 +97,14 @@ export function Navbar() {
               href="/explore"
               className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
-              Explore
+              {t.nav.explore}
             </Link>
             {FEATURES.monetization && (
               <Link
                 href="/pricing"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                Pricing
+                {t.nav.pricing}
               </Link>
             )}
             {user && (
@@ -109,7 +112,7 @@ export function Navbar() {
                 href="/dashboard/feed"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                Feed
+                {t.nav.feed}
               </Link>
             )}
             {user && (
@@ -117,7 +120,7 @@ export function Navbar() {
                 href="/dashboard/create-space"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                Create
+                {t.nav.create}
               </Link>
             )}
           </div>
@@ -130,13 +133,13 @@ export function Navbar() {
                 href="/dashboard"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                My Spaces
+                {t.nav.mySpaces}
               </Link>
               <Link
                 href="/dashboard/collections"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
-                My Collections
+                {t.nav.myCollections}
               </Link>
               {FEATURES.agent && profile?.username && (
                 <Link
@@ -144,9 +147,31 @@ export function Navbar() {
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <Bot className="h-3.5 w-3.5" />
-                  My Agent
+                  {t.nav.myAgent}
                 </Link>
               )}
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  {t.nav.login}
+                </Button>
+              </Link>
+              <Link href="/login?tab=signup">
+                <Button size="sm">
+                  {t.nav.signup}
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {/* Notification bell — visible on all screen sizes for authenticated users */}
+          {user && <NotificationBell userId={user.id} />}
+
+          {/* Avatar dropdown — desktop only, after the bell */}
+          {user && (
+            <div className="hidden md:flex">
               <DropdownMenu>
                 <DropdownMenuTrigger className="rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer transition-transform hover:scale-105">
                   <Avatar className="h-8 w-8 border-2 border-transparent hover:border-violet-500/50 transition-colors">
@@ -157,7 +182,6 @@ export function Navbar() {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* User info header */}
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="font-normal px-3 py-2.5">
                       <div className="flex items-center gap-2.5">
@@ -183,88 +207,52 @@ export function Navbar() {
 
                   <DropdownMenuSeparator />
 
-                  {/* Navigation */}
                   <DropdownMenuGroup>
                     {profile?.username && (
-                      <DropdownMenuItem
-                        onClick={() => router.push(`/${profile.username}`)}
-                        className="gap-2"
-                      >
+                      <DropdownMenuItem onClick={() => router.push(`/${profile.username}`)} className="gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        My Profile
+                        {t.nav.profile}
                       </DropdownMenuItem>
                     )}
                     {FEATURES.agent && profile?.username && (
-                      <DropdownMenuItem
-                        onClick={() => router.push(`/${profile.username}/agent`)}
-                        className="gap-2"
-                      >
+                      <DropdownMenuItem onClick={() => router.push(`/${profile.username}/agent`)} className="gap-2">
                         <Bot className="h-4 w-4 text-muted-foreground" />
-                        My Agent
+                        {t.nav.myAgent}
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem
-                      onClick={() => router.push("/dashboard/settings")}
-                      className="gap-2"
-                    >
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="gap-2">
                       <Settings className="h-4 w-4 text-muted-foreground" />
-                      Settings
+                      {t.nav.settings}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
-                      <DropdownMenuItem
-                        onClick={() => router.push("/dashboard/billing")}
-                        className="gap-2"
-                      >
+                      <DropdownMenuItem onClick={() => router.push("/dashboard/billing")} className="gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        Billing & Plans
+                        {t.nav.billing}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuGroup>
 
                   <DropdownMenuSeparator />
 
-                  {/* Preferences */}
                   <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                      className="gap-2"
-                    >
+                    <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="gap-2">
                       {theme === "dark" ? (
                         <Sun className="h-4 w-4 text-muted-foreground" />
                       ) : (
                         <Moon className="h-4 w-4 text-muted-foreground" />
                       )}
-                      {theme === "dark" ? "Switch to Light" : "Switch to Dark"}
+                      {theme === "dark" ? t.nav.switchLight : t.nav.switchDark}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
                   <DropdownMenuSeparator />
 
-                  {/* Destructive */}
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-                  >
+                  <DropdownMenuItem onClick={handleLogout} className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
                     <LogOut className="h-4 w-4" />
-                    Log out
+                    {t.nav.logout}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/login?tab=signup">
-                <Button
-                  size="sm"
-                >
-                  Sign up
-                </Button>
-              </Link>
             </div>
           )}
 
@@ -306,23 +294,23 @@ export function Navbar() {
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push("/explore")} className="gap-2">
                       <Compass className="h-4 w-4 text-muted-foreground" />
-                      Explore
+                      {t.nav.explore}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/dashboard/feed")} className="gap-2">
                       <Rss className="h-4 w-4 text-muted-foreground" />
-                      Feed
+                      {t.nav.feed}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/dashboard/create-space")} className="gap-2">
                       <Plus className="h-4 w-4 text-muted-foreground" />
-                      Create Space
+                      {t.nav.createSpace}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/dashboard")} className="gap-2">
                       <LayoutGrid className="h-4 w-4 text-muted-foreground" />
-                      My Spaces
+                      {t.nav.mySpaces}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/dashboard/collections")} className="gap-2">
                       <Layers className="h-4 w-4 text-muted-foreground" />
-                      My Collections
+                      {t.nav.myCollections}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
 
@@ -333,23 +321,23 @@ export function Navbar() {
                     {profile?.username && (
                       <DropdownMenuItem onClick={() => router.push(`/${profile.username}`)} className="gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        My Profile
+                        {t.nav.profile}
                       </DropdownMenuItem>
                     )}
                     {FEATURES.agent && profile?.username && (
                       <DropdownMenuItem onClick={() => router.push(`/${profile.username}/agent`)} className="gap-2">
                         <Bot className="h-4 w-4 text-muted-foreground" />
-                        My Agent
+                        {t.nav.myAgent}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="gap-2">
                       <Settings className="h-4 w-4 text-muted-foreground" />
-                      Settings
+                      {t.nav.settings}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
                       <DropdownMenuItem onClick={() => router.push("/dashboard/billing")} className="gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        Billing & Plans
+                        {t.nav.billing}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuGroup>
@@ -362,14 +350,14 @@ export function Navbar() {
                     ) : (
                       <Moon className="h-4 w-4 text-muted-foreground" />
                     )}
-                    {theme === "dark" ? "Switch to Light" : "Switch to Dark"}
+                    {theme === "dark" ? t.nav.switchLight : t.nav.switchDark}
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={handleLogout} className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10">
                     <LogOut className="h-4 w-4" />
-                    Log out
+                    {t.nav.logout}
                   </DropdownMenuItem>
                 </>
               ) : (
@@ -377,21 +365,21 @@ export function Navbar() {
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => router.push("/explore")} className="gap-2">
                       <Compass className="h-4 w-4 text-muted-foreground" />
-                      Explore
+                      {t.nav.explore}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
                       <DropdownMenuItem onClick={() => router.push("/pricing")} className="gap-2">
-                        Pricing
+                        {t.nav.pricing}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push("/login")} className="gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    Log in
+                    {t.nav.login}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/login?tab=signup")} className="gap-2">
-                    Sign up
+                    {t.nav.signup}
                   </DropdownMenuItem>
                 </>
               )}
