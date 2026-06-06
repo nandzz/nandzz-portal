@@ -20,6 +20,7 @@ interface CommentItemProps {
     avatar_url: string | null;
   } | null;
   spaceId: string;
+  spaceOwnerId: string;
   spaceOwnerUsername: string;
   spaceTitle: string;
   onDelete: (commentId: string) => void;
@@ -63,6 +64,7 @@ export function CommentItem({
   userId,
   currentProfile,
   spaceId,
+  spaceOwnerId,
   spaceOwnerUsername,
   spaceTitle,
   onDelete,
@@ -77,6 +79,8 @@ export function CommentItem({
 
   const { t } = useLanguage();
   const isOwnComment = userId === comment.user_id;
+  const isSpaceOwner = userId === spaceOwnerId;
+  const canDelete = isOwnComment || isSpaceOwner;
   const displayName =
     comment.profiles.display_name || comment.profiles.username || "User";
   const initials = displayName[0]?.toUpperCase() ?? "U";
@@ -116,13 +120,9 @@ export function CommentItem({
   };
 
   const handleDelete = async () => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("space_comments")
-      .delete()
-      .eq("id", comment.id);
-    if (error) {
-      console.error("Delete comment failed:", error.message);
+    const res = await fetch(`/api/spaces/comments/${comment.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      console.error("Delete comment failed:", res.status);
       return;
     }
     onDelete(comment.id);
@@ -242,7 +242,7 @@ export function CommentItem({
                 {t.comment.reply}
               </button>
             )}
-            {isOwnComment && (
+            {canDelete && (
               <button
                 type="button"
                 onClick={handleDelete}
@@ -301,6 +301,7 @@ export function CommentItem({
               userId={userId}
               currentProfile={currentProfile}
               spaceId={spaceId}
+              spaceOwnerId={spaceOwnerId}
               spaceOwnerUsername={spaceOwnerUsername}
               spaceTitle={spaceTitle}
               onDelete={handleDeleteReply}

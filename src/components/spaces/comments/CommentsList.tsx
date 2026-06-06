@@ -162,6 +162,7 @@ export function CommentsList({
                 userId={userId}
                 currentProfile={currentProfile}
                 spaceId={spaceId}
+                spaceOwnerId={spaceOwnerId}
                 spaceOwnerUsername={spaceOwnerUsername}
                 spaceTitle={spaceTitle}
                 onDelete={handleDeleteComment}
