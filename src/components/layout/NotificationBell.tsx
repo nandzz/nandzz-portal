@@ -136,7 +136,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                 key={n.id}
                 type="button"
                 onClick={() => {
-                  router.push(`/${n.payload.space_owner_username}/space/${n.payload.space_id}`);
+                  const isComment = n.type === "new_comment" || n.type === "new_reply" || n.type === "comment_mention";
+                  const suffix = isComment ? "?comments=open" : "";
+                  router.push(`/${n.payload.space_owner_username}/space/${n.payload.space_id}${suffix}`);
                   setOpen(false);
                 }}
                 className={cn(

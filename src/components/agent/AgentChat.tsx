@@ -421,7 +421,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
   const showSecurityWarning = isOwnerMode && containsSensitive(input);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-left">
       {/* Messages — flex col so empty state can fill with flex-1 */}
       <div
         ref={scrollContainerRef}

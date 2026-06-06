@@ -100,10 +100,13 @@ export async function generateMetadata({
 
 export default async function SpaceViewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string; id: string }>;
+  searchParams: Promise<{ comments?: string }>;
 }) {
   const { username, id } = await params;
+  const { comments } = await searchParams;
   const space = await getSpace(id);
 
   if (!space) notFound();
@@ -255,6 +258,7 @@ export default async function SpaceViewPage({
             currentProfile={currentProfile}
             initialComments={initialComments}
             initialHasMore={initialHasMore}
+            initialOpen={comments === "open"}
           />
           {!isOwner && (
             <StarButton spaceId={space.id} initialSaved={saved} size="md" />

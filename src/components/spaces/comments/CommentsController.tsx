@@ -20,6 +20,7 @@ interface CommentsControllerProps {
   } | null;
   initialComments: CommentWithLike[];
   initialHasMore: boolean;
+  initialOpen?: boolean;
 }
 
 export function CommentsController({
@@ -32,8 +33,9 @@ export function CommentsController({
   currentProfile,
   initialComments,
   initialHasMore,
+  initialOpen = false,
 }: CommentsControllerProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [count, setCount] = useState(commentsCount);
 
   return (

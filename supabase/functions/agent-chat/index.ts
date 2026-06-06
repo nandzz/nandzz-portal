@@ -365,10 +365,11 @@ serve(async (req: Request) => {
   // 4. Log request before streaming. Awaited so concurrent requests can't both
   //    pass the quota check before either write lands.
   if (mode === "visitor") {
-    await admin
-      .from("agent_requests")
-      .insert({ profile_id: profile.id, messages_count: messages.length })
-      .catch(() => {});
+    try {
+      await admin
+        .from("agent_requests")
+        .insert({ profile_id: profile.id, messages_count: messages.length });
+    } catch (err) { console.error("[agent-chat] Failed to log request:", err); }
   }
 
   // 5. Stream response

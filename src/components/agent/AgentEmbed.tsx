@@ -52,7 +52,7 @@ export function AgentEmbed({ profile, isAuthenticated }: AgentEmbedProps) {
               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/40 flex-shrink-0">
                 <Bot className="w-4 h-4 text-violet-600 dark:text-violet-400" />
               </div>
-              <div>
+              <div className="text-left">
                 <p className="text-xs font-semibold leading-none">{t.agent.askUser.replace("{name}", displayName)}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{t.agent.aiAgentLabel}</p>
               </div>
