@@ -8,9 +8,10 @@ const mockRefresh = vi.fn();
 const mockSignUp = vi.fn();
 const mockSignIn = vi.fn();
 
+const mockSearchParams = { get: vi.fn().mockReturnValue(null) };
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
-  useSearchParams: () => ({ get: vi.fn().mockReturnValue(null) }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 vi.mock("@/lib/supabase/client", () => ({

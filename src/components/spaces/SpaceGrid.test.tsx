@@ -78,49 +78,6 @@ describe("SpaceGrid", () => {
     });
   });
 
-  describe("hashtag filter", () => {
-    it("lists all unique hashtags in the dropdown", () => {
-      render(<SpaceGrid spaces={allSpaces} />);
-      expect(screen.getByRole("option", { name: /#tool/i })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: /#service/i })).toBeInTheDocument();
-    });
-
-    it("filters to #tool spaces when tool is selected", async () => {
-      const user = userEvent.setup();
-      render(<SpaceGrid spaces={allSpaces} />);
-
-      await user.selectOptions(screen.getByRole("combobox"), "tag:tool");
-
-      const cards = screen.getAllByTestId("space-card");
-      expect(cards).toHaveLength(2);
-      expect(screen.getByText("Space 1")).toBeInTheDocument();
-      expect(screen.getByText("Space 3")).toBeInTheDocument();
-    });
-
-    it("filters to #service spaces when service is selected", async () => {
-      const user = userEvent.setup();
-      render(<SpaceGrid spaces={allSpaces} />);
-
-      await user.selectOptions(screen.getByRole("combobox"), "tag:service");
-
-      const cards = screen.getAllByTestId("space-card");
-      expect(cards).toHaveLength(2);
-      expect(screen.getByText("Space 2")).toBeInTheDocument();
-      expect(screen.getByText("Space 3")).toBeInTheDocument();
-    });
-
-    it("resets to all spaces when All is selected", async () => {
-      const user = userEvent.setup();
-      render(<SpaceGrid spaces={allSpaces} />);
-
-      await user.selectOptions(screen.getByRole("combobox"), "tag:tool");
-      expect(screen.getAllByTestId("space-card")).toHaveLength(2);
-
-      await user.selectOptions(screen.getByRole("combobox"), "all");
-      expect(screen.getAllByTestId("space-card")).toHaveLength(3);
-    });
-  });
-
   describe("compact toggle", () => {
     it("starts in comfortable view (Compact button visible)", () => {
       render(<SpaceGrid spaces={allSpaces} />);

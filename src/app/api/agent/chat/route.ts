@@ -3,18 +3,45 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Thin proxy → Supabase Edge Function (agent-chat).
-// All business logic lives in supabase/functions/agent-chat/index.ts:
-//   quota enforcement, RAG retrieval, system prompt assembly, Claude streaming.
+// Business logic lives in supabase/functions/agent-chat/index.ts:
+//   RAG retrieval, system prompt assembly, OpenAI streaming.
 //
 // mode is resolved server-side: "owner" only when the authenticated session
 // user is the actual profile owner. Never trusted from the client body.
+//
+// Credits are charged to the profile owner (whose agent is being queried),
+// not the visitor. The pre-check below refuses early when the owner is out
+// of paid_credits. The actual debit happens inside the edge function after
+// OpenAI reports token usage.
 
 const MAX_MESSAGE_CHARS = 1000;
+// Refuse the request if the profile owner has fewer than this many paid_credits.
+// A typical short chat (~1k in / 500 out on gpt-4.1-nano with 3× markup) bills ≈1 credit.
+const MIN_CREDITS_FOR_CHAT = 1;
+
+// Defaults if app_settings.chat_rate_limit is missing. The chat charges the
+// owner regardless of who's chatting, so an unthrottled public endpoint is a
+// direct path to draining someone's paid balance. Per-IP guards casual abuse;
+// per-owner caps a coordinated botnet.
+const DEFAULT_PER_IP_PER_OWNER_HOURLY = 30;
+const DEFAULT_PER_OWNER_HOURLY = 240;
+
+// Amplify sits behind CloudFront, which appends the true client IP as the
+// LAST entry of X-Forwarded-For. Any earlier entry is attacker-controlled
+// (a client can send its own XFF and CloudFront preserves it), so the
+// leftmost value would let anyone rotate the rate-limit key at will.
+function getClientIp(req: NextRequest): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0) return parts[parts.length - 1]!;
+  }
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
 
 export async function POST(req: NextRequest) {
   const { messages, username, preview } = await req.json();
 
-  // Reject if any message exceeds the character limit.
   if (
     !Array.isArray(messages) ||
     messages.some((m) => typeof m.content === "string" && m.content.length > MAX_MESSAGE_CHARS)
@@ -25,36 +52,106 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Determine mode server-side.
-  // "owner" requires: authenticated session user === profile owner AND preview !== true.
-  // preview=true lets the owner force visitor mode (e.g. the preview page).
   let mode: "visitor" | "owner" = "visitor";
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (user && !preview) {
-    const admin = createAdminClient();
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("username", username)
-      .single();
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id, paid_credits")
+    .eq("username", username)
+    .single();
 
-    if (profile?.id === user.id) {
-      mode = "owner";
+  if (!profile) {
+    return new Response(JSON.stringify({ error: "Profile not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (user && !preview && profile.id === user.id) {
+    mode = "owner";
+  }
+
+  // Owners chatting with their own agent skip the abuse throttle — they're
+  // testing, and they're the one being billed anyway. Everyone else passes
+  // through the per-IP and per-owner caps.
+  if (mode !== "owner") {
+    const { data: rlSetting } = await admin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "chat_rate_limit")
+      .maybeSingle();
+    const rlValue = (rlSetting?.value ?? {}) as {
+      per_ip_per_owner_hourly?: number;
+      per_owner_hourly?: number;
+    };
+    const perIpMax = rlValue.per_ip_per_owner_hourly ?? DEFAULT_PER_IP_PER_OWNER_HOURLY;
+    const perOwnerMax = rlValue.per_owner_hourly ?? DEFAULT_PER_OWNER_HOURLY;
+
+    const ip = getClientIp(req);
+    const perIpKey = `ip:${ip}:owner:${profile.id}`;
+    const perOwnerKey = `owner:${profile.id}`;
+
+    const [{ error: ipErr }, { error: ownerErr }] = await Promise.all([
+      admin.rpc("assert_chat_rate_limit", {
+        p_key: perIpKey,
+        p_max: perIpMax,
+        p_window_seconds: 3600,
+      }),
+      admin.rpc("assert_chat_rate_limit", {
+        p_key: perOwnerKey,
+        p_max: perOwnerMax,
+        p_window_seconds: 3600,
+      }),
+    ]);
+
+    if (ipErr?.message?.includes("RATE_LIMITED") || ownerErr?.message?.includes("RATE_LIMITED")) {
+      return new Response(
+        JSON.stringify({ error: "RATE_LIMITED", retry_after_seconds: 3600 }),
+        { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "3600" } }
+      );
     }
   }
 
+  // Pre-check: the profile owner must have at least one paid credit.
+  // Doing it here (not inside the edge function) lets us fail fast with 402 — no stream open.
+  if ((profile.paid_credits ?? 0) < MIN_CREDITS_FOR_CHAT) {
+    return new Response(
+      JSON.stringify({ error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/credits" }),
+      { status: 402, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const requestId = crypto.randomUUID();
   const edgeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/agent-chat`;
+
+  const proxySecret = process.env.INTERNAL_PROXY_SECRET;
+  if (!proxySecret) {
+    console.error("[api/agent/chat] INTERNAL_PROXY_SECRET not configured");
+    return new Response(
+      JSON.stringify({ error: "Server misconfigured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   const upstream = await fetch(edgeUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      "x-internal-proxy-secret": proxySecret,
     },
-    body: JSON.stringify({ messages, username, mode }),
+    body: JSON.stringify({
+      messages,
+      username,
+      mode,
+      profile_id: profile.id,
+      request_id: requestId,
+      role: "agent_chat",
+    }),
   });
 
   const streamHeaders = {

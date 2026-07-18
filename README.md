@@ -44,38 +44,72 @@ A **Space** is a shared web app. It has:
 
 ## Getting Started
 
-### 1. Clone and install
+### 1. Prerequisites
+
+- **Node.js 20+** and npm
+- Access to the **cloud DEV Supabase project** (anon + service-role keys)
+- Supabase CLI (installed as a devDependency, no global install needed) — used for `db push` and `functions deploy` against the cloud project
+
+> Dev runs against a cloud Supabase dev project, not a local stack. No Docker needed.
+
+### 2. Clone and install
 
 ```bash
 git clone https://github.com/nandzz/nandzz.git
-cd nandzz
+cd nandzz/Portal
 npm install
 ```
 
-### 2. Set up Supabase
+### 3. Configure env
 
-Create a project at [supabase.com](https://supabase.com), then run the schema in the Supabase SQL editor:
+Two env files live next to `package.json` (both gitignored). Copy from `.env.example` if they don't exist:
 
-```
-supabase-schema.sql
-```
+| File | Purpose |
+|---|---|
+| `.env.local` | **Day-to-day dev** — points at the **cloud DEV** Supabase project. Used by `npm run dev`. |
+| `.env.production.local` | **Optional, prod-mirror testing** — points at the live PROD Supabase project. Used by `npm run dev:prod` to verify a change against real data before deploying. |
 
-### 3. Configure environment variables
+Fill in `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` from **Supabase Dashboard → (project) → Settings → API**. Configure Google OAuth in the Supabase Dashboard (Authentication → Providers → Google) — no env vars needed for that on the cloud project.
 
-Create a `.env.local` file:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### 4. Run locally
+### 4. Run dev
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Starts Next.js at [http://localhost:3000](http://localhost:3000), wired to the cloud DEV Supabase project. Emails go out for real (the dev project is configured with real SMTP) — sign up with an address you control.
+
+### 5. Useful scripts
+
+```bash
+npm run dev               # Next dev against the cloud DEV Supabase project
+npm run dev:prod          # Next dev against the cloud PROD Supabase project
+npm run db:push           # apply supabase/migrations/ to the linked cloud project
+npm run functions:deploy  # deploy edge functions to the linked cloud project
+```
+
+### 6. Editing the schema
+
+`supabase-schema.sql` at the repo root is the canonical schema. To apply changes to the cloud DEV project you have two options:
+
+1. **SQL editor** — paste the new statements into the cloud Supabase Studio's SQL editor and run. The schema is idempotent (`if not exists`, `add column if not exists`), so re-runs are safe.
+2. **CLI** — author a migration in `supabase/migrations/` and run `npm run db:push` against the linked DEV project.
+
+Always apply schema changes to **DEV first**, verify the app still works, then repeat on PROD.
+
+### 7. Edge function secrets
+
+Cloud edge function secrets are managed via the Supabase Dashboard (Edge Functions → (function) → Secrets) or `supabase secrets set --project-ref <ref>`. Local `supabase/functions/.env` is no longer used in this workflow.
+
+### 8. Testing against production
+
+Before deploying, sanity-check the change against real prod data:
+
+```bash
+npm run dev:prod
+```
+
+This loads `.env.production.local` (real Supabase URL, real service-role key, real Stripe webhook) and runs Next dev. **Read-mostly testing only — any mutation is a real prod write.**
 
 ---
 

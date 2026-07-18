@@ -6,6 +6,9 @@ frontend:
         - npm ci --cache .npm --prefer-offline
     build:
       commands:
+        # Amplify SSR runtime doesn't inherit Console env vars — write them to
+        # .env.production so Next bundles them into the .next/ server output.
+        - env | grep -E '^(SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)=' >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next

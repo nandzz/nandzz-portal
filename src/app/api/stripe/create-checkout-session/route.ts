@@ -1,79 +1,89 @@
-// TODO: npm install stripe
-// Then set STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, and STRIPE_WEBHOOK_SECRET in .env.local
-//
-// Price IDs (create in Stripe Dashboard → Products):
-//   STRIPE_PRICE_PRO_MONTHLY=price_...
-//   STRIPE_PRICE_PRO_ANNUAL=price_...
+// Creates a one-off Stripe Checkout Session for a credit pack purchase.
+// Required env: STRIPE_SECRET_KEY, NEXT_PUBLIC_SITE_URL.
+// Each credit_pack row stores its own stripe_price_id — no env vars per pack.
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
 
 export async function POST(request: Request) {
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-  if (!stripeKey) {
+  if (!isStripeConfigured()) {
     return Response.json(
       {
         error: "Stripe is not configured yet.",
         instructions:
-          "Add STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_PRICE_PRO_MONTHLY, and STRIPE_PRICE_PRO_ANNUAL to your .env.local file, then run: npm install stripe",
+          "Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET in .env.local. Pack price IDs live in the credit_packs table.",
       },
       { status: 503 }
     );
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const { credit_pack_id } = (await request.json()) as { credit_pack_id?: string };
+  if (!credit_pack_id) {
+    return Response.json({ error: "credit_pack_id is required" }, { status: 400 });
   }
 
-  const body = await request.json() as { billing?: string };
-  const isAnnual = body.billing === "annual";
-  const priceId = isAnnual
-    ? process.env.STRIPE_PRICE_PRO_ANNUAL
-    : process.env.STRIPE_PRICE_PRO_MONTHLY;
+  const admin = createAdminClient();
 
-  if (!priceId) {
+  const { data: pack, error: packErr } = await admin
+    .from("credit_packs")
+    .select("id, name, credits, price_cents, currency, stripe_price_id, active")
+    .eq("id", credit_pack_id)
+    .single();
+
+  if (packErr || !pack || !pack.active) {
+    return Response.json({ error: "Pack not available" }, { status: 404 });
+  }
+  if (!pack.stripe_price_id) {
     return Response.json(
-      { error: "Stripe price IDs not configured. Add STRIPE_PRICE_PRO_MONTHLY and STRIPE_PRICE_PRO_ANNUAL to .env.local" },
-      { status: 503 }
+      { error: "Pack is missing a Stripe price. Sync it from the admin dashboard." },
+      { status: 500 }
     );
   }
 
-  // --- Activate when stripe package is installed ---
-  // const Stripe = (await import("stripe")).default;
-  // const stripe = new Stripe(stripeKey);
-  //
-  // const { data: profile } = await supabase
-  //   .from("profiles")
-  //   .select("stripe_customer_id")
-  //   .eq("id", user.id)
-  //   .single();
-  //
-  // const session = await stripe.checkout.sessions.create({
-  //   mode: "subscription",
-  //   customer: profile?.stripe_customer_id ?? undefined,
-  //   customer_email: profile?.stripe_customer_id ? undefined : user.email,
-  //   line_items: [{ price: priceId, quantity: 1 }],
-  //   success_url: `${siteUrl}/dashboard/billing?success=1`,
-  //   cancel_url: `${siteUrl}/dashboard/billing?canceled=1`,
-  //   metadata: { user_id: user.id },
-  //   allow_promotion_codes: true,
-  //   subscription_data: {
-  //     metadata: { user_id: user.id },
-  //   },
-  // });
-  //
-  // return Response.json({ url: session.url });
-  // -------------------------------------------------
+  // Look up or create the Stripe customer once per profile.
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .single();
 
-  // Placeholder response until Stripe is configured:
-  return Response.json(
-    { error: "Stripe checkout is not yet activated. See route comments for setup instructions." },
-    { status: 503 }
-  );
+  const stripe = getStripe();
+  let customerId = profile?.stripe_customer_id ?? null;
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: user.email ?? undefined,
+      metadata: { user_id: user.id },
+    });
+    customerId = customer.id;
+    await admin
+      .from("profiles")
+      .update({ stripe_customer_id: customerId })
+      .eq("id", user.id);
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer: customerId,
+    line_items: [{ price: pack.stripe_price_id, quantity: 1 }],
+    success_url: `${siteUrl}/dashboard/credits?success=1`,
+    cancel_url: `${siteUrl}/dashboard/credits?canceled=1`,
+    allow_promotion_codes: true,
+    metadata: {
+      user_id: user.id,
+      credit_pack_id: pack.id,
+      credits: String(pack.credits),
+      pack_name: pack.name,
+      pack_price_cents: String(pack.price_cents),
+    },
+  });
+
+  return Response.json({ url: session.url });
 }

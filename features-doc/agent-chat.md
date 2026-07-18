@@ -46,13 +46,15 @@ Browser
                  │    otherwise               → "visitor"
                  └─ POST /functions/v1/agent-chat  { messages, username, mode }
                       └─ Supabase Edge Function (Deno)
-                           1. Profile lookup
-                           2. Quota check (visitors only)
+                           1. Profile lookup (validates profile_id from caller)
+                           2. Lookup default model from llm_models (role='agent_chat')
                            3. RAG retrieval (OpenAI embeddings → match_agent_chunks)
                               └─ Fallback: full-document injection
                            4. Build system prompt (visitor or owner template)
-                           5. Stream Claude response (claude-haiku-4-5)
-                           6. Log to agent_requests (visitors only)
+                           5. Stream OpenAI response (model from llm_models, e.g. gpt-4.1-nano)
+                              with stream_options.include_usage = true
+                           6. Log to agent_requests (visitors only, analytics)
+                           7. charge_llm_usage RPC — debit profile owner's paid_credits
 ```
 
 ### Mode is server-side only
@@ -87,14 +89,9 @@ Owner preview: `/{username}/agent/preview` — auth-gated, redirects to public p
 
 ---
 
-## Quota
+## Billing
 
-| Plan | Daily messages (24h rolling) |
-|---|---|
-| free | 50 |
-| pro | 1 000 |
-
-Quota only applies to visitor mode. Owner previews are never counted or logged.
+Each chat message is charged per token to the **profile owner's** `paid_credits` (not the visitor's). The proxy refuses the request with 402 if the owner has fewer than 1 paid_credit. Token cost is computed from the `llm_models` row using a 3× markup on raw model cost — see [credits.md](./credits.md). The `agent_requests` table is now analytics-only; the authoritative source of usage is `llm_usage`.
 
 ---
 

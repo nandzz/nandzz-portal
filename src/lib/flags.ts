@@ -1,4 +1,4 @@
 export const FEATURES = {
-  monetization: false,
+  monetization: true,
   agent: true,
 };

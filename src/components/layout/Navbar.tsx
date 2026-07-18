@@ -225,9 +225,9 @@ export function Navbar() {
                       {t.nav.settings}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
-                      <DropdownMenuItem onClick={() => router.push("/dashboard/billing")} className="gap-2">
+                      <DropdownMenuItem onClick={() => router.push("/dashboard/credits")} className="gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        {t.nav.billing}
+                        Credits
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuGroup>
@@ -335,9 +335,9 @@ export function Navbar() {
                       {t.nav.settings}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
-                      <DropdownMenuItem onClick={() => router.push("/dashboard/billing")} className="gap-2">
+                      <DropdownMenuItem onClick={() => router.push("/dashboard/credits")} className="gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        {t.nav.billing}
+                        Credits
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuGroup>
