@@ -1,0 +1,21 @@
+project_id = "nandzz"
+
+# This project runs against a cloud Supabase dev project (linked via
+# `.temp/linked-project.json`). Local-stack sections were removed — config
+# below is only what `supabase functions deploy` and `supabase db push` use
+# when targeting the cloud project.
+
+[functions.agent-chat]
+verify_jwt = true
+
+[functions.embed-document]
+verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.space-ai-edit]
+verify_jwt = true
+
+[functions.anthropic-webhook]
+verify_jwt = false

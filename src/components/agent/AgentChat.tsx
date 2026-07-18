@@ -296,6 +296,19 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
         body: JSON.stringify({ messages: historyForApi, username, preview }),
       });
 
+      // The proxy returns 402 when the profile owner is out of paid credits.
+      // Surface a tailored message instead of the generic stream-error fallback.
+      if (res.status === 402) {
+        const outOfCredits = `${displayName}'s agent is out of credits. If this is your profile, [top up](/dashboard/credits) to keep it answering.`;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: outOfCredits } : m
+          )
+        );
+        setIsStreaming(false);
+        return;
+      }
+
       if (!res.body) throw new Error("No stream");
 
       const reader = res.body.getReader();

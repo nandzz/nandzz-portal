@@ -86,11 +86,23 @@ function streamText(text: string): Response {
   return new Response(stream, { headers: STREAM_HEADERS });
 }
 
+type UsageReport = { input: number; output: number };
+type ChargeContext = {
+  // deno-lint-ignore no-explicit-any
+  admin: any;
+  userId: string;
+  modelId: string;
+  modelIdForApi: string;
+  role: "agent_chat" | "page_editor";
+  requestId: string;
+};
+
 async function streamOpenAI(
   systemPrompt: string,
   messages: { role: string; content: string }[],
   apiKey: string,
-  ownerMode: boolean
+  ownerMode: boolean,
+  charge: ChargeContext
 ): Promise<Response> {
   const openAIMessages = [
     { role: "system", content: systemPrompt },
@@ -101,11 +113,13 @@ async function streamOpenAI(
   ];
 
   const body: Record<string, unknown> = {
-    model: "gpt-4.1-nano",
+    model: charge.modelIdForApi,
     // Owner mode needs more tokens to draft full document content.
     max_tokens: ownerMode ? 2048 : 1024,
     messages: openAIMessages,
     stream: true,
+    // Required to receive the terminal usage event without a separate API call.
+    stream_options: { include_usage: true },
   };
 
   if (ownerMode) {
@@ -136,6 +150,7 @@ async function streamOpenAI(
       // Tool call accumulator — OpenAI streams arguments as deltas
       let toolCallName: string | null = null;
       let toolCallArgs = "";
+      let usage: UsageReport | null = null;
 
       try {
         while (true) {
@@ -172,6 +187,15 @@ async function streamOpenAI(
 
             try {
               const event = JSON.parse(data);
+
+              // Terminal usage event has empty choices but a populated usage field.
+              if (event.usage && typeof event.usage.prompt_tokens === "number") {
+                usage = {
+                  input: event.usage.prompt_tokens ?? 0,
+                  output: event.usage.completion_tokens ?? 0,
+                };
+              }
+
               const choice = event.choices?.[0];
               if (!choice) continue;
 
@@ -222,16 +246,30 @@ async function streamOpenAI(
       } finally {
         if (!sentDone) controller.enqueue(jsonLine({ done: true }));
         controller.close();
+
+        // Charge credits AFTER the stream completes. Best-effort —
+        // a failure here must not affect the user-visible response.
+        if (usage && usage.input + usage.output > 0) {
+          try {
+            await charge.admin.rpc("charge_llm_usage", {
+              p_user_id: charge.userId,
+              p_model_id: charge.modelId,
+              p_role: charge.role,
+              p_input_tokens: usage.input,
+              p_output_tokens: usage.output,
+              p_message_id: null,
+              p_request_id: charge.requestId,
+            });
+          } catch (err) {
+            console.error("[agent-chat] charge_llm_usage failed:", err);
+          }
+        }
       }
     },
   });
 
   return new Response(stream, { headers: STREAM_HEADERS });
 }
-
-// ─── Quota limits per plan ────────────────────────────────────────────────────
-
-const DAILY_LIMITS: Record<string, number> = { free: 50, pro: 1000 };
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
@@ -240,12 +278,38 @@ serve(async (req: Request) => {
     return new Response(null, { headers: CORS });
   }
 
+  // verify_jwt=true only proves the caller has *some* Supabase-issued JWT
+  // (any anon/user key qualifies), which is not enough here: rate limits and
+  // credit pre-checks live in the Next.js proxy, and this function bills the
+  // profile owner regardless of who's chatting. A shared secret set only in
+  // the proxy env locks out direct-to-edge callers so those guards can't be
+  // bypassed.
+  const expectedProxySecret = Deno.env.get("INTERNAL_PROXY_SECRET");
+  if (!expectedProxySecret) {
+    console.error("[agent-chat] INTERNAL_PROXY_SECRET not configured");
+    return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+      status: 500, headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+  if (req.headers.get("x-internal-proxy-secret") !== expectedProxySecret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   let messages: { role: string; content: string }[];
   let username: string;
   let mode: "visitor" | "owner";
+  let profileIdFromCaller: string | null = null;
+  let requestIdFromCaller: string | null = null;
 
   try {
-    ({ messages, username, mode = "visitor" } = await req.json());
+    const body = await req.json();
+    messages = body.messages;
+    username = body.username;
+    mode = body.mode ?? "visitor";
+    profileIdFromCaller = body.profile_id ?? null;
+    requestIdFromCaller = body.request_id ?? null;
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
@@ -268,7 +332,7 @@ serve(async (req: Request) => {
   // 1. Profile lookup
   const { data: profile } = await admin
     .from("profiles")
-    .select("id, display_name, username, plan_tier")
+    .select("id, display_name, username")
     .eq("username", username)
     .single();
 
@@ -276,23 +340,29 @@ serve(async (req: Request) => {
     return streamText("This profile doesn't exist.");
   }
 
+  // Trust the caller's profile_id only if it matches the looked-up profile.
+  // (The proxy at src/app/api/agent/chat/route.ts is the only legitimate caller.)
+  if (profileIdFromCaller && profileIdFromCaller !== profile.id) {
+    return new Response(JSON.stringify({ error: "profile_id mismatch" }), {
+      status: 400,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  }
+
   const displayName: string = profile.display_name || profile.username;
 
-  // 2. Quota check — skipped for owner
-  if (mode === "visitor") {
-    const planLimit = DAILY_LIMITS[profile.plan_tier as string] ?? DAILY_LIMITS.free;
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count } = await admin
-      .from("agent_requests")
-      .select("*", { count: "exact", head: true })
-      .eq("profile_id", profile.id)
-      .gte("created_at", since);
+  // 2. Lookup the active agent-chat model.
+  const { data: modelRow } = await admin
+    .from("llm_models")
+    .select("id, provider, model_id")
+    .eq("default_for_role", "agent_chat")
+    .eq("active", true)
+    .maybeSingle();
 
-    if ((count ?? 0) >= planLimit) {
-      return streamText(
-        `${displayName}'s agent has reached its daily message limit. Please try again tomorrow.`
-      );
-    }
+  if (!modelRow) {
+    return streamText(
+      `${displayName}'s agent is temporarily unavailable. No active chat model is configured.`
+    );
   }
 
   // 3. Build system prompt
@@ -362,8 +432,7 @@ serve(async (req: Request) => {
     }
   }
 
-  // 4. Log request before streaming. Awaited so concurrent requests can't both
-  //    pass the quota check before either write lands.
+  // 4. Log request (analytics) — non-blocking, separate from credit charge.
   if (mode === "visitor") {
     try {
       await admin
@@ -372,6 +441,14 @@ serve(async (req: Request) => {
     } catch (err) { console.error("[agent-chat] Failed to log request:", err); }
   }
 
-  // 5. Stream response
-  return streamOpenAI(systemPrompt, messages, openAIKey, mode === "owner");
+  // 5. Stream response — credits are debited from the profile owner after the
+  //    stream completes and OpenAI has reported real token counts.
+  return streamOpenAI(systemPrompt, messages, openAIKey, mode === "owner", {
+    admin,
+    userId: profile.id,
+    modelId: modelRow.id,
+    modelIdForApi: modelRow.model_id,
+    role: "agent_chat",
+    requestId: requestIdFromCaller ?? crypto.randomUUID(),
+  });
 });

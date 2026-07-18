@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { publishSpace } from "@/lib/actions/publish-space";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -156,6 +158,10 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const [previewTitle, setPreviewTitle] = useState(space?.preview_title || "");
   const [clearExistingImage, setClearExistingImage] = useState(false);
   const [htmlAreaCollapsed, setHtmlAreaCollapsed] = useState(true);
+  const [insufficientCredits, setInsufficientCredits] = useState(false);
+
+  // Stable per-mount idempotency token — retried submits resolve to the same space row.
+  const clientRequestIdRef = useRef<string>(crypto.randomUUID());
 
   useEffect(() => {
     supabase
@@ -340,6 +346,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInsufficientCredits(false);
     setLoading(true);
 
     try {
@@ -567,28 +574,37 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
       let spaceId: string;
 
       if (isEditing && space) {
+        // Edits don't cost credits — stay on the direct client update.
+        // user_id stays on the row from creation; no need to re-send it.
+        const { user_id: _omit, ...updatePayload } = spaceData;
+        void _omit;
         const { error } = await supabase
           .from("spaces")
-          .update(spaceData)
+          .update(updatePayload)
           .eq("id", space.id);
         if (error) throw error;
         spaceId = space.id;
       } else {
-        const { data: inserted, error } = await supabase
-          .from("spaces")
-          .insert(spaceData)
-          .select("id")
-          .single();
-        if (error) throw error;
-        spaceId = inserted.id;
+        // First-time publish goes through the server action so credits are deducted atomically.
+        const { user_id: _omit, ...publishPayload } = spaceData;
+        void _omit;
+        const result = await publishSpace(
+          publishPayload,
+          clientRequestIdRef.current,
+          collectionId
+        );
+        if (!result.ok) {
+          if (result.error === "INSUFFICIENT_CREDITS") {
+            setInsufficientCredits(true);
+            setError("");
+            return;
+          }
+          throw new Error(result.message || result.error);
+        }
+        spaceId = result.spaceId;
       }
 
-      if (!isEditing && collectionId) {
-        await supabase
-          .from("collection_spaces")
-          .insert({ collection_id: collectionId, space_id: spaceId });
-      }
-
+      void spaceId;
       router.push(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard");
       router.refresh();
     } catch (err: unknown) {
@@ -1355,6 +1371,23 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
               </div>
             )}
           </div>
+
+          {insufficientCredits && (
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                You&apos;re out of credits.
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                Publishing a space costs credits. Top up to keep sharing.
+              </p>
+              <Link
+                href="/dashboard/credits"
+                className="inline-flex items-center mt-2 text-sm font-semibold text-amber-900 dark:text-amber-200 underline underline-offset-2"
+              >
+                Buy credits →
+              </Link>
+            </div>
+          )}
 
           {error && (
             <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">

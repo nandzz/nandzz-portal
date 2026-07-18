@@ -48,17 +48,22 @@ export default function SetupUsernamePage() {
         return;
       }
 
-      const { error: insertError } = await supabase.from("profiles").insert({
-        id: user.id,
-        username: trimmed,
-        display_name: displayName.trim() || trimmed,
+      // claim_signup_profile inserts the profile AND writes the welcome-credit
+      // grant in one SECURITY DEFINER call, so OAuth signups get the same
+      // signup_credit_grant from app_settings that email/password signups get
+      // via the handle_new_user trigger.
+      const { error: rpcError } = await supabase.rpc("claim_signup_profile", {
+        p_username: trimmed,
+        p_display_name: displayName.trim() || null,
       });
 
-      if (insertError) {
-        if (insertError.code === "23505") {
+      if (rpcError) {
+        if (rpcError.message?.includes("USERNAME_TAKEN")) {
           setError(t.setup.usernameTaken);
+        } else if (rpcError.message?.includes("INVALID_USERNAME")) {
+          setError(t.setup.usernameInvalid);
         } else {
-          setError(insertError.message);
+          setError(rpcError.message);
         }
       } else {
         router.push("/dashboard");

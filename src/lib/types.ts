@@ -7,8 +7,6 @@ export type SocialLinks = {
   youtube?: string;
 };
 
-export type PlanTier = "free" | "pro";
-
 export type Profile = {
   id: string;
   username: string;
@@ -21,10 +19,42 @@ export type Profile = {
   website_url: string | null;
   social_links: SocialLinks | null;
   created_at: string;
-  plan_tier?: PlanTier | null;
   stripe_customer_id?: string | null;
+  free_space_credits?: number | null;
+  paid_credits?: number | null;
+  is_admin?: boolean | null;
   followers_count?: number | null;
   following_count?: number | null;
+};
+
+export type CreditBucket = "free_space" | "paid";
+
+export type CreditLedgerEntry = {
+  id: number;
+  user_id: string;
+  delta: number;
+  bucket: CreditBucket;
+  reason: string;
+  balance_after_free: number;
+  balance_after_paid: number;
+  stripe_event_id: string | null;
+  stripe_payment_intent_id: string | null;
+  related_entity_type: string | null;
+  related_entity_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type CreditPack = {
+  id: string;
+  stripe_product_id: string | null;
+  stripe_price_id: string | null;
+  name: string;
+  credits: number;
+  price_cents: number;
+  currency: string;
+  sort_order: number;
+  active: boolean;
 };
 
 export type Space = {

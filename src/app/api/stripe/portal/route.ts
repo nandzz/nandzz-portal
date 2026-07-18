@@ -1,50 +1,37 @@
-// TODO: npm install stripe
-// Creates a Stripe Customer Portal session for managing subscriptions.
-// Configure in Stripe Dashboard → Settings → Customer portal
+// Stripe Customer Portal — lets users view receipts and manage payment methods.
+// Subscriptions are not used in the credits model, but the portal still surfaces invoice history.
+// Configure in Stripe Dashboard → Settings → Customer portal.
 
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
 
 export async function POST() {
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-  if (!stripeKey) {
+  if (!isStripeConfigured()) {
     return Response.json({ error: "Stripe not configured" }, { status: 503 });
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!user) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.stripe_customer_id) {
+    return Response.json({ error: "No purchase history yet" }, { status: 400 });
   }
 
-  // --- Activate when stripe package is installed ---
-  // const Stripe = (await import("stripe")).default;
-  // const stripe = new Stripe(stripeKey);
-  //
-  // const { data: profile } = await supabase
-  //   .from("profiles")
-  //   .select("stripe_customer_id")
-  //   .eq("id", user.id)
-  //   .single();
-  //
-  // if (!profile?.stripe_customer_id) {
-  //   return Response.json({ error: "No active subscription found" }, { status: 400 });
-  // }
-  //
-  // const portalSession = await stripe.billingPortal.sessions.create({
-  //   customer: profile.stripe_customer_id,
-  //   return_url: `${siteUrl}/dashboard/billing`,
-  // });
-  //
-  // return Response.json({ url: portalSession.url });
-  // -------------------------------------------------
+  const stripe = getStripe();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  return Response.json(
-    { error: "Stripe billing portal not yet activated. See route comments for setup." },
-    { status: 503 }
-  );
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: profile.stripe_customer_id,
+    return_url: `${siteUrl}/dashboard/credits`,
+  });
+
+  return NextResponse.redirect(portalSession.url, 303);
 }
