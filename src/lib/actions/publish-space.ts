@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type PublishSpacePayload = {
@@ -18,24 +19,19 @@ export type PublishSpacePayload = {
   hashtags?: string[];
 };
 
-export type PublishSpaceResult =
-  | {
-      ok: true;
-      spaceId: string;
-      freeSpaceCredits: number;
-      paidCredits: number;
-    }
-  | {
-      ok: false;
-      error: "INSUFFICIENT_CREDITS" | "UNAUTHENTICATED" | "FAILED";
-      message?: string;
-    };
+// Only error results are returned to the client. On success the action
+// calls redirect() and never returns.
+export type PublishSpaceError = {
+  ok: false;
+  error: "INSUFFICIENT_CREDITS" | "UNAUTHENTICATED" | "FAILED";
+  message?: string;
+};
 
 export async function publishSpace(
   payload: PublishSpacePayload,
   clientRequestId: string,
   collectionId?: string
-): Promise<PublishSpaceResult> {
+): Promise<PublishSpaceError | void> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
@@ -65,10 +61,9 @@ export async function publishSpace(
       .insert({ collection_id: collectionId, space_id: row.space_id });
   }
 
-  return {
-    ok: true,
-    spaceId: row.space_id,
-    freeSpaceCredits: row.free_space_credits,
-    paidCredits: row.paid_credits,
-  };
+  // Server-side redirect — recommended pattern for post-mutation navigation
+  // in Next.js server actions. Throws NEXT_REDIRECT which Next.js turns into
+  // a 303 the client always honors; avoids the router.push race with the
+  // enclosing server-action transition.
+  redirect(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard");
 }

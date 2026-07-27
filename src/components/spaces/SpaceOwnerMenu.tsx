@@ -28,7 +28,11 @@ export function SpaceOwnerMenu({ spaceId, editHref, redirectTo }: SpaceOwnerMenu
     if (!confirm(t.space.confirmDelete)) return;
     const supabase = createClient();
     await deleteSpaceWithCleanup(supabase, spaceId);
-    router.push(redirectTo);
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push(redirectTo);
+    }
   };
 
   return (

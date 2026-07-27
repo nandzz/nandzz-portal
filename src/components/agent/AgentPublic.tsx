@@ -1,18 +1,21 @@
 "use client";
 
-import { Eye, Bot } from "lucide-react";
+import Link from "next/link";
+import { Eye, Bot, LogIn } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { AgentChat } from "./AgentChat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { buttonVariants } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AgentPublicProps {
   profile: Profile;
   isPreview?: boolean;
   hasDocuments?: boolean;
+  isAuthenticated?: boolean;
 }
 
-export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPublicProps) {
+export function AgentPublic({ profile, isPreview, hasDocuments = true, isAuthenticated = false }: AgentPublicProps) {
   const { t } = useLanguage();
   const displayName = profile.display_name || profile.username;
 
@@ -50,9 +53,7 @@ export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPu
 
         {/* Chat — borderless, fills remaining space */}
         <div className="flex-1 overflow-hidden min-h-0">
-          {hasDocuments ? (
-            <AgentChat username={profile.username} displayName={displayName} preview={isPreview} />
-          ) : (
+          {!hasDocuments ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
               <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-muted">
                 <Bot className="w-6 h-6 text-muted-foreground/50" />
@@ -64,6 +65,28 @@ export function AgentPublic({ profile, isPreview, hasDocuments = true }: AgentPu
                 </p>
               </div>
             </div>
+          ) : !isAuthenticated && !isPreview ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-900/40">
+                <LogIn className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{t.agent.signInToChat.replace("{name}", displayName)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t.agent.signInToChatDesc}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Link href="/login" className={buttonVariants({ size: "sm" })}>
+                  {t.nav.login}
+                </Link>
+                <Link href="/login?tab=signup" className={buttonVariants({ size: "sm", variant: "outline" })}>
+                  {t.nav.signup}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <AgentChat username={profile.username} displayName={displayName} preview={isPreview} />
           )}
         </div>
       </div>

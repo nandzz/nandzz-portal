@@ -19,3 +19,6 @@ verify_jwt = true
 
 [functions.anthropic-webhook]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

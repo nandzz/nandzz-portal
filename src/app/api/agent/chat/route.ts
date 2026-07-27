@@ -9,20 +9,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // mode is resolved server-side: "owner" only when the authenticated session
 // user is the actual profile owner. Never trusted from the client body.
 //
-// Credits are charged to the profile owner (whose agent is being queried),
-// not the visitor. The pre-check below refuses early when the owner is out
-// of paid_credits. The actual debit happens inside the edge function after
-// OpenAI reports token usage.
+// Credits are charged to whoever is chatting — the caller, not the profile
+// owner. Owner mode (owner chatting with their own agent) bills the owner
+// because they are the caller. The pre-check below refuses early when the
+// caller is out of paid_credits. The actual debit happens inside the edge
+// function after OpenAI reports token usage.
 
-const MAX_MESSAGE_CHARS = 1000;
-// Refuse the request if the profile owner has fewer than this many paid_credits.
+const MAX_MESSAGE_CHARS = 30000;
+// Refuse the request if the caller has fewer than this many paid_credits.
 // A typical short chat (~1k in / 500 out on gpt-4.1-nano with 3× markup) bills ≈1 credit.
 const MIN_CREDITS_FOR_CHAT = 1;
 
-// Defaults if app_settings.chat_rate_limit is missing. The chat charges the
-// owner regardless of who's chatting, so an unthrottled public endpoint is a
-// direct path to draining someone's paid balance. Per-IP guards casual abuse;
-// per-owner caps a coordinated botnet.
+// Defaults if app_settings.chat_rate_limit is missing. Per-IP guards casual
+// abuse; per-owner caps a coordinated flood aimed at a specific agent.
 const DEFAULT_PER_IP_PER_OWNER_HOURLY = 30;
 const DEFAULT_PER_OWNER_HOURLY = 240;
 
@@ -57,12 +56,23 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Every chat is billed to the caller, so anonymous visitors are refused
+  // outright — a signed-in account is required to identify who to charge and
+  // to keep abuse tied to a real user, not just an IP.
+  if (!user) {
+    return new Response(
+      JSON.stringify({ error: "AUTH_REQUIRED" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("id, paid_credits")
-    .eq("username", username)
-    .single();
+
+  // Look up the agent's owner (for id) and the caller (for paid_credits) in parallel.
+  const [{ data: profile }, { data: caller }] = await Promise.all([
+    admin.from("profiles").select("id").eq("username", username).single(),
+    admin.from("profiles").select("id, paid_credits").eq("id", user.id).single(),
+  ]);
 
   if (!profile) {
     return new Response(JSON.stringify({ error: "Profile not found" }), {
@@ -71,13 +81,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  if (user && !preview && profile.id === user.id) {
+  if (!preview && profile.id === user.id) {
     mode = "owner";
   }
 
-  // Owners chatting with their own agent skip the abuse throttle — they're
-  // testing, and they're the one being billed anyway. Everyone else passes
-  // through the per-IP and per-owner caps.
+  // Owners chatting with their own agent still pay (they're the caller), but
+  // skip the abuse throttle — they're testing their own agent. Everyone else
+  // passes through the per-IP and per-owner caps.
   if (mode !== "owner") {
     const { data: rlSetting } = await admin
       .from("app_settings")
@@ -116,9 +126,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Pre-check: the profile owner must have at least one paid credit.
+  // Pre-check: the caller (who will be charged) must have at least one paid credit.
   // Doing it here (not inside the edge function) lets us fail fast with 402 — no stream open.
-  if ((profile.paid_credits ?? 0) < MIN_CREDITS_FOR_CHAT) {
+  if ((caller?.paid_credits ?? 0) < MIN_CREDITS_FOR_CHAT) {
     return new Response(
       JSON.stringify({ error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/credits" }),
       { status: 402, headers: { "Content-Type": "application/json" } }
@@ -149,6 +159,7 @@ export async function POST(req: NextRequest) {
       username,
       mode,
       profile_id: profile.id,
+      caller_user_id: user.id,
       request_id: requestId,
       role: "agent_chat",
     }),

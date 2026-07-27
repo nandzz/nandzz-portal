@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       {
         error: "Stripe is not configured yet.",
         instructions:
-          "Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET in .env.local. Pack price IDs live in the credit_packs table.",
+          "Set STRIPE_SECRET_KEY in .env.local. Pack price IDs live in the credit_packs table.",
       },
       { status: 503 }
     );

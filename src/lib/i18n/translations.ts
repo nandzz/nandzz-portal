@@ -405,6 +405,8 @@ export type Translations = {
     askAnything: string;
     notReady: string;
     notReadyDesc: string;
+    signInToChat: string;
+    signInToChatDesc: string;
     talkToAgent: string;
     aiAgentLabel: string;
     askUser: string;
@@ -910,6 +912,8 @@ const en: Translations = {
     askAnything: "Ask anything — powered by {name}'s public knowledge",
     notReady: "{name}'s agent isn't ready yet",
     notReadyDesc: "They haven't published any knowledge for their agent yet.",
+    signInToChat: "Sign in to chat with {name}",
+    signInToChatDesc: "An account is required to talk to this agent.",
     talkToAgent: "Talk to {name}'s Agent",
     aiAgentLabel: "AI Agent · Powered by public knowledge",
     askUser: "Ask {name}",
@@ -1415,6 +1419,8 @@ const pt: Translations = {
     askAnything: "Pergunte qualquer coisa — baseado no conhecimento público de {name}",
     notReady: "O agente de {name} ainda não está pronto",
     notReadyDesc: "Eles ainda não publicaram nenhum conhecimento para seu agente.",
+    signInToChat: "Entre para conversar com {name}",
+    signInToChatDesc: "É necessária uma conta para falar com este agente.",
     talkToAgent: "Falar com o Agente de {name}",
     aiAgentLabel: "Agente de IA · Baseado em conhecimento público",
     askUser: "Pergunte a {name}",
@@ -1920,6 +1926,8 @@ const fr: Translations = {
     askAnything: "Posez n'importe quelle question — alimenté par les connaissances publiques de {name}",
     notReady: "L'agent de {name} n'est pas encore prêt",
     notReadyDesc: "Il n'a pas encore publié de connaissances pour son agent.",
+    signInToChat: "Connectez-vous pour discuter avec {name}",
+    signInToChatDesc: "Un compte est requis pour parler à cet agent.",
     talkToAgent: "Parler avec l'Agent de {name}",
     aiAgentLabel: "Agent IA · Alimenté par les connaissances publiques",
     askUser: "Demandez à {name}",
@@ -2425,6 +2433,8 @@ const es: Translations = {
     askAnything: "Pregunta cualquier cosa — impulsado por el conocimiento público de {name}",
     notReady: "El agente de {name} aún no está listo",
     notReadyDesc: "Aún no han publicado conocimiento para su agente.",
+    signInToChat: "Inicia sesión para chatear con {name}",
+    signInToChatDesc: "Se requiere una cuenta para hablar con este agente.",
     talkToAgent: "Hablar con el Agente de {name}",
     aiAgentLabel: "Agente IA · Impulsado por conocimiento público",
     askUser: "Pregunta a {name}",
@@ -2930,6 +2940,8 @@ const ja: Translations = {
     askAnything: "何でも聞いてください — {name}の公開知識に基づいています",
     notReady: "{name}のエージェントはまだ準備ができていません",
     notReadyDesc: "まだエージェント用の知識を公開していません。",
+    signInToChat: "{name}とチャットするにはサインインしてください",
+    signInToChatDesc: "このエージェントと話すにはアカウントが必要です。",
     talkToAgent: "{name}のエージェントと話す",
     aiAgentLabel: "AIエージェント · 公開知識に基づく",
     askUser: "{name}に質問する",
@@ -3435,6 +3447,8 @@ const de: Translations = {
     askAnything: "Frag alles — angetrieben durch das öffentliche Wissen von {name}",
     notReady: "{name}s Agent ist noch nicht bereit",
     notReadyDesc: "Sie haben noch kein Wissen für ihren Agenten veröffentlicht.",
+    signInToChat: "Melde dich an, um mit {name} zu chatten",
+    signInToChatDesc: "Für ein Gespräch mit diesem Agenten ist ein Konto erforderlich.",
     talkToAgent: "Mit {name}s Agent sprechen",
     aiAgentLabel: "KI-Agent · Angetrieben durch öffentliches Wissen",
     askUser: "Frag {name}",
@@ -3940,6 +3954,8 @@ const it: Translations = {
     askAnything: "Chiedi qualsiasi cosa — basato sulla conoscenza pubblica di {name}",
     notReady: "L'agente di {name} non è ancora pronto",
     notReadyDesc: "Non hanno ancora pubblicato conoscenza per il loro agente.",
+    signInToChat: "Accedi per chattare con {name}",
+    signInToChatDesc: "È necessario un account per parlare con questo agente.",
     talkToAgent: "Parla con l'Agente di {name}",
     aiAgentLabel: "Agente IA · Basato su conoscenza pubblica",
     askUser: "Chiedi a {name}",

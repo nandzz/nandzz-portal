@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Bot } from "lucide-react";
+import Link from "next/link";
+import { X, Bot, LogIn } from "lucide-react";
 import { AgentChat } from "./AgentChat";
+import { buttonVariants } from "@/components/ui/button";
 import type { Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -67,7 +69,29 @@ export function AgentEmbed({ profile, isAuthenticated }: AgentEmbedProps) {
           </div>
 
           <div className="flex-1 min-h-0 flex flex-col max-w-2xl w-full mx-auto">
-            <AgentChat username={profile.username} displayName={displayName} />
+            {isAuthenticated ? (
+              <AgentChat username={profile.username} displayName={displayName} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
+                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-900/40">
+                  <LogIn className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{t.agent.signInToChat.replace("{name}", displayName)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t.agent.signInToChatDesc}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Link href="/login" className={buttonVariants({ size: "sm" })}>
+                    {t.nav.login}
+                  </Link>
+                  <Link href="/login?tab=signup" className={buttonVariants({ size: "sm", variant: "outline" })}>
+                    {t.nav.signup}
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

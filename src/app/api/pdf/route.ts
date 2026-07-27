@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const SUPABASE_HOST = "lphevvdbqtqyakjmjcjl.supabase.co";
+const SUPABASE_HOST = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname;
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");

@@ -24,7 +24,7 @@ function containsSensitive(text: string): boolean {
   return SENSITIVE_PATTERNS.some((p) => p.test(text));
 }
 
-const MAX_CHARS = 1000;
+const MAX_CHARS = 30000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -265,10 +265,8 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    if (e.target.value.length <= MAX_CHARS) {
-      setInput(e.target.value);
-      resizeTextarea();
-    }
+    setInput(e.target.value.slice(0, MAX_CHARS));
+    resizeTextarea();
   }
 
   async function send(text: string) {
@@ -296,13 +294,27 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
         body: JSON.stringify({ messages: historyForApi, username, preview }),
       });
 
-      // The proxy returns 402 when the profile owner is out of paid credits.
+      // The proxy returns 402 when the caller is out of paid credits.
       // Surface a tailored message instead of the generic stream-error fallback.
       if (res.status === 402) {
-        const outOfCredits = `${displayName}'s agent is out of credits. If this is your profile, [top up](/dashboard/credits) to keep it answering.`;
+        const outOfCredits = `You're out of credits. [Top up](/dashboard/credits) to keep chatting.`;
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId ? { ...m, content: outOfCredits } : m
+          )
+        );
+        setIsStreaming(false);
+        return;
+      }
+
+      // 401 means the session expired (or was never there). The client-side gate
+      // hides the chat for anonymous visitors, so this is mostly a mid-session
+      // fallback; either way, point them at /login.
+      if (res.status === 401) {
+        const signInPrompt = `${t.agent.signInToChatDesc} [${t.nav.login}](/login)`;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId ? { ...m, content: signInPrompt } : m
           )
         );
         setIsStreaming(false);
@@ -428,7 +440,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
   }
 
   const charsLeft = MAX_CHARS - input.length;
-  const nearLimit = charsLeft <= 150;
+  const nearLimit = charsLeft <= 1000;
   const showSuggested = messages.length === 0;
   const isOwnerMode = docs !== undefined;
   const showSecurityWarning = isOwnerMode && containsSensitive(input);

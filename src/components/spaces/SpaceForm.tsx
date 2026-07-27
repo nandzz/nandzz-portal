@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, unstable_rethrow } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { publishSpace } from "@/lib/actions/publish-space";
@@ -571,8 +571,6 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         hashtags: selectedHashtags,
       };
 
-      let spaceId: string;
-
       if (isEditing && space) {
         // Edits don't cost credits — stay on the direct client update.
         // user_id stays on the row from creation; no need to re-send it.
@@ -583,9 +581,12 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           .update(updatePayload)
           .eq("id", space.id);
         if (error) throw error;
-        spaceId = space.id;
+        router.push(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard");
+        router.refresh();
       } else {
         // First-time publish goes through the server action so credits are deducted atomically.
+        // On success the action calls redirect() — nothing is returned, and control
+        // won't reach the code below because Next.js navigates before resolving.
         const { user_id: _omit, ...publishPayload } = spaceData;
         void _omit;
         const result = await publishSpace(
@@ -593,7 +594,8 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           clientRequestIdRef.current,
           collectionId
         );
-        if (!result.ok) {
+        // Only error results come back; success redirects server-side.
+        if (result && !result.ok) {
           if (result.error === "INSUFFICIENT_CREDITS") {
             setInsufficientCredits(true);
             setError("");
@@ -601,13 +603,11 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           }
           throw new Error(result.message || result.error);
         }
-        spaceId = result.spaceId;
       }
-
-      void spaceId;
-      router.push(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard");
-      router.refresh();
     } catch (err: unknown) {
+      // Let framework control-flow errors (redirect, notFound, …) propagate so
+      // Next.js can handle the navigation instead of us swallowing them.
+      unstable_rethrow(err);
       const supaErr = err as {
         message?: string;
         details?: string;
@@ -704,18 +704,13 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Hashtags</Label>
-            <p className="text-xs text-muted-foreground">Add up to 3 hashtags — search existing or create new ones</p>
-            <HashtagPicker
-              suggestions={hashtagSuggestions}
-              selectedHashtags={selectedHashtags}
-              onChange={setSelectedHashtags}
-            />
-          </div>
-
-          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title" className="flex items-center gap-1.5">
+                Title
+                <span className="rounded-full bg-violet-100 dark:bg-violet-950/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+                  Required
+                </span>
+              </Label>
               <span className="text-xs text-muted-foreground">{title.length}/{LIMITS.title}</span>
             </div>
             <Input
@@ -725,7 +720,18 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
               onChange={(e) => setTitle(e.target.value.slice(0, LIMITS.title))}
               maxLength={LIMITS.title}
               required
+              aria-required="true"
               className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Hashtags</Label>
+            <p className="text-xs text-muted-foreground">Add up to 3 hashtags — search existing or create new ones</p>
+            <HashtagPicker
+              suggestions={hashtagSuggestions}
+              selectedHashtags={selectedHashtags}
+              onChange={setSelectedHashtags}
             />
           </div>
 

@@ -41,5 +41,5 @@ export default async function AgentPage({
     .eq("visibility", "public")
     .eq("status", "active");
 
-  return <AgentPublic profile={profile} hasDocuments={(count ?? 0) > 0} />;
+  return <AgentPublic profile={profile} hasDocuments={(count ?? 0) > 0} isAuthenticated={!!user} />;
 }
