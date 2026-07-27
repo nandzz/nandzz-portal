@@ -30,8 +30,12 @@ interface NotificationBellProps {
 }
 
 function notificationText(n: Notification, t: ReturnType<typeof useLanguage>["t"]): string {
-  const name = n.payload.commenter_display_name || n.payload.commenter_username;
   const title = n.payload.space_title;
+  if (n.type === "ai_edit_ready") {
+    return t.notifications.aiEditReady.replace("{title}", title);
+  }
+  const p = n.payload as { commenter_display_name: string | null; commenter_username: string };
+  const name = p.commenter_display_name || p.commenter_username;
   switch (n.type) {
     case "new_comment":
       return t.notifications.newComment.replace("{name}", name).replace("{title}", title);
@@ -138,7 +142,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                 onClick={() => {
                   const isComment = n.type === "new_comment" || n.type === "new_reply" || n.type === "comment_mention";
                   const suffix = isComment ? "?comments=open" : "";
-                  router.push(`/${n.payload.space_owner_username}/space/${n.payload.space_id}${suffix}`);
+                  const ownerUsername = (n.payload as { space_owner_username: string }).space_owner_username;
+                  router.push(`/${ownerUsername}/space/${n.payload.space_id}${suffix}`);
                   setOpen(false);
                 }}
                 className={cn(

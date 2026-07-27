@@ -230,6 +230,7 @@ export type Translations = {
     newComment: string;
     newReply: string;
     mention: string;
+    aiEditReady: string;
   };
   error: {
     title: string;
@@ -515,6 +516,40 @@ export type Translations = {
     invalidCode: string;
     unexpectedError: string;
   };
+  aiAssistant: {
+    buttonLabel: string;
+    panelTitle: string;
+    placeholder: string;
+    submit: string;
+    submitting: string;
+    submitted: string;
+    submittedDesc: string;
+    statusReading: string;
+    statusApplying: string;
+    statusRefining: string;
+    apply: string;
+    applying: string;
+    discard: string;
+    refine: string;
+    toggleBefore: string;
+    toggleAfter: string;
+    undoLabel: string;
+    errorInvalid: string;
+    errorUnavailable: string;
+    errorTooLarge: string;
+    errorQuota: string;
+    errorGeneric: string;
+    retry: string;
+    showingBefore: string;
+    showingAfter: string;
+    approvalTitle: string;
+    approvalPreview: string;
+    approvalShowOriginal: string;
+    approvalApply: string;
+    approvalDismiss: string;
+    attachFile: string;
+    fileTooLarge: string;
+  };
 };
 
 // ─── English ──────────────────────────────────────────────────────────────────
@@ -737,6 +772,7 @@ const en: Translations = {
     newComment: "{name} commented on your space \"{title}\"",
     newReply: "{name} replied to your comment in \"{title}\"",
     mention: "{name} mentioned you in \"{title}\"",
+    aiEditReady: "AI edit ready for your space \"{title}\"",
   },
   error: {
     title: "Something went wrong",
@@ -1022,6 +1058,40 @@ const en: Translations = {
     invalidCode: "Enter the 6-digit code",
     unexpectedError: "An unexpected error occurred",
   },
+  aiAssistant: {
+    buttonLabel: "AI Edit",
+    panelTitle: "AI Page Editor",
+    placeholder: "Describe what you'd like to change…",
+    submit: "Apply",
+    submitting: "Generating…",
+    statusReading: "Reading your page…",
+    statusApplying: "Applying your changes…",
+    statusRefining: "Refining…",
+    apply: "Apply changes",
+    applying: "Applying…",
+    discard: "Discard",
+    refine: "Refine",
+    toggleBefore: "Before",
+    toggleAfter: "After",
+    undoLabel: "Undo AI edit",
+    errorInvalid: "The AI edit was malformed — try rephrasing your instruction.",
+    errorUnavailable: "AI is busy, please try again in a moment.",
+    errorTooLarge: "This page is too large for AI editing.",
+    errorQuota: "Daily AI edit limit reached.",
+    errorGeneric: "Something went wrong. Please try again.",
+    retry: "Try again",
+    showingBefore: "Before",
+    showingAfter: "After",
+    submitted: "Working on your edit…",
+    submittedDesc: "We'll notify you when it's ready. You can close this panel.",
+    approvalTitle: "AI edit ready",
+    approvalPreview: "Preview",
+    approvalShowOriginal: "Show original",
+    approvalApply: "Apply changes",
+    approvalDismiss: "Dismiss",
+    attachFile: "Attach files",
+    fileTooLarge: "File exceeds 5 MB limit",
+  },
 };
 
 // ─── Portuguese ───────────────────────────────────────────────────────────────
@@ -1244,6 +1314,7 @@ const pt: Translations = {
     newComment: "{name} comentou no seu space \"{title}\"",
     newReply: "{name} respondeu ao seu comentário em \"{title}\"",
     mention: "{name} mencionou você em \"{title}\"",
+    aiEditReady: "Edição por IA pronta para \"{title}\"",
   },
   error: {
     title: "Algo deu errado",
@@ -1529,6 +1600,40 @@ const pt: Translations = {
     invalidCode: "Insira o código de 6 dígitos",
     unexpectedError: "Ocorreu um erro inesperado",
   },
+  aiAssistant: {
+    buttonLabel: "Editar com IA",
+    panelTitle: "Editor de Página com IA",
+    placeholder: "Descreva o que você gostaria de mudar…",
+    submit: "Aplicar",
+    submitting: "Gerando…",
+    statusReading: "Lendo sua página…",
+    statusApplying: "Aplicando suas alterações…",
+    statusRefining: "Refinando…",
+    apply: "Aplicar alterações",
+    applying: "Aplicando…",
+    discard: "Descartar",
+    refine: "Refinar",
+    toggleBefore: "Antes",
+    toggleAfter: "Depois",
+    undoLabel: "Desfazer edição de IA",
+    errorInvalid: "A edição de IA estava incorreta — tente reformular a instrução.",
+    errorUnavailable: "A IA está ocupada, tente novamente em instantes.",
+    errorTooLarge: "Esta página é grande demais para edição com IA.",
+    errorQuota: "Limite diário de edições com IA atingido.",
+    errorGeneric: "Algo deu errado. Tente novamente.",
+    retry: "Tentar novamente",
+    showingBefore: "Antes",
+    showingAfter: "Depois",
+    submitted: "Trabalhando na sua edição…",
+    submittedDesc: "Vamos notificá-lo quando estiver pronto.",
+    approvalTitle: "Edição de IA pronta",
+    approvalPreview: "Pré-visualizar",
+    approvalShowOriginal: "Ver original",
+    approvalApply: "Aplicar alterações",
+    approvalDismiss: "Descartar",
+    attachFile: "Anexar arquivos",
+    fileTooLarge: "Arquivo excede o limite de 5 MB",
+  },
 };
 
 // ─── French ───────────────────────────────────────────────────────────────────
@@ -1751,6 +1856,7 @@ const fr: Translations = {
     newComment: "{name} a commenté votre space \"{title}\"",
     newReply: "{name} a répondu à votre commentaire dans \"{title}\"",
     mention: "{name} vous a mentionné dans \"{title}\"",
+    aiEditReady: "Modification IA prête pour \"{title}\"",
   },
   error: {
     title: "Une erreur s'est produite",
@@ -2036,6 +2142,40 @@ const fr: Translations = {
     invalidCode: "Entrez le code à 6 chiffres",
     unexpectedError: "Une erreur inattendue s'est produite",
   },
+  aiAssistant: {
+    buttonLabel: "Modifier avec IA",
+    panelTitle: "Éditeur de page IA",
+    placeholder: "Décrivez les modifications souhaitées…",
+    submit: "Appliquer",
+    submitting: "Génération…",
+    statusReading: "Lecture de votre page…",
+    statusApplying: "Application de vos modifications…",
+    statusRefining: "Affinage…",
+    apply: "Appliquer les modifications",
+    applying: "Application…",
+    discard: "Annuler",
+    refine: "Affiner",
+    toggleBefore: "Avant",
+    toggleAfter: "Après",
+    undoLabel: "Annuler la modification IA",
+    errorInvalid: "La modification IA était incorrecte — reformulez votre instruction.",
+    errorUnavailable: "L'IA est occupée, réessayez dans un instant.",
+    errorTooLarge: "Cette page est trop grande pour l'édition IA.",
+    errorQuota: "Limite quotidienne d'éditions IA atteinte.",
+    errorGeneric: "Une erreur est survenue. Veuillez réessayer.",
+    retry: "Réessayer",
+    showingBefore: "Avant",
+    showingAfter: "Après",
+    submitted: "Traitement de votre modification…",
+    submittedDesc: "Vous serez notifié dès que c'est prêt.",
+    approvalTitle: "Modification IA prête",
+    approvalPreview: "Aperçu",
+    approvalShowOriginal: "Voir l'original",
+    approvalApply: "Appliquer les modifications",
+    approvalDismiss: "Ignorer",
+    attachFile: "Joindre des fichiers",
+    fileTooLarge: "Fichier dépasse la limite de 5 Mo",
+  },
 };
 
 // ─── Spanish ──────────────────────────────────────────────────────────────────
@@ -2258,6 +2398,7 @@ const es: Translations = {
     newComment: "{name} comentó en tu space \"{title}\"",
     newReply: "{name} respondió a tu comentario en \"{title}\"",
     mention: "{name} te mencionó en \"{title}\"",
+    aiEditReady: "Edición IA lista para \"{title}\"",
   },
   error: {
     title: "Algo salió mal",
@@ -2543,6 +2684,40 @@ const es: Translations = {
     invalidCode: "Ingresa el código de 6 dígitos",
     unexpectedError: "Ocurrió un error inesperado",
   },
+  aiAssistant: {
+    buttonLabel: "Editar con IA",
+    panelTitle: "Editor de página con IA",
+    placeholder: "Describe los cambios que deseas…",
+    submit: "Aplicar",
+    submitting: "Generando…",
+    statusReading: "Leyendo tu página…",
+    statusApplying: "Aplicando tus cambios…",
+    statusRefining: "Refinando…",
+    apply: "Aplicar cambios",
+    applying: "Aplicando…",
+    discard: "Descartar",
+    refine: "Refinar",
+    toggleBefore: "Antes",
+    toggleAfter: "Después",
+    undoLabel: "Deshacer edición de IA",
+    errorInvalid: "La edición de IA era incorrecta — intenta reformular la instrucción.",
+    errorUnavailable: "La IA está ocupada, inténtalo de nuevo en un momento.",
+    errorTooLarge: "Esta página es demasiado grande para la edición con IA.",
+    errorQuota: "Límite diario de ediciones con IA alcanzado.",
+    errorGeneric: "Algo salió mal. Por favor, inténtalo de nuevo.",
+    retry: "Intentar de nuevo",
+    showingBefore: "Antes",
+    showingAfter: "Después",
+    submitted: "Trabajando en tu edición…",
+    submittedDesc: "Te notificaremos cuando esté listo.",
+    approvalTitle: "Edición de IA lista",
+    approvalPreview: "Vista previa",
+    approvalShowOriginal: "Ver original",
+    approvalApply: "Aplicar cambios",
+    approvalDismiss: "Descartar",
+    attachFile: "Adjuntar archivos",
+    fileTooLarge: "El archivo supera el límite de 5 MB",
+  },
 };
 
 // ─── Japanese ─────────────────────────────────────────────────────────────────
@@ -2765,6 +2940,7 @@ const ja: Translations = {
     newComment: "{name}がスペース「{title}」にコメントしました",
     newReply: "{name}が「{title}」のコメントに返信しました",
     mention: "{name}が「{title}」であなたをメンションしました",
+    aiEditReady: "「{title}」のAI編集が完了しました",
   },
   error: {
     title: "問題が発生しました",
@@ -3050,6 +3226,40 @@ const ja: Translations = {
     invalidCode: "6桁のコードを入力してください",
     unexpectedError: "予期しないエラーが発生しました",
   },
+  aiAssistant: {
+    buttonLabel: "AIで編集",
+    panelTitle: "AIページエディター",
+    placeholder: "変更したい内容を説明してください…",
+    submit: "適用",
+    submitting: "生成中…",
+    statusReading: "ページを読み込んでいます…",
+    statusApplying: "変更を適用しています…",
+    statusRefining: "調整中…",
+    apply: "変更を適用",
+    applying: "適用中…",
+    discard: "破棄",
+    refine: "調整",
+    toggleBefore: "変更前",
+    toggleAfter: "変更後",
+    undoLabel: "AI編集を元に戻す",
+    errorInvalid: "AIの編集が正しくありませんでした。指示を言い換えてみてください。",
+    errorUnavailable: "AIが混雑しています。しばらくしてから再試行してください。",
+    errorTooLarge: "このページはAI編集には大きすぎます。",
+    errorQuota: "本日のAI編集の上限に達しました。",
+    errorGeneric: "問題が発生しました。もう一度お試しください。",
+    retry: "再試行",
+    showingBefore: "変更前",
+    showingAfter: "変更後",
+    submitted: "編集を処理中…",
+    submittedDesc: "準備ができたら通知します。",
+    approvalTitle: "AI編集の準備ができました",
+    approvalPreview: "プレビュー",
+    approvalShowOriginal: "元を表示",
+    approvalApply: "変更を適用",
+    approvalDismiss: "破棄",
+    attachFile: "ファイルを添付",
+    fileTooLarge: "ファイルが5 MBの制限を超えています",
+  },
 };
 
 // ─── German ───────────────────────────────────────────────────────────────────
@@ -3272,6 +3482,7 @@ const de: Translations = {
     newComment: "{name} hat deinen Space \"{title}\" kommentiert",
     newReply: "{name} hat auf deinen Kommentar in \"{title}\" geantwortet",
     mention: "{name} hat dich in \"{title}\" erwähnt",
+    aiEditReady: "KI-Bearbeitung für \"{title}\" fertig",
   },
   error: {
     title: "Etwas ist schiefgelaufen",
@@ -3557,6 +3768,40 @@ const de: Translations = {
     invalidCode: "Gib den 6-stelligen Code ein",
     unexpectedError: "Ein unerwarteter Fehler ist aufgetreten",
   },
+  aiAssistant: {
+    buttonLabel: "KI-Bearbeitung",
+    panelTitle: "KI-Seiteneditor",
+    placeholder: "Beschreibe, was du ändern möchtest…",
+    submit: "Anwenden",
+    submitting: "Wird generiert…",
+    statusReading: "Seite wird gelesen…",
+    statusApplying: "Änderungen werden angewendet…",
+    statusRefining: "Wird verfeinert…",
+    apply: "Änderungen anwenden",
+    applying: "Wird angewendet…",
+    discard: "Verwerfen",
+    refine: "Verfeinern",
+    toggleBefore: "Vorher",
+    toggleAfter: "Nachher",
+    undoLabel: "KI-Bearbeitung rückgängig machen",
+    errorInvalid: "Die KI-Bearbeitung war fehlerhaft — versuche die Anweisung umzuformulieren.",
+    errorUnavailable: "Die KI ist beschäftigt, bitte versuche es gleich erneut.",
+    errorTooLarge: "Diese Seite ist für die KI-Bearbeitung zu groß.",
+    errorQuota: "Tägliches Limit für KI-Bearbeitungen erreicht.",
+    errorGeneric: "Etwas ist schief gelaufen. Bitte versuche es erneut.",
+    retry: "Erneut versuchen",
+    showingBefore: "Vorher",
+    showingAfter: "Nachher",
+    submitted: "Bearbeitung läuft…",
+    submittedDesc: "Wir benachrichtigen dich, wenn sie fertig ist.",
+    approvalTitle: "KI-Bearbeitung bereit",
+    approvalPreview: "Vorschau",
+    approvalShowOriginal: "Original anzeigen",
+    approvalApply: "Änderungen anwenden",
+    approvalDismiss: "Verwerfen",
+    attachFile: "Dateien anhängen",
+    fileTooLarge: "Datei überschreitet das 5-MB-Limit",
+  },
 };
 
 // ─── Italian ──────────────────────────────────────────────────────────────────
@@ -3779,6 +4024,7 @@ const it: Translations = {
     newComment: "{name} ha commentato il tuo space \"{title}\"",
     newReply: "{name} ha risposto al tuo commento in \"{title}\"",
     mention: "{name} ti ha menzionato in \"{title}\"",
+    aiEditReady: "Modifica AI pronta per \"{title}\"",
   },
   error: {
     title: "Qualcosa è andato storto",
@@ -4063,6 +4309,40 @@ const it: Translations = {
     invalidPhone: "Inserisci un numero valido con prefisso internazionale (es. +39312345678)",
     invalidCode: "Inserisci il codice a 6 cifre",
     unexpectedError: "Si è verificato un errore imprevisto",
+  },
+  aiAssistant: {
+    buttonLabel: "Modifica con IA",
+    panelTitle: "Editor di pagina IA",
+    placeholder: "Descrivi le modifiche che vorresti apportare…",
+    submit: "Applica",
+    submitting: "Generazione…",
+    statusReading: "Lettura della tua pagina…",
+    statusApplying: "Applicazione delle modifiche…",
+    statusRefining: "Perfezionamento…",
+    apply: "Applica modifiche",
+    applying: "Applicazione…",
+    discard: "Annulla",
+    refine: "Perfeziona",
+    toggleBefore: "Prima",
+    toggleAfter: "Dopo",
+    undoLabel: "Annulla modifica IA",
+    errorInvalid: "La modifica IA era errata — prova a riformulare l'istruzione.",
+    errorUnavailable: "L'IA è occupata, riprova tra un momento.",
+    errorTooLarge: "Questa pagina è troppo grande per la modifica IA.",
+    errorQuota: "Limite giornaliero di modifiche IA raggiunto.",
+    errorGeneric: "Qualcosa è andato storto. Riprova.",
+    retry: "Riprova",
+    showingBefore: "Prima",
+    showingAfter: "Dopo",
+    submitted: "Elaborando la modifica…",
+    submittedDesc: "Ti notificheremo quando sarà pronta.",
+    approvalTitle: "Modifica AI pronta",
+    approvalPreview: "Anteprima",
+    approvalShowOriginal: "Mostra originale",
+    approvalApply: "Applica modifiche",
+    approvalDismiss: "Ignora",
+    attachFile: "Allega file",
+    fileTooLarge: "Il file supera il limite di 5 MB",
   },
 };
 

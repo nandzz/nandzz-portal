@@ -1,6 +1,13 @@
+// Injected into every sandboxed iframe document:
+// - CSP blocks all outbound network calls, workers, and child frames
+// - <base> opens all links in a new tab instead of navigating the frame
+// - The inline script intercepts form submissions to prevent "Unsafe attempt
+//   to load URL from frame" errors that occur when a form with no action
+//   attribute tries to navigate the sandboxed (null-origin) iframe to itself
 const SANDBOX_CSP =
   `<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; worker-src 'none'; child-src 'none';">` +
-  `<base target="_blank" rel="noopener noreferrer">`;
+  `<base target="_blank" rel="noopener noreferrer">` +
+  `<script>document.addEventListener('submit',function(e){e.preventDefault()},true)</script>`;
 
 /**
  * Inject a restrictive CSP into user-supplied HTML before rendering in an iframe.
