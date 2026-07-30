@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Pencil, X, Save, Loader2, Sparkles, Check } from "lucide-react";
+import { Pencil, X, Save, Loader2, Sparkles, Check, AlertCircle } from "lucide-react";
 import { sandboxHtml } from "@/lib/sandbox-html";
 import { AiAssistantPanel } from "@/components/spaces/AiAssistantPanel";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -59,6 +59,7 @@ interface HtmlSpaceEditorProps {
 type GrapesjsEditor = any;
 
 type PendingJob = { id: string; instruction: string; result_html: string };
+type FailedJob = { id: string; instruction: string; errorCode: string };
 
 export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEditorProps) {
   const { t } = useLanguage();
@@ -73,8 +74,16 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
   const [error, setError] = useState<string | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [pendingJob, setPendingJob] = useState<PendingJob | null>(null);
+  const [failedJob, setFailedJob] = useState<FailedJob | null>(null);
   const [showingProposed, setShowingProposed] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+
+  const errMap: Record<string, string> = {
+    ai_unavailable: ai.errorUnavailable,
+    ai_invalid_output: ai.errorInvalid,
+    html_too_large: ai.errorTooLarge,
+    html_not_found: ai.errorGeneric,
+  };
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const grapesjsRef = useRef<GrapesjsEditor>(null);
   const htmlAtEditStartRef = useRef("");
@@ -99,9 +108,17 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
         event: "UPDATE", schema: "public", table: "ai_edit_jobs",
         filter: `space_id=eq.${spaceId}`,
       }, (payload) => {
-        const job = payload.new as { id: string; status: string; instruction: string; result_html?: string };
+        const job = payload.new as {
+          id: string;
+          status: string;
+          instruction: string;
+          result_html?: string;
+          error_code?: string;
+        };
         if (job.status === "done" && job.result_html) {
           setPendingJob({ id: job.id, instruction: job.instruction, result_html: job.result_html });
+        } else if (job.status === "error") {
+          setFailedJob({ id: job.id, instruction: job.instruction, errorCode: job.error_code ?? "ai_unavailable" });
         }
       })
       .subscribe();
@@ -139,6 +156,13 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
     setPendingJob(null);
     setShowingProposed(false);
   }, [pendingJob]);
+
+  const handleDismissFailedAiEdit = useCallback(async () => {
+    if (!failedJob) return;
+    const supabase = createClient();
+    await supabase.from("ai_edit_jobs").delete().eq("id", failedJob.id);
+    setFailedJob(null);
+  }, [failedJob]);
 
   // Reset proposed-iframe loaded flag whenever a new job arrives
   useEffect(() => { setProposedLoaded(false); }, [pendingJob?.id]);
@@ -358,45 +382,68 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
     );
   }
 
+  const bannerOffsetPx = (pendingJob ? 42 : 0) + (failedJob ? 42 : 0);
+  const bannerPadding = bannerOffsetPx > 0 ? `${bannerOffsetPx}px` : 0;
+
   return (
     <div className="relative h-full w-full">
-      {/* AI edit approval banner */}
-      {pendingJob && (
-        <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-2 bg-background/95 backdrop-blur border-b px-3 py-2 shadow-sm">
-          <Sparkles className="size-4 text-primary shrink-0" />
-          <p className="text-xs flex-1 min-w-0">
-            <span className="font-semibold">{ai.approvalTitle}:</span>{" "}
-            <span className="text-muted-foreground truncate">"{pendingJob.instruction}"</span>
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs px-2 shrink-0"
-            onClick={() => setShowingProposed((v) => !v)}
-          >
-            {showingProposed ? ai.approvalShowOriginal : ai.approvalPreview}
-          </Button>
-          <Button
-            size="sm"
-            className="h-7 text-xs px-2 gap-1 shrink-0"
-            onClick={handleApproveAiEdit}
-            disabled={isApplying}
-          >
-            {isApplying ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
-            {ai.approvalApply}
-          </Button>
-          <button
-            onClick={handleDismissAiEdit}
-            className="text-muted-foreground hover:text-foreground shrink-0"
-            aria-label={ai.approvalDismiss}
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
+      <div className="absolute top-0 inset-x-0 z-20 flex flex-col">
+        {/* AI edit error banner */}
+        {failedJob && (
+          <div className="flex items-center gap-2 bg-destructive/10 backdrop-blur border-b border-destructive/20 px-3 py-2 shadow-sm">
+            <AlertCircle className="size-4 text-destructive shrink-0" />
+            <p className="text-xs flex-1 min-w-0">
+              <span className="font-semibold text-destructive">{ai.errorTitle}:</span>{" "}
+              <span className="text-muted-foreground truncate">{errMap[failedJob.errorCode] ?? ai.errorGeneric}</span>
+            </p>
+            <button
+              onClick={handleDismissFailedAiEdit}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label={ai.approvalDismiss}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
+
+        {/* AI edit approval banner */}
+        {pendingJob && (
+          <div className="flex items-center gap-2 bg-background/95 backdrop-blur border-b px-3 py-2 shadow-sm">
+            <Sparkles className="size-4 text-primary shrink-0" />
+            <p className="text-xs flex-1 min-w-0">
+              <span className="font-semibold">{ai.approvalTitle}:</span>{" "}
+              <span className="text-muted-foreground truncate">"{pendingJob.instruction}"</span>
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs px-2 shrink-0"
+              onClick={() => setShowingProposed((v) => !v)}
+            >
+              {showingProposed ? ai.approvalShowOriginal : ai.approvalPreview}
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-xs px-2 gap-1 shrink-0"
+              onClick={handleApproveAiEdit}
+              disabled={isApplying}
+            >
+              {isApplying ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+              {ai.approvalApply}
+            </Button>
+            <button
+              onClick={handleDismissAiEdit}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label={ai.approvalDismiss}
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
       {((!showingProposed && !iframeLoaded) || (showingProposed && !proposedLoaded)) && (
-        <div className="absolute flex items-center justify-center bg-background z-10" style={{ inset: 0, top: pendingJob ? "42px" : 0 }}>
+        <div className="absolute flex items-center justify-center bg-background z-10" style={{ inset: 0, top: bannerPadding }}>
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
@@ -407,7 +454,7 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
         className="absolute inset-0 h-full w-full border-0"
         sandbox="allow-scripts allow-forms allow-downloads allow-popups"
         title={spaceTitle}
-        style={{ opacity: !showingProposed && iframeLoaded ? 1 : 0, paddingTop: pendingJob ? "42px" : 0, pointerEvents: showingProposed ? "none" : "auto" }}
+        style={{ opacity: !showingProposed && iframeLoaded ? 1 : 0, paddingTop: bannerPadding, pointerEvents: showingProposed ? "none" : "auto" }}
         onLoad={() => setIframeLoaded(true)}
       />
       {/* Proposed — pre-loads in background while showing original */}
@@ -418,7 +465,7 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
           className="absolute inset-0 h-full w-full border-0"
           sandbox="allow-scripts allow-forms allow-downloads allow-popups"
           title={`${spaceTitle} – proposed`}
-          style={{ opacity: showingProposed && proposedLoaded ? 1 : 0, paddingTop: "42px", pointerEvents: !showingProposed ? "none" : "auto" }}
+          style={{ opacity: showingProposed && proposedLoaded ? 1 : 0, paddingTop: bannerPadding, pointerEvents: !showingProposed ? "none" : "auto" }}
           onLoad={() => setProposedLoaded(true)}
         />
       )}

@@ -58,9 +58,18 @@ export async function GET(
     }
   }
 
+  // The editor iframe appends ?v=<version> after an AI-edit apply / manual save
+  // to force a fresh render. Treat that as the "just changed" signal: bust
+  // Supabase's storage CDN and refuse to cache the response. Public visitors
+  // without ?v= get a short shared cache so a busy space doesn't hammer origin.
+  const isPostChange = req.nextUrl.searchParams.has("v");
+  const upstreamUrl = isPostChange
+    ? `${space.html_url}${space.html_url.includes("?") ? "&" : "?"}t=${Date.now()}`
+    : space.html_url;
+
   let html: string;
   try {
-    const res = await fetch(space.html_url, { cache: "no-store" });
+    const res = await fetch(upstreamUrl, { cache: "no-store" });
     html = await res.text();
   } catch {
     return new NextResponse("Failed to load content", { status: 502 });
@@ -71,6 +80,9 @@ export async function GET(
       "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy": SANDBOX_CSP,
       "X-Frame-Options": "SAMEORIGIN",
+      "Cache-Control": isPostChange
+        ? "no-store, no-cache, must-revalidate"
+        : "public, max-age=0, s-maxage=30, must-revalidate",
     },
   });
 }

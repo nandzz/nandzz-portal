@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── File attachments ─────────────────────────────────────────────────────────
 
@@ -95,7 +96,9 @@ function reducer(state: AiEditState, action: AiEditAction): AiEditState {
     case "ERROR":
       return {
         status: "error",
-        instruction: state.status === "loading" ? state.instruction : "",
+        instruction: state.status === "loading" || state.status === "submitted"
+          ? state.instruction
+          : "",
         message: action.message,
         canRetry: action.canRetry,
       };
@@ -151,9 +154,11 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
   const [visible, setVisible] = useState(false);
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [fileTooLargeError, setFileTooLargeError] = useState(false);
+  const [submittedJobId, setSubmittedJobId] = useState<string | null>(null);
 
   const errMap: Record<string, string> = {
     ai_unavailable: ai.errorUnavailable,
+    ai_invalid_output: ai.errorInvalid,
     html_too_large: ai.errorTooLarge,
     html_not_found: ai.errorGeneric,
   };
@@ -175,6 +180,7 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
   useEffect(() => {
     if (isOpen && state.status === "submitted") {
       dispatch({ type: "DISCARD" });
+      setSubmittedJobId(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -188,6 +194,34 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen, state.status, onClose]);
+
+  // Watch the submitted job — surface errors inline so the panel doesn't hang on
+  // "working in background" forever if the edge function fails.
+  useEffect(() => {
+    if (!submittedJobId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`ai-edit-job-${submittedJobId}`)
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "ai_edit_jobs",
+        filter: `id=eq.${submittedJobId}`,
+      }, (payload) => {
+        const job = payload.new as { status: string; error_code?: string };
+        if (job.status === "error") {
+          dispatch({
+            type: "ERROR",
+            message: errMap[job.error_code ?? ""] ?? ai.errorGeneric,
+            canRetry: true,
+          });
+          setSubmittedJobId(null);
+        } else if (job.status === "done") {
+          setSubmittedJobId(null);
+        }
+      })
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submittedJobId]);
 
   // ── Submit handler ──────────────────────────────────────────────────────────
 
@@ -233,6 +267,10 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
 
       console.log("[ai-edit] response", res.status);
 
+      if (res.status === 402) {
+        dispatch({ type: "ERROR", message: ai.errorInsufficientCredits, canRetry: false });
+        return;
+      }
       if (res.status === 429) {
         dispatch({ type: "ERROR", message: ai.errorQuota, canRetry: false });
         return;
@@ -248,6 +286,7 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
       console.log("[ai-edit] job started:", jobId);
       setAttachments([]);
       setFileTooLargeError(false);
+      setSubmittedJobId(jobId);
       dispatch({ type: "SUBMITTED" });
     } catch (err) {
       console.error("[ai-edit] submit error:", err);
@@ -262,21 +301,15 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
 
   const panelContent = (
     <>
-      {/* ── Desktop: backdrop ── */}
-      <div
-        className="fixed inset-0 z-40 hidden md:block"
-        onClick={closeable ? onClose : undefined}
-        aria-hidden
-      />
-
-      {/* ── Desktop: right slide-in ── */}
+      {/* ── Desktop: floating bottom-right panel ── */}
       <div
         className={cn(
-          "fixed top-16 right-0 bottom-0 w-[380px] z-50 hidden md:flex flex-col bg-background border-l shadow-2xl transition-transform duration-300 ease-in-out",
-          visible ? "translate-x-0" : "translate-x-full"
+          "fixed bottom-4 right-4 w-[380px] max-h-[calc(100dvh-6rem)] z-50 hidden md:flex flex-col bg-background border rounded-xl shadow-2xl transition-all duration-300 ease-in-out origin-bottom-right",
+          visible
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-4 opacity-0 scale-95 pointer-events-none"
         )}
         role="dialog"
-        aria-modal="true"
         aria-label={ai.panelTitle}
       >
         <PanelHeader title={ai.panelTitle} onClose={onClose} closeable={closeable} />

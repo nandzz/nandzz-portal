@@ -35,6 +35,10 @@ export default async function CreditsPage({
       .from("credit_ledger")
       .select("*")
       .eq("user_id", user.id)
+      // Reservation hold/release/refund rows are internal bookkeeping — the
+      // user-visible delta is captured by the corresponding usage or refund
+      // row. Hide them so the activity table stays readable.
+      .not("reason", "in", "(llm_reservation_hold,llm_reservation_release,llm_reservation_refund)")
       .order("created_at", { ascending: false })
       .limit(25),
     getCreditsConfig(),

@@ -538,6 +538,7 @@ export type Translations = {
     errorUnavailable: string;
     errorTooLarge: string;
     errorQuota: string;
+    errorInsufficientCredits: string;
     errorGeneric: string;
     retry: string;
     showingBefore: string;
@@ -547,6 +548,7 @@ export type Translations = {
     approvalShowOriginal: string;
     approvalApply: string;
     approvalDismiss: string;
+    errorTitle: string;
     attachFile: string;
     fileTooLarge: string;
   };
@@ -1078,6 +1080,7 @@ const en: Translations = {
     errorUnavailable: "AI is busy, please try again in a moment.",
     errorTooLarge: "This page is too large for AI editing.",
     errorQuota: "Daily AI edit limit reached.",
+    errorInsufficientCredits: "Not enough credits for an AI edit. Top up in Credits.",
     errorGeneric: "Something went wrong. Please try again.",
     retry: "Try again",
     showingBefore: "Before",
@@ -1089,6 +1092,7 @@ const en: Translations = {
     approvalShowOriginal: "Show original",
     approvalApply: "Apply changes",
     approvalDismiss: "Dismiss",
+    errorTitle: "AI edit failed",
     attachFile: "Attach files",
     fileTooLarge: "File exceeds 5 MB limit",
   },
@@ -1620,6 +1624,7 @@ const pt: Translations = {
     errorUnavailable: "A IA está ocupada, tente novamente em instantes.",
     errorTooLarge: "Esta página é grande demais para edição com IA.",
     errorQuota: "Limite diário de edições com IA atingido.",
+    errorInsufficientCredits: "Créditos insuficientes para uma edição com IA. Recarregue em Créditos.",
     errorGeneric: "Algo deu errado. Tente novamente.",
     retry: "Tentar novamente",
     showingBefore: "Antes",
@@ -1631,6 +1636,7 @@ const pt: Translations = {
     approvalShowOriginal: "Ver original",
     approvalApply: "Aplicar alterações",
     approvalDismiss: "Descartar",
+    errorTitle: "Falha na edição de IA",
     attachFile: "Anexar arquivos",
     fileTooLarge: "Arquivo excede o limite de 5 MB",
   },
@@ -2162,6 +2168,7 @@ const fr: Translations = {
     errorUnavailable: "L'IA est occupée, réessayez dans un instant.",
     errorTooLarge: "Cette page est trop grande pour l'édition IA.",
     errorQuota: "Limite quotidienne d'éditions IA atteinte.",
+    errorInsufficientCredits: "Crédits insuffisants pour une édition IA. Rechargez dans Crédits.",
     errorGeneric: "Une erreur est survenue. Veuillez réessayer.",
     retry: "Réessayer",
     showingBefore: "Avant",
@@ -2173,6 +2180,7 @@ const fr: Translations = {
     approvalShowOriginal: "Voir l'original",
     approvalApply: "Appliquer les modifications",
     approvalDismiss: "Ignorer",
+    errorTitle: "Échec de la modification IA",
     attachFile: "Joindre des fichiers",
     fileTooLarge: "Fichier dépasse la limite de 5 Mo",
   },
@@ -2704,6 +2712,7 @@ const es: Translations = {
     errorUnavailable: "La IA está ocupada, inténtalo de nuevo en un momento.",
     errorTooLarge: "Esta página es demasiado grande para la edición con IA.",
     errorQuota: "Límite diario de ediciones con IA alcanzado.",
+    errorInsufficientCredits: "Créditos insuficientes para una edición con IA. Recarga en Créditos.",
     errorGeneric: "Algo salió mal. Por favor, inténtalo de nuevo.",
     retry: "Intentar de nuevo",
     showingBefore: "Antes",
@@ -2715,6 +2724,7 @@ const es: Translations = {
     approvalShowOriginal: "Ver original",
     approvalApply: "Aplicar cambios",
     approvalDismiss: "Descartar",
+    errorTitle: "Fallo en la edición de IA",
     attachFile: "Adjuntar archivos",
     fileTooLarge: "El archivo supera el límite de 5 MB",
   },
@@ -3246,6 +3256,7 @@ const ja: Translations = {
     errorUnavailable: "AIが混雑しています。しばらくしてから再試行してください。",
     errorTooLarge: "このページはAI編集には大きすぎます。",
     errorQuota: "本日のAI編集の上限に達しました。",
+    errorInsufficientCredits: "AI編集に必要なクレジットが不足しています。クレジットからチャージしてください。",
     errorGeneric: "問題が発生しました。もう一度お試しください。",
     retry: "再試行",
     showingBefore: "変更前",
@@ -3257,6 +3268,7 @@ const ja: Translations = {
     approvalShowOriginal: "元を表示",
     approvalApply: "変更を適用",
     approvalDismiss: "破棄",
+    errorTitle: "AI編集に失敗しました",
     attachFile: "ファイルを添付",
     fileTooLarge: "ファイルが5 MBの制限を超えています",
   },
@@ -3788,6 +3800,7 @@ const de: Translations = {
     errorUnavailable: "Die KI ist beschäftigt, bitte versuche es gleich erneut.",
     errorTooLarge: "Diese Seite ist für die KI-Bearbeitung zu groß.",
     errorQuota: "Tägliches Limit für KI-Bearbeitungen erreicht.",
+    errorInsufficientCredits: "Nicht genug Credits für eine KI-Bearbeitung. Lade unter Credits auf.",
     errorGeneric: "Etwas ist schief gelaufen. Bitte versuche es erneut.",
     retry: "Erneut versuchen",
     showingBefore: "Vorher",
@@ -3799,6 +3812,7 @@ const de: Translations = {
     approvalShowOriginal: "Original anzeigen",
     approvalApply: "Änderungen anwenden",
     approvalDismiss: "Verwerfen",
+    errorTitle: "KI-Bearbeitung fehlgeschlagen",
     attachFile: "Dateien anhängen",
     fileTooLarge: "Datei überschreitet das 5-MB-Limit",
   },
@@ -4330,6 +4344,7 @@ const it: Translations = {
     errorUnavailable: "L'IA è occupata, riprova tra un momento.",
     errorTooLarge: "Questa pagina è troppo grande per la modifica IA.",
     errorQuota: "Limite giornaliero di modifiche IA raggiunto.",
+    errorInsufficientCredits: "Crediti insufficienti per una modifica IA. Ricarica dalla sezione Crediti.",
     errorGeneric: "Qualcosa è andato storto. Riprova.",
     retry: "Riprova",
     showingBefore: "Prima",
@@ -4341,6 +4356,7 @@ const it: Translations = {
     approvalShowOriginal: "Mostra originale",
     approvalApply: "Applica modifiche",
     approvalDismiss: "Ignora",
+    errorTitle: "Modifica AI non riuscita",
     attachFile: "Allega file",
     fileTooLarge: "Il file supera il limite di 5 MB",
   },

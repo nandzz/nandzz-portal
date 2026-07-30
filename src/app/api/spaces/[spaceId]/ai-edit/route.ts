@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { checkAiEditQuota } from "@/lib/ai-edit-quota";
 
 const MAX_INSTRUCTION_CHARS = 500;
 const MAX_ATTACHMENTS = 3;
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB base64-encoded ceiling
 const MAX_TEXT_CHARS = 50_000;
+// Refuse the request if the caller has fewer than this many paid_credits.
+// A single AI edit round-trip on claude-sonnet-4-6 (0.90/4.50 per 1k) with
+// a typical page + instruction (~5k in / ~2k out) bills roughly 14 credits.
+// Sized to cover one full edit plus a small buffer — anything lower lets
+// users trigger a session they can't pay for. Concurrent edits can still
+// race this check; a proper reservation/hold is a follow-up.
+const MIN_CREDITS_FOR_AI_EDIT = 20;
 
 type FileAttachment = {
   name: string;
@@ -92,16 +98,39 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("plan_tier")
-    .eq("id", user.id)
-    .single();
+  // Model lookup (credit reservation happens next via RPC).
+  const { data: modelRow } = await admin
+    .from("llm_models")
+    .select("id")
+    .eq("default_for_role", "page_editor")
+    .eq("active", true)
+    .maybeSingle();
 
-  const { allowed, remaining } = await checkAiEditQuota(user.id, profile?.plan_tier);
-  console.log("[ai-edit] quota", { allowed, remaining });
-  if (!allowed) {
-    return NextResponse.json({ error: "quota_exceeded", remaining: 0 }, { status: 429 });
+  if (!modelRow) {
+    console.error("[ai-edit] no active page_editor model configured");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
+
+  const requestId = crypto.randomUUID();
+
+  // Atomic reserve — combines the balance check and the debit so concurrent
+  // requests can't each pass a stale pre-check on the same balance. The hold
+  // is released either by charge_llm_usage on success or by the
+  // ai_edit_jobs status-error trigger on failure.
+  const { error: reserveErr } = await admin.rpc("reserve_llm_credits", {
+    p_user_id:    user.id,
+    p_amount:     MIN_CREDITS_FOR_AI_EDIT,
+    p_request_id: requestId,
+  });
+  if (reserveErr) {
+    if ((reserveErr.message ?? "").includes("INSUFFICIENT_CREDITS")) {
+      return NextResponse.json(
+        { error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/credits" },
+        { status: 402 }
+      );
+    }
+    console.error("[ai-edit] reserve_llm_credits failed", reserveErr);
+    return NextResponse.json({ error: "Failed to reserve credits" }, { status: 500 });
   }
 
   // Create the job row
@@ -112,6 +141,9 @@ export async function POST(
       user_id: user.id,
       instruction,
       html_url: htmlUrl,
+      model_id: modelRow.id,
+      request_id: requestId,
+      credits_reserved: MIN_CREDITS_FOR_AI_EDIT,
       ...(attachments.length > 0 && { file_context: attachments }),
     })
     .select("id")
@@ -119,13 +151,19 @@ export async function POST(
 
   if (!job || jobError) {
     console.error("[ai-edit] job creation failed", jobError);
+    // Release the hold so the user isn't charged for a job that never ran.
+    await admin.rpc("refund_llm_reservation", {
+      p_user_id:    user.id,
+      p_amount:     MIN_CREDITS_FOR_AI_EDIT,
+      p_request_id: requestId,
+    });
     return NextResponse.json({ error: "Failed to create job" }, { status: 500 });
   }
 
-  console.log("[ai-edit] job created", job.id, "remaining quota:", remaining);
+  console.log("[ai-edit] job created", job.id, "request", requestId);
 
   // Fire edge function after the response is sent
   after(fireEdgeFunction(job.id));
 
-  return NextResponse.json({ jobId: job.id, remaining: remaining - 1 });
+  return NextResponse.json({ jobId: job.id });
 }

@@ -8,8 +8,6 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// ─── Tool definition (owner mode only) ───────────────────────────────────────
-
 const PROPOSE_DOCUMENT_TOOL = {
   type: "function",
   function: {

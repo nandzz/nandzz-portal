@@ -70,7 +70,82 @@ function restoreBase64Assets(html: string, manifest: Record<string, string>): st
   return html.replace(/data:(ASSET_PLACEHOLDER_\d+)/g, (_m: string, key: string) => manifest[key] ?? `data:${key}`);
 }
 
-async function extractHtmlFromSession(sessionId: string, apiKey: string): Promise<string> {
+type Usage = { input: number; output: number };
+
+// Anthropic Managed Agents can surface usage in a few shapes depending on
+// the beta revision — a top-level `usage`, one inside `event.data`, or one
+// nested on `agent.message` content blocks. Sniff all three per event.
+// Cache tokens (creation + read) count as input — otherwise we undercount
+// heavily on cached sessions.
+function readUsageInput(u: Record<string, unknown>): number {
+  const base = (u.input_tokens ?? u.prompt_tokens) as number | undefined;
+  const cacheCreate = u.cache_creation_input_tokens as number | undefined;
+  const cacheRead = u.cache_read_input_tokens as number | undefined;
+  return (typeof base === "number" ? base : 0)
+    + (typeof cacheCreate === "number" ? cacheCreate : 0)
+    + (typeof cacheRead === "number" ? cacheRead : 0);
+}
+
+function addUsage(target: Usage, event: Record<string, unknown>): void {
+  const candidates: Array<Record<string, unknown> | undefined> = [
+    event.usage as Record<string, unknown> | undefined,
+    (event.data as Record<string, unknown> | undefined)?.usage as Record<string, unknown> | undefined,
+  ];
+  const content = event.content as Array<Record<string, unknown>> | undefined;
+  if (Array.isArray(content)) {
+    for (const block of content) {
+      candidates.push(block?.usage as Record<string, unknown> | undefined);
+    }
+  }
+  for (const u of candidates) {
+    if (!u || typeof u !== "object") continue;
+    const outTok = (u.output_tokens ?? u.completion_tokens) as number | undefined;
+    target.input += readUsageInput(u);
+    if (typeof outTok === "number") target.output += outTok;
+  }
+}
+
+// Fallback: aggregate usage from the session detail endpoint. Different
+// Managed Agents beta revisions surface it under `usage`, `total_usage`,
+// `token_usage`, or nested inside `metadata`.
+async function fetchSessionUsage(sessionId: string, apiKey: string): Promise<Usage | null> {
+  try {
+    const res = await fetch(`https://api.anthropic.com/v1/sessions/${sessionId}`, {
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": AGENT_BETA,
+      },
+    });
+    if (!res.ok) {
+      console.error("[usage] session detail fetch failed:", res.status);
+      return null;
+    }
+    const body = await res.json();
+    console.error("[usage] session detail keys:", Object.keys(body));
+    console.error("[usage] session detail body (first 500):", JSON.stringify(body).slice(0, 500));
+    const candidates: Array<Record<string, unknown> | undefined> = [
+      body.usage,
+      body.total_usage,
+      body.token_usage,
+      body.metadata?.usage,
+    ];
+    for (const u of candidates) {
+      if (!u || typeof u !== "object") continue;
+      const outTok = (u.output_tokens ?? u.completion_tokens) as number | undefined;
+      const inTok = readUsageInput(u as Record<string, unknown>);
+      if (inTok > 0 || typeof outTok === "number") {
+        return { input: inTok, output: outTok ?? 0 };
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error("[usage] session detail threw:", err);
+    return null;
+  }
+}
+
+async function extractHtmlFromSession(sessionId: string, apiKey: string): Promise<{ html: string; usage: Usage }> {
   console.error("[extract] fetching events for completed session:", sessionId);
 
   const headers = {
@@ -80,6 +155,7 @@ async function extractHtmlFromSession(sessionId: string, apiKey: string): Promis
   };
 
   let finalHtml = "";
+  const usage: Usage = { input: 0, output: 0 };
   let afterId: string | undefined;
   let page = 0;
 
@@ -108,6 +184,7 @@ async function extractHtmlFromSession(sessionId: string, apiKey: string): Promis
 
     for (const event of events) {
       console.error("[extract] event type:", event.type, "id:", event.id);
+      addUsage(usage, event);
       if (event.type === "agent.message") {
         finalHtml = "";
         for (const block of ((event.content ?? []) as Array<Record<string, unknown>>)) {
@@ -122,8 +199,8 @@ async function extractHtmlFromSession(sessionId: string, apiKey: string): Promis
     if (!afterId || page >= 20) break;
   }
 
-  console.error("[extract] done — finalHtml length:", finalHtml.length, "preview:", finalHtml.slice(0, 150));
-  return finalHtml;
+  console.error("[extract] done — finalHtml length:", finalHtml.length, "usage:", usage.input, "/", usage.output);
+  return { html: finalHtml, usage };
 }
 
 serve(async (req) => {
@@ -202,7 +279,7 @@ serve(async (req) => {
   console.error("[webhook] querying ai_edit_jobs for session_id:", sessionId);
   const { data: job, error: jobError } = await admin
     .from("ai_edit_jobs")
-    .select("id, user_id, space_id, instruction, html_url, status")
+    .select("id, user_id, space_id, instruction, html_url, status, model_id, request_id, credits_reserved")
     .eq("session_id", sessionId)
     .maybeSingle();
 
@@ -223,7 +300,9 @@ serve(async (req) => {
 
   try {
     console.error("[webhook] calling extractHtmlFromSession...");
-    let html = await extractHtmlFromSession(sessionId, apiKey);
+    const extracted = await extractHtmlFromSession(sessionId, apiKey);
+    let html = extracted.html;
+    const usage = extracted.usage;
     console.error("[webhook] raw html length:", html.length);
 
     // Strip code fences in case the agent ignored the no-fences instruction
@@ -275,6 +354,48 @@ serve(async (req) => {
       .update({ status: "done", result_html: html })
       .eq("id", job.id);
     console.error("[webhook] job update error:", updateErr);
+
+    // Charge credits — best effort so a failure here can't mask the ready
+    // banner. Idempotent via request_id (charge_llm_usage skips repeats).
+    //
+    // Session-detail usage is the source of truth: it returns cumulative
+    // totals including cache_creation/cache_read input tokens, whereas
+    // per-event `usage` blocks under-report on Managed Agents (they surface
+    // only the uncached delta, missing everything the session read from
+    // cache — which for a warm system prompt is the bulk of input). Fall
+    // back to the event-aggregated tally only if session detail is missing.
+    const detailUsage = await fetchSessionUsage(sessionId, apiKey);
+    let finalUsage = detailUsage ?? usage;
+    if (detailUsage) {
+      console.error(
+        "[webhook] session-detail usage:", detailUsage.input, "/", detailUsage.output,
+        "— event-aggregated was:", usage.input, "/", usage.output,
+      );
+    } else {
+      console.error("[webhook] session detail unavailable — falling back to event aggregation:", usage.input, "/", usage.output);
+    }
+
+    if (job.model_id && job.request_id && (finalUsage.input + finalUsage.output > 0)) {
+      const { data: charged, error: chargeErr } = await admin.rpc("charge_llm_usage", {
+        p_user_id:          job.user_id,
+        p_model_id:         job.model_id,
+        p_role:             "page_editor",
+        p_input_tokens:     finalUsage.input,
+        p_output_tokens:    finalUsage.output,
+        p_message_id:       null,
+        p_request_id:       job.request_id,
+        p_space_id:         job.space_id,
+        p_credits_reserved: job.credits_reserved ?? 0,
+      });
+      if (chargeErr) console.error("[webhook] charge_llm_usage error:", chargeErr);
+      else console.error("[webhook] charged", charged, "credits for", finalUsage.input, "/", finalUsage.output, "tokens (reserved:", job.credits_reserved ?? 0, ")");
+    } else {
+      console.error("[webhook] skipping charge — missing", {
+        model_id: !!job.model_id,
+        request_id: !!job.request_id,
+        usage_total: finalUsage.input + finalUsage.output,
+      });
+    }
 
     console.error("[webhook] fetching space:", job.space_id);
     const { data: space, error: spaceErr } = await admin
