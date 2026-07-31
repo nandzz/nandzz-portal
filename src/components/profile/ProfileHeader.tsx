@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Camera,
@@ -14,8 +16,12 @@ import type { Profile } from "@/lib/types";
 import { FollowButton } from "./FollowButton";
 import { FollowersDialog } from "./FollowersDialog";
 import { AgentEmbed } from "@/components/agent/AgentEmbed";
+import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
+import { createClient } from "@/lib/supabase/client";
 import { FEATURES } from "@/lib/flags";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+const MAX_AVATAR_SIZE = 1.5 * 1024 * 1024;
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -43,7 +49,73 @@ function buildUrl(key: string, value: string): string {
 
 export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false }: ProfileHeaderProps) {
   const { t } = useLanguage();
+  const router = useRouter();
   const socialLinks = profile.social_links || {};
+
+  // Optimistic avatar url so upload reflects immediately, before server refresh
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(profile.avatar_url ?? null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Re-sync with server props (e.g. after router.refresh reads freshly-revalidated data)
+  useEffect(() => { setLocalAvatarUrl(profile.avatar_url ?? null); }, [profile.avatar_url]);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_AVATAR_SIZE) {
+      setAvatarError("Profile picture must be under 1.5 MB");
+      e.target.value = "";
+      return;
+    }
+    setAvatarError("");
+    const reader = new FileReader();
+    reader.onload = () => setCropImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleCroppedAvatar = async (blob: Blob) => {
+    setCropImageSrc(null);
+    setAvatarUploading(true);
+    setAvatarError("");
+    try {
+      const supabase = createClient();
+      const filePath = `${profile.id}/avatar.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+      // Query string busts the browser/CDN cache since the storage path is stable
+      const nextUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: nextUrl })
+        .eq("id", profile.id);
+      if (updateError) throw updateError;
+
+      setLocalAvatarUrl(nextUrl);
+      // Invalidate the profile page's unstable_cache tag so router.refresh reads fresh data
+      await fetch("/api/profile/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: profile.username }),
+      });
+      window.dispatchEvent(new CustomEvent("profile-updated"));
+      router.refresh();
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Failed to update picture");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const links = [
     {
@@ -99,13 +171,55 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
 
   return (
     <div className="flex flex-col items-center text-center">
-      <Avatar className="h-28 w-28 border-4 border-background shadow-xl ring-2 ring-violet-200/50 dark:ring-violet-800/30">
-        <AvatarImage src={profile.avatar_url || undefined} />
-        <AvatarFallback className="text-3xl bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">
-          {profile.display_name?.[0]?.toUpperCase() ||
-            profile.username[0]?.toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+      <div className="relative group">
+        <Avatar className="h-28 w-28 border-4 border-background shadow-xl ring-2 ring-violet-200/50 dark:ring-violet-800/30">
+          <AvatarImage src={localAvatarUrl || undefined} />
+          <AvatarFallback className="text-3xl bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">
+            {profile.display_name?.[0]?.toUpperCase() ||
+              profile.username[0]?.toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+
+        {isOwner && (
+          <>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleAvatarFileChange}
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={avatarUploading}
+              aria-label="Change profile picture"
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus:opacity-100 focus:outline-none disabled:cursor-not-allowed"
+            >
+              {avatarUploading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+              ) : (
+                <div className="flex flex-col items-center gap-0.5">
+                  <Camera className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">Edit</span>
+                </div>
+              )}
+            </button>
+          </>
+        )}
+      </div>
+
+      {avatarError && (
+        <p className="mt-2 text-xs text-destructive">{avatarError}</p>
+      )}
+
+      {cropImageSrc && (
+        <AvatarCropModal
+          imageSrc={cropImageSrc}
+          onCancel={() => setCropImageSrc(null)}
+          onCrop={handleCroppedAvatar}
+        />
+      )}
       <h1 className="mt-5 text-2xl font-bold tracking-tight">
         {profile.display_name || profile.username}
       </h1>

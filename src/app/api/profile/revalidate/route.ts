@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -16,6 +16,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Missing username" }, { status: 400 });
   }
 
+  // Tag invalidates the unstable_cache entry in app/[username]/(profile)/page.tsx;
+  // path drops any route-level caches for the profile URL.
+  revalidateTag(`profile:${username}`, "max");
   revalidatePath(`/${username}`);
 
   return Response.json({ revalidated: true });

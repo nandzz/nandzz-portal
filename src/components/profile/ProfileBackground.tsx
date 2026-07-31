@@ -133,6 +133,14 @@ export function ProfileBackground({
       setSavedPosition(resetPos);
       // Enter reposition mode right away so the user can frame the shot
       setRepositioning(true);
+      // Invalidate the profile page's unstable_cache tag BEFORE router.refresh(),
+      // otherwise the server re-render returns the stale background_url and the
+      // useEffect below snaps localUrl back to the old value.
+      await fetch("/api/profile/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -169,6 +177,11 @@ export function ProfileBackground({
       setPosition({ x: 50, y: 50 });
       setSavedPosition({ x: 50, y: 50 });
       setRepositioning(false);
+      await fetch("/api/profile/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove background");
@@ -217,6 +230,11 @@ export function ProfileBackground({
       if (error) throw error;
       setSavedPosition(position);
       setRepositioning(false);
+      await fetch("/api/profile/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save position");

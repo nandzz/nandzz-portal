@@ -8,22 +8,24 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileBackground } from "@/components/profile/ProfileBackground";
 
-const fetchProfileCached = unstable_cache(
-  async (username: string) => {
-    const admin = createAdminClient();
-    const { data } = await admin
-      .from("profiles")
-      .select("*")
-      .eq("username", username)
-      .single();
-    return data;
-  },
-  ["profile"],
-  { revalidate: 60 }
-);
+const fetchProfileByUsername = async (username: string) => {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("profiles")
+    .select("*")
+    .eq("username", username)
+    .single();
+  return data;
+};
 
-// react.cache deduplicates within a single request so generateMetadata and ProfilePage share one DB hit
-const getProfile = cache(fetchProfileCached);
+// Per-username tag so a single profile can be invalidated with revalidateTag(`profile:${username}`)
+const getProfile = cache((username: string) =>
+  unstable_cache(
+    () => fetchProfileByUsername(username),
+    ["profile", username],
+    { revalidate: 60, tags: [`profile:${username}`] }
+  )()
+);
 
 export async function generateMetadata({
   params,
