@@ -147,9 +147,6 @@ export default async function CreditsPage({
                   <p className="mt-2 text-sm text-muted-foreground">
                     {pack.credits.toLocaleString()} credits
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {publishCost > 0 ? Math.floor(pack.credits / publishCost) : pack.credits} space publishes
-                  </p>
                   <div className="mt-5">
                     <BuyCreditsButton packId={pack.id} packName={pack.name} highlighted={idx === 1} />
                   </div>

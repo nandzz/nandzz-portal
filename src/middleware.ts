@@ -3,7 +3,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { detectLocale, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/translations";
 
 const LANG_COOKIE = "nandzz-lang";
+const PROFILE_UID_COOKIE = "nandzz-profile-uid";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+
+const SETUP_PATH = "/setup-username";
+const POST_SETUP_PATH = "/dashboard";
+
+function skipProfileGuard(pathname: string): boolean {
+  return (
+    pathname === SETUP_PATH ||
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/auth/") ||
+    pathname === "/logout"
+  );
+}
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -46,7 +60,50 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh the auth session
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const pathname = request.nextUrl.pathname;
+    const cachedUid = request.cookies.get(PROFILE_UID_COOKIE)?.value;
+    const cacheHit = cachedUid === user.id;
+
+    let hasProfile = cacheHit;
+    if (!cacheHit && !pathname.startsWith("/api/")) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      hasProfile = !!profile;
+
+      if (hasProfile) {
+        supabaseResponse.cookies.set(PROFILE_UID_COOKIE, user.id, {
+          path: "/",
+          maxAge: PROFILE_COOKIE_MAX_AGE,
+          sameSite: "lax",
+          httpOnly: true,
+        });
+      } else if (cachedUid) {
+        supabaseResponse.cookies.delete(PROFILE_UID_COOKIE);
+      }
+    }
+
+    if (!hasProfile && !skipProfileGuard(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = SETUP_PATH;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (hasProfile && pathname === SETUP_PATH) {
+      const url = request.nextUrl.clone();
+      url.pathname = POST_SETUP_PATH;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
 
   return supabaseResponse;
 }

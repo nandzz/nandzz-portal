@@ -263,7 +263,7 @@ export function ProfileBackground({
                 backgroundPosition: savedPosStr,
               }}
             />
-            <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-background/40 via-background/70 to-background pointer-events-none" />
+            <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-background/20 via-background/50 to-background pointer-events-none" />
           </>
         ) : (
           <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[600px] rounded-full bg-violet-100/40 blur-3xl dark:bg-violet-950/20" />
