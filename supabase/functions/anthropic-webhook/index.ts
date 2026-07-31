@@ -72,42 +72,48 @@ function restoreBase64Assets(html: string, manifest: Record<string, string>): st
 
 type Usage = { input: number; output: number };
 
-// Anthropic Managed Agents can surface usage in a few shapes depending on
-// the beta revision — a top-level `usage`, one inside `event.data`, or one
-// nested on `agent.message` content blocks. Sniff all three per event.
-// Cache tokens (creation + read) count as input — otherwise we undercount
-// heavily on cached sessions.
-function readUsageInput(u: Record<string, unknown>): number {
+// Read a usage-shaped object and return `{ input, output }` where input
+// includes cache_creation and cache_read tokens (the model is charged for
+// both). Missing fields treated as 0.
+function readUsageBlock(u: Record<string, unknown>): Usage {
   const base = (u.input_tokens ?? u.prompt_tokens) as number | undefined;
   const cacheCreate = u.cache_creation_input_tokens as number | undefined;
   const cacheRead = u.cache_read_input_tokens as number | undefined;
-  return (typeof base === "number" ? base : 0)
+  const outTok = (u.output_tokens ?? u.completion_tokens) as number | undefined;
+  const input = (typeof base === "number" ? base : 0)
     + (typeof cacheCreate === "number" ? cacheCreate : 0)
     + (typeof cacheRead === "number" ? cacheRead : 0);
+  const output = typeof outTok === "number" ? outTok : 0;
+  return { input, output };
 }
 
+// Per-event usage extraction. `span.model_request_end` is the authoritative
+// per-inference boundary — its `model_usage` block includes cache_creation
+// and cache_read tokens, which the session-detail summary strips. Summing
+// these across a session gives the real cost. Other event types are skipped
+// to avoid double-counting (e.g. `agent.message` can carry a redundant usage
+// block that overlaps with the preceding span).
 function addUsage(target: Usage, event: Record<string, unknown>): void {
-  const candidates: Array<Record<string, unknown> | undefined> = [
-    event.usage as Record<string, unknown> | undefined,
-    (event.data as Record<string, unknown> | undefined)?.usage as Record<string, unknown> | undefined,
-  ];
-  const content = event.content as Array<Record<string, unknown>> | undefined;
-  if (Array.isArray(content)) {
-    for (const block of content) {
-      candidates.push(block?.usage as Record<string, unknown> | undefined);
-    }
+  const type = event.type as string | undefined;
+  if (type !== "span.model_request_end") return;
+
+  // model_usage may sit on the event or inside a data envelope
+  const data = event.data as Record<string, unknown> | undefined;
+  const raw = (event.model_usage ?? data?.model_usage ?? event.usage ?? data?.usage) as
+    | Record<string, unknown>
+    | undefined;
+  if (!raw || typeof raw !== "object") {
+    console.error("[usage] span.model_request_end had no model_usage; event keys:", Object.keys(event));
+    return;
   }
-  for (const u of candidates) {
-    if (!u || typeof u !== "object") continue;
-    const outTok = (u.output_tokens ?? u.completion_tokens) as number | undefined;
-    target.input += readUsageInput(u);
-    if (typeof outTok === "number") target.output += outTok;
-  }
+  const u = readUsageBlock(raw);
+  console.error(`[usage] span.model_request_end += in=${u.input} out=${u.output}`);
+  target.input += u.input;
+  target.output += u.output;
 }
 
-// Fallback: aggregate usage from the session detail endpoint. Different
-// Managed Agents beta revisions surface it under `usage`, `total_usage`,
-// `token_usage`, or nested inside `metadata`.
+// Session-detail fallback. The GET /v1/sessions/{id} summary usage often
+// drops cache tokens — treat it as a lower bound, not source of truth.
 async function fetchSessionUsage(sessionId: string, apiKey: string): Promise<Usage | null> {
   try {
     const res = await fetch(`https://api.anthropic.com/v1/sessions/${sessionId}`, {
@@ -123,19 +129,20 @@ async function fetchSessionUsage(sessionId: string, apiKey: string): Promise<Usa
     }
     const body = await res.json();
     console.error("[usage] session detail keys:", Object.keys(body));
-    console.error("[usage] session detail body (first 500):", JSON.stringify(body).slice(0, 500));
+    console.error("[usage] session detail body (first 800):", JSON.stringify(body).slice(0, 800));
     const candidates: Array<Record<string, unknown> | undefined> = [
       body.usage,
       body.total_usage,
       body.token_usage,
+      body.model_usage,
       body.metadata?.usage,
+      body.metadata?.model_usage,
     ];
     for (const u of candidates) {
       if (!u || typeof u !== "object") continue;
-      const outTok = (u.output_tokens ?? u.completion_tokens) as number | undefined;
-      const inTok = readUsageInput(u as Record<string, unknown>);
-      if (inTok > 0 || typeof outTok === "number") {
-        return { input: inTok, output: outTok ?? 0 };
+      const parsed = readUsageBlock(u as Record<string, unknown>);
+      if (parsed.input > 0 || parsed.output > 0) {
+        return parsed;
       }
     }
     return null;
@@ -358,22 +365,21 @@ serve(async (req) => {
     // Charge credits — best effort so a failure here can't mask the ready
     // banner. Idempotent via request_id (charge_llm_usage skips repeats).
     //
-    // Session-detail usage is the source of truth: it returns cumulative
-    // totals including cache_creation/cache_read input tokens, whereas
-    // per-event `usage` blocks under-report on Managed Agents (they surface
-    // only the uncached delta, missing everything the session read from
-    // cache — which for a warm system prompt is the bulk of input). Fall
-    // back to the event-aggregated tally only if session detail is missing.
+    // Event aggregation is source of truth: summing `model_usage` on every
+    // `span.model_request_end` gives the real per-inference totals
+    // including cache_creation and cache_read input tokens. Session-detail
+    // is a defensive floor — its summary often strips cache fields, so use
+    // whichever value is larger per axis.
     const detailUsage = await fetchSessionUsage(sessionId, apiKey);
-    let finalUsage = detailUsage ?? usage;
-    if (detailUsage) {
-      console.error(
-        "[webhook] session-detail usage:", detailUsage.input, "/", detailUsage.output,
-        "— event-aggregated was:", usage.input, "/", usage.output,
-      );
-    } else {
-      console.error("[webhook] session detail unavailable — falling back to event aggregation:", usage.input, "/", usage.output);
-    }
+    const finalUsage: Usage = {
+      input:  Math.max(usage.input,  detailUsage?.input  ?? 0),
+      output: Math.max(usage.output, detailUsage?.output ?? 0),
+    };
+    console.error(
+      "[webhook] usage — event-aggregated:", usage.input, "/", usage.output,
+      "| session-detail:", detailUsage?.input ?? "n/a", "/", detailUsage?.output ?? "n/a",
+      "| final:", finalUsage.input, "/", finalUsage.output,
+    );
 
     if (job.model_id && job.request_id && (finalUsage.input + finalUsage.output > 0)) {
       const { data: charged, error: chargeErr } = await admin.rpc("charge_llm_usage", {
