@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { corsPreflight, withCors } from "@/lib/mcp-cors";
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 // Dynamic Client Registration (RFC 7591). Public clients only —
 // no client_secret is issued. PKCE + registered redirect_uris are the
@@ -9,12 +14,12 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "invalid_client_metadata", error_description: "Body must be JSON" }, { status: 400 });
+    return withCors(NextResponse.json({ error: "invalid_client_metadata", error_description: "Body must be JSON" }, { status: 400 }));
   }
 
   const redirectUris = Array.isArray(body.redirect_uris) ? (body.redirect_uris as unknown[]).filter((u) => typeof u === "string") as string[] : [];
   if (redirectUris.length === 0) {
-    return NextResponse.json({ error: "invalid_redirect_uri", error_description: "At least one redirect_uri required" }, { status: 400 });
+    return withCors(NextResponse.json({ error: "invalid_redirect_uri", error_description: "At least one redirect_uri required" }, { status: 400 }));
   }
 
   const clientName = typeof body.client_name === "string" ? body.client_name : null;
@@ -27,10 +32,10 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: "server_error", error_description: error.message }, { status: 500 });
+    return withCors(NextResponse.json({ error: "server_error", error_description: error.message }, { status: 500 }));
   }
 
-  return NextResponse.json(
+  return withCors(NextResponse.json(
     {
       client_id: data.id,
       client_id_issued_at: Math.floor(new Date(data.created_at).getTime() / 1000),
@@ -41,5 +46,5 @@ export async function POST(req: NextRequest) {
       response_types: ["code"],
     },
     { status: 201 }
-  );
+  ));
 }

@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { corsPreflight, withCors } from "@/lib/mcp-cors";
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 // MCP protected-resource metadata (RFC 9728). Tells clients which
 // authorization server(s) can issue tokens for this MCP resource.
@@ -7,11 +12,11 @@ export async function GET(req: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") || "";
   const resource = supabaseUrl ? `${supabaseUrl}/functions/v1/mcp` : "";
 
-  return NextResponse.json({
+  return withCors(NextResponse.json({
     resource,
     authorization_servers: [origin],
     bearer_methods_supported: ["header"],
     resource_documentation: `${origin}/mcp`,
     scopes_supported: ["publish", "read"],
-  });
+  }));
 }

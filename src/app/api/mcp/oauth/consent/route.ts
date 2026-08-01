@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 function appendQuery(base: string, params: Record<string, string | undefined>): string {
   const url = new URL(base);
@@ -26,6 +27,24 @@ export async function POST(req: NextRequest) {
 
   if (!clientId || !redirectUri) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  }
+
+  // Validate redirect_uri against the client's registered list BEFORE any
+  // redirect — otherwise the deny branch is an open redirect that anyone can
+  // aim at a phishing site by crafting a consent URL. The allow branch is
+  // separately re-checked inside mcp_issue_oauth_code, but we short-circuit
+  // here to avoid ever bouncing to an untrusted URL.
+  const admin = createAdminClient();
+  const { data: client } = await admin
+    .from("mcp_oauth_clients")
+    .select("id, redirect_uris")
+    .eq("id", clientId)
+    .maybeSingle();
+  if (!client || !(client.redirect_uris as string[]).includes(redirectUri)) {
+    return NextResponse.json(
+      { error: "invalid_redirect_uri", error_description: "The redirect_uri is not registered for this client." },
+      { status: 400 }
+    );
   }
 
   if (action === "deny") {

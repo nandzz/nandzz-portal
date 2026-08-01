@@ -7,11 +7,23 @@ import type { Ctx, ToolResult } from "./tools/types.ts";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, mcp-protocol-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Expose-Headers": "www-authenticate",
 };
 
 const PROTOCOL_VERSION = "2025-06-18";
 const SERVER_INFO = { name: "nandzz-mcp", version: "0.1.0" };
+
+// Portal origin that hosts the OAuth authorization server + metadata.
+// Only prod Portal exists (nandzz.com); both dev + prod edge functions
+// point at it. Override with the PORTAL_ORIGIN secret if that ever changes.
+const PORTAL_ORIGIN = Deno.env.get("PORTAL_ORIGIN") ?? "https://nandzz.com";
+const RESOURCE_METADATA_URL = `${PORTAL_ORIGIN}/.well-known/oauth-protected-resource`;
+
+// RFC 9728 / MCP 2025-06-18: on 401 the resource server tells the client
+// where to find its metadata. Without this header, MCP clients can't
+// discover the authorization server and OAuth registration silently fails.
+const WWW_AUTHENTICATE = `Bearer resource_metadata="${RESOURCE_METADATA_URL}"`;
 
 type JsonRpcRequest = {
   jsonrpc: "2.0";
@@ -55,6 +67,16 @@ serve(async (req: Request) => {
   const rid = crypto.randomUUID().slice(0, 8);
 
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
+
+  // GET/HEAD probes get a 401 with the WWW-Authenticate challenge so MCP
+  // clients that discover via any method can find the authorization server.
+  if (req.method === "GET" || req.method === "HEAD") {
+    return json(
+      { error: "Unauthorized", resource_metadata: RESOURCE_METADATA_URL },
+      { status: 401, headers: { "WWW-Authenticate": WWW_AUTHENTICATE } }
+    );
+  }
+
   if (req.method !== "POST") {
     return json({ error: "Use POST for MCP JSON-RPC" }, { status: 405 });
   }
@@ -95,7 +117,10 @@ serve(async (req: Request) => {
   // All other methods require a valid token.
   const userId = await resolveCaller(req, admin);
   if (!userId) {
-    return json(rpcError(id, { code: -32001, message: "Unauthorized: invalid or missing MCP token" }), { status: 401 });
+    return json(
+      rpcError(id, { code: -32001, message: "Unauthorized: invalid or missing MCP token" }),
+      { status: 401, headers: { "WWW-Authenticate": WWW_AUTHENTICATE } }
+    );
   }
 
   if (method === "tools/list") {

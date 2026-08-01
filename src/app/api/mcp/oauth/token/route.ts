@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { corsPreflight, withCors } from "@/lib/mcp-cors";
+
+export async function OPTIONS() {
+  return corsPreflight();
+}
 
 function err(code: string, description: string, status = 400) {
-  return NextResponse.json({ error: code, error_description: description }, { status });
+  return withCors(NextResponse.json({ error: code, error_description: description }, { status }));
 }
 
 // base64url(sha256(input)) — PKCE S256 challenge format (RFC 7636).
@@ -72,9 +77,9 @@ export async function POST(req: NextRequest) {
   if (tokErr) return err("server_error", tokErr.message, 500);
 
   const t = Array.isArray(tokenRow) ? tokenRow[0] : tokenRow;
-  return NextResponse.json({
+  return withCors(NextResponse.json({
     access_token: t.token,
     token_type: "Bearer",
     scope: (row.scopes as string[]).join(" "),
-  });
+  }));
 }
