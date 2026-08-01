@@ -29,6 +29,7 @@ export type Translations = {
     switchDark: string;
     switchLight: string;
     createSpace: string;
+    mcp: string;
   };
   home: {
     badge: string;
@@ -552,6 +553,43 @@ export type Translations = {
     attachFile: string;
     fileTooLarge: string;
   };
+  mcp: {
+    navItem: string;
+    title: string;
+    subtitle: string;
+    serverUrl: string;
+    serverUrlDesc: string;
+    serverUrlMissing: string;
+    copy: string;
+    copied: string;
+    howToConnect: string;
+    step1Title: string;
+    step1Body: string;
+    step2Title: string;
+    step2Body: string;
+    step3Title: string;
+    step3Body: string;
+    toolsHeading: string;
+    toolPublishHtml: string;
+    toolPublishPdf: string;
+    toolPublishImage: string;
+    toolListCollections: string;
+    creditsTitle: string;
+    creditsBody: string;
+    viewBalance: string;
+    controlTitle: string;
+    controlBody: string;
+    sessionsTitle: string;
+    sessionsDesc: string;
+    sessionsEmpty: string;
+    sessionsRevoke: string;
+    sessionsRevoking: string;
+    sessionsLastUsed: string;
+    sessionsNeverUsed: string;
+    sessionsCreated: string;
+    sessionsRevokeConfirm: string;
+    sessionDefaultName: string;
+  };
 };
 
 // ─── English ──────────────────────────────────────────────────────────────────
@@ -573,6 +611,7 @@ const en: Translations = {
     switchDark: "Switch to Dark",
     switchLight: "Switch to Light",
     createSpace: "Create Space",
+    mcp: "Connect AI",
   },
   home: {
     badge: "Your Gallery · Community",
@@ -1096,6 +1135,43 @@ const en: Translations = {
     attachFile: "Attach files",
     fileTooLarge: "File exceeds 5 MB limit",
   },
+  mcp: {
+    navItem: "Connect AI",
+    title: "Publish from any AI",
+    subtitle: "Hey {name} — any AI that supports MCP (Claude, Cursor, Cline, custom apps) can publish pages, PDFs, and images directly to your Nandzz space.",
+    serverUrl: "Your MCP server URL",
+    serverUrlDesc: "Paste this into any MCP-compatible client. Sign-in happens in the browser — no tokens to copy around.",
+    serverUrlMissing: "MCP URL not configured on this deployment.",
+    copy: "Copy",
+    copied: "Copied",
+    howToConnect: "How to connect",
+    step1Title: "Add the server in your AI client",
+    step1Body: "Copy the URL above and add it as an MCP server in your client. Claude Desktop: Settings → Connectors → Add custom connector. Claude Code: /mcp add nandzz <URL>. Cursor, Cline, Zed and other MCP clients each have their own path — check their docs.",
+    step2Title: "Sign in when prompted",
+    step2Body: "Your AI will open a Nandzz page in your browser and ask you to grant access. You'll see exactly what it will be able to do before you approve.",
+    step3Title: "Ask your AI to publish something",
+    step3Body: "Try: \"Publish this HTML page to my Nandzz space as private.\" Your AI will ask whether it should be public or private, and which collection to file it under.",
+    toolsHeading: "What a connected AI can do",
+    toolPublishHtml: "Publish an HTML page to your Nandzz space.",
+    toolPublishPdf: "Publish a PDF to your Nandzz space.",
+    toolPublishImage: "Publish an image to your Nandzz space.",
+    toolListCollections: "List your collections so your AI can ask which to file into.",
+    creditsTitle: "Publishes cost credits",
+    creditsBody: "Each publish deducts from your Nandzz balance — the same as publishing from the app.",
+    viewBalance: "View balance",
+    controlTitle: "You stay in control",
+    controlBody: "Every publish requires you to pick private or public. Revoke access anytime by removing the connector in your AI client or below.",
+    sessionsTitle: "Active connections",
+    sessionsDesc: "Every time you approve access from an MCP client, a new connection appears here. Revoke to sign that client out.",
+    sessionsEmpty: "No active connections yet. Approve access from your AI and it will show up here.",
+    sessionsRevoke: "Revoke",
+    sessionsRevoking: "Revoking…",
+    sessionsLastUsed: "Last used {when}",
+    sessionsNeverUsed: "Never used",
+    sessionsCreated: "Created {when}",
+    sessionsRevokeConfirm: "Revoke this connection? The client will need to reconnect to publish again.",
+    sessionDefaultName: "OAuth grant",
+  },
 };
 
 // ─── Portuguese ───────────────────────────────────────────────────────────────
@@ -1117,6 +1193,7 @@ const pt: Translations = {
     switchDark: "Modo Escuro",
     switchLight: "Modo Claro",
     createSpace: "Criar Space",
+    mcp: "Conectar IA",
   },
   home: {
     badge: "Sua Galeria · Comunidade",
@@ -1640,6 +1717,43 @@ const pt: Translations = {
     attachFile: "Anexar arquivos",
     fileTooLarge: "Arquivo excede o limite de 5 MB",
   },
+  mcp: {
+    navItem: "Conectar IA",
+    title: "Publique a partir de qualquer IA",
+    subtitle: "Olá {name} — qualquer IA que suporte MCP (Claude, Cursor, Cline, apps personalizados) pode publicar páginas, PDFs e imagens diretamente no seu Nandzz space.",
+    serverUrl: "URL do seu servidor MCP",
+    serverUrlDesc: "Cole isto em qualquer cliente compatível com MCP. O login acontece no navegador — sem tokens para copiar.",
+    serverUrlMissing: "URL MCP não configurada nesta implantação.",
+    copy: "Copiar",
+    copied: "Copiado",
+    howToConnect: "Como conectar",
+    step1Title: "Adicione o servidor no seu cliente de IA",
+    step1Body: "Copie a URL acima e adicione como servidor MCP no seu cliente. Claude Desktop: Configurações → Conectores → Adicionar conector personalizado. Claude Code: /mcp add nandzz <URL>. Cursor, Cline, Zed e outros clientes MCP têm seus próprios caminhos — consulte a documentação deles.",
+    step2Title: "Faça login quando solicitado",
+    step2Body: "Sua IA abrirá uma página do Nandzz no seu navegador e pedirá para você conceder acesso. Você verá exatamente o que ela poderá fazer antes de aprovar.",
+    step3Title: "Peça à sua IA para publicar algo",
+    step3Body: "Tente: \"Publique esta página HTML no meu Nandzz space como privada.\" Sua IA perguntará se deve ser pública ou privada, e em qual coleção arquivar.",
+    toolsHeading: "O que uma IA conectada pode fazer",
+    toolPublishHtml: "Publicar uma página HTML no seu Nandzz space.",
+    toolPublishPdf: "Publicar um PDF no seu Nandzz space.",
+    toolPublishImage: "Publicar uma imagem no seu Nandzz space.",
+    toolListCollections: "Listar suas coleções para sua IA perguntar em qual arquivar.",
+    creditsTitle: "Publicações custam créditos",
+    creditsBody: "Cada publicação desconta do seu saldo Nandzz — igual a publicar pelo app.",
+    viewBalance: "Ver saldo",
+    controlTitle: "Você mantém o controle",
+    controlBody: "Cada publicação exige que você escolha entre privada ou pública. Revogue o acesso a qualquer momento removendo o conector no seu cliente de IA ou abaixo.",
+    sessionsTitle: "Conexões ativas",
+    sessionsDesc: "Toda vez que você aprovar acesso de um cliente MCP, uma nova conexão aparecerá aqui. Revogue para desconectar aquele cliente.",
+    sessionsEmpty: "Nenhuma conexão ativa ainda. Aprove o acesso pela sua IA e ela aparecerá aqui.",
+    sessionsRevoke: "Revogar",
+    sessionsRevoking: "Revogando…",
+    sessionsLastUsed: "Usada por último {when}",
+    sessionsNeverUsed: "Nunca usada",
+    sessionsCreated: "Criada {when}",
+    sessionsRevokeConfirm: "Revogar esta conexão? O cliente precisará se reconectar para publicar novamente.",
+    sessionDefaultName: "Concessão OAuth",
+  },
 };
 
 // ─── French ───────────────────────────────────────────────────────────────────
@@ -1661,6 +1775,7 @@ const fr: Translations = {
     switchDark: "Mode Sombre",
     switchLight: "Mode Clair",
     createSpace: "Créer un Space",
+    mcp: "Connecter votre IA",
   },
   home: {
     badge: "Votre Galerie · Communauté",
@@ -2184,6 +2299,43 @@ const fr: Translations = {
     attachFile: "Joindre des fichiers",
     fileTooLarge: "Fichier dépasse la limite de 5 Mo",
   },
+  mcp: {
+    navItem: "Connecter votre IA",
+    title: "Publiez depuis n'importe quelle IA",
+    subtitle: "Salut {name} — toute IA compatible MCP (Claude, Cursor, Cline, apps personnalisées) peut publier des pages, PDF et images directement dans votre Nandzz space.",
+    serverUrl: "URL de votre serveur MCP",
+    serverUrlDesc: "Collez ceci dans n'importe quel client compatible MCP. La connexion se fait dans le navigateur — aucun jeton à copier.",
+    serverUrlMissing: "URL MCP non configurée sur ce déploiement.",
+    copy: "Copier",
+    copied: "Copié",
+    howToConnect: "Comment se connecter",
+    step1Title: "Ajoutez le serveur dans votre client IA",
+    step1Body: "Copiez l'URL ci-dessus et ajoutez-la comme serveur MCP dans votre client. Claude Desktop : Paramètres → Connecteurs → Ajouter un connecteur personnalisé. Claude Code : /mcp add nandzz <URL>. Cursor, Cline, Zed et d'autres clients MCP ont chacun leur propre chemin — consultez leur documentation.",
+    step2Title: "Connectez-vous quand demandé",
+    step2Body: "Votre IA ouvrira une page Nandzz dans votre navigateur et vous demandera d'accorder l'accès. Vous verrez exactement ce qu'elle pourra faire avant d'approuver.",
+    step3Title: "Demandez à votre IA de publier quelque chose",
+    step3Body: "Essayez : \"Publie cette page HTML dans mon Nandzz space en privé.\" Votre IA vous demandera si elle doit être publique ou privée, et dans quelle collection la ranger.",
+    toolsHeading: "Ce qu'une IA connectée peut faire",
+    toolPublishHtml: "Publier une page HTML dans votre Nandzz space.",
+    toolPublishPdf: "Publier un PDF dans votre Nandzz space.",
+    toolPublishImage: "Publier une image dans votre Nandzz space.",
+    toolListCollections: "Lister vos collections pour que votre IA puisse demander dans laquelle ranger.",
+    creditsTitle: "Les publications coûtent des crédits",
+    creditsBody: "Chaque publication déduit de votre solde Nandzz — comme publier depuis l'app.",
+    viewBalance: "Voir le solde",
+    controlTitle: "Vous gardez le contrôle",
+    controlBody: "Chaque publication exige que vous choisissiez privée ou publique. Révoquez l'accès à tout moment en supprimant le connecteur dans votre client IA ou ci-dessous.",
+    sessionsTitle: "Connexions actives",
+    sessionsDesc: "Chaque fois que vous autorisez l'accès depuis un client MCP, une nouvelle connexion apparaît ici. Révoquez pour déconnecter ce client.",
+    sessionsEmpty: "Aucune connexion active pour l'instant. Autorisez l'accès depuis votre IA et cela apparaîtra ici.",
+    sessionsRevoke: "Révoquer",
+    sessionsRevoking: "Révocation…",
+    sessionsLastUsed: "Dernière utilisation {when}",
+    sessionsNeverUsed: "Jamais utilisée",
+    sessionsCreated: "Créée {when}",
+    sessionsRevokeConfirm: "Révoquer cette connexion ? Le client devra se reconnecter pour publier à nouveau.",
+    sessionDefaultName: "Autorisation OAuth",
+  },
 };
 
 // ─── Spanish ──────────────────────────────────────────────────────────────────
@@ -2205,6 +2357,7 @@ const es: Translations = {
     switchDark: "Modo Oscuro",
     switchLight: "Modo Claro",
     createSpace: "Crear Space",
+    mcp: "Conectar IA",
   },
   home: {
     badge: "Tu Galería · Comunidad",
@@ -2728,6 +2881,43 @@ const es: Translations = {
     attachFile: "Adjuntar archivos",
     fileTooLarge: "El archivo supera el límite de 5 MB",
   },
+  mcp: {
+    navItem: "Conectar IA",
+    title: "Publica desde cualquier IA",
+    subtitle: "Hola {name} — cualquier IA compatible con MCP (Claude, Cursor, Cline, apps personalizadas) puede publicar páginas, PDFs e imágenes directamente en tu Nandzz space.",
+    serverUrl: "URL de tu servidor MCP",
+    serverUrlDesc: "Pega esto en cualquier cliente compatible con MCP. El inicio de sesión sucede en el navegador — sin tokens que copiar.",
+    serverUrlMissing: "URL MCP no configurada en este despliegue.",
+    copy: "Copiar",
+    copied: "Copiado",
+    howToConnect: "Cómo conectar",
+    step1Title: "Añade el servidor en tu cliente de IA",
+    step1Body: "Copia la URL de arriba y añádela como servidor MCP en tu cliente. Claude Desktop: Ajustes → Conectores → Añadir conector personalizado. Claude Code: /mcp add nandzz <URL>. Cursor, Cline, Zed y otros clientes MCP tienen cada uno su propio camino — consulta su documentación.",
+    step2Title: "Inicia sesión cuando se te pida",
+    step2Body: "Tu IA abrirá una página de Nandzz en tu navegador y pedirá que concedas acceso. Verás exactamente qué podrá hacer antes de aprobar.",
+    step3Title: "Pídele a tu IA que publique algo",
+    step3Body: "Prueba: \"Publica esta página HTML en mi Nandzz space como privada.\" Tu IA te preguntará si debe ser pública o privada, y en qué colección archivarla.",
+    toolsHeading: "Lo que puede hacer una IA conectada",
+    toolPublishHtml: "Publicar una página HTML en tu Nandzz space.",
+    toolPublishPdf: "Publicar un PDF en tu Nandzz space.",
+    toolPublishImage: "Publicar una imagen en tu Nandzz space.",
+    toolListCollections: "Listar tus colecciones para que tu IA pueda preguntar en cuál archivar.",
+    creditsTitle: "Las publicaciones cuestan créditos",
+    creditsBody: "Cada publicación descuenta de tu saldo Nandzz — igual que publicar desde la app.",
+    viewBalance: "Ver saldo",
+    controlTitle: "Mantienes el control",
+    controlBody: "Cada publicación requiere que elijas privada o pública. Revoca el acceso en cualquier momento eliminando el conector en tu cliente de IA o abajo.",
+    sessionsTitle: "Conexiones activas",
+    sessionsDesc: "Cada vez que apruebas acceso desde un cliente MCP, aparece una nueva conexión aquí. Revoca para desconectar a ese cliente.",
+    sessionsEmpty: "Sin conexiones activas todavía. Aprueba el acceso desde tu IA y aparecerá aquí.",
+    sessionsRevoke: "Revocar",
+    sessionsRevoking: "Revocando…",
+    sessionsLastUsed: "Último uso {when}",
+    sessionsNeverUsed: "Nunca usada",
+    sessionsCreated: "Creada {when}",
+    sessionsRevokeConfirm: "¿Revocar esta conexión? El cliente tendrá que reconectarse para publicar de nuevo.",
+    sessionDefaultName: "Concesión OAuth",
+  },
 };
 
 // ─── Japanese ─────────────────────────────────────────────────────────────────
@@ -2749,6 +2939,7 @@ const ja: Translations = {
     switchDark: "ダークモード",
     switchLight: "ライトモード",
     createSpace: "スペース作成",
+    mcp: "AIを接続",
   },
   home: {
     badge: "あなたのギャラリー · コミュニティ",
@@ -3272,6 +3463,43 @@ const ja: Translations = {
     attachFile: "ファイルを添付",
     fileTooLarge: "ファイルが5 MBの制限を超えています",
   },
+  mcp: {
+    navItem: "AIを接続",
+    title: "どんなAIからでも公開",
+    subtitle: "こんにちは{name}さん — MCPをサポートするAI（Claude、Cursor、Cline、カスタムアプリなど）が、あなたのNandzz spaceへ直接ページ、PDF、画像を公開できます。",
+    serverUrl: "あなたのMCPサーバーURL",
+    serverUrlDesc: "これをMCP対応クライアントに貼り付けてください。サインインはブラウザで行われます — コピーするトークンはありません。",
+    serverUrlMissing: "この環境ではMCP URLが設定されていません。",
+    copy: "コピー",
+    copied: "コピーしました",
+    howToConnect: "接続方法",
+    step1Title: "AIクライアントにサーバーを追加",
+    step1Body: "上のURLをコピーし、クライアントにMCPサーバーとして追加してください。Claude Desktop:設定 → コネクタ → カスタムコネクタを追加。Claude Code:/mcp add nandzz <URL>。Cursor、Cline、Zedなど他のMCPクライアントもそれぞれ手順があります — 各クライアントのドキュメントをご確認ください。",
+    step2Title: "プロンプトが表示されたらサインイン",
+    step2Body: "AIはブラウザで Nandzz のページを開き、アクセス許可を求めます。承認する前に、そのAIが何をできるかを正確に確認できます。",
+    step3Title: "AIに何かを公開するよう頼む",
+    step3Body: "試しに:「このHTMLページを私のNandzz spaceにプライベートとして公開して」と伝えてみてください。AIは公開/非公開の選択と、どのコレクションに入れるかを尋ねます。",
+    toolsHeading: "接続されたAIができること",
+    toolPublishHtml: "HTMLページをあなたのNandzz spaceに公開します。",
+    toolPublishPdf: "PDFをあなたのNandzz spaceに公開します。",
+    toolPublishImage: "画像をあなたのNandzz spaceに公開します。",
+    toolListCollections: "あなたのコレクションを一覧化し、AIがどこに入れるか尋ねられるようにします。",
+    creditsTitle: "公開にはクレジットがかかります",
+    creditsBody: "公開ごとにNandzz残高から控除されます — アプリから公開するのと同じです。",
+    viewBalance: "残高を確認",
+    controlTitle: "あなたが管理を保持",
+    controlBody: "すべての公開でプライベートか公開かを選択する必要があります。いつでもAIクライアントまたは下からコネクタを削除してアクセスを取り消せます。",
+    sessionsTitle: "有効な接続",
+    sessionsDesc: "MCPクライアントからのアクセスを承認するたび、新しい接続がここに表示されます。取り消すとそのクライアントをサインアウトします。",
+    sessionsEmpty: "有効な接続はまだありません。AIからアクセスを承認するとここに表示されます。",
+    sessionsRevoke: "取り消し",
+    sessionsRevoking: "取り消し中…",
+    sessionsLastUsed: "最後の使用: {when}",
+    sessionsNeverUsed: "未使用",
+    sessionsCreated: "作成: {when}",
+    sessionsRevokeConfirm: "この接続を取り消しますか?クライアントは再度公開するために再接続する必要があります。",
+    sessionDefaultName: "OAuth許可",
+  },
 };
 
 // ─── German ───────────────────────────────────────────────────────────────────
@@ -3293,6 +3521,7 @@ const de: Translations = {
     switchDark: "Dunkelmodus",
     switchLight: "Hellmodus",
     createSpace: "Space erstellen",
+    mcp: "KI verbinden",
   },
   home: {
     badge: "Deine Galerie · Community",
@@ -3816,6 +4045,43 @@ const de: Translations = {
     attachFile: "Dateien anhängen",
     fileTooLarge: "Datei überschreitet das 5-MB-Limit",
   },
+  mcp: {
+    navItem: "KI verbinden",
+    title: "Von jeder KI aus veröffentlichen",
+    subtitle: "Hallo {name} — jede KI, die MCP unterstützt (Claude, Cursor, Cline, eigene Apps), kann Seiten, PDFs und Bilder direkt in deinen Nandzz Space veröffentlichen.",
+    serverUrl: "Deine MCP-Server-URL",
+    serverUrlDesc: "Füge dies in einen beliebigen MCP-kompatiblen Client ein. Die Anmeldung erfolgt im Browser — keine Tokens zum Kopieren.",
+    serverUrlMissing: "MCP-URL in dieser Bereitstellung nicht konfiguriert.",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    howToConnect: "Verbindung herstellen",
+    step1Title: "Server in deinem KI-Client hinzufügen",
+    step1Body: "Kopiere die URL oben und füge sie als MCP-Server in deinem Client hinzu. Claude Desktop: Einstellungen → Connectors → Benutzerdefinierten Connector hinzufügen. Claude Code: /mcp add nandzz <URL>. Cursor, Cline, Zed und andere MCP-Clients haben jeweils eigene Wege — sieh in ihre Dokumentation.",
+    step2Title: "Melde dich an, wenn du dazu aufgefordert wirst",
+    step2Body: "Deine KI öffnet eine Nandzz-Seite in deinem Browser und bittet um Zugriff. Vor der Genehmigung siehst du genau, was sie tun darf.",
+    step3Title: "Bitte deine KI, etwas zu veröffentlichen",
+    step3Body: "Versuche: \"Veröffentliche diese HTML-Seite in meinem Nandzz Space als privat.\" Deine KI fragt, ob sie öffentlich oder privat sein soll und in welche Sammlung sie kommt.",
+    toolsHeading: "Was eine verbundene KI tun kann",
+    toolPublishHtml: "Eine HTML-Seite in deinem Nandzz Space veröffentlichen.",
+    toolPublishPdf: "Ein PDF in deinem Nandzz Space veröffentlichen.",
+    toolPublishImage: "Ein Bild in deinem Nandzz Space veröffentlichen.",
+    toolListCollections: "Deine Sammlungen auflisten, damit deine KI fragen kann, in welche einsortiert werden soll.",
+    creditsTitle: "Veröffentlichungen kosten Credits",
+    creditsBody: "Jede Veröffentlichung wird von deinem Nandzz-Guthaben abgezogen — genau wie beim Veröffentlichen aus der App.",
+    viewBalance: "Guthaben anzeigen",
+    controlTitle: "Du behältst die Kontrolle",
+    controlBody: "Jede Veröffentlichung erfordert, dass du privat oder öffentlich wählst. Widerrufe den Zugriff jederzeit, indem du den Connector in deinem KI-Client oder unten entfernst.",
+    sessionsTitle: "Aktive Verbindungen",
+    sessionsDesc: "Jedes Mal, wenn du Zugriff aus einem MCP-Client genehmigst, erscheint hier eine neue Verbindung. Widerrufen meldet diesen Client ab.",
+    sessionsEmpty: "Noch keine aktiven Verbindungen. Genehmige den Zugriff aus deiner KI und es erscheint hier.",
+    sessionsRevoke: "Widerrufen",
+    sessionsRevoking: "Wird widerrufen…",
+    sessionsLastUsed: "Zuletzt benutzt {when}",
+    sessionsNeverUsed: "Nie benutzt",
+    sessionsCreated: "Erstellt {when}",
+    sessionsRevokeConfirm: "Diese Verbindung widerrufen? Der Client muss sich neu verbinden, um wieder zu veröffentlichen.",
+    sessionDefaultName: "OAuth-Genehmigung",
+  },
 };
 
 // ─── Italian ──────────────────────────────────────────────────────────────────
@@ -3837,6 +4103,7 @@ const it: Translations = {
     switchDark: "Modalità Scura",
     switchLight: "Modalità Chiara",
     createSpace: "Crea Space",
+    mcp: "Connetti IA",
   },
   home: {
     badge: "La tua Galleria · Comunità",
@@ -4359,6 +4626,43 @@ const it: Translations = {
     errorTitle: "Modifica AI non riuscita",
     attachFile: "Allega file",
     fileTooLarge: "Il file supera il limite di 5 MB",
+  },
+  mcp: {
+    navItem: "Connetti IA",
+    title: "Pubblica da qualsiasi IA",
+    subtitle: "Ciao {name} — qualsiasi IA che supporta MCP (Claude, Cursor, Cline, app personalizzate) può pubblicare pagine, PDF e immagini direttamente nel tuo Nandzz space.",
+    serverUrl: "URL del tuo server MCP",
+    serverUrlDesc: "Incolla questo in qualsiasi client compatibile con MCP. L'accesso avviene nel browser — nessun token da copiare.",
+    serverUrlMissing: "URL MCP non configurata in questa distribuzione.",
+    copy: "Copia",
+    copied: "Copiato",
+    howToConnect: "Come connettere",
+    step1Title: "Aggiungi il server nel tuo client IA",
+    step1Body: "Copia l'URL sopra e aggiungilo come server MCP nel tuo client. Claude Desktop: Impostazioni → Connettori → Aggiungi connettore personalizzato. Claude Code: /mcp add nandzz <URL>. Cursor, Cline, Zed e altri client MCP hanno percorsi propri — consulta la loro documentazione.",
+    step2Title: "Accedi quando richiesto",
+    step2Body: "La tua IA aprirà una pagina Nandzz nel tuo browser e ti chiederà di concedere l'accesso. Vedrai esattamente cosa potrà fare prima di approvare.",
+    step3Title: "Chiedi alla tua IA di pubblicare qualcosa",
+    step3Body: "Prova: \"Pubblica questa pagina HTML nel mio Nandzz space come privata.\" La tua IA ti chiederà se deve essere pubblica o privata, e in quale collezione archiviarla.",
+    toolsHeading: "Cosa può fare un'IA connessa",
+    toolPublishHtml: "Pubblicare una pagina HTML nel tuo Nandzz space.",
+    toolPublishPdf: "Pubblicare un PDF nel tuo Nandzz space.",
+    toolPublishImage: "Pubblicare un'immagine nel tuo Nandzz space.",
+    toolListCollections: "Elencare le tue collezioni così la tua IA può chiedere dove archiviare.",
+    creditsTitle: "Le pubblicazioni costano crediti",
+    creditsBody: "Ogni pubblicazione deduce dal tuo saldo Nandzz — come pubblicare dall'app.",
+    viewBalance: "Vedi saldo",
+    controlTitle: "Mantieni il controllo",
+    controlBody: "Ogni pubblicazione richiede di scegliere privata o pubblica. Revoca l'accesso in qualsiasi momento rimuovendo il connettore nel tuo client IA o qui sotto.",
+    sessionsTitle: "Connessioni attive",
+    sessionsDesc: "Ogni volta che approvi l'accesso da un client MCP, appare una nuova connessione qui. Revoca per disconnettere quel client.",
+    sessionsEmpty: "Ancora nessuna connessione attiva. Approva l'accesso dalla tua IA e apparirà qui.",
+    sessionsRevoke: "Revoca",
+    sessionsRevoking: "Revoca in corso…",
+    sessionsLastUsed: "Ultimo uso {when}",
+    sessionsNeverUsed: "Mai usata",
+    sessionsCreated: "Creata {when}",
+    sessionsRevokeConfirm: "Revocare questa connessione? Il client dovrà riconnettersi per pubblicare di nuovo.",
+    sessionDefaultName: "Concessione OAuth",
   },
 };
 

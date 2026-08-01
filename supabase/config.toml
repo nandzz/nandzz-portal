@@ -22,3 +22,7 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+# MCP server uses its own PAT-based auth (mcp_tokens table), not Supabase JWTs.
+[functions.mcp]
+verify_jwt = false

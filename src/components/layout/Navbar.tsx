@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, User, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers, Bot } from "lucide-react";
+import { Moon, Sun, Menu, User, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers, Bot, Plug } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
@@ -226,6 +226,10 @@ export function Navbar() {
                       <Settings className="h-4 w-4 text-muted-foreground" />
                       {t.nav.settings}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/mcp")} className="gap-2">
+                      <Plug className="h-4 w-4 text-muted-foreground" />
+                      {t.nav.mcp}
+                    </DropdownMenuItem>
                     {FEATURES.monetization && (
                       <DropdownMenuItem onClick={() => router.push("/dashboard/credits")} className="gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -335,6 +339,10 @@ export function Navbar() {
                     <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="gap-2">
                       <Settings className="h-4 w-4 text-muted-foreground" />
                       {t.nav.settings}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/mcp")} className="gap-2">
+                      <Plug className="h-4 w-4 text-muted-foreground" />
+                      {t.nav.mcp}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
                       <DropdownMenuItem onClick={() => router.push("/dashboard/credits")} className="gap-2">
