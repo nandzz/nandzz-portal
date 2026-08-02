@@ -84,6 +84,36 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // MCP OAuth consent page: the form on /mcp/authorize submits to
+      // /api/mcp/oauth/consent, which 303s to the MCP client's registered
+      // redirect_uri (e.g. https://claude.ai/api/mcp/auth_callback). Chrome
+      // 116+, Firefox, and Safari all enforce `form-action` on the redirect
+      // target too, so the global `form-action 'self'` silently blocks the
+      // cross-origin redirect after Allow — the browser stays on the consent
+      // page and nothing appears to happen. Allow any HTTPS form target here;
+      // the redirect_uri is separately validated server-side against the
+      // client's registered URIs, so this doesn't widen the attack surface.
+      {
+        source: "/mcp/authorize",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: [
+              `default-src 'self'`,
+              `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+              `style-src 'self' 'unsafe-inline'`,
+              `img-src 'self' data: blob: https://${supabaseHost}`,
+              `font-src 'self'`,
+              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+              `worker-src 'self'`,
+              `frame-src *`,
+              `object-src 'none'`,
+              `base-uri 'self'`,
+              `form-action 'self' https:`,
+            ].join("; "),
+          },
+        ],
+      },
       // Sandbox route: user HTML pages that need CDN scripts, fonts, and images.
       // connect-src stays 'none' to block data exfiltration from untrusted content.
       // This entry is listed last so it overrides the global CSP for /sandbox/* paths.
