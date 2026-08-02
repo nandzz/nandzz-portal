@@ -1,15 +1,20 @@
 import type { ToolDefinition, ToolHandler } from "./types.ts";
 import {
   attachToCollection,
+  buildSpaceUrl,
   commonPublishProps,
   decodeBase64,
   fetchBytes,
+  getUsername,
+  openAIFileParamSchema,
   publishSpace,
   requireStr,
   requireVisibility,
+  resolveFileInput,
   successResult,
   uploadToBucket,
   type CommonPublishArgs,
+  type OpenAIFileInput,
 } from "./_shared.ts";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // matches space-images bucket limit
@@ -28,12 +33,17 @@ function extFor(contentType: string): string {
 export const publishImageDef: ToolDefinition = {
   name: "publish_image",
   description:
-    "Publish an image to the caller's Nandzz space. Provide either content_base64 (with media_type) or source_url (remote URL). Requires the user's explicit visibility choice. Costs credits.",
+    "Publish an image to the caller's Nandzz space. Preferred: pass the image via `file` — the ChatGPT connector runtime auto-uploads user or AI-generated files. Alternatives: `source_url` (remote URL) or `content_base64` (with `media_type`). Requires the user's explicit visibility choice. Costs credits.",
   inputSchema: {
     type: "object",
     required: ["title", "visibility"],
     properties: {
       ...commonPublishProps,
+      file: {
+        ...openAIFileParamSchema,
+        description:
+          "Image file. When the connector runtime handles this parameter it will fill in `download_url`, `file_id`, and (usually) `mime_type` automatically — you do not need to base64-encode or pre-upload. Takes precedence over source_url and content_base64.",
+      },
       content_base64: {
         type: "string",
         contentEncoding: "base64",
@@ -47,15 +57,21 @@ export const publishImageDef: ToolDefinition = {
       source_url: {
         type: "string",
         format: "uri",
-        description: "URL to fetch the image from. Provide exactly one of content_base64 or source_url.",
+        description: "URL to fetch the image from. Used only if `file` is not provided.",
       },
     },
     additionalProperties: false,
+  },
+  // Tell the OpenAI Apps SDK runtime that `file` is an uploadable file input.
+  // Without this the runtime won't intercept local paths / generated images.
+  _meta: {
+    "openai/fileParams": ["file"],
   },
 };
 
 export const publishImage: ToolHandler = async (args, ctx) => {
   const a = args as CommonPublishArgs & {
+    file?: OpenAIFileInput;
     content_base64?: string;
     media_type?: string;
     source_url?: string;
@@ -63,26 +79,33 @@ export const publishImage: ToolHandler = async (args, ctx) => {
   const title = requireStr(a.title, "title");
   const visibility = requireVisibility(a.visibility);
 
-  if ((!a.content_base64) === (!a.source_url)) {
-    throw new Error("Provide exactly one of content_base64 or source_url.");
+  if (!a.file && !a.source_url && !a.content_base64) {
+    throw new Error("Provide one of file, source_url, or content_base64.");
   }
 
   let bytes: Uint8Array;
   let contentType: string;
 
-  if (a.content_base64) {
-    if (!a.media_type || !ALLOWED_TYPES.has(a.media_type)) {
-      throw new Error("media_type required for content_base64 (image/jpeg|png|gif|webp).");
+  if (a.file) {
+    const resolved = await resolveFileInput(a.file, MAX_IMAGE_BYTES);
+    if (!ALLOWED_TYPES.has(resolved.contentType)) {
+      throw new Error(`Unsupported image type from file: ${resolved.contentType}`);
     }
-    bytes = decodeBase64(a.content_base64);
-    contentType = a.media_type;
-  } else {
-    const fetched = await fetchBytes(a.source_url!, MAX_IMAGE_BYTES);
+    bytes = resolved.bytes;
+    contentType = resolved.contentType;
+  } else if (a.source_url) {
+    const fetched = await fetchBytes(a.source_url, MAX_IMAGE_BYTES);
     if (!ALLOWED_TYPES.has(fetched.contentType)) {
       throw new Error(`Unsupported image type from source_url: ${fetched.contentType}`);
     }
     bytes = fetched.bytes;
     contentType = fetched.contentType;
+  } else {
+    if (!a.media_type || !ALLOWED_TYPES.has(a.media_type)) {
+      throw new Error("media_type required for content_base64 (image/jpeg|png|gif|webp).");
+    }
+    bytes = decodeBase64(a.content_base64!);
+    contentType = a.media_type;
   }
 
   if (bytes.byteLength > MAX_IMAGE_BYTES) {
@@ -101,9 +124,10 @@ export const publishImage: ToolHandler = async (args, ctx) => {
 
   if (a.collection_id) await attachToCollection(ctx, spaceId, a.collection_id);
 
+  const username = await getUsername(ctx);
   return successResult({
     spaceId,
-    publicUrl: asset.publicUrl,
+    spaceUrl: buildSpaceUrl(username, spaceId),
     visibility,
     collectionAttached: a.collection_id ?? null,
     remainingCredits: { free: freeCredits, paid: paidCredits },

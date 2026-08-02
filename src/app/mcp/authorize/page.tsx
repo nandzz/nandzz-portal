@@ -12,10 +12,16 @@ type SP = {
   response_type?: string;
 };
 
-// Human-readable scope descriptions shown on the consent card.
-const SCOPE_LABELS: Record<string, string> = {
-  publish: "Publish HTML pages, PDFs, and images to your Nandzz space",
-  read: "List your collections",
+// Human-readable scope descriptions shown on the consent card. One scope can
+// map to multiple bullets when the underlying tools do meaningfully different
+// things (e.g. `publish` also grants update/edit tools).
+const SCOPE_LABELS: Record<string, string[]> = {
+  publish: [
+    "Publish HTML pages, PDFs, and images to your Nandzz space",
+    "Replace the content of spaces you already own",
+    "Edit a space's title, description, hashtags, or visibility",
+  ],
+  read: ["List your collections"],
 };
 
 export default async function AuthorizePage({
@@ -95,10 +101,10 @@ export default async function AuthorizePage({
             This app will be able to:
           </p>
           <ul className="mt-3 space-y-2">
-            {scopes.map((s) => (
-              <li key={s} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+            {scopes.flatMap((s) => (SCOPE_LABELS[s] ?? [s]).map((label) => ({ scope: s, label }))).map(({ scope, label }) => (
+              <li key={`${scope}:${label}`} className="flex items-start gap-2 text-sm text-neutral-700 dark:text-neutral-300">
                 <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-500" />
-                {SCOPE_LABELS[s] ?? s}
+                {label}
               </li>
             ))}
           </ul>

@@ -1,6 +1,7 @@
 {
   "version": "5",
   "redirects": {
+    "https://esm.sh/@supabase/supabase-js@2": "https://esm.sh/@supabase/supabase-js@2.110.9",
     "https://esm.sh/@types/get-intrinsic@~1.2.3/index.d.ts": "https://esm.sh/@types/get-intrinsic@1.2.3/index.d.ts",
     "https://esm.sh/@types/object-inspect@~1.13.0/index.d.ts": "https://esm.sh/@types/object-inspect@1.13.0/index.d.ts",
     "https://esm.sh/@types/qs@~6.15.1/index.d.ts": "https://esm.sh/@types/qs@6.15.1/index.d.ts",
@@ -20,6 +21,7 @@
     "https://esm.sh/get-proto@^1.0.1/Object.getPrototypeOf?target=denonext": "https://esm.sh/get-proto@1.0.1/Object.getPrototypeOf?target=denonext",
     "https://esm.sh/get-proto@^1.0.1/Reflect.getPrototypeOf?target=denonext": "https://esm.sh/get-proto@1.0.1/Reflect.getPrototypeOf?target=denonext",
     "https://esm.sh/get-proto@^1.0.1?target=denonext": "https://esm.sh/get-proto@1.0.1?target=denonext",
+    "https://esm.sh/iceberg-js@^0.8.1?target=denonext": "https://esm.sh/iceberg-js@0.8.1?target=denonext",
     "https://esm.sh/math-intrinsics@^1.1.0/abs?target=denonext": "https://esm.sh/math-intrinsics@1.1.0/abs?target=denonext",
     "https://esm.sh/math-intrinsics@^1.1.0/floor?target=denonext": "https://esm.sh/math-intrinsics@1.1.0/floor?target=denonext",
     "https://esm.sh/math-intrinsics@^1.1.0/max?target=denonext": "https://esm.sh/math-intrinsics@1.1.0/max?target=denonext",
@@ -69,6 +71,14 @@
     "https://deno.land/x/imagescript@1.2.15/v2/ops/resize.mjs": "814e78ebce8eaf8f1f918688db7b52a141405e06a36ed4b25d04413d69e7d17b",
     "https://deno.land/x/imagescript@1.2.15/v2/ops/rotate.mjs": "a1b65616717bd2eed8db406affea3263b4674dada46b56441ef38167a187455d",
     "https://deno.land/x/imagescript@1.2.15/v2/util/mem.mjs": "4968d400dae069b4bf0ef4767c1802fd2cc7d15d90eda4cfadf5b4cd19b96c6d",
+    "https://esm.sh/@supabase/auth-js@2.110.9/denonext/auth-js.mjs": "ca9b13adea7c023664d5d206af26d75fb6507ebf07e91a3dcc2d02e2f972042e",
+    "https://esm.sh/@supabase/functions-js@2.110.9/denonext/functions-js.mjs": "529b01ec97822e473c777c9e0027f6f8b309a413da000eb244b2e328880f9c9f",
+    "https://esm.sh/@supabase/phoenix@0.4.5/denonext/phoenix.mjs": "40bd2a70829cd847848baac58e635bacd83fd62188f6624b44e2c295341004eb",
+    "https://esm.sh/@supabase/postgrest-js@2.110.9/denonext/postgrest-js.mjs": "68061891089b7857bf623941f84e33df9a4980f79f8c179983a24690f6684577",
+    "https://esm.sh/@supabase/realtime-js@2.110.9/denonext/realtime-js.mjs": "855145492cdfc127c973416fff1ff130243e00466d2d51b223b54841c48bc40e",
+    "https://esm.sh/@supabase/storage-js@2.110.9/denonext/storage-js.mjs": "f1f03e679c80955a84703f27bf4c769749fa7e34ba0938aa70f1b841e58d4c9e",
+    "https://esm.sh/@supabase/supabase-js@2.110.9": "649ae8415d0ea35102fa931ba3b37569ea4be476ff630be26f8e3687bbf4907c",
+    "https://esm.sh/@supabase/supabase-js@2.110.9/denonext/supabase-js.mjs": "2c5c0927e55bb729021518816027c2b3bd6ac780cc1da652bf7945d54b65deba",
     "https://esm.sh/async-function@1.0.0/denonext/async-function.mjs": "9a68a79494e7318827f19367915e5e8c902d81d395a2a429114371d8f506afd8",
     "https://esm.sh/async-function@1.0.0?target=denonext": "c5e89ac5310741350e80c75eb1ff0c24bdaa16db5bf0f9181fceea7e3bca763e",
     "https://esm.sh/async-generator-function@1.0.0/denonext/async-generator-function.mjs": "c7d6e6484a0083577a002c3114e08d84762b6f74327c89cd0129226cefd7436a",
@@ -97,6 +107,8 @@
     "https://esm.sh/get-proto@1.0.1/denonext/Reflect.getPrototypeOf.mjs": "4b884fb35dbdc6b2a67708f195cf46435514a7eb3930578453176aafe59d49fe",
     "https://esm.sh/get-proto@1.0.1/denonext/get-proto.mjs": "0e4ddb145c883b3f941aeba555feb48b9f177838d070449782265daf59b77377",
     "https://esm.sh/get-proto@1.0.1?target=denonext": "fa3e52250f16f485da729565f1f41dcbb23edeb64420db0146e374cc835c9b04",
+    "https://esm.sh/iceberg-js@0.8.1/denonext/iceberg-js.mjs": "d839d81a2e3966500ca2cdd0c1cb458e9608bacfc91f7bb67a69b2e878dcdb4f",
+    "https://esm.sh/iceberg-js@0.8.1?target=denonext": "58c849d7fe2bf4eca4a84eb501e83c161a7d8c34ca1bec15a962b3bec3062633",
     "https://esm.sh/math-intrinsics@1.1.0/abs?target=denonext": "b43b9b3996b29cda49a1ad6d71b876095144b3252c761b4338e8870e5073542e",
     "https://esm.sh/math-intrinsics@1.1.0/denonext/abs.mjs": "08304368394a36ee89a52def8a533da1f7c602891647a3e10543a8bbdb746c8b",
     "https://esm.sh/math-intrinsics@1.1.0/denonext/floor.mjs": "c5e41bb95fa47641ca012faa0a093eef6401d3ace4479a85e39cf726eb184785",
@@ -125,7 +137,8 @@
     "https://esm.sh/side-channel@1.1.1/denonext/side-channel.mjs": "4128535b2cbb605d142594272a90adef511c250130167eba0e06b0168a03b556",
     "https://esm.sh/side-channel@1.1.1?target=denonext": "95435f8b4cfb2827b11a0a384b7a5a82cf42e7d54435276084aef40717129eac",
     "https://esm.sh/stripe@17.7.0/denonext/stripe.mjs": "19c9be92eb508422159fdbd082badc3d5f425639a59525570422c998e1979a1b",
-    "https://esm.sh/stripe@17.7.0?target=denonext": "3c3e5f9024cb4652c585a5e715f5da184c608f6ac3613e0d6b506d2bb47669bd"
+    "https://esm.sh/stripe@17.7.0?target=denonext": "3c3e5f9024cb4652c585a5e715f5da184c608f6ac3613e0d6b506d2bb47669bd",
+    "https://esm.sh/tslib@2.8.1/denonext/tslib.mjs": "c38da5dd6da6281964435002ce204cd586634fe3bdfb24a0ee116f48cf3292e9"
   },
   "workspace": {
     "packageJson": {

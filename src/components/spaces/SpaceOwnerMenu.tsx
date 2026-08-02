@@ -28,11 +28,8 @@ export function SpaceOwnerMenu({ spaceId, editHref, redirectTo }: SpaceOwnerMenu
     if (!confirm(t.space.confirmDelete)) return;
     const supabase = createClient();
     await deleteSpaceWithCleanup(supabase, spaceId);
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(redirectTo);
-    }
+    router.push(redirectTo);
+    router.refresh();
   };
 
   return (
@@ -43,7 +40,7 @@ export function SpaceOwnerMenu({ spaceId, editHref, redirectTo }: SpaceOwnerMenu
       >
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-max">
         <DropdownMenuItem onClick={() => router.push(editHref)}>
           <Pencil className="h-4 w-4" />
           {t.space.edit}

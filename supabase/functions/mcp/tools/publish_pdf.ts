@@ -1,9 +1,11 @@
 import type { ToolDefinition, ToolHandler } from "./types.ts";
 import {
   attachToCollection,
+  buildSpaceUrl,
   commonPublishProps,
   decodeBase64,
   fetchBytes,
+  getUsername,
   publishSpace,
   requireStr,
   requireVisibility,
@@ -69,9 +71,10 @@ export const publishPdf: ToolHandler = async (args, ctx) => {
 
   if (a.collection_id) await attachToCollection(ctx, spaceId, a.collection_id);
 
+  const username = await getUsername(ctx);
   return successResult({
     spaceId,
-    publicUrl: asset.publicUrl,
+    spaceUrl: buildSpaceUrl(username, spaceId),
     visibility,
     collectionAttached: a.collection_id ?? null,
     remainingCredits: { free: freeCredits, paid: paidCredits },

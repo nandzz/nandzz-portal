@@ -698,7 +698,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           {/* Space Type Toggle */}
           <div className="space-y-2">
             <Label>Space Type</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {typeButtons.map(({ type, icon: Icon, label, description, beta }) => (
                 <button
                   key={type}

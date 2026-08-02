@@ -1,5 +1,30 @@
 import type { Ctx, ToolResult } from "./types.ts";
 
+// Portal origin that hosts the space pages. Kept in sync with index.ts;
+// override in dev via PORTAL_ORIGIN secret.
+const PORTAL_ORIGIN = Deno.env.get("PORTAL_ORIGIN") ?? "https://nandzz.com";
+
+// Look up the caller's username. Used to build the public space URL so the
+// tool response never leaks a raw Supabase storage URL — those bypass the
+// per-space is_public check that the Portal page enforces.
+export async function getUsername(ctx: Ctx): Promise<string> {
+  const { data, error } = await ctx.admin
+    .from("profiles")
+    .select("username")
+    .eq("id", ctx.userId)
+    .maybeSingle();
+  if (error) throw new Error(`Profile lookup failed: ${error.message}`);
+  const username = (data as { username?: string | null } | null)?.username;
+  if (!username) {
+    throw new Error("Your profile has no username set — cannot build a shareable space URL.");
+  }
+  return username;
+}
+
+export function buildSpaceUrl(username: string, spaceId: string): string {
+  return `${PORTAL_ORIGIN}/${username}/space/${spaceId}`;
+}
+
 // Fields that every publish_* tool exposes to the caller.
 export const commonPublishProps = {
   title: {
@@ -60,6 +85,51 @@ export function decodeBase64(input: string): Uint8Array {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+// Shape the ChatGPT Apps SDK / OpenAI connector runtime injects into tool args
+// when a param is annotated as `openai/fileParams`. The runtime replaces the
+// user's local path (or generated file) with this object; download_url points
+// to an OpenAI-hosted file the tool can fetch. mime_type is best-effort.
+export type OpenAIFileInput = {
+  download_url?: unknown;
+  file_id?: unknown;
+  mime_type?: unknown;
+  file_name?: unknown;
+};
+
+// JSON schema fragment for a single OpenAI file input. Advertise it under an
+// inputSchema property and list that property name in `_meta.openai/fileParams`.
+export const openAIFileParamSchema = {
+  type: "object",
+  properties: {
+    download_url: { type: "string" },
+    file_id: { type: "string" },
+    mime_type: { type: "string" },
+    file_name: { type: "string" },
+  },
+  required: ["download_url", "file_id"],
+  additionalProperties: false,
+} as const;
+
+// Resolve an OpenAI file input into raw bytes + type. Fetches `download_url`
+// (which fetchBytes SSRF-guards). mime_type from the payload wins over the
+// server-reported Content-Type when present — the runtime knows the file's
+// real type better than an arbitrary storage endpoint's headers do.
+export async function resolveFileInput(
+  input: OpenAIFileInput,
+  maxBytes: number,
+): Promise<{ bytes: Uint8Array; contentType: string }> {
+  if (!input || typeof input !== "object") {
+    throw new Error("file must be an object with { download_url, file_id }.");
+  }
+  const url = input.download_url;
+  if (typeof url !== "string" || url.trim() === "") {
+    throw new Error("file.download_url is required.");
+  }
+  const fetched = await fetchBytes(url, maxBytes);
+  const declared = typeof input.mime_type === "string" ? input.mime_type : "";
+  return { bytes: fetched.bytes, contentType: declared || fetched.contentType };
 }
 
 // ── SSRF guards for fetchBytes ──────────────────────────────────────────────
@@ -249,6 +319,9 @@ export async function uploadToBucket(
 
 // Insert the space row atomically via the existing publish_space_tx RPC.
 // Handles credit deduction; throws INSUFFICIENT_CREDITS if the user is broke.
+// p_cost is intentionally omitted so the DB-side default (or app_settings
+// lookup) applies. Passing p_cost: null instead of omitting it makes the SQL
+// arithmetic go NULL and violates profiles.paid_credits NOT NULL.
 export async function publishSpace(
   ctx: Ctx,
   payload: Record<string, unknown>
@@ -257,7 +330,6 @@ export async function publishSpace(
     p_user_id: ctx.userId,
     p_space_payload: payload,
     p_client_request_id: crypto.randomUUID(),
-    p_cost: null,
   });
   if (error) {
     if (error.message?.includes("INSUFFICIENT_CREDITS")) {
@@ -293,9 +365,128 @@ export async function attachToCollection(ctx: Ctx, spaceId: string, collectionId
   if (insErr) throw new Error(`Failed to add to collection: ${insErr.message}`);
 }
 
+// ── Update helpers ─────────────────────────────────────────────────────────
+// Callers of update_* pass either space_id OR the current asset URL (never
+// both, never neither). Resolving by URL leans on the ownership filter to
+// double as an authorization check — a mismatched user_id returns null, same
+// as a non-existent space, so the caller can't probe others' URLs.
+
+export type AssetKind = "html" | "pdf" | "image";
+
+export function assetUrlColumn(kind: AssetKind): "html_url" | "pdf_url" | "image_url" {
+  switch (kind) {
+    case "html":  return "html_url";
+    case "pdf":   return "pdf_url";
+    case "image": return "image_url";
+  }
+}
+
+export function requireOneLookup(
+  spaceId: unknown,
+  url: unknown,
+): { spaceId?: string; url?: string } {
+  const hasId = typeof spaceId === "string" && spaceId.trim() !== "";
+  const hasUrl = typeof url === "string" && url.trim() !== "";
+  if (hasId === hasUrl) {
+    throw new Error("Provide exactly one of space_id or url.");
+  }
+  return hasId ? { spaceId: spaceId as string } : { url: url as string };
+}
+
+export type SpaceRow = {
+  id: string;
+  user_id: string;
+  html_url: string | null;
+  pdf_url: string | null;
+  image_url: string | null;
+};
+
+// Resolve a space by id or by asset URL, always scoped to the caller. When
+// looking up by url we filter on the specific asset column too — this both
+// pins the correct kind and stops url-guessing across asset types.
+export async function resolveSpaceForAssetUpdate(
+  ctx: Ctx,
+  lookup: { spaceId?: string; url?: string },
+  kind: AssetKind,
+): Promise<SpaceRow> {
+  const col = assetUrlColumn(kind);
+  let query = ctx.admin
+    .from("spaces")
+    .select("id, user_id, html_url, pdf_url, image_url")
+    .eq("user_id", ctx.userId);
+  query = lookup.spaceId
+    ? query.eq("id", lookup.spaceId)
+    : query.eq(col, lookup.url!);
+  const { data, error } = await query.maybeSingle();
+  if (error) throw new Error(`Space lookup failed: ${error.message}`);
+  if (!data) {
+    throw new Error(
+      lookup.spaceId
+        ? `Space ${lookup.spaceId} does not exist or is not owned by you.`
+        : `No ${kind} space of yours has that URL.`,
+    );
+  }
+  const row = data as SpaceRow;
+  if (!row[col]) {
+    throw new Error(`Space ${row.id} is not a ${kind.toUpperCase()} space.`);
+  }
+  return row;
+}
+
+// Metadata lookup matches across all three asset columns; kind isn't known.
+export async function resolveSpaceForMetadata(
+  ctx: Ctx,
+  lookup: { spaceId?: string; url?: string },
+): Promise<SpaceRow> {
+  let query = ctx.admin
+    .from("spaces")
+    .select("id, user_id, html_url, pdf_url, image_url")
+    .eq("user_id", ctx.userId);
+  if (lookup.spaceId) {
+    query = query.eq("id", lookup.spaceId);
+  } else {
+    const u = lookup.url!;
+    // PostgREST .or() takes a comma-separated filter expression.
+    query = query.or(
+      `html_url.eq.${u},pdf_url.eq.${u},image_url.eq.${u}`,
+    );
+  }
+  const { data, error } = await query.maybeSingle();
+  if (error) throw new Error(`Space lookup failed: ${error.message}`);
+  if (!data) {
+    throw new Error(
+      lookup.spaceId
+        ? `Space ${lookup.spaceId} does not exist or is not owned by you.`
+        : "No space of yours has that URL.",
+    );
+  }
+  return data as SpaceRow;
+}
+
+export function updateSuccessResult(opts: {
+  spaceId: string;
+  spaceUrl: string;
+  kind: AssetKind;
+}): ToolResult {
+  return {
+    content: [
+      {
+        type: "text",
+        text:
+          `Updated ${opts.kind.toUpperCase()} for space ${opts.spaceId}.\n` +
+          `Space URL: ${opts.spaceUrl}`,
+      },
+    ],
+    structuredContent: {
+      space_id: opts.spaceId,
+      space_url: opts.spaceUrl,
+    },
+  };
+}
+
 export function successResult(opts: {
   spaceId: string;
-  publicUrl: string;
+  spaceUrl: string;
   visibility: "private" | "public";
   collectionAttached: string | null;
   remainingCredits: { free: number; paid: number };
@@ -303,7 +494,7 @@ export function successResult(opts: {
 }): ToolResult {
   const parts: string[] = [
     `Published "${opts.title}" as ${opts.visibility}.`,
-    `Asset URL: ${opts.publicUrl}`,
+    `Space URL: ${opts.spaceUrl}`,
     `Space ID: ${opts.spaceId}`,
   ];
   if (opts.collectionAttached) parts.push(`Added to collection ${opts.collectionAttached}.`);
@@ -312,7 +503,7 @@ export function successResult(opts: {
     content: [{ type: "text", text: parts.join("\n") }],
     structuredContent: {
       space_id: opts.spaceId,
-      public_url: opts.publicUrl,
+      space_url: opts.spaceUrl,
       visibility: opts.visibility,
       collection_id: opts.collectionAttached,
       remaining_credits: opts.remainingCredits,

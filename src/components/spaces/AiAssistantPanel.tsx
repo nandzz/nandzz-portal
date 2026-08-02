@@ -411,9 +411,6 @@ function PanelBody({ state, ai, instruction, onInstructionChange, onSubmit, onRe
         <p className="text-xs text-muted-foreground/70 italic max-w-[260px] truncate">
           "{state.instruction}"
         </p>
-        <Button size="sm" className="mt-2" onClick={onClose}>
-          {ai.discard}
-        </Button>
       </div>
     );
   }

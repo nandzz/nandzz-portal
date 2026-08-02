@@ -2,6 +2,10 @@ import { listCollections, listCollectionsDef } from "./list_collections.ts";
 import { publishHtml, publishHtmlDef } from "./publish_html.ts";
 import { publishPdf, publishPdfDef } from "./publish_pdf.ts";
 import { publishImage, publishImageDef } from "./publish_image.ts";
+import { updateHtml, updateHtmlDef } from "./update_html.ts";
+import { updatePdf, updatePdfDef } from "./update_pdf.ts";
+import { updateImage, updateImageDef } from "./update_image.ts";
+import { updateSpaceMetadata, updateSpaceMetadataDef } from "./update_space_metadata.ts";
 import type { ToolDefinition, ToolHandler } from "./types.ts";
 
 export const toolDefinitions: ToolDefinition[] = [
@@ -9,6 +13,10 @@ export const toolDefinitions: ToolDefinition[] = [
   publishHtmlDef,
   publishPdfDef,
   publishImageDef,
+  updateHtmlDef,
+  updatePdfDef,
+  updateImageDef,
+  updateSpaceMetadataDef,
 ];
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -16,4 +24,8 @@ export const toolHandlers: Record<string, ToolHandler> = {
   publish_html: publishHtml,
   publish_pdf: publishPdf,
   publish_image: publishImage,
+  update_html: updateHtml,
+  update_pdf: updatePdf,
+  update_image: updateImage,
+  update_space_metadata: updateSpaceMetadata,
 };

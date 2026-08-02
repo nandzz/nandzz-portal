@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plug, Sparkles, Coins, Shield, FileText, Image as ImageIcon, FileCode2, FolderKanban, ShieldCheck } from "lucide-react";
+import { Plug, Sparkles, Coins, Shield, FileText, Image as ImageIcon, FileCode2, FolderKanban, ShieldCheck, Pencil, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { CopyField } from "./CopyField";
@@ -41,6 +41,10 @@ export default async function McpConnectPage() {
     { name: "publish_html", icon: FileCode2, desc: t.mcp.toolPublishHtml },
     { name: "publish_pdf",  icon: FileText,  desc: t.mcp.toolPublishPdf },
     { name: "publish_image",icon: ImageIcon, desc: t.mcp.toolPublishImage },
+    { name: "update_html",  icon: Pencil,    desc: t.mcp.toolUpdateHtml },
+    { name: "update_pdf",   icon: Pencil,    desc: t.mcp.toolUpdatePdf },
+    { name: "update_image", icon: Pencil,    desc: t.mcp.toolUpdateImage },
+    { name: "update_space_metadata", icon: Tag, desc: t.mcp.toolUpdateMetadata },
     { name: "list_collections", icon: FolderKanban, desc: t.mcp.toolListCollections },
   ];
 

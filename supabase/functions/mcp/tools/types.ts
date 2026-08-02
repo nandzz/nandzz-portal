@@ -21,4 +21,10 @@ export type ToolDefinition = {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  // MCP `_meta` is passed through in tools/list. Used here to advertise
+  // OpenAI Apps SDK annotations like `openai/fileParams`, which tells the
+  // ChatGPT connector runtime that named params are file inputs — the runtime
+  // then auto-uploads user/AI-generated files and hands us `{download_url,
+  // file_id, mime_type?, file_name?}` instead of a local path string.
+  _meta?: Record<string, unknown>;
 };

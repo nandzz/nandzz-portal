@@ -573,6 +573,10 @@ export type Translations = {
     toolPublishHtml: string;
     toolPublishPdf: string;
     toolPublishImage: string;
+    toolUpdateHtml: string;
+    toolUpdatePdf: string;
+    toolUpdateImage: string;
+    toolUpdateMetadata: string;
     toolListCollections: string;
     creditsTitle: string;
     creditsBody: string;
@@ -1155,6 +1159,10 @@ const en: Translations = {
     toolPublishHtml: "Publish an HTML page to your Nandzz space.",
     toolPublishPdf: "Publish a PDF to your Nandzz space.",
     toolPublishImage: "Publish an image to your Nandzz space.",
+    toolUpdateHtml: "Replace the HTML of an existing space you own.",
+    toolUpdatePdf: "Replace the PDF of an existing space you own.",
+    toolUpdateImage: "Replace the image of an existing space you own.",
+    toolUpdateMetadata: "Edit a space's title, description, hashtags, or visibility.",
     toolListCollections: "List your collections so your AI can ask which to file into.",
     creditsTitle: "Publishes cost credits",
     creditsBody: "Each publish deducts from your Nandzz balance — the same as publishing from the app.",
@@ -1737,6 +1745,10 @@ const pt: Translations = {
     toolPublishHtml: "Publicar uma página HTML no seu Nandzz space.",
     toolPublishPdf: "Publicar um PDF no seu Nandzz space.",
     toolPublishImage: "Publicar uma imagem no seu Nandzz space.",
+    toolUpdateHtml: "Substituir o HTML de um space existente que você criou.",
+    toolUpdatePdf: "Substituir o PDF de um space existente que você criou.",
+    toolUpdateImage: "Substituir a imagem de um space existente que você criou.",
+    toolUpdateMetadata: "Editar título, descrição, hashtags ou visibilidade de um space.",
     toolListCollections: "Listar suas coleções para sua IA perguntar em qual arquivar.",
     creditsTitle: "Publicações custam créditos",
     creditsBody: "Cada publicação desconta do seu saldo Nandzz — igual a publicar pelo app.",
@@ -2319,6 +2331,10 @@ const fr: Translations = {
     toolPublishHtml: "Publier une page HTML dans votre Nandzz space.",
     toolPublishPdf: "Publier un PDF dans votre Nandzz space.",
     toolPublishImage: "Publier une image dans votre Nandzz space.",
+    toolUpdateHtml: "Remplacer le HTML d'un space existant que vous possédez.",
+    toolUpdatePdf: "Remplacer le PDF d'un space existant que vous possédez.",
+    toolUpdateImage: "Remplacer l'image d'un space existant que vous possédez.",
+    toolUpdateMetadata: "Modifier le titre, la description, les hashtags ou la visibilité d'un space.",
     toolListCollections: "Lister vos collections pour que votre IA puisse demander dans laquelle ranger.",
     creditsTitle: "Les publications coûtent des crédits",
     creditsBody: "Chaque publication déduit de votre solde Nandzz — comme publier depuis l'app.",
@@ -2901,6 +2917,10 @@ const es: Translations = {
     toolPublishHtml: "Publicar una página HTML en tu Nandzz space.",
     toolPublishPdf: "Publicar un PDF en tu Nandzz space.",
     toolPublishImage: "Publicar una imagen en tu Nandzz space.",
+    toolUpdateHtml: "Reemplazar el HTML de un space existente que te pertenece.",
+    toolUpdatePdf: "Reemplazar el PDF de un space existente que te pertenece.",
+    toolUpdateImage: "Reemplazar la imagen de un space existente que te pertenece.",
+    toolUpdateMetadata: "Editar el título, descripción, hashtags o visibilidad de un space.",
     toolListCollections: "Listar tus colecciones para que tu IA pueda preguntar en cuál archivar.",
     creditsTitle: "Las publicaciones cuestan créditos",
     creditsBody: "Cada publicación descuenta de tu saldo Nandzz — igual que publicar desde la app.",
@@ -3483,6 +3503,10 @@ const ja: Translations = {
     toolPublishHtml: "HTMLページをあなたのNandzz spaceに公開します。",
     toolPublishPdf: "PDFをあなたのNandzz spaceに公開します。",
     toolPublishImage: "画像をあなたのNandzz spaceに公開します。",
+    toolUpdateHtml: "あなたが所有する既存spaceのHTMLを置き換えます。",
+    toolUpdatePdf: "あなたが所有する既存spaceのPDFを置き換えます。",
+    toolUpdateImage: "あなたが所有する既存spaceの画像を置き換えます。",
+    toolUpdateMetadata: "spaceのタイトル、説明、ハッシュタグ、公開範囲を編集します。",
     toolListCollections: "あなたのコレクションを一覧化し、AIがどこに入れるか尋ねられるようにします。",
     creditsTitle: "公開にはクレジットがかかります",
     creditsBody: "公開ごとにNandzz残高から控除されます — アプリから公開するのと同じです。",
@@ -4065,6 +4089,10 @@ const de: Translations = {
     toolPublishHtml: "Eine HTML-Seite in deinem Nandzz Space veröffentlichen.",
     toolPublishPdf: "Ein PDF in deinem Nandzz Space veröffentlichen.",
     toolPublishImage: "Ein Bild in deinem Nandzz Space veröffentlichen.",
+    toolUpdateHtml: "Das HTML eines vorhandenen Spaces von dir ersetzen.",
+    toolUpdatePdf: "Das PDF eines vorhandenen Spaces von dir ersetzen.",
+    toolUpdateImage: "Das Bild eines vorhandenen Spaces von dir ersetzen.",
+    toolUpdateMetadata: "Titel, Beschreibung, Hashtags oder Sichtbarkeit eines Spaces bearbeiten.",
     toolListCollections: "Deine Sammlungen auflisten, damit deine KI fragen kann, in welche einsortiert werden soll.",
     creditsTitle: "Veröffentlichungen kosten Credits",
     creditsBody: "Jede Veröffentlichung wird von deinem Nandzz-Guthaben abgezogen — genau wie beim Veröffentlichen aus der App.",
@@ -4647,6 +4675,10 @@ const it: Translations = {
     toolPublishHtml: "Pubblicare una pagina HTML nel tuo Nandzz space.",
     toolPublishPdf: "Pubblicare un PDF nel tuo Nandzz space.",
     toolPublishImage: "Pubblicare un'immagine nel tuo Nandzz space.",
+    toolUpdateHtml: "Sostituire l'HTML di uno space esistente di tua proprietà.",
+    toolUpdatePdf: "Sostituire il PDF di uno space esistente di tua proprietà.",
+    toolUpdateImage: "Sostituire l'immagine di uno space esistente di tua proprietà.",
+    toolUpdateMetadata: "Modificare titolo, descrizione, hashtag o visibilità di uno space.",
     toolListCollections: "Elencare le tue collezioni così la tua IA può chiedere dove archiviare.",
     creditsTitle: "Le pubblicazioni costano crediti",
     creditsBody: "Ogni pubblicazione deduce dal tuo saldo Nandzz — come pubblicare dall'app.",

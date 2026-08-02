@@ -166,8 +166,8 @@ export default async function CreditsPage({
             <h2 className="text-lg font-semibold">Activity</h2>
           </div>
           {ledger && ledger.length > 0 ? (
-            <div className="rounded-xl border border-border/60 bg-card overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="rounded-xl border border-border/60 bg-card overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-border/40 bg-muted/30">
                     <th className="text-left font-medium text-xs text-muted-foreground px-4 py-2.5">When</th>

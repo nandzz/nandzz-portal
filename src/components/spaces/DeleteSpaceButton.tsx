@@ -18,11 +18,8 @@ export function DeleteSpaceButton({ spaceId, redirectTo }: DeleteSpaceButtonProp
     if (!confirm("Are you sure you want to delete this space? This cannot be undone.")) return;
     const supabase = createClient();
     await deleteSpaceWithCleanup(supabase, spaceId);
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(redirectTo);
-    }
+    router.push(redirectTo);
+    router.refresh();
   };
 
   return (
