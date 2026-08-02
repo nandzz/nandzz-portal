@@ -7,10 +7,13 @@ export async function OPTIONS() {
 
 // MCP protected-resource metadata (RFC 9728). Tells clients which
 // authorization server(s) can issue tokens for this MCP resource.
+// Catch-all path: RFC 9728 clients construct the metadata URL by inserting
+// `/.well-known/oauth-protected-resource` between origin and resource path,
+// so both `/.well-known/oauth-protected-resource` and
+// `/.well-known/oauth-protected-resource/api/mcp` must return the same doc.
 export async function GET(req: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || new URL(req.url).origin;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") || "";
-  const resource = supabaseUrl ? `${supabaseUrl}/functions/v1/mcp` : "";
+  const resource = `${origin}/api/mcp`;
 
   return withCors(NextResponse.json({
     resource,

@@ -34,8 +34,8 @@ export default async function McpConnectPage() {
 
   const greeting = profile?.display_name || profile?.username || "there";
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
-  const mcpUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/mcp` : "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+  const mcpUrl = siteUrl ? `${siteUrl}/api/mcp` : "/api/mcp";
 
   const tools = [
     { name: "publish_html", icon: FileCode2, desc: t.mcp.toolPublishHtml },
