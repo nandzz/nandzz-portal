@@ -109,9 +109,11 @@ serve(async (req: Request) => {
     );
   }
 
-  // Notifications (no id) — accept and no-op.
-  if (method === "notifications/initialized") {
-    return new Response(null, { status: 204, headers: CORS });
+  // JSON-RPC notifications (no `id` member) — MCP Streamable HTTP requires
+  // 202 Accepted with no body. Returning 204 makes claude.ai's connector
+  // treat the handshake as incomplete and loop on `initialize`.
+  if (id === undefined) {
+    return new Response(null, { status: 202, headers: CORS });
   }
 
   // All other methods require a valid token.
