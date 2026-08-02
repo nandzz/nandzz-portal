@@ -47,11 +47,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // RFC 9207 (OAuth 2.1, MCP 2025-06-18): the authorization response MUST
+  // include an `iss` parameter identifying this authorization server, so the
+  // client can defend against mix-up attacks. Without it Anthropic's client
+  // silently drops the code and the flow appears to hang after Allow.
+  const issuer = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? new URL(req.url).origin;
+
   if (action === "deny") {
     // 303 See Other so the browser switches POST → GET when hitting the
     // client's callback URL.
     return NextResponse.redirect(
-      appendQuery(redirectUri, { error: "access_denied", state }),
+      appendQuery(redirectUri, { error: "access_denied", state, iss: issuer }),
       303
     );
   }
@@ -75,13 +81,13 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      appendQuery(redirectUri, { error: "server_error", error_description: error.message, state }),
+      appendQuery(redirectUri, { error: "server_error", error_description: error.message, state, iss: issuer }),
       303
     );
   }
 
   return NextResponse.redirect(
-    appendQuery(redirectUri, { code: String(code), state }),
+    appendQuery(redirectUri, { code: String(code), state, iss: issuer }),
     303
   );
 }
