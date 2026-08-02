@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { corsPreflight, withCors } from "@/lib/mcp-cors";
+import { safe } from "@/lib/mcp-log";
 
 // Grant types this server actually implements. Anything else the client
 // requests is dropped (with a warning) rather than silently returned.
@@ -18,17 +19,26 @@ export async function POST(req: NextRequest) {
   const rid = crypto.randomUUID().slice(0, 8);
 
   let body: Record<string, unknown> = {};
-  let rawBody = "";
+  let rawLen = 0;
   try {
-    rawBody = await req.text();
+    const rawBody = await req.text();
+    rawLen = rawBody.length;
     body = rawBody ? JSON.parse(rawBody) : {};
   } catch (err) {
-    console.warn(`[mcp-register][${rid}] JSON parse failed: raw=${rawBody.slice(0, 500)} err=${(err as Error).message}`);
+    console.warn(`[mcp-register][${rid}] JSON parse failed raw_len=${rawLen} err="${safe((err as Error).message)}"`);
     return withCors(NextResponse.json({ error: "invalid_client_metadata", error_description: "Body must be JSON" }, { status: 400 }));
   }
 
+  // Log headers Anthropic's OAuth proxy might send so we can identify
+  // the caller. Every value is safe()-sanitized to prevent log injection.
+  const hdrDict = {
+    origin: req.headers.get("origin"),
+    ua: req.headers.get("user-agent"),
+    ct: req.headers.get("content-type"),
+    forwarded_for: req.headers.get("x-forwarded-for"),
+  };
   console.log(
-    `[mcp-register][${rid}] in origin=${req.headers.get("origin") ?? "none"} ua="${(req.headers.get("user-agent") ?? "").slice(0, 80)}" content-type=${req.headers.get("content-type") ?? "none"} body=${JSON.stringify(body).slice(0, 800)}`
+    `[mcp-register][${rid}] in headers=${safe(hdrDict, 300)} body=${safe(body, 800)}`
   );
 
   const redirectUris = Array.isArray(body.redirect_uris)
@@ -43,15 +53,17 @@ export async function POST(req: NextRequest) {
 
   const clientName = typeof body.client_name === "string" ? body.client_name : null;
 
-  // Echo the intersection of what the client asked for and what we support.
-  // If the client sent nothing, default to authorization_code / code.
-  const requestedGrants = Array.isArray(body.grant_types) ? (body.grant_types as unknown[]).filter((g) => typeof g === "string") as string[] : [];
+  const requestedGrants = Array.isArray(body.grant_types)
+    ? ((body.grant_types as unknown[]).filter((g) => typeof g === "string") as string[])
+    : [];
   const grantTypes = requestedGrants.length
     ? requestedGrants.filter((g) => SUPPORTED_GRANT_TYPES.has(g))
     : ["authorization_code"];
   if (grantTypes.length === 0) grantTypes.push("authorization_code");
 
-  const requestedResponses = Array.isArray(body.response_types) ? (body.response_types as unknown[]).filter((r) => typeof r === "string") as string[] : [];
+  const requestedResponses = Array.isArray(body.response_types)
+    ? ((body.response_types as unknown[]).filter((r) => typeof r === "string") as string[])
+    : [];
   const responseTypes = requestedResponses.length
     ? requestedResponses.filter((r) => SUPPORTED_RESPONSE_TYPES.has(r))
     : ["code"];
@@ -67,13 +79,17 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    console.error(`[mcp-register][${rid}] insert failed: ${error.message}`);
+    console.error(`[mcp-register][${rid}] insert failed err="${safe(error.message)}"`);
     return withCors(NextResponse.json({ error: "server_error", error_description: error.message }, { status: 500 }));
   }
 
+  // client_secret_expires_at: 0 signals "no secret, and any secret that ever
+  // exists would not expire" — required by some stricter DCR consumers for
+  // public clients even though we don't issue a secret at all.
   const response = {
     client_id: data.id,
     client_id_issued_at: Math.floor(new Date(data.created_at).getTime() / 1000),
+    client_secret_expires_at: 0,
     client_name: data.client_name,
     redirect_uris: data.redirect_uris,
     token_endpoint_auth_method: "none",
@@ -82,6 +98,8 @@ export async function POST(req: NextRequest) {
     scope,
   };
 
-  console.log(`[mcp-register][${rid}] issued client_id=${data.id} grants=${grantTypes.join(",")} scope="${scope}"`);
+  console.log(
+    `[mcp-register][${rid}] issued client_id=${safe(data.id)} grants=${safe(grantTypes.join(","))} scope="${safe(scope)}"`
+  );
   return withCors(NextResponse.json(response, { status: 201 }));
 }
