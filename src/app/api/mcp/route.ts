@@ -29,6 +29,7 @@ function upstreamUrl(): string {
 }
 
 async function proxy(req: NextRequest): Promise<NextResponse> {
+  const rid = crypto.randomUUID().slice(0, 8);
   const headers = new Headers();
   const authz = req.headers.get("authorization");
   if (authz) headers.set("authorization", authz);
@@ -36,6 +37,13 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
   if (ct) headers.set("content-type", ct);
   const mv = req.headers.get("mcp-protocol-version");
   if (mv) headers.set("mcp-protocol-version", mv);
+
+  // Temporary diagnostic: confirm the Authorization header survives CloudFront/Amplify.
+  const authzLen = authz?.length ?? 0;
+  const authzPrefix = authz ? authz.slice(0, 20) : "";
+  console.log(
+    `[mcp-proxy][${rid}] ${req.method} authz_present=${!!authz} authz_len=${authzLen} authz_prefix="${authzPrefix}"`
+  );
 
   const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
 
@@ -45,6 +53,7 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
     body,
     cache: "no-store",
   });
+  console.log(`[mcp-proxy][${rid}] upstream status=${upstream.status}`);
 
   const out = new Headers(CORS);
   const upstreamCt = upstream.headers.get("content-type");
