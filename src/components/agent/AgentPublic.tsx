@@ -86,7 +86,12 @@ export function AgentPublic({ profile, isPreview, hasDocuments = true, isAuthent
               </div>
             </div>
           ) : (
-            <AgentChat username={profile.username} displayName={displayName} preview={isPreview} />
+            <AgentChat
+              username={profile.username}
+              displayName={displayName}
+              preview={isPreview}
+              suggestedQuestions={profile.agent_suggested_questions ?? []}
+            />
           )}
         </div>
       </div>

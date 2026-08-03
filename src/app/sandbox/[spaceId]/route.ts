@@ -2,18 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-// Injected at the top of every sandboxed page to prevent form navigation errors.
-// Sandboxed iframes have null origin so form submissions cause "Unsafe attempt to load URL" errors.
-const NAV_GUARD =
+// Injected at the top of every sandboxed page:
+//   - form nav-guard: sandboxed iframes have null origin, so form submits cause
+//     "Unsafe attempt to load URL" errors — swallow them.
+//   - activity beacon: notify the parent on touch/scroll so idle-hide chrome
+//     can reset its timer even while the user is interacting inside the iframe.
+const INJECTED_SCRIPT =
   `<script>` +
   `document.addEventListener('submit',function(e){e.preventDefault();},true);` +
   `HTMLFormElement.prototype.submit=function(){};` +
+  `(function(){` +
+  `var last=0;` +
+  `function ping(){var n=Date.now();if(n-last<400)return;last=n;` +
+  `try{parent.postMessage({type:'nandzz:activity'},'*');}catch(_){}}` +
+  `document.addEventListener('touchstart',ping,{passive:true,capture:true});` +
+  `document.addEventListener('scroll',ping,{passive:true,capture:true});` +
+  `document.addEventListener('mousedown',ping,{passive:true,capture:true});` +
+  `document.addEventListener('keydown',ping,true);` +
+  `document.addEventListener('wheel',ping,{passive:true,capture:true});` +
+  `})();` +
   `</script>`;
 
 function injectNavGuard(html: string): string {
   const m = html.match(/<head[^>]*>/i);
-  if (m) return html.replace(m[0], m[0] + NAV_GUARD);
-  return NAV_GUARD + html;
+  if (m) return html.replace(m[0], m[0] + INJECTED_SCRIPT);
+  return INJECTED_SCRIPT + html;
 }
 
 // Permissive CSP for user-authored HTML: allows any CDN scripts/styles/fonts/images

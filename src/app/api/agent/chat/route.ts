@@ -68,9 +68,9 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Look up the agent's owner (for id) and the caller (for paid_credits) in parallel.
+  // Look up the agent's owner (for id + enabled state) and the caller (for paid_credits) in parallel.
   const [{ data: profile }, { data: caller }] = await Promise.all([
-    admin.from("profiles").select("id").eq("username", username).single(),
+    admin.from("profiles").select("id, agent_enabled").eq("username", username).single(),
     admin.from("profiles").select("id, paid_credits").eq("id", user.id).single(),
   ]);
 
@@ -81,7 +81,18 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  if (!preview && profile.id === user.id) {
+  const isOwner = profile.id === user.id;
+
+  // A disabled agent is hidden from the profile; block direct API calls to it too.
+  // The owner can always reach their own agent (studio advisor + preview).
+  if (!isOwner && !profile.agent_enabled) {
+    return new Response(JSON.stringify({ error: "Agent not available" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (!preview && isOwner) {
     mode = "owner";
   }
 

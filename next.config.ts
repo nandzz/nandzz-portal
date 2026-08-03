@@ -114,6 +114,19 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Fingerprint-free public assets (not content-hashed): modest TTL with
+      // stale-while-revalidate rather than immutable, since a rebuild can
+      // change these without the filename changing.
+      {
+        source:
+          "/:path(favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|logo.png|logo.svg|site.webmanifest|pdf.worker.min.mjs)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
       // Sandbox route: user HTML pages that need CDN scripts, fonts, and images.
       // connect-src stays 'none' to block data exfiltration from untrusted content.
       // This entry is listed last so it overrides the global CSP for /sandbox/* paths.

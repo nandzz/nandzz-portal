@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ChromeProvider } from "@/contexts/ChromeContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
@@ -80,6 +81,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+};
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -112,10 +117,12 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider initialLocale={initialLocale}>
-            <Navbar />
-            <main className="flex-1 pb-16 md:pb-0">{children}</main>
-            <ConditionalFooter />
-            <MobileTabBar />
+            <ChromeProvider>
+              <Navbar />
+              <main className="flex-1 pb-16 md:pb-0">{children}</main>
+              <ConditionalFooter />
+              <MobileTabBar />
+            </ChromeProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

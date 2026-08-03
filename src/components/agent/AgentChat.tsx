@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Bot, FilePlus, FileText, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react";
+import { Send, Bot, FilePlus, FileText, CheckCircle, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { AgentDocument } from "@/lib/types";
@@ -56,6 +56,8 @@ interface AgentChatProps {
   onDocumentCreated?: (doc: AgentDocument) => void;
   /** Existing documents — used to resolve update vs create when the LLM omits document_id. Only provided in owner (studio) mode. */
   docs?: AgentDocument[];
+  /** Owner-configured visitor prompt chips. Falls back to i18n defaults when empty. */
+  suggestedQuestions?: string[];
 }
 
 // ─── Markdown renderer ────────────────────────────────────────────────────────
@@ -213,15 +215,18 @@ function ProposalCard({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function AgentChat({ username, displayName, preview, onDocumentCreated, docs }: AgentChatProps) {
+export function AgentChat({ username, displayName, preview, onDocumentCreated, docs, suggestedQuestions }: AgentChatProps) {
   const { t } = useLanguage();
-  const VISITOR_SUGGESTED = [
-    t.agent.suggestWhoAreYou,
-    t.agent.suggestWhatBuilding,
-    t.agent.suggestTechnologies,
-    t.agent.suggestProjects,
-    t.agent.suggestInterests,
-  ];
+  const VISITOR_SUGGESTED =
+    suggestedQuestions && suggestedQuestions.length > 0
+      ? suggestedQuestions
+      : [
+          t.agent.suggestWhoAreYou,
+          t.agent.suggestWhatBuilding,
+          t.agent.suggestTechnologies,
+          t.agent.suggestProjects,
+          t.agent.suggestInterests,
+        ];
   const OWNER_SUGGESTED = [
     t.agent.suggestAddFirst,
     t.agent.suggestWriteMeMd,
@@ -231,6 +236,7 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isAtBottom = useRef(true);
@@ -453,6 +459,21 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto min-h-0 flex flex-col"
       >
+        {!isOwnerMode && !noticeDismissed && (
+          <div className="flex-shrink-0 flex items-start gap-2 mx-4 mt-3 px-3 py-2 rounded-xl border border-border bg-muted/50 text-[11px] text-muted-foreground">
+            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-violet-500" />
+            <span className="flex-1 leading-relaxed">
+              {t.agent.complianceNotice.replace(/{name}/g, displayName)}
+            </span>
+            <button
+              onClick={() => setNoticeDismissed(true)}
+              aria-label={t.agent.complianceDismiss}
+              className="cursor-pointer flex-shrink-0 text-muted-foreground/50 hover:text-foreground transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {showSuggested ? (
           /* Empty / initial state — flex-1 centers it in the available space */
           <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 py-8">

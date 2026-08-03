@@ -25,6 +25,8 @@ export type Profile = {
   is_admin?: boolean | null;
   followers_count?: number | null;
   following_count?: number | null;
+  agent_enabled?: boolean | null;
+  agent_suggested_questions?: string[] | null;
 };
 
 export type CreditBucket = "free_space" | "paid";
@@ -146,6 +148,7 @@ export type SpaceComment = {
   parent_id: string | null;
   content: string;
   likes_count: number;
+  replies_count: number;
   created_at: string;
   updated_at: string;
 };

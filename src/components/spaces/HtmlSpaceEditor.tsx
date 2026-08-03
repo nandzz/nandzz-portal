@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Pencil, X, Save, Loader2, Sparkles, Check, AlertCircle } from "lucide-react";
+import { Pencil, X, Save, Loader2, Sparkles, Check, AlertCircle, ArrowRight } from "lucide-react";
 import { sandboxHtml } from "@/lib/sandbox-html";
 import { AiAssistantPanel } from "@/components/spaces/AiAssistantPanel";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
 
 // Extract the Supabase Storage path from the public URL.
 // URL format: https://<ref>.supabase.co/storage/v1/object/public/space-html/<path>
@@ -496,15 +497,32 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
         </Button>
       </div>
 
-      {/* Mobile FAB */}
-      <Button
-        size="icon"
-        className="absolute bottom-4 right-4 lg:hidden rounded-full h-12 w-12 shadow-lg"
-        onClick={() => setShowAssistant(true)}
-        aria-label="AI Edit"
-      >
-        <Sparkles className="h-5 w-5" />
-      </Button>
+      {/* Mobile prompt pill — replaces the icon-only FAB so the affordance is
+          obvious and readable. Doubles as the AI panel opener. Hidden while a
+          proposal is under review (top banner takes over) or the panel is open. */}
+      {!pendingJob && !showAssistant && (
+        <button
+          type="button"
+          onClick={() => setShowAssistant(true)}
+          aria-label={ai.buttonLabel}
+          className={cn(
+            "lg:hidden absolute bottom-3 left-3 right-3 z-30",
+            "flex items-center gap-2.5 rounded-full",
+            "bg-background/95 backdrop-blur-xl",
+            "border border-violet-500/30",
+            "shadow-lg shadow-violet-500/15",
+            "pl-1.5 pr-3 py-1.5",
+            "text-sm text-left",
+            "transition-transform duration-150 active:scale-[0.98]",
+          )}
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <span className="flex-1 truncate text-muted-foreground">{ai.placeholder}</span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-violet-600" />
+        </button>
+      )}
 
       <AiAssistantPanel
         spaceId={spaceId}

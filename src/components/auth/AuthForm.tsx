@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +45,10 @@ export function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
-  const next = searchParams.get("next") ?? "/dashboard";
+  // Restrict to a same-origin path — this value is echoed back through
+  // Supabase's OAuth redirectTo and could otherwise be used for an open
+  // redirect (see safeNextPath).
+  const next = safeNextPath(searchParams.get("next"), "/dashboard");
 
   const [mode, setMode] = useState<"login" | "signup">(defaultTab);
   const { t } = useLanguage();

@@ -211,3 +211,32 @@
 .animate-hero-gradient-2 {
   animation: hero-gradient-2 10s ease-in-out infinite;
 }
+
+/* Space viewer immersive mode — expands the fixed wrapper to fill the viewport
+   when the chrome (navbar + tabbar) is slid out. Mobile-only; the wrapper is
+   md:static on desktop so these overrides are naturally ignored above md. */
+.chrome-immersive-space {
+  transition: top 300ms ease-out, bottom 300ms ease-out;
+}
+body[data-chrome-hidden="true"] .chrome-immersive-space {
+  top: 0 !important;
+  bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+.space-viewer-topbar {
+  transition: max-height 300ms ease-out, opacity 200ms ease-out;
+  max-height: 5rem;
+  overflow: hidden;
+}
+body[data-chrome-hidden="true"] .space-viewer-topbar {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  border-bottom-width: 0;
+}
+@media (min-width: 768px) {
+  .space-viewer-topbar { max-height: none; overflow: visible; }
+  body[data-chrome-hidden="true"] .space-viewer-topbar { max-height: none; opacity: 1; pointer-events: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chrome-immersive-space { transition: none; }
+}

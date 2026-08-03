@@ -70,7 +70,11 @@ export function AgentEmbed({ profile, isAuthenticated }: AgentEmbedProps) {
 
           <div className="flex-1 min-h-0 flex flex-col max-w-2xl w-full mx-auto">
             {isAuthenticated ? (
-              <AgentChat username={profile.username} displayName={displayName} />
+              <AgentChat
+                username={profile.username}
+                displayName={displayName}
+                suggestedQuestions={profile.agent_suggested_questions ?? []}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
                 <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-violet-100 dark:bg-violet-900/40">

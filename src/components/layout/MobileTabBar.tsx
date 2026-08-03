@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useChrome } from "@/contexts/ChromeContext";
 
 type TabDef = {
   href: string;
@@ -37,6 +38,7 @@ export function MobileTabBar() {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
   const { t } = useLanguage();
+  const { isHidden } = useChrome();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
@@ -74,7 +76,12 @@ export function MobileTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80"
+      aria-hidden={isHidden}
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80",
+        "transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform",
+        isHidden && "translate-y-full pointer-events-none"
+      )}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="flex h-16 items-center justify-around px-1">
@@ -88,6 +95,7 @@ export function MobileTabBar() {
               <Link
                 key={tab.href}
                 href={tab.href}
+                aria-label={label}
                 className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2"
               >
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30 transition-transform active:scale-95">

@@ -34,6 +34,9 @@ export default async function AgentPage({
     return <AgentStudio profile={profile} />;
   }
 
+  // Disabled agents are hidden from everyone but the owner.
+  if (!profile.agent_enabled) notFound();
+
   const { count } = await admin
     .from("agent_documents")
     .select("*", { count: "exact", head: true })

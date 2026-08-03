@@ -245,6 +245,11 @@ export type Translations = {
     desc: string;
     tryAgain: string;
   };
+  notFound: {
+    title: string;
+    desc: string;
+    cta: string;
+  };
   setup: {
     title: string;
     desc: string;
@@ -418,6 +423,23 @@ export type Translations = {
     signInToChatDesc: string;
     talkToAgent: string;
     aiAgentLabel: string;
+    bannerTitle: string;
+    bannerDesc: string;
+    agentLive: string;
+    agentHidden: string;
+    settings: string;
+    settingsTitle: string;
+    enableLabel: string;
+    enableHint: string;
+    suggestedQuestionsLabel: string;
+    suggestedQuestionsHint: string;
+    addQuestion: string;
+    questionPlaceholder: string;
+    saveSettings: string;
+    savingSettings: string;
+    settingsError: string;
+    complianceNotice: string;
+    complianceDismiss: string;
     askUser: string;
     close: string;
     knowledge: string;
@@ -838,6 +860,11 @@ const en: Translations = {
     desc: "An unexpected error occurred. Please try again.",
     tryAgain: "Try again",
   },
+  notFound: {
+    title: "Page not found",
+    desc: "The page you're looking for doesn't exist or may have been moved.",
+    cta: "Browse Explore",
+  },
   setup: {
     title: "One last step",
     desc: "Choose a username for your profile",
@@ -1011,6 +1038,23 @@ const en: Translations = {
     signInToChatDesc: "An account is required to talk to this agent.",
     talkToAgent: "Talk to {name}'s Agent",
     aiAgentLabel: "AI Agent · Powered by public knowledge",
+    bannerTitle: "Your AI agent",
+    bannerDesc: "Visitors can ask your agent questions, answered from the knowledge you publish here.",
+    agentLive: "Live",
+    agentHidden: "Hidden",
+    settings: "Settings",
+    settingsTitle: "Agent settings",
+    enableLabel: "Show agent on your profile",
+    enableHint: "When off, your agent is hidden from your profile and nobody can chat with it.",
+    suggestedQuestionsLabel: "Suggested questions",
+    suggestedQuestionsHint: "Shown as prompt chips to visitors. Leave empty to use the defaults.",
+    addQuestion: "Add question",
+    questionPlaceholder: "e.g. What are you building?",
+    saveSettings: "Save",
+    savingSettings: "Saving…",
+    settingsError: "Couldn't save settings. Please try again.",
+    complianceNotice: "You're chatting with {name}'s AI agent. Answers are generated from {name}'s published knowledge — not from {name} personally. To reach {name} directly, contact them.",
+    complianceDismiss: "Dismiss notice",
     askUser: "Ask {name}",
     close: "Close",
     knowledge: "Knowledge",
@@ -1431,6 +1475,11 @@ const pt: Translations = {
     desc: "Ocorreu um erro inesperado. Tente novamente.",
     tryAgain: "Tentar novamente",
   },
+  notFound: {
+    title: "Página não encontrada",
+    desc: "A página que você procura não existe ou pode ter sido movida.",
+    cta: "Explorar",
+  },
   setup: {
     title: "Último passo",
     desc: "Escolha um nome de usuário para seu perfil",
@@ -1604,6 +1653,23 @@ const pt: Translations = {
     signInToChatDesc: "É necessária uma conta para falar com este agente.",
     talkToAgent: "Falar com o Agente de {name}",
     aiAgentLabel: "Agente de IA · Baseado em conhecimento público",
+    bannerTitle: "Seu agente de IA",
+    bannerDesc: "Os visitantes podem fazer perguntas ao seu agente, respondidas com o conhecimento que você publica aqui.",
+    agentLive: "Ativo",
+    agentHidden: "Oculto",
+    settings: "Configurações",
+    settingsTitle: "Configurações do agente",
+    enableLabel: "Mostrar agente no seu perfil",
+    enableHint: "Quando desativado, seu agente fica oculto do seu perfil e ninguém pode conversar com ele.",
+    suggestedQuestionsLabel: "Perguntas sugeridas",
+    suggestedQuestionsHint: "Exibidas como sugestões aos visitantes. Deixe vazio para usar as padrão.",
+    addQuestion: "Adicionar pergunta",
+    questionPlaceholder: "ex.: O que você está construindo?",
+    saveSettings: "Salvar",
+    savingSettings: "Salvando…",
+    settingsError: "Não foi possível salvar as configurações. Tente novamente.",
+    complianceNotice: "Você está conversando com o agente de IA de {name}. As respostas são geradas a partir do conhecimento publicado por {name} — não são do próprio {name}. Para falar diretamente com {name}, entre em contato.",
+    complianceDismiss: "Dispensar aviso",
     askUser: "Pergunte a {name}",
     close: "Fechar",
     knowledge: "Conhecimento",
@@ -2024,6 +2090,11 @@ const fr: Translations = {
     desc: "Une erreur inattendue s'est produite. Veuillez réessayer.",
     tryAgain: "Réessayer",
   },
+  notFound: {
+    title: "Page introuvable",
+    desc: "La page que vous recherchez n'existe pas ou a peut-être été déplacée.",
+    cta: "Explorer",
+  },
   setup: {
     title: "Dernière étape",
     desc: "Choisissez un nom d'utilisateur pour votre profil",
@@ -2197,6 +2268,23 @@ const fr: Translations = {
     signInToChatDesc: "Un compte est requis pour parler à cet agent.",
     talkToAgent: "Parler avec l'Agent de {name}",
     aiAgentLabel: "Agent IA · Alimenté par les connaissances publiques",
+    bannerTitle: "Votre agent IA",
+    bannerDesc: "Les visiteurs peuvent poser des questions à votre agent, qui répond à partir des connaissances que vous publiez ici.",
+    agentLive: "Actif",
+    agentHidden: "Masqué",
+    settings: "Paramètres",
+    settingsTitle: "Paramètres de l'agent",
+    enableLabel: "Afficher l'agent sur votre profil",
+    enableHint: "Lorsqu'il est désactivé, votre agent est masqué de votre profil et personne ne peut discuter avec lui.",
+    suggestedQuestionsLabel: "Questions suggérées",
+    suggestedQuestionsHint: "Affichées comme suggestions aux visiteurs. Laissez vide pour utiliser les valeurs par défaut.",
+    addQuestion: "Ajouter une question",
+    questionPlaceholder: "ex. : Que construisez-vous ?",
+    saveSettings: "Enregistrer",
+    savingSettings: "Enregistrement…",
+    settingsError: "Impossible d'enregistrer les paramètres. Veuillez réessayer.",
+    complianceNotice: "Vous discutez avec l'agent IA de {name}. Les réponses sont générées à partir des connaissances publiées par {name} — et non par {name} en personne. Pour joindre {name} directement, contactez-le.",
+    complianceDismiss: "Ignorer l'avis",
     askUser: "Demandez à {name}",
     close: "Fermer",
     knowledge: "Connaissances",
@@ -2617,6 +2705,11 @@ const es: Translations = {
     desc: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
     tryAgain: "Intentar de nuevo",
   },
+  notFound: {
+    title: "Página no encontrada",
+    desc: "La página que buscas no existe o puede haber sido movida.",
+    cta: "Explorar",
+  },
   setup: {
     title: "Un último paso",
     desc: "Elige un nombre de usuario para tu perfil",
@@ -2790,6 +2883,23 @@ const es: Translations = {
     signInToChatDesc: "Se requiere una cuenta para hablar con este agente.",
     talkToAgent: "Hablar con el Agente de {name}",
     aiAgentLabel: "Agente IA · Impulsado por conocimiento público",
+    bannerTitle: "Tu agente de IA",
+    bannerDesc: "Los visitantes pueden hacer preguntas a tu agente, respondidas con el conocimiento que publicas aquí.",
+    agentLive: "Activo",
+    agentHidden: "Oculto",
+    settings: "Configuración",
+    settingsTitle: "Configuración del agente",
+    enableLabel: "Mostrar agente en tu perfil",
+    enableHint: "Cuando está desactivado, tu agente se oculta de tu perfil y nadie puede chatear con él.",
+    suggestedQuestionsLabel: "Preguntas sugeridas",
+    suggestedQuestionsHint: "Se muestran como sugerencias a los visitantes. Déjalo vacío para usar las predeterminadas.",
+    addQuestion: "Añadir pregunta",
+    questionPlaceholder: "p. ej.: ¿Qué estás construyendo?",
+    saveSettings: "Guardar",
+    savingSettings: "Guardando…",
+    settingsError: "No se pudo guardar la configuración. Inténtalo de nuevo.",
+    complianceNotice: "Estás chateando con el agente de IA de {name}. Las respuestas se generan a partir del conocimiento publicado por {name}, no de {name} en persona. Para contactar directamente con {name}, comunícate con él.",
+    complianceDismiss: "Descartar aviso",
     askUser: "Pregunta a {name}",
     close: "Cerrar",
     knowledge: "Conocimiento",
@@ -3210,6 +3320,11 @@ const ja: Translations = {
     desc: "予期しないエラーが発生しました。もう一度お試しください。",
     tryAgain: "もう一度試す",
   },
+  notFound: {
+    title: "ページが見つかりません",
+    desc: "お探しのページは存在しないか、移動された可能性があります。",
+    cta: "探索する",
+  },
   setup: {
     title: "最後のステップ",
     desc: "プロフィールのユーザー名を選択してください",
@@ -3383,6 +3498,23 @@ const ja: Translations = {
     signInToChatDesc: "このエージェントと話すにはアカウントが必要です。",
     talkToAgent: "{name}のエージェントと話す",
     aiAgentLabel: "AIエージェント · 公開知識に基づく",
+    bannerTitle: "あなたのAIエージェント",
+    bannerDesc: "訪問者はあなたのエージェントに質問でき、ここで公開した知識をもとに回答されます。",
+    agentLive: "公開中",
+    agentHidden: "非表示",
+    settings: "設定",
+    settingsTitle: "エージェント設定",
+    enableLabel: "プロフィールにエージェントを表示",
+    enableHint: "オフにすると、エージェントはプロフィールから非表示になり、誰も会話できなくなります。",
+    suggestedQuestionsLabel: "おすすめの質問",
+    suggestedQuestionsHint: "訪問者に候補として表示されます。空にするとデフォルトが使われます。",
+    addQuestion: "質問を追加",
+    questionPlaceholder: "例：何を作っていますか？",
+    saveSettings: "保存",
+    savingSettings: "保存中…",
+    settingsError: "設定を保存できませんでした。もう一度お試しください。",
+    complianceNotice: "{name}のAIエージェントと会話しています。回答は{name}が公開した知識から生成されており、{name}本人によるものではありません。{name}に直接連絡するには、本人にお問い合わせください。",
+    complianceDismiss: "通知を閉じる",
     askUser: "{name}に質問する",
     close: "閉じる",
     knowledge: "知識",
@@ -3803,6 +3935,11 @@ const de: Translations = {
     desc: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
     tryAgain: "Erneut versuchen",
   },
+  notFound: {
+    title: "Seite nicht gefunden",
+    desc: "Die gesuchte Seite existiert nicht oder wurde möglicherweise verschoben.",
+    cta: "Entdecken",
+  },
   setup: {
     title: "Letzter Schritt",
     desc: "Wähle einen Benutzernamen für dein Profil",
@@ -3976,6 +4113,23 @@ const de: Translations = {
     signInToChatDesc: "Für ein Gespräch mit diesem Agenten ist ein Konto erforderlich.",
     talkToAgent: "Mit {name}s Agent sprechen",
     aiAgentLabel: "KI-Agent · Angetrieben durch öffentliches Wissen",
+    bannerTitle: "Dein KI-Agent",
+    bannerDesc: "Besucher können deinem Agenten Fragen stellen, die aus dem hier veröffentlichten Wissen beantwortet werden.",
+    agentLive: "Aktiv",
+    agentHidden: "Verborgen",
+    settings: "Einstellungen",
+    settingsTitle: "Agent-Einstellungen",
+    enableLabel: "Agent auf deinem Profil anzeigen",
+    enableHint: "Wenn deaktiviert, ist dein Agent auf deinem Profil verborgen und niemand kann mit ihm chatten.",
+    suggestedQuestionsLabel: "Vorgeschlagene Fragen",
+    suggestedQuestionsHint: "Werden Besuchern als Vorschläge angezeigt. Leer lassen, um die Standardwerte zu verwenden.",
+    addQuestion: "Frage hinzufügen",
+    questionPlaceholder: "z. B.: Was baust du gerade?",
+    saveSettings: "Speichern",
+    savingSettings: "Speichern…",
+    settingsError: "Einstellungen konnten nicht gespeichert werden. Bitte versuche es erneut.",
+    complianceNotice: "Du chattest mit dem KI-Agenten von {name}. Die Antworten werden aus dem von {name} veröffentlichten Wissen generiert – nicht von {name} persönlich. Um {name} direkt zu erreichen, kontaktiere die Person.",
+    complianceDismiss: "Hinweis schließen",
     askUser: "Frag {name}",
     close: "Schließen",
     knowledge: "Wissen",
@@ -4396,6 +4550,11 @@ const it: Translations = {
     desc: "Si è verificato un errore imprevisto. Riprova.",
     tryAgain: "Riprova",
   },
+  notFound: {
+    title: "Pagina non trovata",
+    desc: "La pagina che stai cercando non esiste o potrebbe essere stata spostata.",
+    cta: "Esplora",
+  },
   setup: {
     title: "Ultimo passo",
     desc: "Scegli un nome utente per il tuo profilo",
@@ -4569,6 +4728,23 @@ const it: Translations = {
     signInToChatDesc: "È necessario un account per parlare con questo agente.",
     talkToAgent: "Parla con l'Agente di {name}",
     aiAgentLabel: "Agente IA · Basato su conoscenza pubblica",
+    bannerTitle: "Il tuo agente IA",
+    bannerDesc: "I visitatori possono porre domande al tuo agente, con risposte basate sulla conoscenza che pubblichi qui.",
+    agentLive: "Attivo",
+    agentHidden: "Nascosto",
+    settings: "Impostazioni",
+    settingsTitle: "Impostazioni dell'agente",
+    enableLabel: "Mostra l'agente sul tuo profilo",
+    enableHint: "Quando è disattivato, il tuo agente è nascosto dal profilo e nessuno può chattarci.",
+    suggestedQuestionsLabel: "Domande suggerite",
+    suggestedQuestionsHint: "Mostrate come suggerimenti ai visitatori. Lascia vuoto per usare quelle predefinite.",
+    addQuestion: "Aggiungi domanda",
+    questionPlaceholder: "es.: Cosa stai costruendo?",
+    saveSettings: "Salva",
+    savingSettings: "Salvataggio…",
+    settingsError: "Impossibile salvare le impostazioni. Riprova.",
+    complianceNotice: "Stai chattando con l'agente IA di {name}. Le risposte sono generate dalla conoscenza pubblicata da {name}, non da {name} in persona. Per contattare direttamente {name}, mettiti in contatto con lui.",
+    complianceDismiss: "Ignora avviso",
     askUser: "Chiedi a {name}",
     close: "Chiudi",
     knowledge: "Conoscenza",

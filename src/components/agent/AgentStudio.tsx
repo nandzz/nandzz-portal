@@ -14,10 +14,12 @@ import {
   Save,
   Eye,
   Sparkles,
+  Settings,
 } from "lucide-react";
 import type { AgentDocument, AgentDocStatus, AgentDocVisibility, Profile } from "@/lib/types";
 import { SetupAssistant } from "./SetupAssistant";
 import { AgentChat } from "./AgentChat";
+import { AgentSettings } from "./AgentSettings";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AgentStudioProps {
@@ -101,6 +103,11 @@ export function AgentStudio({ profile }: AgentStudioProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("knowledge");
   const [guideTab, setGuideTab] = useState<GuideTab>("advisor");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [agentEnabled, setAgentEnabled] = useState(!!profile.agent_enabled);
+  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>(
+    profile.agent_suggested_questions ?? []
+  );
 
   const fetchDocs = useCallback(async () => {
     setLoading(true);
@@ -494,6 +501,46 @@ export function AgentStudio({ profile }: AgentStudioProps) {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
+
+      {/* Info banner — what the public agent does + settings entry point */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-violet-200 dark:border-violet-800/60 bg-violet-50/70 dark:bg-violet-950/20">
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex-shrink-0">
+          <Sparkles className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold text-foreground leading-tight">{t.agent.bannerTitle}</p>
+          <p className="text-[11px] text-muted-foreground leading-tight truncate">{t.agent.bannerDesc}</p>
+        </div>
+        <span
+          className={`hidden sm:inline-flex items-center gap-1 flex-shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+            agentEnabled
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"
+              : "border-border bg-muted text-muted-foreground"
+          }`}
+        >
+          {agentEnabled ? t.agent.agentLive : t.agent.agentHidden}
+        </span>
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="cursor-pointer inline-flex items-center gap-1.5 flex-shrink-0 text-xs px-3 py-1.5 rounded-lg border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 bg-background hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors"
+        >
+          <Settings className="w-3.5 h-3.5" />
+          {t.agent.settings}
+        </button>
+      </div>
+
+      {settingsOpen && (
+        <AgentSettings
+          username={profile.username}
+          initialEnabled={agentEnabled}
+          initialQuestions={suggestedQuestions}
+          onClose={() => setSettingsOpen(false)}
+          onSaved={({ enabled, questions }) => {
+            setAgentEnabled(enabled);
+            setSuggestedQuestions(questions);
+          }}
+        />
+      )}
 
       {/* Mobile tab bar — hidden on md+ */}
       <div className="md:hidden flex-shrink-0 flex border-b border-border bg-background">

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isPublicHttpUrl } from "@/lib/ssrf-guard";
 
 async function fetchOgImage(
   pageUrl: string
@@ -34,6 +35,9 @@ async function fetchOgImage(
     }
 
     if (!/^https?:\/\//i.test(imgUrl)) return null;
+    // og:image is attacker-controlled content read from an arbitrary page —
+    // it can point at an internal address even when pageUrl itself was fine.
+    if (!(await isPublicHttpUrl(imgUrl))) return null;
 
     const imgRes = await fetch(imgUrl, { signal: AbortSignal.timeout(8_000) });
     if (!imgRes.ok) return null;
@@ -55,6 +59,13 @@ export async function GET(req: NextRequest) {
 
   if (!/^https?:\/\//i.test(url)) {
     return NextResponse.json({ error: "Invalid URL scheme" }, { status: 400 });
+  }
+
+  // Block requests aimed at internal/private addresses (loopback, RFC1918,
+  // link-local — including the cloud metadata endpoint at 169.254.169.254)
+  // before this server-side fetch touches them.
+  if (!(await isPublicHttpUrl(url))) {
+    return NextResponse.json({ error: "URL is not allowed" }, { status: 400 });
   }
 
   // 1. Try OG / twitter:image — fast, already optimized for previews

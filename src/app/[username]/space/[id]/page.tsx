@@ -23,6 +23,7 @@ import { MarkdownViewer } from "@/components/spaces/MarkdownViewer";
 import { MarkdownSpaceEditor } from "@/components/spaces/MarkdownSpaceEditor";
 import { BackButton } from "@/components/ui/BackButton";
 import { ViewTracker } from "@/components/spaces/ViewTracker";
+import { IdleChromeActivator } from "@/contexts/ChromeContext";
 
 function hasDownloadableContent(html: string): boolean {
   return (
@@ -221,12 +222,13 @@ export default async function SpaceViewPage({
 
   return (
     <div
-      className="fixed left-0 right-0 flex flex-col overflow-hidden md:static md:h-[calc(100dvh-4rem)]"
+      className="chrome-immersive-space fixed left-0 right-0 flex flex-col overflow-hidden md:static md:h-[calc(100dvh-4rem)]"
       style={{ top: '4rem', bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
     >
+      <IdleChromeActivator />
       <ViewTracker spaceId={space.id} ownerId={space.user_id} />
       {/* Top bar */}
-      <div className="shrink-0 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <div className="space-viewer-topbar shrink-0 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 pl-4 pr-6 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
           <BackButton />

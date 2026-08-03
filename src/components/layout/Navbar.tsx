@@ -22,11 +22,14 @@ import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
 import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useChrome } from "@/contexts/ChromeContext";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
+  const { isHidden } = useChrome();
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -83,7 +86,14 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+    <nav
+      aria-hidden={isHidden || undefined}
+      className={cn(
+        "sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
+        "transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform",
+        isHidden && "max-md:-translate-y-full max-md:pointer-events-none"
+      )}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-8">
@@ -175,9 +185,9 @@ export function Navbar() {
           {user && (
             <div className="hidden md:flex">
               <DropdownMenu>
-                <DropdownMenuTrigger className="rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer transition-transform hover:scale-105">
+                <DropdownMenuTrigger aria-label="Account menu" className="rounded-full ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer transition-transform hover:scale-105">
                   <Avatar className="h-8 w-8 border-2 border-transparent hover:border-violet-500/50 transition-colors">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.display_name || profile?.username || "User avatar"} />
                     <AvatarFallback className="bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300 text-sm font-medium">
                       {profile?.display_name?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
@@ -188,7 +198,7 @@ export function Navbar() {
                     <DropdownMenuLabel className="font-normal px-3 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarImage src={profile?.avatar_url || undefined} />
+                          <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.display_name || profile?.username || "User avatar"} />
                           <AvatarFallback className="bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300 text-xs font-semibold">
                             {profile?.display_name?.[0]?.toUpperCase() || "U"}
                           </AvatarFallback>
@@ -264,7 +274,7 @@ export function Navbar() {
 
           {/* Mobile menu button */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="h-9 w-9 md:hidden inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
+            <DropdownMenuTrigger aria-label="Open menu" className="h-9 w-9 md:hidden inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors">
               <Menu className="h-5 w-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -275,7 +285,7 @@ export function Navbar() {
                     <DropdownMenuLabel className="font-normal px-3 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarImage src={profile?.avatar_url || undefined} />
+                          <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.display_name || profile?.username || "User avatar"} />
                           <AvatarFallback className="bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300 text-xs font-semibold">
                             {profile?.display_name?.[0]?.toUpperCase() || "U"}
                           </AvatarFallback>

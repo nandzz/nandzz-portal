@@ -74,7 +74,7 @@ export function CommentItem({
   const [replies, setReplies] = useState<CommentWithLike[]>([]);
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
-  const [replyCount, setReplyCount] = useState(0);
+  const [replyCount, setReplyCount] = useState(comment.replies_count);
   const [repliesLoaded, setRepliesLoaded] = useState(false);
 
   const { t } = useLanguage();

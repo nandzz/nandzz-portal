@@ -278,7 +278,9 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
         </div>
       )}
 
-      {FEATURES.agent && <AgentEmbed profile={profile} isAuthenticated={!!currentUserId} />}
+      {FEATURES.agent && profile.agent_enabled && (
+        <AgentEmbed profile={profile} isAuthenticated={!!currentUserId} />
+      )}
     </div>
   );
 }
