@@ -59,27 +59,29 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh the auth session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh the auth session and read the user's claims. getClaims() verifies
+  // the JWT locally against the project's asymmetric (ES256) signing key — no
+  // per-request /auth/v1/user round-trip. It falls back to getUser() only if
+  // the token is ever symmetric (HS*), so this is safe regardless.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
 
-  if (user) {
+  if (userId) {
     const pathname = request.nextUrl.pathname;
     const cachedUid = request.cookies.get(PROFILE_UID_COOKIE)?.value;
-    const cacheHit = cachedUid === user.id;
+    const cacheHit = cachedUid === userId;
 
     let hasProfile = cacheHit;
     if (!cacheHit && !pathname.startsWith("/api/")) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("id", user.id)
+        .eq("id", userId)
         .maybeSingle();
       hasProfile = !!profile;
 
       if (hasProfile) {
-        supabaseResponse.cookies.set(PROFILE_UID_COOKIE, user.id, {
+        supabaseResponse.cookies.set(PROFILE_UID_COOKIE, userId, {
           path: "/",
           maxAge: PROFILE_COOKIE_MAX_AGE,
           sameSite: "lax",
@@ -110,6 +112,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
