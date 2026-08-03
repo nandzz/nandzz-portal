@@ -68,22 +68,18 @@ export default async function ExplorePage({
       ? supabase.from("space_likes").select("space_id").eq("user_id", user.id).in("space_id", spaceIds)
       : Promise.resolve({ data: null });
 
-    const fetchStarred = user
-      ? supabase.from("collections").select("id").eq("user_id", user.id).eq("is_default", true).maybeSingle()
+    const fetchSaved = user
+      ? supabase
+          .from("collection_spaces")
+          .select("space_id, collections!inner(user_id)")
+          .eq("collections.user_id", user.id)
+          .in("space_id", spaceIds)
       : Promise.resolve({ data: null });
 
-    const [likesRes, starredRes] = await Promise.all([fetchLikes, fetchStarred]);
+    const [likesRes, savedRes] = await Promise.all([fetchLikes, fetchSaved]);
 
     likedSpaceIds = likesRes.data?.map((l: { space_id: string }) => l.space_id) || [];
-
-    if (starredRes.data) {
-      const { data: savedEntries } = await supabase
-        .from("collection_spaces")
-        .select("space_id")
-        .eq("collection_id", starredRes.data.id)
-        .in("space_id", spaceIds);
-      savedSpaceIds = savedEntries?.map((e: { space_id: string }) => e.space_id) || [];
-    }
+    savedSpaceIds = [...new Set((savedRes.data ?? []).map((e: { space_id: string }) => e.space_id))];
   }
 
   const resultCount = count ?? 0;

@@ -126,29 +126,20 @@ export default async function ProfilePage({
     }
 
     if (allSpaceIds.length > 0) {
-      const [{ data: likes }, { data: starredCol }] = await Promise.all([
+      const [{ data: likes }, { data: savedEntries }] = await Promise.all([
         supabase
           .from("space_likes")
           .select("space_id")
           .eq("user_id", user.id)
           .in("space_id", allSpaceIds),
         supabase
-          .from("collections")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("is_default", true)
-          .maybeSingle(),
+          .from("collection_spaces")
+          .select("space_id, collections!inner(user_id)")
+          .eq("collections.user_id", user.id)
+          .in("space_id", allSpaceIds),
       ]);
       likedSpaceIds = likes?.map(l => l.space_id) || [];
-
-      if (starredCol) {
-        const { data: savedEntries } = await supabase
-          .from("collection_spaces")
-          .select("space_id")
-          .eq("collection_id", starredCol.id)
-          .in("space_id", allSpaceIds);
-        savedSpaceIds = savedEntries?.map(e => e.space_id) || [];
-      }
+      savedSpaceIds = [...new Set((savedEntries ?? []).map((e: { space_id: string }) => e.space_id))];
     }
   }
 

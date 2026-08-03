@@ -199,6 +199,12 @@ export type Translations = {
     open: string;
     saveToStarred: string;
     removeFromStarred: string;
+    saveToCollection: string;
+    manageCollections: string;
+    duplicate: string;
+    duplicating: string;
+    duplicateFailed: string;
+    duplicateNoCredits: string;
     addToCollection: string;
     removeFromCollection: string;
     edit: string;
@@ -786,6 +792,12 @@ const en: Translations = {
     open: "Open",
     saveToStarred: "Save to Starred",
     removeFromStarred: "Remove from Starred",
+    saveToCollection: "Save to Collection",
+    manageCollections: "Manage Collections",
+    duplicate: "Duplicate",
+    duplicating: "Duplicating…",
+    duplicateFailed: "Failed to duplicate space",
+    duplicateNoCredits: "You don't have enough credits to duplicate this space.",
     addToCollection: "Add to Collection",
     removeFromCollection: "Remove from Collection",
     edit: "Edit",
@@ -1373,6 +1385,12 @@ const pt: Translations = {
     open: "Abrir",
     saveToStarred: "Salvar nos Favoritos",
     removeFromStarred: "Remover dos Favoritos",
+    saveToCollection: "Salvar em Coleção",
+    manageCollections: "Gerenciar Coleções",
+    duplicate: "Duplicar",
+    duplicating: "Duplicando…",
+    duplicateFailed: "Falha ao duplicar o espaço",
+    duplicateNoCredits: "Você não tem créditos suficientes para duplicar este espaço.",
     addToCollection: "Adicionar à Coleção",
     removeFromCollection: "Remover da Coleção",
     edit: "Editar",
@@ -1960,6 +1978,12 @@ const fr: Translations = {
     open: "Ouvrir",
     saveToStarred: "Enregistrer dans les favoris",
     removeFromStarred: "Retirer des favoris",
+    saveToCollection: "Enregistrer dans une collection",
+    manageCollections: "Gérer les collections",
+    duplicate: "Dupliquer",
+    duplicating: "Duplication…",
+    duplicateFailed: "Échec de la duplication de l'espace",
+    duplicateNoCredits: "Vous n'avez pas assez de crédits pour dupliquer cet espace.",
     addToCollection: "Ajouter à la collection",
     removeFromCollection: "Retirer de la collection",
     edit: "Modifier",
@@ -2547,6 +2571,12 @@ const es: Translations = {
     open: "Abrir",
     saveToStarred: "Guardar en Destacados",
     removeFromStarred: "Quitar de Destacados",
+    saveToCollection: "Guardar en colección",
+    manageCollections: "Gestionar colecciones",
+    duplicate: "Duplicar",
+    duplicating: "Duplicando…",
+    duplicateFailed: "No se pudo duplicar el espacio",
+    duplicateNoCredits: "No tienes créditos suficientes para duplicar este espacio.",
     addToCollection: "Añadir a Colección",
     removeFromCollection: "Quitar de la Colección",
     edit: "Editar",
@@ -3134,6 +3164,12 @@ const ja: Translations = {
     open: "開く",
     saveToStarred: "お気に入りに保存",
     removeFromStarred: "お気に入りから削除",
+    saveToCollection: "コレクションに保存",
+    manageCollections: "コレクションを管理",
+    duplicate: "複製",
+    duplicating: "複製中…",
+    duplicateFailed: "スペースの複製に失敗しました",
+    duplicateNoCredits: "このスペースを複製するのに十分なクレジットがありません。",
     addToCollection: "コレクションに追加",
     removeFromCollection: "コレクションから削除",
     edit: "編集",
@@ -3721,6 +3757,12 @@ const de: Translations = {
     open: "Öffnen",
     saveToStarred: "Zu Favoriten hinzufügen",
     removeFromStarred: "Aus Favoriten entfernen",
+    saveToCollection: "In Sammlung speichern",
+    manageCollections: "Sammlungen verwalten",
+    duplicate: "Duplizieren",
+    duplicating: "Wird dupliziert…",
+    duplicateFailed: "Space konnte nicht dupliziert werden",
+    duplicateNoCredits: "Du hast nicht genügend Credits, um diesen Space zu duplizieren.",
     addToCollection: "Zur Sammlung hinzufügen",
     removeFromCollection: "Aus Sammlung entfernen",
     edit: "Bearbeiten",
@@ -4308,6 +4350,12 @@ const it: Translations = {
     open: "Apri",
     saveToStarred: "Salva nei preferiti",
     removeFromStarred: "Rimuovi dai preferiti",
+    saveToCollection: "Salva nella raccolta",
+    manageCollections: "Gestisci raccolte",
+    duplicate: "Duplica",
+    duplicating: "Duplicazione…",
+    duplicateFailed: "Impossibile duplicare lo spazio",
+    duplicateNoCredits: "Non hai crediti sufficienti per duplicare questo spazio.",
     addToCollection: "Aggiungi alla collezione",
     removeFromCollection: "Rimuovi dalla collezione",
     edit: "Modifica",

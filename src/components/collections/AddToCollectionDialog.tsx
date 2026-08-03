@@ -19,6 +19,7 @@ interface AddToCollectionDialogProps {
   onClose: () => void;
   spaceId: string;
   spaceTitle: string;
+  onSavedChange?: (inAnyCollection: boolean) => void;
 }
 
 export function AddToCollectionDialog({
@@ -26,6 +27,7 @@ export function AddToCollectionDialog({
   onClose,
   spaceId,
   spaceTitle,
+  onSavedChange,
 }: AddToCollectionDialogProps) {
   const { t } = useLanguage();
   const supabase = useMemo(() => createClient(), []);
@@ -97,6 +99,7 @@ export function AddToCollectionDialog({
         .eq("space_id", spaceId);
     }
     setSaving(false);
+    onSavedChange?.(pending.size > 0);
     onClose();
   };
 
@@ -110,7 +113,7 @@ export function AddToCollectionDialog({
 
     const { data } = await supabase
       .from("collections")
-      .insert({ name: newName.trim(), user_id: user.id })
+      .insert({ name: newName.trim(), user_id: user.id, is_public: false })
       .select("id, name")
       .single();
 

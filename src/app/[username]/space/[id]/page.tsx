@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LikeButton } from "@/components/spaces/LikeButton";
 import { ShareMenu } from "@/components/spaces/ShareMenu";
 import { StarButton } from "@/components/spaces/StarButton";
+import { DuplicateSpaceButton } from "@/components/spaces/DuplicateSpaceButton";
 import { SpaceOwnerMenu } from "@/components/spaces/SpaceOwnerMenu";
 import { ExternalLink, Lock, Smartphone } from "lucide-react";
 import { CommentsController } from "@/components/spaces/comments/CommentsController";
@@ -149,7 +150,7 @@ export default async function SpaceViewPage({
   let saved = false;
 
   if (user) {
-    const [{ data: likeData }, { data: starredCol }] = await Promise.all([
+    const [{ data: likeData }, { data: savedEntries }] = await Promise.all([
       supabase
         .from("space_likes")
         .select("id")
@@ -157,23 +158,14 @@ export default async function SpaceViewPage({
         .eq("space_id", id)
         .maybeSingle(),
       supabase
-        .from("collections")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("is_default", true)
-        .maybeSingle(),
+        .from("collection_spaces")
+        .select("collection_id, collections!inner(user_id)")
+        .eq("space_id", id)
+        .eq("collections.user_id", user.id)
+        .limit(1),
     ]);
     liked = !!likeData;
-
-    if (starredCol) {
-      const { data: savedEntry } = await supabase
-        .from("collection_spaces")
-        .select("id")
-        .eq("collection_id", starredCol.id)
-        .eq("space_id", id)
-        .maybeSingle();
-      saved = !!savedEntry;
-    }
+    saved = (savedEntries?.length ?? 0) > 0;
   }
 
   // Comments: first page + current user profile for the input avatar
@@ -261,7 +253,10 @@ export default async function SpaceViewPage({
             initialOpen={comments === "open"}
           />
           {!isOwner && (
-            <StarButton spaceId={space.id} initialSaved={saved} size="md" />
+            <StarButton spaceId={space.id} spaceTitle={space.title} initialSaved={saved} size="md" />
+          )}
+          {!isOwner && space.is_public && (
+            <DuplicateSpaceButton spaceId={space.id} size="md" />
           )}
           <ShareMenu url={`/${username}/space/${space.id}`} title={space.title} size="md" />
           {profile && (

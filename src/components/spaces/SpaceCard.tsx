@@ -13,7 +13,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { ExternalLink, FolderPlus, Pencil, Trash2, Bookmark, Globe, Lock } from "lucide-react";
+import { ExternalLink, FolderPlus, Pencil, Trash2, Bookmark, Globe, Lock, Copy } from "lucide-react";
 import { LikeButton } from "./LikeButton";
 import { ShareButton } from "./ShareButton";
 import { StarButton } from "./StarButton";
@@ -42,6 +42,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(saved ?? false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const handleRemoveFromCollection = async () => {
     if (!collectionId) return;
@@ -55,44 +56,33 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
     router.refresh();
   };
 
-  const handleToggleStar = async () => {
+  const handleOpenSaveDialog = async () => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
-
-    let { data: collection } = await supabase
-      .from("collections")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_default", true)
-      .maybeSingle();
-
-    if (!collection) {
-      const { data: newCol } = await supabase
-        .from("collections")
-        .insert({ user_id: user.id, name: "Starred", description: "Spaces I've saved from the community", is_public: true, is_default: true })
-        .select("id")
-        .single();
-      collection = newCol;
-    }
-
-    if (!collection) return;
-
-    const wasSaved = isSaved;
-    setIsSaved(!wasSaved);
-
-    if (wasSaved) {
-      await supabase.from("collection_spaces").delete().eq("collection_id", collection.id).eq("space_id", space.id);
-    } else {
-      await supabase.from("collection_spaces").insert({ collection_id: collection.id, space_id: space.id });
-    }
-    router.refresh();
+    setCollectionDialogOpen(true);
   };
 
   const handleDelete = async () => {
     const supabase = createClient();
     await supabase.from("spaces").delete().eq("id", space.id);
     router.refresh();
+  };
+
+  const handleDuplicate = async () => {
+    if (isDuplicating) return;
+    setIsDuplicating(true);
+    try {
+      const res = await fetch(`/api/spaces/${space.id}/duplicate`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error === "INSUFFICIENT_CREDITS" ? t.space.duplicateNoCredits : (data?.error || t.space.duplicateFailed));
+        return;
+      }
+      router.push(`/dashboard/edit-space/${data.spaceId}`);
+    } finally {
+      setIsDuplicating(false);
+    }
   };
 
   const cardContent = compact ? (
@@ -196,7 +186,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
                     initialLiked={liked}
                     size="sm"
                   />
-                  <StarButton spaceId={space.id} initialSaved={isSaved} size="sm" onToggle={setIsSaved} />
+                  <StarButton spaceId={space.id} spaceTitle={space.title} initialSaved={isSaved} size="sm" onToggle={setIsSaved} />
                 </>
               )}
               <ShareButton url={spaceUrl} title={space.title} size="sm" />
@@ -217,10 +207,18 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
             {t.space.open}
           </ContextMenuItem>
           {!editable && !isOwn && (
-            <ContextMenuItem onClick={handleToggleStar}>
-              <Bookmark className={`size-4 ${isSaved ? "fill-violet-500 text-violet-500" : ""}`} />
-              {isSaved ? t.space.removeFromStarred : t.space.saveToStarred}
-            </ContextMenuItem>
+            <>
+              <ContextMenuItem onClick={handleOpenSaveDialog}>
+                <Bookmark className={`size-4 ${isSaved ? "fill-violet-500 text-violet-500" : ""}`} />
+                {isSaved ? t.space.manageCollections : t.space.saveToCollection}
+              </ContextMenuItem>
+              {space.is_public && (
+                <ContextMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
+                  <Copy className="size-4" />
+                  {isDuplicating ? t.space.duplicating : t.space.duplicate}
+                </ContextMenuItem>
+              )}
+            </>
           )}
           {editable && (
             <>
@@ -260,6 +258,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
         onClose={() => setCollectionDialogOpen(false)}
         spaceId={space.id}
         spaceTitle={space.title}
+        onSavedChange={setIsSaved}
       />
 
       <ConfirmDialog
