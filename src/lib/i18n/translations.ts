@@ -207,6 +207,7 @@ export type Translations = {
     confirmRemoveFromCollection: string;
     analytics: string;
     spaceActions: string;
+    cancel: string;
   };
   share: {
     share: string;
@@ -793,6 +794,7 @@ const en: Translations = {
     confirmRemoveFromCollection: "Remove this space from the collection?",
     analytics: "Analytics",
     spaceActions: "Space actions",
+    cancel: "Cancel",
   },
   share: {
     share: "Share",
@@ -1379,6 +1381,7 @@ const pt: Translations = {
     confirmRemoveFromCollection: "Remover este space da coleção?",
     analytics: "Análises",
     spaceActions: "Ações do Space",
+    cancel: "Cancelar",
   },
   share: {
     share: "Compartilhar",
@@ -1965,6 +1968,7 @@ const fr: Translations = {
     confirmRemoveFromCollection: "Retirer ce space de la collection ?",
     analytics: "Statistiques",
     spaceActions: "Actions Space",
+    cancel: "Annuler",
   },
   share: {
     share: "Partager",
@@ -2551,6 +2555,7 @@ const es: Translations = {
     confirmRemoveFromCollection: "¿Quitar este space de la colección?",
     analytics: "Estadísticas",
     spaceActions: "Acciones del Space",
+    cancel: "Cancelar",
   },
   share: {
     share: "Compartir",
@@ -3137,6 +3142,7 @@ const ja: Translations = {
     confirmRemoveFromCollection: "このスペースをコレクションから削除しますか？",
     analytics: "アナリティクス",
     spaceActions: "Spaceのアクション",
+    cancel: "キャンセル",
   },
   share: {
     share: "シェア",
@@ -3723,6 +3729,7 @@ const de: Translations = {
     confirmRemoveFromCollection: "Diesen Space aus der Sammlung entfernen?",
     analytics: "Analytik",
     spaceActions: "Space-Aktionen",
+    cancel: "Abbrechen",
   },
   share: {
     share: "Teilen",
@@ -4309,6 +4316,7 @@ const it: Translations = {
     confirmRemoveFromCollection: "Rimuovere questo space dalla collezione?",
     analytics: "Analisi",
     spaceActions: "Azioni Space",
+    cancel: "Annulla",
   },
   share: {
     share: "Condividi",

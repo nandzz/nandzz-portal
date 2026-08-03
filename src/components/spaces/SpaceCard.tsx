@@ -18,6 +18,7 @@ import { LikeButton } from "./LikeButton";
 import { ShareButton } from "./ShareButton";
 import { StarButton } from "./StarButton";
 import { AddToCollectionDialog } from "@/components/collections/AddToCollectionDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Space } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -39,6 +40,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   const router = useRouter();
   const { t } = useLanguage();
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(saved ?? false);
 
   const handleRemoveFromCollection = async () => {
@@ -88,7 +90,6 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   };
 
   const handleDelete = async () => {
-    if (!confirm(t.space.confirmDelete)) return;
     const supabase = createClient();
     await supabase.from("spaces").delete().eq("id", space.id);
     router.refresh();
@@ -243,7 +244,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
                     <Pencil className="size-4" />
                     {t.space.edit}
                   </ContextMenuItem>
-                  <ContextMenuItem variant="destructive" onClick={handleDelete}>
+                  <ContextMenuItem variant="destructive" onClick={() => setDeleteConfirmOpen(true)}>
                     <Trash2 className="size-4" />
                     {t.space.deleteSpace}
                   </ContextMenuItem>
@@ -259,6 +260,16 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
         onClose={() => setCollectionDialogOpen(false)}
         spaceId={space.id}
         spaceTitle={space.title}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title={t.space.deleteSpace}
+        description={t.space.confirmDelete}
+        confirmLabel={t.space.deleteSpace}
+        cancelLabel={t.space.cancel}
       />
     </>
   );
