@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { HomeClient } from "./HomeClient";
 
 export const metadata: Metadata = {
-  title: "Nandzz — Share what you create.",
+  title: "Nandzz | Share what you create.",
   description:
-    "Nandzz — Share what you create. A gallery for web pages, PDFs, tools, and interactive AI creations.",
+    "Nandzz | Share what you create. A gallery for web pages, PDFs, tools, and interactive AI creations.",
   alternates: {
     canonical: "https://nandzz.com",
   },

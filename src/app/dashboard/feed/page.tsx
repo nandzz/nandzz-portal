@@ -11,7 +11,7 @@ import type { SpaceWithProfile } from "@/lib/types";
 import { getServerTranslations } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
-  title: "Feed — Nandzz",
+  title: "Feed | Nandzz",
   description: "Spaces from people you follow.",
 };
 

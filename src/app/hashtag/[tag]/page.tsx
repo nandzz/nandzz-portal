@@ -34,7 +34,7 @@ export async function generateMetadata({
       canonical: `https://nandzz.com/hashtag/${tag}`,
     },
     openGraph: {
-      title: `#${tag} — Nandzz`,
+      title: `#${tag} | Nandzz`,
       description,
       type: "website",
       url: `https://nandzz.com/hashtag/${tag}`,
@@ -45,7 +45,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: firstSpace?.preview_image_url ? "summary_large_image" : "summary",
-      title: `#${tag} — Nandzz`,
+      title: `#${tag} | Nandzz`,
       description,
       ...(firstSpace?.preview_image_url && { images: [firstSpace.preview_image_url] }),
     },

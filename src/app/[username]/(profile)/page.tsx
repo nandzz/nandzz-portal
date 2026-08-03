@@ -36,7 +36,7 @@ export async function generateMetadata({
   const profile = await getProfile(username);
 
   if (!profile) {
-    return { title: "Profile Not Found — Nandzz" };
+    return { title: "Profile Not Found | Nandzz" };
   }
 
   const name = profile.display_name || profile.username;
@@ -61,7 +61,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary",
-      title: `${name} (@${profile.username}) — Nandzz`,
+      title: `${name} (@${profile.username}) | Nandzz`,
       description,
       ...(profile.avatar_url && { images: [profile.avatar_url] }),
     },

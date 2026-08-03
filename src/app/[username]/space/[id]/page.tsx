@@ -57,10 +57,10 @@ export async function generateMetadata({
   try {
     space = await getSpace(id);
   } catch {
-    return { title: "Space — Nandzz" };
+    return { title: "Space | Nandzz" };
   }
 
-  if (!space) return { title: "Space Not Found — Nandzz" };
+  if (!space) return { title: "Space Not Found | Nandzz" };
 
   const profile = space.profiles as unknown as {
     display_name: string | null;
@@ -68,9 +68,9 @@ export async function generateMetadata({
   } | null;
 
   // 404 if space doesn't belong to the username in the URL
-  if (profile?.username !== username) return { title: "Space Not Found — Nandzz" };
+  if (profile?.username !== username) return { title: "Space Not Found | Nandzz" };
 
-  if (!space.is_public) return { title: "Private Space — Nandzz" };
+  if (!space.is_public) return { title: "Private Space | Nandzz" };
 
   const author = profile?.display_name || profile?.username || "Unknown";
   const description = space.description || `A web app shared by ${author} on nandzz.`;
@@ -93,7 +93,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: space.preview_image_url ? "summary_large_image" : "summary",
-      title: `${space.title} — Nandzz`,
+      title: `${space.title} | Nandzz`,
       description,
       ...(space.preview_image_url && { images: [space.preview_image_url] }),
     },

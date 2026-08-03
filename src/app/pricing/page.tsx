@@ -11,16 +11,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const desc = `Pay as you go. ${signupGrant} free space credits on signup. Buy more whenever you need them — credits never expire.`;
   const shortDesc = `Pay as you go. ${signupGrant} free credits on signup. Buy more anytime.`;
   return {
-    title: "Credits — Nandzz",
+    title: "Credits | Nandzz",
     description: desc,
     openGraph: {
-      title: "Credits — Nandzz",
+      title: "Credits | Nandzz",
       description: shortDesc,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: "Credits — Nandzz",
+      title: "Credits | Nandzz",
       description: shortDesc,
     },
   };

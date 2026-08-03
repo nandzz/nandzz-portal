@@ -34,11 +34,11 @@ export const metadata: Metadata = {
     ],
   },
   title: {
-    default: "Nandzz — Share what you create.",
-    template: "%s — Nandzz",
+    default: "Nandzz | Share what you create.",
+    template: "%s | Nandzz",
   },
   description:
-    "Nandzz — Share what you create. A gallery for web pages, PDFs, tools, and interactive AI creations.",
+    "Nandzz | Share what you create. A gallery for web pages, PDFs, tools, and interactive AI creations.",
   keywords: [
     "share web apps",
     "your gallery",
@@ -55,14 +55,14 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://nandzz.com",
     siteName: "Nandzz",
-    title: "Nandzz — Share what you create.",
+    title: "Nandzz | Share what you create.",
     description:
       "A gallery for web pages, PDFs, tools, and interactive AI creations.",
     images: [{ url: "/logo.png", alt: "Nandzz" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Nandzz — Share what you create.",
+    title: "Nandzz | Share what you create.",
     description:
       "A gallery for web pages, PDFs, tools, and interactive AI creations.",
     creator: "@nandzz",

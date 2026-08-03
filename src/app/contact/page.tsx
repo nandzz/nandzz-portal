@@ -3,7 +3,7 @@ import { ContactForm } from "./ContactForm";
 import { getServerTranslations } from "@/lib/i18n/server";
 
 export const metadata: Metadata = {
-  title: "Contact — Nandzz",
+  title: "Contact | Nandzz",
   description: "Get in touch with the Nandzz team.",
 };
 
