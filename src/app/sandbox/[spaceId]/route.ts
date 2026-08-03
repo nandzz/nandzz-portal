@@ -5,21 +5,20 @@ import { createClient } from "@/lib/supabase/server";
 // Injected at the top of every sandboxed page:
 //   - form nav-guard: sandboxed iframes have null origin, so form submits cause
 //     "Unsafe attempt to load URL" errors — swallow them.
-//   - activity beacon: notify the parent on touch/scroll so idle-hide chrome
-//     can reset its timer even while the user is interacting inside the iframe.
+//   - chrome toggle: a sandboxed iframe's taps never reach the parent, so detect
+//     a double-tap here and forward it so the parent can toggle nav/tab chrome.
 const INJECTED_SCRIPT =
   `<script>` +
   `document.addEventListener('submit',function(e){e.preventDefault();},true);` +
   `HTMLFormElement.prototype.submit=function(){};` +
   `(function(){` +
-  `var last=0;` +
-  `function ping(){var n=Date.now();if(n-last<400)return;last=n;` +
-  `try{parent.postMessage({type:'nandzz:activity'},'*');}catch(_){}}` +
-  `document.addEventListener('touchstart',ping,{passive:true,capture:true});` +
-  `document.addEventListener('scroll',ping,{passive:true,capture:true});` +
-  `document.addEventListener('mousedown',ping,{passive:true,capture:true});` +
-  `document.addEventListener('keydown',ping,true);` +
-  `document.addEventListener('wheel',ping,{passive:true,capture:true});` +
+  `var lt=0,lx=0,ly=0;` +
+  `document.addEventListener('touchend',function(e){` +
+  `var t=e.changedTouches[0];if(!t)return;var n=Date.now();` +
+  `if(n-lt<300&&Math.abs(t.clientX-lx)<40&&Math.abs(t.clientY-ly)<40){` +
+  `try{parent.postMessage({type:'nandzz:toggle-chrome'},'*');}catch(_){}lt=0;}` +
+  `else{lt=n;lx=t.clientX;ly=t.clientY;}` +
+  `},{passive:true,capture:true});` +
   `})();` +
   `</script>`;
 

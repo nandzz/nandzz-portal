@@ -128,6 +128,16 @@
     @apply font-sans;
     overflow-x: hidden;
   }
+  /* iOS Safari auto-zooms when focusing a form control whose font-size is
+     under 16px. Enforce a 16px minimum on touch/small screens so focusing any
+     text field never triggers that zoom. Desktop typography is untouched. */
+  @media (max-width: 767px) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1rem);
+    }
+  }
 }
 
 @layer utilities {
