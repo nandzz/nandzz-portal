@@ -138,17 +138,19 @@ export default async function CreditsPage({
                       </span>
                     </div>
                   )}
-                  <p className="font-semibold">{pack.name}</p>
-                  <div className="mt-3 flex items-baseline gap-1">
+                  {/* Price leads so it reads as money, not a credit count —
+                      a one-time top-up, not a plan tier. */}
+                  <div className="flex items-baseline gap-1.5">
                     <span className="text-3xl font-bold">
                       ${(pack.price_cents / 100).toFixed(0)}
                     </span>
+                    <span className="text-sm font-medium text-muted-foreground">one-time</span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
                     {pack.credits.toLocaleString()} credits
                   </p>
                   <div className="mt-5">
-                    <BuyCreditsButton packId={pack.id} packName={pack.name} highlighted={idx === 1} />
+                    <BuyCreditsButton packId={pack.id} credits={pack.credits} highlighted={idx === 1} />
                   </div>
                 </div>
               ))}

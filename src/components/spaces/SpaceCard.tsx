@@ -165,7 +165,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
           <h3 className="text-sm @[280px]:text-base @[380px]:text-lg font-bold truncate mt-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
             {space.title}
           </h3>
-          <p className="mt-1 text-[10px] @[280px]:text-xs @[380px]:text-sm text-muted-foreground line-clamp-2 h-10">
+          <p className="mt-1 text-[10px] @[280px]:text-xs @[380px]:text-sm text-muted-foreground line-clamp-2 h-10 leading-5">
             {space.description ?? ""}
           </p>
           <div className="mt-3 flex items-center justify-between">

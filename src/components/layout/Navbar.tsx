@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, User, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers, Bot, Plug } from "lucide-react";
+import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers, Bot, Plug } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
@@ -110,7 +110,7 @@ export function Navbar() {
             >
               {t.nav.explore}
             </Link>
-            {FEATURES.monetization && (
+            {user && FEATURES.monetization && (
               <Link
                 href="/pricing"
                 className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -387,11 +387,6 @@ export function Navbar() {
                       <Compass className="h-4 w-4 text-muted-foreground" />
                       {t.nav.explore}
                     </DropdownMenuItem>
-                    {FEATURES.monetization && (
-                      <DropdownMenuItem onClick={() => router.push("/pricing")} className="gap-2">
-                        {t.nav.pricing}
-                      </DropdownMenuItem>
-                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => router.push("/login")} className="gap-2">
@@ -399,6 +394,7 @@ export function Navbar() {
                     {t.nav.login}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push("/login?tab=signup")} className="gap-2">
+                    <UserPlus className="h-4 w-4 text-muted-foreground" />
                     {t.nav.signup}
                   </DropdownMenuItem>
                 </>

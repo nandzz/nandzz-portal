@@ -6,11 +6,11 @@ import { ArrowRight } from "lucide-react";
 
 export function BuyCreditsButton({
   packId,
-  packName,
+  credits,
   highlighted,
 }: {
   packId: string;
-  packName: string;
+  credits: number;
   highlighted: boolean;
 }) {
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ export function BuyCreditsButton({
         onClick={handleClick}
         disabled={loading}
       >
-        {loading ? "Opening checkout…" : `Buy ${packName}`}
+        {loading ? "Opening checkout…" : `Get ${credits.toLocaleString()} credits`}
         {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
       </Button>
       {error && (

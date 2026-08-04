@@ -67,33 +67,33 @@ export function PricingClient({
         {packs.length > 0 ? (
           <div className="grid sm:grid-cols-3 gap-6">
             {packs.map((pack, idx) => {
-              const isPopular = idx === 1;
+              const isBestValue = idx === 1;
               return (
                 <div
                   key={pack.id}
                   className={`relative rounded-2xl border p-8 flex flex-col bg-card ${
-                    isPopular
+                    isBestValue
                       ? "border-2 border-violet-500 shadow-2xl shadow-violet-500/10"
                       : "border-border/60"
                   }`}
                 >
-                  {isPopular && (
+                  {isBestValue && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-1 text-xs font-semibold text-white shadow-sm shadow-violet-600/40">
                         <Sparkles className="h-3 w-3" />
-                        Most popular
+                        Best value
                       </span>
                     </div>
                   )}
-                  <div className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground mb-3 w-fit">
-                    {pack.name}
-                  </div>
-                  <div className="flex items-baseline gap-1">
+                  {/* Price leads so it reads as money, not a credit count —
+                      a one-time top-up, not a plan. */}
+                  <div className="flex items-baseline gap-1.5">
                     <span className="text-4xl font-bold tracking-tight">
                       ${(pack.price_cents / 100).toFixed(0)}
                     </span>
+                    <span className="text-sm font-medium text-muted-foreground">one-time</span>
                   </div>
-                  <p className="mt-3 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     {pack.credits.toLocaleString()} credits
                   </p>
                   <ul className="space-y-2.5 mt-6 mb-8 text-sm flex-1">
@@ -117,8 +117,8 @@ export function PricingClient({
                     </li>
                   </ul>
                   <Link href="/dashboard/credits">
-                    <Button variant={isPopular ? "default" : "outline"} className="w-full">
-                      Buy {pack.name}
+                    <Button variant={isBestValue ? "default" : "outline"} className="w-full">
+                      Get {pack.credits.toLocaleString()} credits
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
