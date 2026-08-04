@@ -12,10 +12,11 @@ import {
   Play,
   Globe,
 } from "lucide-react";
-import type { Profile } from "@/lib/types";
+import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { FollowButton } from "./FollowButton";
 import { FollowersDialog } from "./FollowersDialog";
 import { AgentEmbed } from "@/components/agent/AgentEmbed";
+import { WidgetStrip } from "@/components/widgets/WidgetStrip";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { createClient } from "@/lib/supabase/client";
 import { FEATURES } from "@/lib/flags";
@@ -28,6 +29,7 @@ interface ProfileHeaderProps {
   isOwner?: boolean;
   currentUserId?: string | null;
   isFollowing?: boolean;
+  widgets?: WidgetInstanceWithCatalog[];
 }
 
 function buildUrl(key: string, value: string): string {
@@ -47,7 +49,7 @@ function buildUrl(key: string, value: string): string {
   return `${baseUrls[key]}${v.replace(/^@/, "")}`;
 }
 
-export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [] }: ProfileHeaderProps) {
   const { t } = useLanguage();
   const router = useRouter();
   const socialLinks = profile.social_links || {};
@@ -280,6 +282,10 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
 
       {FEATURES.agent && profile.agent_enabled && (
         <AgentEmbed profile={profile} isAuthenticated={!!currentUserId} />
+      )}
+
+      {FEATURES.widgets && widgets.length > 0 && (
+        <WidgetStrip widgets={widgets} profile={profile} />
       )}
     </div>
   );

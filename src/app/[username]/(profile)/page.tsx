@@ -7,6 +7,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { ProfileBackground } from "@/components/profile/ProfileBackground";
+import { FEATURES } from "@/lib/flags";
+import { getProfileWidgets } from "@/lib/widgets/server";
+import type { WidgetInstanceWithCatalog } from "@/lib/types";
 
 const fetchProfileByUsername = async (username: string) => {
   const admin = createAdminClient();
@@ -87,6 +90,7 @@ export default async function ProfilePage({
     { data: spaces },
     { data: collections },
     { data: { user } },
+    widgets,
   ] = await Promise.all([
     supabase
       .from("spaces")
@@ -102,6 +106,9 @@ export default async function ProfilePage({
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase.auth.getUser(),
+    FEATURES.widgets
+      ? getProfileWidgets(profile.id)
+      : Promise.resolve([] as WidgetInstanceWithCatalog[]),
   ]);
 
   let likedSpaceIds: string[] = [];
@@ -162,6 +169,7 @@ export default async function ProfilePage({
           isOwner={isOwner}
           currentUserId={user?.id ?? null}
           isFollowing={isFollowing}
+          widgets={widgets}
         />
         <div className="mt-12">
           <ProfileTabs

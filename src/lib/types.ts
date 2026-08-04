@@ -185,6 +185,109 @@ export type Notification = {
   created_at: string;
 };
 
+// ── Widgets ──────────────────────────────────────────────────────────────────
+
+export type WidgetSlug = "calendar";
+
+export type WidgetCatalogEntry = {
+  id: string;
+  slug: WidgetSlug | string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  stripe_product_id: string | null;
+  stripe_price_id: string | null;
+  price_cents: number;
+  currency: string;
+  billing_interval: "month" | "year";
+  active: boolean;
+  sort_order: number;
+};
+
+export type WidgetSubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "incomplete"
+  | "incomplete_expired"
+  | "unpaid";
+
+export type WidgetSubscription = {
+  id: string;
+  user_id: string;
+  instance_id: string;
+  catalog_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
+  status: WidgetSubscriptionStatus;
+  current_period_end: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// A service the owner offers through the calendar widget.
+export type CalendarService = {
+  id: string;
+  name: string;
+  duration_min: number;
+  price_cents?: number | null;
+};
+
+// Weekday key → list of [start, end] "HH:MM" windows (owner-local time).
+export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+export type AvailabilityWindows = Partial<Record<WeekdayKey, [string, string][]>>;
+
+export type CalendarConfig = {
+  timezone: string;
+  buffer_min: number;
+  services: CalendarService[];
+  availability: AvailabilityWindows;
+  blackout_dates: string[]; // "YYYY-MM-DD"
+};
+
+// Generic per-profile widget instance. `config` shape depends on catalog slug.
+export type WidgetInstance = {
+  id: string;
+  user_id: string;
+  catalog_id: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// Instance joined to its catalog type + resolved entitlement, as rendered on a
+// profile or the owner dashboard.
+export type WidgetInstanceWithCatalog = WidgetInstance & {
+  catalog: WidgetCatalogEntry;
+  has_access: boolean;
+};
+
+export type WidgetBookingStatus = "confirmed" | "cancelled";
+
+export type WidgetBooking = {
+  id: string;
+  instance_id: string;
+  owner_user_id: string;
+  service_id: string;
+  service_name: string;
+  duration_min: number;
+  price_cents: number | null;
+  starts_at: string;
+  ends_at: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  notes: string | null;
+  status: WidgetBookingStatus;
+  manage_token: string;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AgentDocVisibility = 'public' | 'private';
 export type AgentDocStatus = 'active' | 'outdated' | 'needs_review';
 

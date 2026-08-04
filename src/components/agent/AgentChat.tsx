@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Bot, FilePlus, FileText, CheckCircle, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { AgentDocument } from "@/lib/types";
+import type { AgentDocument, CalendarService } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { CalendarBookingFlow } from "@/components/widgets/calendar/CalendarBookingFlow";
 
 const SENSITIVE_PATTERNS: RegExp[] = [
   /\b(?:password|passwd|pwd)\s*[:=]/i,
@@ -36,13 +37,25 @@ interface ActionProposal {
   reason: string;
 }
 
+// Emitted by the agent-chat edge fn when a visitor wants to book. The edge fn
+// injects instance_id/timezone/services (the model only supplies service_id).
+interface BookingAction {
+  type: "book_appointment";
+  instance_id: string;
+  timezone: string;
+  services: CalendarService[];
+  service_id?: string;
+}
+
+type MessageAction = ActionProposal | BookingAction;
+
 type ActionStatus = "pending" | "creating" | "done" | "error" | "dismissed";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  action?: ActionProposal;
+  action?: MessageAction;
   actionStatus?: ActionStatus;
 }
 
@@ -368,6 +381,15 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
                     : m
                 )
               );
+            } else if (chunk.action?.type === "book_appointment") {
+              const incoming = chunk.action as BookingAction;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, action: incoming, actionStatus: "pending" }
+                    : m
+                )
+              );
             }
           } catch {}
         }
@@ -535,7 +557,18 @@ export function AgentChat({ username, displayName, preview, onDocumentCreated, d
                     ) : (
                       <>
                         {msg.content && <AssistantMessage content={msg.content} />}
-                        {msg.action && msg.actionStatus && (
+                        {msg.action?.type === "book_appointment" && (
+                          <div className="mt-2 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 p-4">
+                            <CalendarBookingFlow
+                              instanceId={msg.action.instance_id}
+                              services={msg.action.services}
+                              timezone={msg.action.timezone}
+                              initialServiceId={msg.action.service_id}
+                              businessName={displayName}
+                            />
+                          </div>
+                        )}
+                        {msg.action?.type === "propose_document" && msg.actionStatus && (
                           <ProposalCard
                             messageId={msg.id}
                             action={msg.action}

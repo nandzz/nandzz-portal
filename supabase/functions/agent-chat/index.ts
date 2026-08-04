@@ -39,6 +39,69 @@ const PROPOSE_DOCUMENT_TOOL = {
   },
 };
 
+const BOOK_APPOINTMENT_TOOL = {
+  type: "function",
+  function: {
+    name: "book_appointment",
+    description:
+      "Open the booking widget so the visitor can schedule an appointment. Call this whenever the visitor wants to book, schedule, reserve, or make an appointment. If they named a specific service, pass its service_id; otherwise omit it. Do NOT ask for date/time or contact details yourself — the widget collects those.",
+    parameters: {
+      type: "object",
+      properties: {
+        service_id: {
+          type: "string",
+          description: "The id of the service the visitor asked for, if they named one. Omit when unsure.",
+        },
+      },
+    },
+  },
+};
+
+// Booking context for a visitor chat: the owner's live calendar widget + its
+// services. Null when the owner has no enabled+entitled calendar with services.
+type BookingCtx = {
+  instanceId: string;
+  timezone: string;
+  services: { id: string; name: string; duration_min: number }[];
+};
+
+async function loadBookingContext(
+  // deno-lint-ignore no-explicit-any
+  admin: any,
+  ownerId: string,
+): Promise<BookingCtx | null> {
+  const { data: rows } = await admin
+    .from("widget_instances")
+    .select("id, config, enabled, catalog:widget_catalog(slug)")
+    .eq("user_id", ownerId)
+    .eq("enabled", true);
+
+  const calendar = (rows ?? []).find((r: { catalog?: { slug?: string } | { slug?: string }[] }) => {
+    const cat = Array.isArray(r.catalog) ? r.catalog[0] : r.catalog;
+    return cat?.slug === "calendar";
+  });
+  if (!calendar) return null;
+
+  const { data: hasAccess } = await admin.rpc("has_widget_access", {
+    p_instance_id: calendar.id,
+  });
+  if (!hasAccess) return null;
+
+  const config = calendar.config ?? {};
+  const services = Array.isArray(config.services) ? config.services : [];
+  if (services.length === 0) return null;
+
+  return {
+    instanceId: calendar.id,
+    timezone: typeof config.timezone === "string" && config.timezone ? config.timezone : "UTC",
+    services: services.map((s: { id: string; name: string; duration_min: number }) => ({
+      id: s.id,
+      name: s.name,
+      duration_min: s.duration_min,
+    })),
+  };
+}
+
 // ─── Embedding (OpenAI) ───────────────────────────────────────────────────────
 
 async function embedText(text: string, apiKey: string, rid: string): Promise<number[] | null> {
@@ -108,6 +171,7 @@ async function streamOpenAI(
   messages: { role: string; content: string }[],
   apiKey: string,
   ownerMode: boolean,
+  bookingContext: BookingCtx | null,
   charge: ChargeContext
 ): Promise<Response> {
   const openAIMessages = [
@@ -128,8 +192,11 @@ async function streamOpenAI(
     stream_options: { include_usage: true },
   };
 
-  if (ownerMode) {
-    body.tools = [PROPOSE_DOCUMENT_TOOL];
+  const tools: unknown[] = [];
+  if (ownerMode) tools.push(PROPOSE_DOCUMENT_TOOL);
+  if (bookingContext) tools.push(BOOK_APPOINTMENT_TOOL);
+  if (tools.length > 0) {
+    body.tools = tools;
     body.tool_choice = "auto";
   }
 
@@ -168,6 +235,22 @@ async function streamOpenAI(
       let firstDeltaAt: number | null = null;
       const streamStart = Date.now();
 
+      // book_appointment carries widget context the model doesn't know
+      // (instance id, services, timezone) — the edge fn injects it so the
+      // client can render the booking widget inline.
+      const buildActionPayload = (name: string, input: Record<string, unknown>) => {
+        if (name === "book_appointment" && bookingContext) {
+          return {
+            type: name,
+            instance_id: bookingContext.instanceId,
+            timezone: bookingContext.timezone,
+            services: bookingContext.services,
+            ...input,
+          };
+        }
+        return { type: name, ...input };
+      };
+
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -187,7 +270,7 @@ async function streamOpenAI(
                   try {
                     const input = JSON.parse(toolCallArgs);
                     controller.enqueue(
-                      jsonLine({ action: { type: toolCallName, ...input } })
+                      jsonLine({ action: buildActionPayload(toolCallName, input) })
                     );
                   } catch {
                     // malformed tool JSON — skip
@@ -248,7 +331,7 @@ async function streamOpenAI(
                   try {
                     const input = JSON.parse(toolCallArgs);
                     controller.enqueue(
-                      jsonLine({ action: { type: toolCallName, ...input } })
+                      jsonLine({ action: buildActionPayload(toolCallName, input) })
                     );
                   } catch {
                     // malformed tool JSON — skip
@@ -546,6 +629,23 @@ serve(async (req: Request) => {
 
   console.log(`[agent-chat][${rid}] branch=${branch} system_prompt_len=${systemPrompt.length} setup_ms=${Date.now() - t0}`);
 
+  // Booking: expose the calendar tool when this profile has a live booking
+  // widget. Available in visitor mode so visitors can book from chat.
+  let bookingContext: BookingCtx | null = null;
+  if (mode === "visitor") {
+    bookingContext = await loadBookingContext(admin, profile.id);
+    if (bookingContext) {
+      const list = bookingContext.services
+        .map((s) => `- ${s.name} (${s.duration_min} min, service_id: ${s.id})`)
+        .join("\n");
+      systemPrompt +=
+        `\n\n## Booking\n${displayName} accepts appointment bookings for:\n${list}\n` +
+        `If the visitor wants to book, schedule, or make an appointment, call the book_appointment tool ` +
+        `(pass service_id when they named a service). The booking widget collects the date, time and contact details — do not ask for those yourself.`;
+    }
+    console.log(`[agent-chat][${rid}] booking: available=${!!bookingContext} services=${bookingContext?.services.length ?? 0}`);
+  }
+
   // 4. Log request (analytics) — non-blocking, separate from credit charge.
   if (mode === "visitor") {
     try {
@@ -560,7 +660,7 @@ serve(async (req: Request) => {
   //    chatting) after the stream completes and OpenAI has reported real token
   //    counts. In owner mode, caller == profile owner, so the owner pays for
   //    their own testing; in visitor mode, the visitor pays.
-  return streamOpenAI(systemPrompt, messages, openAIKey, mode === "owner", {
+  return streamOpenAI(systemPrompt, messages, openAIKey, mode === "owner", bookingContext, {
     admin,
     userId: callerUserId,
     modelId: modelRow.id,

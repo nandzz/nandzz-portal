@@ -49,10 +49,83 @@ export async function handleStripeEvent(
       return handleCheckoutCompleted(event, admin, logger);
     case "charge.refunded":
       return handleChargeRefunded(event, admin, logger);
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted":
+      return handleWidgetSubscription(event, admin, logger);
     default:
       logger.info(`event.type=${event.type} not handled — acking`);
       return { status: 200, body: { received: true, ignored: event.type } };
   }
+}
+
+// Widget entitlement. Fires on every subscription lifecycle change. The
+// subscription carries our metadata (set via `subscription_data.metadata` at
+// checkout), so we can map it straight to the entitlement row. Status +
+// current_period_end drive `has_widget_access`.
+const WIDGET_SUB_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "canceled",
+  "incomplete",
+  "incomplete_expired",
+  "unpaid",
+]);
+
+async function handleWidgetSubscription(
+  event: Stripe.Event,
+  admin: AdminClientLike,
+  logger: Logger,
+): Promise<HandlerResult> {
+  const sub = event.data.object as Stripe.Subscription & {
+    current_period_end?: number;
+  };
+  const meta = sub.metadata ?? {};
+  const userId = meta.user_id || null;
+  const instanceId = meta.instance_id || null;
+  const catalogId = meta.catalog_id || null;
+
+  if (!instanceId) {
+    logger.warn(`subscription=${sub.id} has no instance_id metadata — skipping`);
+    return { status: 200, body: { received: true, skipped: "missing_metadata" } };
+  }
+
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null;
+
+  // subscription.deleted always means the entitlement is gone.
+  let status = event.type === "customer.subscription.deleted" ? "canceled" : sub.status;
+  if (!WIDGET_SUB_STATUSES.has(status)) status = "past_due"; // e.g. Stripe "paused"
+
+  const periodEndUnix =
+    sub.current_period_end ??
+    (sub as unknown as { items?: { data?: Array<{ current_period_end?: number }> } })
+      .items?.data?.[0]?.current_period_end ??
+    null;
+  const currentPeriodEnd = periodEndUnix
+    ? new Date(periodEndUnix * 1000).toISOString()
+    : null;
+
+  const { error } = await admin.rpc("grant_widget_subscription", {
+    p_user_id: userId,
+    p_instance_id: instanceId,
+    p_catalog_id: catalogId,
+    p_stripe_subscription_id: sub.id,
+    p_stripe_customer_id: customerId,
+    p_status: status,
+    p_current_period_end: currentPeriodEnd,
+    p_stripe_event_id: event.id,
+    p_event_created: new Date(event.created * 1000).toISOString(),
+  });
+
+  if (error) {
+    logger.error(`grant_widget_subscription failed`, error);
+    return { status: 500, body: { error: "widget_sub_failed" } };
+  }
+
+  logger.info(`widget sub ${sub.id} → status=${status} instance=${instanceId}`);
+  return { status: 200, body: { received: true, widget_status: status } };
 }
 
 async function handleCheckoutCompleted(

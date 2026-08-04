@@ -328,6 +328,98 @@ Deno.test("refund: unwraps payment_intent when passed as an expanded object", as
   ]);
 });
 
+// ---- customer.subscription.* (widget entitlements) --------------------------
+
+function subscriptionEvent(overrides: {
+  type?: string;
+  metadata?: Record<string, string> | null;
+  status?: string;
+  customer?: string | { id: string } | null;
+  currentPeriodEnd?: number | null;
+  subId?: string;
+  eventId?: string;
+  eventCreated?: number;
+}): Stripe.Event {
+  return {
+    id: overrides.eventId ?? "evt_test_sub",
+    type: overrides.type ?? "customer.subscription.created",
+    livemode: false,
+    created: overrides.eventCreated ?? 1_700_000_000,
+    data: {
+      object: {
+        id: overrides.subId ?? "sub_test_123",
+        status: overrides.status ?? "active",
+        customer: "customer" in overrides ? overrides.customer : "cus_test_1",
+        current_period_end:
+          "currentPeriodEnd" in overrides ? overrides.currentPeriodEnd : 1_700_100_000,
+        metadata:
+          overrides.metadata === undefined
+            ? { user_id: "user-1", instance_id: "inst-1", catalog_id: "cat-1" }
+            : overrides.metadata ?? {},
+      } as unknown as Stripe.Subscription,
+    },
+  } as unknown as Stripe.Event;
+}
+
+Deno.test("subscription.created: calls grant_widget_subscription with mapped fields", async () => {
+  const { admin, rpcCalls } = makeAdmin();
+  const result = await handleStripeEvent(subscriptionEvent({}), admin);
+
+  assertEquals(result.status, 200);
+  assertEquals(result.body.widget_status, "active");
+  assertEquals(rpcCalls.length, 1);
+  assertEquals(rpcCalls[0].name, "grant_widget_subscription");
+  assertObjectMatch(rpcCalls[0].args, {
+    p_user_id: "user-1",
+    p_instance_id: "inst-1",
+    p_catalog_id: "cat-1",
+    p_stripe_subscription_id: "sub_test_123",
+    p_stripe_customer_id: "cus_test_1",
+    p_status: "active",
+    p_stripe_event_id: "evt_test_sub",
+  });
+  assertEquals(
+    rpcCalls[0].args.p_current_period_end,
+    new Date(1_700_100_000 * 1000).toISOString(),
+  );
+});
+
+Deno.test("subscription.deleted: forces status=canceled regardless of object status", async () => {
+  const { admin, rpcCalls } = makeAdmin();
+  await handleStripeEvent(
+    subscriptionEvent({ type: "customer.subscription.deleted", status: "active" }),
+    admin,
+  );
+  assertEquals(rpcCalls[0].args.p_status, "canceled");
+});
+
+Deno.test("subscription: unknown Stripe status (paused) coerces to past_due", async () => {
+  const { admin, rpcCalls } = makeAdmin();
+  await handleStripeEvent(subscriptionEvent({ status: "paused" }), admin);
+  assertEquals(rpcCalls[0].args.p_status, "past_due");
+});
+
+Deno.test("subscription: skips with 200 when instance_id metadata is missing", async () => {
+  const { admin, rpcCalls } = makeAdmin();
+  const result = await handleStripeEvent(subscriptionEvent({ metadata: {} }), admin);
+  assertEquals(result.status, 200);
+  assertEquals(result.body.skipped, "missing_metadata");
+  assertEquals(rpcCalls.length, 0);
+});
+
+Deno.test("subscription: unwraps expanded customer object", async () => {
+  const { admin, rpcCalls } = makeAdmin();
+  await handleStripeEvent(subscriptionEvent({ customer: { id: "cus_expanded" } }), admin);
+  assertEquals(rpcCalls[0].args.p_stripe_customer_id, "cus_expanded");
+});
+
+Deno.test("subscription: returns 500 when the RPC errors so Stripe retries", async () => {
+  const { admin } = makeAdmin({ rpcError: { message: "db_down" } });
+  const result = await handleStripeEvent(subscriptionEvent({}), admin);
+  assertEquals(result.status, 500);
+  assertEquals(result.body.error, "widget_sub_failed");
+});
+
 // ---- unhandled event types --------------------------------------------------
 
 Deno.test("unknown events are acked with 200 without touching the DB", async () => {

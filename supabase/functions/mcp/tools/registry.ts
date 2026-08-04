@@ -6,6 +6,8 @@ import { updateHtml, updateHtmlDef } from "./update_html.ts";
 import { updatePdf, updatePdfDef } from "./update_pdf.ts";
 import { updateImage, updateImageDef } from "./update_image.ts";
 import { updateSpaceMetadata, updateSpaceMetadataDef } from "./update_space_metadata.ts";
+import { listAvailability, listAvailabilityDef } from "./list_availability.ts";
+import { bookAppointment, bookAppointmentDef } from "./book_appointment.ts";
 import type { ToolDefinition, ToolHandler } from "./types.ts";
 
 export const toolDefinitions: ToolDefinition[] = [
@@ -17,6 +19,8 @@ export const toolDefinitions: ToolDefinition[] = [
   updatePdfDef,
   updateImageDef,
   updateSpaceMetadataDef,
+  listAvailabilityDef,
+  bookAppointmentDef,
 ];
 
 export const toolHandlers: Record<string, ToolHandler> = {
@@ -28,4 +32,6 @@ export const toolHandlers: Record<string, ToolHandler> = {
   update_pdf: updatePdf,
   update_image: updateImage,
   update_space_metadata: updateSpaceMetadata,
+  list_availability: listAvailability,
+  book_appointment: bookAppointment,
 };
