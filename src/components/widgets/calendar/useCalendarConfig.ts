@@ -11,7 +11,7 @@ export interface CalendarConfigController {
   setEnabled: Dispatch<SetStateAction<boolean>>;
   saving: boolean;
   status: { ok: boolean; msg: string } | null;
-  save: () => Promise<void>;
+  save: () => Promise<boolean>; // resolves true on a successful persist
 }
 
 // Single source of truth for a calendar widget instance's config + enabled flag.
@@ -29,11 +29,11 @@ export function useCalendarConfig(
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (): Promise<boolean> => {
     const errors = validateCalendarConfig(config);
     if (errors.length > 0) {
       setStatus({ ok: false, msg: errors[0] });
-      return;
+      return false;
     }
     setSaving(true);
     setStatus(null);
@@ -46,11 +46,13 @@ export function useCalendarConfig(
       const data = await res.json();
       if (!res.ok) {
         setStatus({ ok: false, msg: data.error ?? "Could not save." });
-        return;
+        return false;
       }
       setStatus({ ok: true, msg: "Saved." });
+      return true;
     } catch {
       setStatus({ ok: false, msg: "Could not save." });
+      return false;
     } finally {
       setSaving(false);
     }

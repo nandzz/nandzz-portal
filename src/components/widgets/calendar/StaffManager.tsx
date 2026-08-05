@@ -158,6 +158,14 @@ export function StaffManager({ controller }: Props) {
     setPhotoError(null);
   }
 
+  // Saving from the editor persists the whole config, then returns to the roster
+  // on success (a failed/invalid save keeps you on the member so you can fix it).
+  // From the list view it just persists in place.
+  async function handleSave() {
+    const ok = await save();
+    if (ok && mode === "edit") backToList();
+  }
+
   // ── staff photo upload (hidden input → crop modal → Supabase Storage) ──
   function openPhotoPicker(staffId: string) {
     setPhotoError(null);
@@ -350,7 +358,7 @@ export function StaffManager({ controller }: Props) {
             {status.msg}
           </span>
         )}
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Save changes
         </Button>
