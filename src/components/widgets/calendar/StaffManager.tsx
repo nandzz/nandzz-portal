@@ -1,29 +1,37 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Loader2, Plus, Trash2, Check, Camera } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Loader2, Plus, Check, Search, Users, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import type { StaffMember, WeekdayKey } from "@/lib/types";
-import { WEEKDAYS, WEEKDAY_LABELS } from "@/lib/widgets/calendar";
 import { createClient } from "@/lib/supabase/client";
 import type { CalendarConfigController } from "@/components/widgets/calendar/useCalendarConfig";
+import { StaffCard } from "@/components/widgets/calendar/StaffCard";
+import { StaffEditor } from "@/components/widgets/calendar/StaffEditor";
 
 // Profile pictures must be under this size (mirrors ProfileHeader's uploader).
 const MAX_STAFF_PHOTO_SIZE = 1.5 * 1024 * 1024;
-
-const inputCls = "rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm";
 
 interface Props {
   controller: CalendarConfigController;
 }
 
-// Top-level Staff tab: staff roster CRUD (photo, name, info, per-staff weekly
-// availability and days off). Consumes the shared config controller so its saves
-// stay in lockstep with the Settings studio (which edits per-service staff_ids).
+type Mode = "list" | "edit";
+
+// Top-level Staff tab: a master–detail roster. The LIST view is a searchable grid
+// of cards; clicking one (or creating) opens the EDIT view — the full per-member
+// editor (photo, name, info, weekly availability, days off). Consumes the shared
+// config controller so its saves stay in lockstep with the Settings studio (which
+// edits per-service staff_ids). The data model, controller and save path are
+// untouched — only the presentation changed.
 export function StaffManager({ controller }: Props) {
   const { config, setConfig, saving, status, save } = controller;
+
+  // Master–detail navigation (local UI state only — never persisted).
+  const [mode, setMode] = useState<Mode>("list");
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   // Staff photo upload: a single hidden file input is shared across cards; the
   // in-flight staff id tracks which card the picked/cropped image belongs to.
@@ -35,13 +43,16 @@ export function StaffManager({ controller }: Props) {
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   // ── staff ──
-  function addStaff() {
+  function createStaff() {
     const member: StaffMember = {
       id: `stf_${Math.random().toString(36).slice(2, 9)}`,
       name: "New staff member",
       availability: {},
     };
     setConfig((c) => ({ ...c, staff: [...c.staff, member] }));
+    // Jump straight into the editor for the fresh member.
+    setEditingStaffId(member.id);
+    setMode("edit");
   }
   function updateStaff(id: string, fields: Partial<StaffMember>) {
     setConfig((c) => ({ ...c, staff: c.staff.map((s) => (s.id === id ? { ...s, ...fields } : s)) }));
@@ -55,6 +66,11 @@ export function StaffManager({ controller }: Props) {
         s.staff_ids?.includes(id) ? { ...s, staff_ids: s.staff_ids.filter((x) => x !== id) } : s
       ),
     }));
+    // Deleting always returns to the roster.
+    if (editingStaffId === id) {
+      setEditingStaffId(null);
+      setMode("list");
+    }
   }
 
   // Per-staff weekly availability (mirrors the business-hours addWindow/updateWindow/removeWindow).
@@ -130,6 +146,18 @@ export function StaffManager({ controller }: Props) {
     }));
   }
 
+  // ── navigation ──
+  function openEditor(id: string) {
+    setPhotoError(null);
+    setEditingStaffId(id);
+    setMode("edit");
+  }
+  function backToList() {
+    setMode("list");
+    setEditingStaffId(null);
+    setPhotoError(null);
+  }
+
   // ── staff photo upload (hidden input → crop modal → Supabase Storage) ──
   function openPhotoPicker(staffId: string) {
     setPhotoError(null);
@@ -181,9 +209,23 @@ export function StaffManager({ controller }: Props) {
     }
   }
 
+  // The member currently open in the detail view (may vanish if deleted elsewhere).
+  const editingStaff = useMemo(
+    () => (mode === "edit" ? config.staff.find((s) => s.id === editingStaffId) ?? null : null),
+    [mode, editingStaffId, config.staff]
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return config.staff;
+    return config.staff.filter(
+      (s) => s.name.toLowerCase().includes(q) || (s.info ?? "").toLowerCase().includes(q)
+    );
+  }, [config.staff, query]);
+
   return (
     <div className="space-y-6">
-      {/* Shared staff-photo picker + crop modal (opened per-card). */}
+      {/* Shared staff-photo picker + crop modal (opened per-card / from the editor). */}
       <input
         ref={photoInputRef}
         type="file"
@@ -202,156 +244,105 @@ export function StaffManager({ controller }: Props) {
         />
       )}
 
-      <div className="space-y-4">
-        <div className="border-b border-border pb-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Staff</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            The people who take bookings. Each keeps their own hours and days off. Leave empty to run as a
-            single bookable resource.
-          </p>
-        </div>
-        <section className="rounded-2xl border border-border bg-background p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Team members</h2>
-            <Button variant="outline" size="sm" onClick={addStaff}>
-              <Plus className="h-4 w-4" /> Add
-            </Button>
-          </div>
-          {photoError && <p className="text-xs text-red-600">{photoError}</p>}
-          {config.staff.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No staff yet. Bookings run against your business hours as a single resource.
-            </p>
-          )}
-
-          <div className="space-y-4">
-            {config.staff.map((st) => (
-              <div key={st.id} className="rounded-xl border border-border p-4 space-y-4">
-                {/* Header: photo + name + remove */}
-                <div className="flex items-start gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openPhotoPicker(st.id)}
-                    disabled={uploadingStaffId === st.id}
-                    aria-label={`Change ${st.name || "staff"} photo`}
-                    className="group relative shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                  >
-                    <Avatar size="lg" className="h-14 w-14">
-                      <AvatarImage src={st.photo_url || undefined} />
-                      <AvatarFallback className="text-base">
-                        {st.name?.[0]?.toUpperCase() ?? "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                      {uploadingStaffId === st.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4" />
-                      )}
-                    </span>
-                  </button>
-                  <div className="flex flex-1 flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      <input
-                        className={`${inputCls} flex-1 min-w-[8rem]`}
-                        value={st.name}
-                        onChange={(e) => updateStaff(st.id, { name: e.target.value })}
-                        placeholder="Full name"
-                      />
-                      <button
-                        onClick={() => removeStaff(st.id)}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-red-600"
-                        aria-label="Remove staff member"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <textarea
-                      className={`${inputCls} w-full resize-y`}
-                      rows={2}
-                      value={st.info ?? ""}
-                      onChange={(e) => updateStaff(st.id, { info: e.target.value })}
-                      placeholder="Short role or bio (e.g. Senior stylist) — shown to visitors when they pick a provider."
-                    />
-                  </div>
-                </div>
-
-                {/* Per-staff weekly availability */}
-                <div className="space-y-2 rounded-lg border border-border/60 p-3">
-                  <h3 className="text-sm font-medium">Weekly availability</h3>
-                  {WEEKDAYS.map((day) => (
-                    <div key={day} className="flex flex-wrap items-start gap-3 border-b border-border/50 py-2 last:border-0">
-                      <span className="w-24 pt-1.5 text-sm font-medium">{WEEKDAY_LABELS[day]}</span>
-                      <div className="flex flex-1 flex-wrap gap-2">
-                        {(st.availability[day] ?? []).map((w, idx) => (
-                          <div key={idx} className="flex items-center gap-1">
-                            <input
-                              type="time"
-                              className={inputCls}
-                              value={w[0]}
-                              onChange={(e) => updateStaffWindow(st.id, day, idx, 0, e.target.value)}
-                            />
-                            <span className="text-muted-foreground">–</span>
-                            <input
-                              type="time"
-                              className={inputCls}
-                              value={w[1]}
-                              onChange={(e) => updateStaffWindow(st.id, day, idx, 1, e.target.value)}
-                            />
-                            <button
-                              onClick={() => removeStaffWindow(st.id, day, idx)}
-                              className="rounded p-1 text-muted-foreground hover:text-red-600"
-                              aria-label="Remove window"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => addStaffWindow(st.id, day)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-2 py-1 text-xs text-muted-foreground hover:border-emerald-400 hover:text-foreground"
-                        >
-                          <Plus className="h-3 w-3" /> Add hours
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Per-staff days off */}
-                <div className="space-y-2 rounded-lg border border-border/60 p-3">
-                  <h3 className="text-sm font-medium">Days off</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {(st.blackout_dates ?? []).map((d) => (
-                      <span key={d} className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-sm">
-                        {d}
-                        <button
-                          onClick={() => removeStaffDayOff(st.id, d)}
-                          className="text-muted-foreground hover:text-red-600"
-                          aria-label="Remove day off"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <input
-                    type="date"
-                    className={inputCls}
-                    onChange={(e) => {
-                      const d = e.target.value;
-                      if (d && !(st.blackout_dates ?? []).includes(d)) addStaffDayOff(st.id, d);
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+      {/* Section header */}
+      <div className="border-b border-border pb-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Staff</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          The people who take bookings. Each keeps their own hours and days off. Leave empty to run as a
+          single bookable resource.
+        </p>
       </div>
 
+      {photoError && <p className="text-xs text-red-600">{photoError}</p>}
+
+      {mode === "edit" && editingStaff ? (
+        <StaffEditor
+          staff={editingStaff}
+          uploading={uploadingStaffId === editingStaff.id}
+          onBack={backToList}
+          onOpenPhotoPicker={openPhotoPicker}
+          onUpdate={updateStaff}
+          onRemove={removeStaff}
+          onAddWindow={addStaffWindow}
+          onUpdateWindow={updateStaffWindow}
+          onRemoveWindow={removeStaffWindow}
+          onAddDayOff={addStaffDayOff}
+          onRemoveDayOff={removeStaffDayOff}
+        />
+      ) : config.staff.length === 0 ? (
+        // Empty state — no staff yet.
+        <div className="rounded-2xl border border-dashed border-border bg-background px-5 py-14 text-center">
+          <Users className="mx-auto h-9 w-9 text-muted-foreground/50" />
+          <p className="mt-3 text-sm font-medium">No team members yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+            Add the people who take bookings and give each their own hours. Until you do, bookings run
+            against your business hours as a single resource.
+          </p>
+          <Button className="mt-5" onClick={createStaff}>
+            <Plus className="h-4 w-4" /> Create staff member
+          </Button>
+        </div>
+      ) : (
+        // List view — searchable grid of cards.
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold">Team members</h3>
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {config.staff.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search staff…"
+                  aria-label="Search staff"
+                  className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-8 text-sm outline-none focus:border-emerald-400"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-1.5 text-sm text-muted-foreground transition hover:text-foreground"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <Button className="shrink-0" onClick={createStaff}>
+                <Plus className="h-4 w-4" /> New staff
+              </Button>
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            // No-results state (search matched nothing).
+            <div className="rounded-2xl border border-border bg-background px-5 py-12 text-center">
+              <UserX className="mx-auto h-8 w-8 text-muted-foreground/50" />
+              <p className="mt-3 text-sm font-medium">No staff match “{query}”</p>
+              <p className="mt-1 text-xs text-muted-foreground">Try a different name or role.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((st) => (
+                <StaffCard
+                  key={st.id}
+                  staff={st}
+                  onOpen={() => openEditor(st.id)}
+                  onDelete={() => removeStaff(st.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Save bar — persists the whole shared config via the controller, so saving
-          here also commits any Settings edits and vice versa. */}
+          here also commits any Settings edits and vice versa. Present in both views. */}
       <div className="sticky bottom-4 flex items-center justify-end gap-3 rounded-xl border border-border bg-background/90 p-3 backdrop-blur">
         {status && (
           <span className={`text-sm ${status.ok ? "text-emerald-600" : "text-red-600"}`}>
