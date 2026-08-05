@@ -36,6 +36,7 @@ export default async function BookingManagePage({
     business_name: owner?.display_name || owner?.username || "your provider",
     business_username: owner?.username ?? null,
     timezone: normalizeCalendarConfig(instance?.config).timezone,
+    staff_name: (data.staff_name as string | null) ?? null,
   };
 
   return <ManageBooking token={token} initial={initial} />;

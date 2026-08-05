@@ -5,6 +5,8 @@ import {
   normalizeCalendarConfig,
   todayInZone,
 } from "@/lib/widgets/calendar";
+import { currencySymbol } from "@/lib/widgets/messages";
+import { dispatchBookingMessage } from "@/lib/widgets/notify";
 import type { WidgetBooking } from "@/lib/types";
 
 // Customer self-serve: view / reschedule / cancel a booking by its unguessable
@@ -15,7 +17,9 @@ async function loadBooking(token: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("widget_bookings")
-    .select("*, instance:widget_instances(config, enabled, owner:profiles(display_name, username))")
+    .select(
+      "*, instance:widget_instances(config, enabled, owner:profiles(display_name, username), catalog:widget_catalog(currency))"
+    )
     .eq("manage_token", token)
     .maybeSingle();
   return { admin, data };
@@ -35,6 +39,8 @@ function present(booking: WidgetBooking, instance: { owner?: { display_name?: st
     timezone: normalizeCalendarConfig(instance?.config).timezone,
     instance_id: booking.instance_id,
     service_id: booking.service_id,
+    staff_id: booking.staff_id,
+    staff_name: booking.staff_name,
   };
 }
 
@@ -57,12 +63,46 @@ export async function DELETE(
   const { admin, data } = await loadBooking(token);
   if (!data) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
+  const booking = data as unknown as WidgetBooking;
+  const alreadyCancelled = booking.status === "cancelled";
+
   const { error } = await admin
     .from("widget_bookings")
     .update({ status: "cancelled" })
     .eq("manage_token", token);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Notify the customer with the owner-configured cancellation message — but
+  // only on the first transition, so a double-cancel doesn't re-message.
+  if (!alreadyCancelled) {
+    const instance = (data as {
+      instance?: {
+        config?: unknown;
+        owner?: { display_name?: string; username?: string } | null;
+        catalog?: { currency?: string } | null;
+      };
+    }).instance;
+    const config = normalizeCalendarConfig(instance?.config);
+    const owner = instance?.owner ?? null;
+    const businessName = owner?.display_name || owner?.username || "your provider";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+    await dispatchBookingMessage(config.messages.cancellation, {
+      customerName: booking.customer_name,
+      customerEmail: booking.customer_email,
+      customerPhone: booking.customer_phone,
+      businessName,
+      serviceName: booking.service_name,
+      startsAt: booking.starts_at,
+      timezone: config.timezone,
+      priceCents: booking.price_cents,
+      currencySymbol: currencySymbol(instance?.catalog?.currency),
+      manageUrl: `${siteUrl}/booking/${token}`,
+      staffName: booking.staff_name ?? null,
+    });
+  }
+
   return NextResponse.json({ ok: true, status: "cancelled" });
 }
 
@@ -99,7 +139,7 @@ export async function PATCH(
   // Other confirmed bookings (exclude this one) in the target date's neighborhood.
   const { data: others } = await admin
     .from("widget_bookings")
-    .select("starts_at, ends_at")
+    .select("starts_at, ends_at, staff_id")
     .eq("instance_id", booking.instance_id)
     .eq("status", "confirmed")
     .neq("id", booking.id);
@@ -111,6 +151,7 @@ export async function PATCH(
     days: 2,
     existingBookings: others ?? [],
     minLeadMinutes: 60,
+    staffId: booking.staff_id,
   });
 
   if (!slots.some((s) => s.start === requestedIso)) {

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getOwnerWidgets, getWidgetCatalog } from "@/lib/widgets/server";
 import { SubscribeButton } from "@/components/widgets/SubscribeButton";
-import { CalendarDays, Check, Settings, CircleAlert } from "lucide-react";
+import { renderWidgetIcon } from "@/components/widgets/widgetIcon";
+import { Blocks, Check, Settings, CircleAlert } from "lucide-react";
 
 export default async function WidgetsDashboardPage() {
   const supabase = await createClient();
@@ -23,7 +24,7 @@ export default async function WidgetsDashboardPage() {
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="mb-10 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
-          <CalendarDays className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          <Blocks className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Widgets</h1>
@@ -45,7 +46,7 @@ export default async function WidgetsDashboardPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                      <CalendarDays className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      {renderWidgetIcon(w.catalog.icon, "h-4 w-4 text-emerald-600 dark:text-emerald-400")}
                     </div>
                     <div>
                       <p className="font-semibold">{w.catalog.name}</p>
@@ -82,7 +83,7 @@ export default async function WidgetsDashboardPage() {
               <div key={c.id} className="rounded-2xl border border-border bg-background p-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                    {renderWidgetIcon(c.icon, "h-4 w-4 text-muted-foreground")}
                   </div>
                   <p className="font-semibold">{c.name}</p>
                 </div>

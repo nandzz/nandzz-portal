@@ -6,11 +6,196 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOwnerWidgetById } from "@/lib/widgets/server";
 import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import { formatBookingTime } from "@/lib/widgets/emails";
-import { CalendarWidgetStudio } from "@/components/widgets/calendar/CalendarWidgetStudio";
-import { SubscribeButton } from "@/components/widgets/SubscribeButton";
-import { ChevronLeft, Check, CircleAlert } from "lucide-react";
+import { renderWidgetIcon } from "@/components/widgets/widgetIcon";
+import { WidgetWorkspace } from "@/components/widgets/calendar/WidgetWorkspace";
+import type { WidgetOverviewData, OverviewBooking } from "@/components/widgets/calendar/WidgetOverview";
+import type { WidgetBookingsData } from "@/components/widgets/calendar/WidgetBookings";
+import type { WidgetCustomersData, CustomerSummary } from "@/components/widgets/calendar/WidgetCustomers";
+import { ChevronLeft } from "lucide-react";
 import type { WidgetBooking } from "@/lib/types";
+
+const CURRENCY_SYMBOLS: Record<string, string> = { usd: "$", eur: "€", gbp: "£" };
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Monday 00:00 UTC of the week containing `d`. Weekly buckets are coarse enough
+// that UTC anchoring (vs. the owner's tz) is fine for a volume trend.
+function startOfWeekUtc(d: Date): number {
+  const x = new Date(d);
+  const dow = (x.getUTCDay() + 6) % 7; // Mon = 0
+  x.setUTCDate(x.getUTCDate() - dow);
+  x.setUTCHours(0, 0, 0, 0);
+  return x.getTime();
+}
+
+function weekLabel(ms: number): string {
+  return new Date(ms).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function toOverviewBooking(b: WidgetBooking): OverviewBooking {
+  return {
+    id: b.id,
+    instance_id: b.instance_id,
+    service_id: b.service_id,
+    customer_name: b.customer_name,
+    customer_email: b.customer_email,
+    service_name: b.service_name,
+    starts_at: b.starts_at,
+    price_cents: b.price_cents,
+    status: b.status,
+    customer_phone: b.customer_phone,
+    manage_token: b.manage_token,
+    staff_id: b.staff_id,
+    staff_name: b.staff_name,
+  };
+}
+
+function buildOverview(
+  bookings: WidgetBooking[],
+  timezone: string,
+  currencySymbol: string,
+  shareUrl: string | null
+): WidgetOverviewData {
+  const now = Date.now();
+  const confirmed = bookings.filter((b) => b.status === "confirmed");
+
+  const upcomingCount = confirmed.filter((b) => new Date(b.starts_at).getTime() >= now).length;
+
+  const in7 = now + WEEK_MS;
+  const next7 = confirmed.filter((b) => {
+    const t = new Date(b.starts_at).getTime();
+    return t >= now && t < in7;
+  }).length;
+
+  const revenueCents = confirmed.reduce((sum, b) => sum + (b.price_cents ?? 0), 0);
+  const cancelled = bookings.filter((b) => b.status === "cancelled").length;
+
+  // Weekly volume: 6 weeks back through 1 week ahead (8 buckets).
+  const currentWeek = startOfWeekUtc(new Date(now));
+  const weekly = Array.from({ length: 8 }, (_, i) => {
+    const start = currentWeek + (i - 6) * WEEK_MS;
+    const end = start + WEEK_MS;
+    const count = confirmed.filter((b) => {
+      const t = new Date(b.starts_at).getTime();
+      return t >= start && t < end;
+    }).length;
+    return { label: weekLabel(start), count, isFuture: start > currentWeek };
+  });
+
+  // Bookings by service.
+  const byService = new Map<string, { count: number; revenueCents: number }>();
+  for (const b of confirmed) {
+    const cur = byService.get(b.service_name) ?? { count: 0, revenueCents: 0 };
+    cur.count += 1;
+    cur.revenueCents += b.price_cents ?? 0;
+    byService.set(b.service_name, cur);
+  }
+  const services = [...byService.entries()]
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    timezone,
+    currencySymbol,
+    totals: {
+      upcoming: upcomingCount,
+      confirmedAllTime: confirmed.length,
+      revenueCents,
+      next7,
+      cancelled,
+    },
+    weekly,
+    services,
+    shareUrl,
+  };
+}
+
+// Full booking list for the Bookings tab, newest first. The tab paginates
+// client-side, so the whole set is shipped once and sliced in the browser.
+function buildBookings(
+  bookings: WidgetBooking[],
+  timezone: string,
+  currencySymbol: string
+): WidgetBookingsData {
+  const sorted = [...bookings].sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+  return {
+    timezone,
+    currencySymbol,
+    now: Date.now(),
+    bookings: sorted.map(toOverviewBooking),
+  };
+}
+
+// Roll bookings up per customer (keyed by email). Contact name/phone come from
+// the customer's most recently created booking.
+function buildCustomers(
+  bookings: WidgetBooking[],
+  timezone: string,
+  currencySymbol: string
+): WidgetCustomersData {
+  const now = Date.now();
+
+  const map = new Map<string, CustomerSummary>();
+  const latestContact = new Map<string, number>(); // email → newest created_at ms
+
+  for (const b of bookings) {
+    const key = b.customer_email.trim().toLowerCase();
+    if (!key) continue;
+    const created = new Date(b.created_at).getTime();
+    let c = map.get(key);
+    if (!c) {
+      c = {
+        email: b.customer_email,
+        name: b.customer_name,
+        phone: b.customer_phone,
+        bookings: 0,
+        upcoming: 0,
+        cancelled: 0,
+        revenueCents: 0,
+        lastVisit: null,
+        nextVisit: null,
+      };
+      map.set(key, c);
+    }
+
+    // Freshest contact details win.
+    if (created >= (latestContact.get(key) ?? -1)) {
+      latestContact.set(key, created);
+      c.name = b.customer_name;
+      if (b.customer_phone) c.phone = b.customer_phone;
+    }
+
+    if (b.status === "cancelled") {
+      c.cancelled += 1;
+      continue;
+    }
+
+    // confirmed
+    c.bookings += 1;
+    c.revenueCents += b.price_cents ?? 0;
+    const t = new Date(b.starts_at).getTime();
+    if (t >= now) {
+      c.upcoming += 1;
+      if (!c.nextVisit || b.starts_at < c.nextVisit) c.nextVisit = b.starts_at;
+    } else {
+      if (!c.lastVisit || b.starts_at > c.lastVisit) c.lastVisit = b.starts_at;
+    }
+  }
+
+  const customers = [...map.values()].sort(
+      (a, b) =>
+        b.upcoming - a.upcoming ||
+        b.revenueCents - a.revenueCents ||
+        b.bookings - a.bookings ||
+        a.name.localeCompare(b.name)
+    );
+
+  return { timezone, currencySymbol, customers };
+}
 
 export default async function WidgetStudioPage({
   params,
@@ -27,27 +212,33 @@ export default async function WidgetStudioPage({
   const widget = await getOwnerWidgetById(user.id, id);
   if (!widget) notFound();
 
+  const isCalendar = widget.catalog.slug === "calendar";
+  if (!isCalendar) notFound();
+
   const admin = createAdminClient();
-  const { data: bookingRows } = await admin
-    .from("widget_bookings")
-    .select("*")
-    .eq("instance_id", id)
-    .order("starts_at", { ascending: true });
+  const [{ data: bookingRows }, { data: profile }] = await Promise.all([
+    admin
+      .from("widget_bookings")
+      .select("*")
+      .eq("instance_id", id)
+      .order("starts_at", { ascending: true }),
+    admin.from("profiles").select("username").eq("id", user.id).maybeSingle(),
+  ]);
 
   const bookings = (bookingRows ?? []) as WidgetBooking[];
-  const now = Date.now();
-  const upcoming = bookings.filter(
-    (b) => b.status === "confirmed" && new Date(b.starts_at).getTime() >= now
-  );
-  const past = bookings.filter(
-    (b) => b.status !== "confirmed" || new Date(b.starts_at).getTime() < now
-  );
-
   const config = normalizeCalendarConfig(widget.config);
-  const isCalendar = widget.catalog.slug === "calendar";
+  const currencySymbol =
+    CURRENCY_SYMBOLS[widget.catalog.currency?.toLowerCase()] ?? widget.catalog.currency?.toUpperCase() ?? "$";
+
+  const canShare = widget.has_access && widget.enabled && !!profile?.username;
+  const shareUrl = canShare ? `/${profile!.username}/widget/${id}` : null;
+
+  const overview = buildOverview(bookings, config.timezone, currencySymbol, shareUrl);
+  const bookingList = buildBookings(bookings, config.timezone, currencySymbol);
+  const customers = buildCustomers(bookings, config.timezone, currencySymbol);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <Link
         href="/dashboard/widgets"
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -55,89 +246,32 @@ export default async function WidgetStudioPage({
         <ChevronLeft className="h-4 w-4" /> All widgets
       </Link>
 
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
+          {renderWidgetIcon(widget.catalog.icon, "h-5 w-5 text-emerald-600 dark:text-emerald-400")}
+        </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{widget.catalog.name}</h1>
-          <p className="mt-1 text-muted-foreground">Configure your widget and manage bookings.</p>
+          <p className="text-sm text-muted-foreground">
+            {widget.has_access
+              ? widget.enabled
+                ? "Live on your profile"
+                : "Active — hidden from your profile"
+              : "Inactive — subscribe to go live"}
+          </p>
         </div>
       </div>
 
-      {/* Subscription status */}
-      <div className="mb-8 rounded-2xl border border-border bg-background p-5">
-        {widget.has_access ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
-              <Check className="h-4 w-4" /> Subscription active
-            </span>
-            {/* POST → Stripe billing portal (303 redirect). */}
-            <form action="/api/stripe/portal" method="post">
-              <button className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
-                Manage subscription
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 dark:text-orange-300">
-              <CircleAlert className="h-4 w-4" /> No active subscription — your widget is hidden.
-            </span>
-            <SubscribeButton catalogId={widget.catalog_id} label="Subscribe to activate" />
-          </div>
-        )}
-      </div>
-
-      {/* Config editor */}
-      {isCalendar && (
-        <CalendarWidgetStudio
-          instanceId={widget.id}
-          initialConfig={config}
-          initialEnabled={widget.enabled}
-          hasAccess={widget.has_access}
-        />
-      )}
-
-      {/* Bookings */}
-      <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold">Upcoming bookings</h2>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No upcoming bookings.</p>
-        ) : (
-          <div className="divide-y divide-border rounded-2xl border border-border">
-            {upcoming.map((b) => (
-              <div key={b.id} className="flex items-center justify-between gap-3 p-4">
-                <div>
-                  <p className="font-medium">{b.customer_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {b.service_name} · {formatBookingTime(b.starts_at, config.timezone)}
-                  </p>
-                </div>
-                <a href={`mailto:${b.customer_email}`} className="text-sm text-emerald-600 hover:underline">
-                  {b.customer_email}
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {past.length > 0 && (
-          <>
-            <h2 className="mb-3 mt-8 text-lg font-semibold text-muted-foreground">Past & cancelled</h2>
-            <div className="divide-y divide-border rounded-2xl border border-border opacity-70">
-              {past.slice(0, 20).map((b) => (
-                <div key={b.id} className="flex items-center justify-between gap-3 p-4">
-                  <div>
-                    <p className="font-medium">{b.customer_name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {b.service_name} · {formatBookingTime(b.starts_at, config.timezone)}
-                    </p>
-                  </div>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">{b.status}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </section>
+      <WidgetWorkspace
+        instanceId={widget.id}
+        catalogId={widget.catalog_id}
+        hasAccess={widget.has_access}
+        enabled={widget.enabled}
+        config={config}
+        overview={overview}
+        bookings={bookingList}
+        customers={customers}
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CalendarDays, Clock, Check, X } from "lucide-react";
+import { CalendarDays, Clock, User, X } from "lucide-react";
 import type { Slot } from "@/lib/widgets/calendar";
+import { ReschedulePicker } from "./ReschedulePicker";
 
 export type ManageBookingData = {
   service_name: string;
@@ -13,13 +14,13 @@ export type ManageBookingData = {
   business_name: string;
   business_username: string | null;
   timezone: string;
+  // Assigned specialist, when the instance uses staff. Null ⇒ nothing shown.
+  staff_name?: string | null;
 };
 
 export function ManageBooking({ token, initial }: { token: string; initial: ManageBookingData }) {
   const [booking, setBooking] = useState(initial);
   const [mode, setMode] = useState<"view" | "reschedule">("view");
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,32 +34,6 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       hour: "numeric",
       minute: "2-digit",
     }).format(new Date(iso));
-  const fmtDay = (iso: string) =>
-    new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(
-      new Date(iso)
-    );
-  const fmtTime = (iso: string) =>
-    new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(new Date(iso));
-
-  async function startReschedule() {
-    setMode("reschedule");
-    setLoadingSlots(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/widgets/${booking.instance_id}/availability?service_id=${encodeURIComponent(
-          booking.service_id
-        )}&days=14`
-      );
-      const data = await res.json();
-      setSlots(res.ok ? data.slots ?? [] : []);
-      if (!res.ok) setError(data.error ?? "Could not load availability.");
-    } catch {
-      setError("Could not load availability.");
-    } finally {
-      setLoadingSlots(false);
-    }
-  }
 
   async function reschedule(slot: Slot) {
     setBusy(true);
@@ -103,13 +78,6 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
     }
   }
 
-  const byDay = new Map<string, Slot[]>();
-  for (const s of slots) {
-    const key = fmtDay(s.start);
-    if (!byDay.has(key)) byDay.set(key, []);
-    byDay.get(key)!.push(s);
-  }
-
   return (
     <div className="mx-auto max-w-lg px-4 py-12">
       <div className="rounded-2xl border border-border bg-background p-6 shadow-sm">
@@ -133,10 +101,15 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
             <p className="flex items-center gap-2 text-base font-medium">
               <Clock className="h-4 w-4 text-muted-foreground" /> {fmt(booking.starts_at)}
             </p>
+            {booking.staff_name && (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" /> with {booking.staff_name}
+              </p>
+            )}
           </div>
         )}
 
-        {error && (
+        {error && mode === "view" && (
           <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
             {error}
           </p>
@@ -145,7 +118,10 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
         {booking.status === "confirmed" && mode === "view" && (
           <div className="mt-6 flex gap-2">
             <button
-              onClick={startReschedule}
+              onClick={() => {
+                setError(null);
+                setMode("reschedule");
+              }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"
             >
               <CalendarDays className="h-4 w-4" /> Reschedule
@@ -164,37 +140,21 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Pick a new time</h2>
-              <button onClick={() => setMode("view")} className="text-xs text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => setMode("view")}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
                 Cancel
               </button>
             </div>
-            {loadingSlots ? (
-              <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-              </div>
-            ) : slots.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open slots in the next two weeks.</p>
-            ) : (
-              <div className="space-y-4">
-                {[...byDay.entries()].map(([day, daySlots]) => (
-                  <div key={day}>
-                    <p className="mb-1.5 text-xs font-medium text-muted-foreground">{day}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {daySlots.map((s) => (
-                        <button
-                          key={s.start}
-                          disabled={busy}
-                          onClick={() => reschedule(s)}
-                          className="rounded-lg border border-border px-3 py-1.5 text-sm transition hover:border-emerald-400 hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-950/30"
-                        >
-                          {fmtTime(s.start)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <ReschedulePicker
+              instanceId={booking.instance_id}
+              serviceId={booking.service_id}
+              timezone={tz}
+              busy={busy}
+              error={error}
+              onPick={reschedule}
+            />
           </div>
         )}
       </div>

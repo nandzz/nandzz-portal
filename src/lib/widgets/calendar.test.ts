@@ -120,6 +120,135 @@ describe("computeAvailableSlots", () => {
   });
 });
 
+describe("computeAvailableSlots with staff", () => {
+  // Two staff both working Mon 09:00–11:00.
+  function staffConfig(overrides: Partial<CalendarConfig> = {}): CalendarConfig {
+    return utcConfig({
+      staff: [
+        { id: "st_a", name: "Alex", availability: { mon: [["09:00", "11:00"]] } },
+        { id: "st_b", name: "Bella", availability: { mon: [["09:00", "11:00"]] } },
+      ],
+      ...overrides,
+    });
+  }
+
+  it("tags each slot with the staff free at it", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+    });
+    expect(slots).toHaveLength(4);
+    expect(slots.every((s) => s.staff_ids?.length === 2)).toBe(true);
+  });
+
+  it("only lists staff whose own hours cover the slot", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig({
+        staff: [
+          { id: "st_a", name: "Alex", availability: { mon: [["09:00", "11:00"]] } },
+          { id: "st_b", name: "Bella", availability: { mon: [["10:00", "11:00"]] } },
+        ],
+      }),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+    });
+    // 09:00 & 09:30 → only Alex; 10:00 & 10:30 → both.
+    expect(slots.find((s) => s.start.endsWith("09:00:00.000Z"))?.staff_ids).toEqual(["st_a"]);
+    expect(slots.find((s) => s.start.endsWith("10:00:00.000Z"))?.staff_ids).toEqual(["st_a", "st_b"]);
+  });
+
+  it("matches booking clashes per staff — same slot stays open for the other staff", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [
+        { starts_at: "2026-08-10T09:00:00.000Z", ends_at: "2026-08-10T09:30:00.000Z", staff_id: "st_a" },
+      ],
+      now: farPast,
+    });
+    // 09:00 still open, but only Bella is free.
+    expect(slots.find((s) => s.start.endsWith("09:00:00.000Z"))?.staff_ids).toEqual(["st_b"]);
+  });
+
+  it("drops a slot only when every eligible staff is booked", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [
+        { starts_at: "2026-08-10T09:00:00.000Z", ends_at: "2026-08-10T09:30:00.000Z", staff_id: "st_a" },
+        { starts_at: "2026-08-10T09:00:00.000Z", ends_at: "2026-08-10T09:30:00.000Z", staff_id: "st_b" },
+      ],
+      now: farPast,
+    });
+    expect(slots.find((s) => s.start.endsWith("09:00:00.000Z"))).toBeUndefined();
+  });
+
+  it("restricts to a single staff member when staffId is given", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+      staffId: "st_a",
+    });
+    expect(slots.every((s) => s.staff_ids?.length === 1 && s.staff_ids[0] === "st_a")).toBe(true);
+  });
+
+  it("honors per-service staff eligibility", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig(),
+      service: { ...service, staff_ids: ["st_b"] },
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+    });
+    expect(slots.every((s) => s.staff_ids?.length === 1 && s.staff_ids[0] === "st_b")).toBe(true);
+  });
+
+  it("skips a staff member's personal day off", () => {
+    const slots = computeAvailableSlots({
+      config: staffConfig({
+        staff: [
+          { id: "st_a", name: "Alex", availability: { mon: [["09:00", "11:00"]] }, blackout_dates: [MONDAY] },
+          { id: "st_b", name: "Bella", availability: { mon: [["09:00", "11:00"]] } },
+        ],
+      }),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+    });
+    expect(slots.every((s) => s.staff_ids?.length === 1 && s.staff_ids[0] === "st_b")).toBe(true);
+  });
+
+  it("leaves slots untagged when no staff are configured", () => {
+    const slots = computeAvailableSlots({
+      config: utcConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+    });
+    expect(slots.every((s) => s.staff_ids === undefined)).toBe(true);
+  });
+});
+
 describe("zonedWallTimeToUtc", () => {
   it("converts a wall-clock time in a positive-offset zone to UTC", () => {
     // Lisbon is UTC+1 in August (WEST) → 09:00 local = 08:00 UTC.

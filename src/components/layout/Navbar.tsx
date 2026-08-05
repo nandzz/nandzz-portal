@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Compass, Rss, Plus, LayoutGrid, Layers, Bot, Plug, CalendarDays } from "lucide-react";
+import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Compass, Layers, Bot, Plug, Blocks } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
@@ -166,7 +166,7 @@ export function Navbar() {
                   href="/dashboard/widgets"
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
-                  <CalendarDays className="h-3.5 w-3.5" />
+                  <Blocks className="h-3.5 w-3.5" />
                   Widgets
                 </Link>
               )}
@@ -315,40 +315,24 @@ export function Navbar() {
 
                   <DropdownMenuSeparator />
 
-                  {/* Navigation */}
+                  {/* Navigation — Feed/Explore/Spaces/Profile live in the bottom tab bar */}
                   <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push("/explore")} className="gap-2">
-                      <Compass className="h-4 w-4 text-muted-foreground" />
-                      {t.nav.explore}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/dashboard/feed")} className="gap-2">
-                      <Rss className="h-4 w-4 text-muted-foreground" />
-                      {t.nav.feed}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/dashboard/create-space")} className="gap-2">
-                      <Plus className="h-4 w-4 text-muted-foreground" />
-                      {t.nav.createSpace}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/dashboard")} className="gap-2">
-                      <LayoutGrid className="h-4 w-4 text-muted-foreground" />
-                      {t.nav.mySpaces}
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/dashboard/collections")} className="gap-2">
                       <Layers className="h-4 w-4 text-muted-foreground" />
                       {t.nav.myCollections}
                     </DropdownMenuItem>
+                    {FEATURES.widgets && (
+                      <DropdownMenuItem onClick={() => router.push("/dashboard/widgets")} className="gap-2">
+                        <Blocks className="h-4 w-4 text-muted-foreground" />
+                        Widgets
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
 
                   <DropdownMenuSeparator />
 
                   {/* Account */}
                   <DropdownMenuGroup>
-                    {profile?.username && (
-                      <DropdownMenuItem onClick={() => router.push(`/${profile.username}`)} className="gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        {t.nav.profile}
-                      </DropdownMenuItem>
-                    )}
                     {FEATURES.agent && profile?.username && (
                       <DropdownMenuItem onClick={() => router.push(`/${profile.username}/agent`)} className="gap-2">
                         <Bot className="h-4 w-4 text-muted-foreground" />

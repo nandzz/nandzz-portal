@@ -17,6 +17,7 @@ export async function GET(
   const { instanceId } = await params;
   const url = new URL(req.url);
   const serviceId = url.searchParams.get("service_id");
+  const staffId = url.searchParams.get("staff_id");
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") ?? 14)));
 
   if (!serviceId) {
@@ -54,7 +55,7 @@ export async function GET(
   const windowEnd = new Date(Date.now() + (days + 2) * 86_400_000).toISOString();
   const { data: bookings } = await admin
     .from("widget_bookings")
-    .select("starts_at, ends_at")
+    .select("starts_at, ends_at, staff_id")
     .eq("instance_id", instanceId)
     .eq("status", "confirmed")
     .gte("starts_at", windowStart)
@@ -67,11 +68,13 @@ export async function GET(
     days,
     existingBookings: bookings ?? [],
     minLeadMinutes: 60,
+    staffId: staffId || null,
   });
 
   return NextResponse.json({
     timezone: config.timezone,
     service: { id: service.id, name: service.name, duration_min: service.duration_min },
+    staff: config.staff,
     slots,
   });
 }

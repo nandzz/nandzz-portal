@@ -57,6 +57,29 @@ export async function getProfileWidgets(
   return join(instances, entitled).filter((i) => i.has_access);
 }
 
+// A single enabled + entitled instance for a profile, used by the public,
+// shareable per-widget page. Returns null unless it's live (owner-enabled AND a
+// current subscription) — the same gate as getProfileWidgets, for one id.
+export async function getPublicWidgetById(
+  ownerId: string,
+  instanceId: string
+): Promise<WidgetInstanceWithCatalog | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("widget_instances")
+    .select("*, catalog:widget_catalog(*)")
+    .eq("user_id", ownerId)
+    .eq("id", instanceId)
+    .eq("enabled", true)
+    .maybeSingle();
+
+  if (!data) return null;
+  const instance = data as WidgetInstance & { catalog: WidgetCatalogEntry };
+  const entitled = await resolveEntitlements(admin, [instance.id]);
+  if (!entitled.has(instance.id)) return null;
+  return { ...instance, has_access: true };
+}
+
 // Every instance the owner has (enabled or not, entitled or not) for the
 // dashboard. Uses the service-role client; callers must have already
 // authenticated the owner.

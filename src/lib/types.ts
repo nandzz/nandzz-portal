@@ -232,18 +232,52 @@ export type CalendarService = {
   name: string;
   duration_min: number;
   price_cents?: number | null;
+  // Staff members who can perform this service. Undefined/empty ⇒ every staff
+  // member is eligible (also the natural default before any staff are added).
+  staff_ids?: string[];
 };
 
 // Weekday key → list of [start, end] "HH:MM" windows (owner-local time).
 export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
 export type AvailabilityWindows = Partial<Record<WeekdayKey, [string, string][]>>;
 
+// A bookable staff member / provider. Each keeps their own weekly working hours
+// (a subset of the business's opening hours) plus optional days off.
+export type StaffMember = {
+  id: string;
+  name: string;
+  photo_url?: string;
+  info?: string; // short role / bio shown in the picker
+  availability: AvailabilityWindows;
+  blackout_dates?: string[]; // "YYYY-MM-DD" personal days off
+};
+
+// Which channel(s) an automated message goes out on. "off" disables it.
+export type MessageChannel = "off" | "whatsapp" | "email" | "both";
+
+// An owner-customizable message template. Body/subject may contain {{variables}}
+// (see MESSAGE_VARIABLES in lib/widgets/messages.ts).
+export type MessageTemplate = {
+  channel: MessageChannel;
+  subject: string; // email subject; ignored for whatsapp-only
+  body: string;
+};
+
+// Per-event templates for the calendar widget's automated messages.
+export type CalendarMessages = {
+  confirmation: MessageTemplate; // sent when a booking is created
+  cancellation: MessageTemplate; // sent when a booking is cancelled
+};
+
 export type CalendarConfig = {
   timezone: string;
   buffer_min: number;
+  show_prices: boolean; // whether service prices are shown on the public booking widget
   services: CalendarService[];
   availability: AvailabilityWindows;
   blackout_dates: string[]; // "YYYY-MM-DD"
+  staff: StaffMember[]; // empty ⇒ business is a single bookable resource (legacy behavior)
+  messages: CalendarMessages;
 };
 
 // Generic per-profile widget instance. `config` shape depends on catalog slug.
@@ -275,6 +309,8 @@ export type WidgetBooking = {
   service_name: string;
   duration_min: number;
   price_cents: number | null;
+  staff_id: string | null; // snapshot of the assigned staff member (config id)
+  staff_name: string | null;
   starts_at: string;
   ends_at: string;
   customer_name: string;

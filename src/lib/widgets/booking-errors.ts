@@ -9,6 +9,7 @@ export const BOOKING_ERROR_MAP: Record<string, { status: number; message: string
   MISSING_CUSTOMER: { status: 400, message: "Your name and email are required." },
   BLACKOUT: { status: 409, message: "That date is unavailable. Please pick another." },
   OUT_OF_HOURS: { status: 409, message: "That time is outside available hours." },
+  STAFF_UNAVAILABLE: { status: 409, message: "That staff member isn't available then. Please pick another." },
   SLOT_TAKEN: { status: 409, message: "That slot was just booked. Please pick another." },
 };
 

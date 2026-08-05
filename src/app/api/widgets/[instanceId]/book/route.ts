@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mapBookingError } from "@/lib/widgets/booking-errors";
-import { bookingConfirmationEmail } from "@/lib/widgets/emails";
 import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import { sendEmail } from "@/lib/email";
+import { currencySymbol } from "@/lib/widgets/messages";
+import { dispatchBookingMessage } from "@/lib/widgets/notify";
 import type { WidgetBooking } from "@/lib/types";
 
 // Public: create a booking. Entitlement, availability and overlap are enforced
@@ -22,11 +22,20 @@ export async function POST(
     customer_email?: string;
     customer_phone?: string;
     notes?: string;
+    staff_id?: string | null;
   };
 
-  if (!body.service_id || !body.starts_at || !body.customer_name || !body.customer_email) {
+  // The public web form requires a phone number (the MCP/AI programmatic path
+  // stays lenient — see create_booking_tx, which keeps customer_phone nullable).
+  if (
+    !body.service_id ||
+    !body.starts_at ||
+    !body.customer_name ||
+    !body.customer_email ||
+    !body.customer_phone?.trim()
+  ) {
     return NextResponse.json(
-      { error: "service_id, starts_at, customer_name and customer_email are required" },
+      { error: "service_id, starts_at, customer_name, customer_email and customer_phone are required" },
       { status: 400 }
     );
   }
@@ -55,10 +64,12 @@ export async function POST(
       p_customer_phone: body.customer_phone ?? null,
       p_notes: body.notes ?? null,
       p_created_by: createdBy,
+      p_staff_id: body.staff_id ?? null,
     })
     .single<WidgetBooking>();
 
   if (error || !booking) {
+    console.error("[widgets/book] create_booking_tx failed:", error);
     const mapped = mapBookingError(error?.message);
     return NextResponse.json({ error: mapped.message }, { status: mapped.status });
   }
@@ -69,23 +80,30 @@ export async function POST(
 
   const { data: instance } = await admin
     .from("widget_instances")
-    .select("config, owner:profiles(display_name, username)")
+    .select("config, owner:profiles(display_name, username), catalog:widget_catalog(currency)")
     .eq("id", instanceId)
     .maybeSingle();
 
   const owner = instance?.owner as unknown as { display_name?: string; username?: string } | null;
+  const catalog = instance?.catalog as unknown as { currency?: string } | null;
   const businessName = owner?.display_name || owner?.username || "your provider";
-  const timezone = normalizeCalendarConfig(instance?.config).timezone;
+  const config = normalizeCalendarConfig(instance?.config);
 
-  const email = bookingConfirmationEmail({
+  // Send the owner-configured confirmation over their chosen channel(s).
+  // Best-effort: dispatch swallows failures so the committed booking still 201s.
+  await dispatchBookingMessage(config.messages.confirmation, {
     customerName: booking.customer_name,
+    customerEmail: booking.customer_email,
+    customerPhone: booking.customer_phone,
     businessName,
     serviceName: booking.service_name,
     startsAt: booking.starts_at,
-    timezone,
+    timezone: config.timezone,
+    priceCents: booking.price_cents,
+    currencySymbol: currencySymbol(catalog?.currency),
     manageUrl,
+    staffName: booking.staff_name ?? null,
   });
-  await sendEmail({ to: booking.customer_email, subject: email.subject, html: email.html });
 
   return NextResponse.json(
     {
