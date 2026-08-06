@@ -1,3 +1,5 @@
+import { PageShell } from "@/components/layout/PageShell";
+
 export default function ProfileLoading() {
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
@@ -6,7 +8,7 @@ export default function ProfileLoading() {
         <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[600px] rounded-full bg-violet-100/40 blur-3xl dark:bg-violet-950/20" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <PageShell width="wide">
         {/* Profile header skeleton — centered, matching ProfileHeader layout */}
         <div className="flex flex-col items-center text-center">
           <div className="h-28 w-28 rounded-full bg-muted animate-pulse border-4 border-background shadow-xl" />
@@ -44,7 +46,7 @@ export default function ProfileLoading() {
             ))}
           </div>
         </div>
-      </div>
+      </PageShell>
     </div>
   );
 }

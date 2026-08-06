@@ -8,6 +8,7 @@ import { ArrowLeft, FolderOpen } from "lucide-react";
 import { CollectionActions } from "./CollectionActions";
 import type { Space } from "@/lib/types";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { PageShell } from "@/components/layout/PageShell";
 
 export default async function CollectionDetailPage({
   params,
@@ -61,7 +62,7 @@ export default async function CollectionDetailPage({
         <div className="absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-violet-100/30 blur-3xl dark:bg-violet-950/15" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <PageShell width="content">
         {/* Back link */}
         <Link
           href="/dashboard/collections"
@@ -99,7 +100,7 @@ export default async function CollectionDetailPage({
           currentUserId={user.id}
           ownerUsername={profile?.username || undefined}
         />
-      </div>
+      </PageShell>
     </div>
   );
 }

@@ -1,19 +1,26 @@
 import { LayoutGrid } from "lucide-react";
+import { PageShell } from "@/components/layout/PageShell";
 
 export default function DashboardLoading() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
+    <PageShell width="content">
+      {/* Header — mirrors dashboard/page.tsx. Neutral pulse bars stand in for
+          the localized title/subtitle so no English flashes first. */}
       <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
               <LayoutGrid className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">My Spaces</h1>
+            <div className="h-9 w-40 rounded-lg bg-muted animate-pulse" />
           </div>
-          <div className="mt-2 h-6 w-64 rounded bg-muted animate-pulse" />
+          <div className="mt-2 h-6 w-64 max-w-full rounded bg-muted animate-pulse" />
         </div>
-        <div className="h-10 w-36 rounded-md bg-muted animate-pulse" />
+        <div className="flex items-center gap-2">
+          <div className="h-10 w-32 rounded-md bg-muted animate-pulse" />
+          <div className="h-10 w-28 rounded-md bg-muted animate-pulse" />
+          <div className="h-10 w-28 rounded-md bg-muted animate-pulse" />
+        </div>
       </div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -29,6 +36,6 @@ export default function DashboardLoading() {
           </div>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

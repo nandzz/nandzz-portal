@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef, useId } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Loader2, CheckCircle2, XCircle, Trash2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,10 @@ function relativeTime(dateStr: string): string {
 export function AiJobsIndicator({ userId }: { userId: string }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  // Unique per mount so multiple instances (e.g. Navbar + Sidebar) don't
+  // collide on the same realtime topic, which throws "cannot add
+  // postgres_changes callbacks after subscribe()".
+  const instanceId = useId();
   const [jobs, setJobs] = useState<AiJob[]>([]);
   const [open, setOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -79,7 +83,7 @@ export function AiJobsIndicator({ userId }: { userId: string }) {
   // Realtime subscription for live updates
   useEffect(() => {
     const channel = supabase
-      .channel(`ai-jobs-indicator-${userId}`)
+      .channel(`ai-jobs-indicator-${userId}-${instanceId}`)
       .on("postgres_changes", {
         event: "*",
         schema: "public",
@@ -87,8 +91,8 @@ export function AiJobsIndicator({ userId }: { userId: string }) {
         filter: `user_id=eq.${userId}`,
       }, () => { fetchJobs(); })
       .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [supabase, userId, fetchJobs]);
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, userId, instanceId, fetchJobs]);
 
   const activeJobs = jobs.filter((j) => j.status === "pending" || j.status === "processing");
   const hasActive = activeJobs.length > 0;

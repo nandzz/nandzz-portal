@@ -7,6 +7,7 @@ import type {
   AvailabilityWindows,
   CalendarConfig,
   CalendarService,
+  Location,
   StaffMember,
   WeekdayKey,
 } from "@/lib/types";
@@ -36,6 +37,7 @@ export function defaultCalendarConfig(): CalendarConfig {
         : "UTC",
     buffer_min: 0,
     show_prices: true,
+    locations: [],
     services: [],
     availability: {
       mon: [["09:00", "17:00"]],
@@ -69,6 +71,33 @@ function normalizeStaffMember(raw: unknown): StaffMember | null {
   };
 }
 
+// Fill any missing keys on a raw location so downstream code can trust the
+// shape, mirroring normalizeStaffMember. Returns null for entries without a
+// usable id (dropped on normalize). Nested staff is normalized the same way
+// as top-level staff; nested services follow the same (shallow) handling as
+// top-level services below.
+export function normalizeLocation(raw: unknown): Location | null {
+  if (!raw || typeof raw !== "object") return null;
+  const l = raw as Partial<Location>;
+  if (typeof l.id !== "string" || !l.id) return null;
+  return {
+    id: l.id,
+    name: typeof l.name === "string" ? l.name : "",
+    address: typeof l.address === "string" ? l.address : undefined,
+    photo_url: typeof l.photo_url === "string" ? l.photo_url : undefined,
+    timezone: typeof l.timezone === "string" && l.timezone ? l.timezone : undefined,
+    services: Array.isArray(l.services) ? (l.services as CalendarService[]) : [],
+    staff: Array.isArray(l.staff)
+      ? (l.staff.map(normalizeStaffMember).filter(Boolean) as StaffMember[])
+      : [],
+    availability:
+      l.availability && typeof l.availability === "object"
+        ? (l.availability as AvailabilityWindows)
+        : {},
+    blackout_dates: Array.isArray(l.blackout_dates) ? l.blackout_dates : undefined,
+  };
+}
+
 // Fill any missing keys so downstream code can trust the shape.
 export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
   const base = defaultCalendarConfig();
@@ -78,6 +107,9 @@ export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
     timezone: typeof c.timezone === "string" && c.timezone ? c.timezone : base.timezone,
     buffer_min: Number.isFinite(c.buffer_min) ? Number(c.buffer_min) : 0,
     show_prices: typeof c.show_prices === "boolean" ? c.show_prices : true,
+    locations: Array.isArray(c.locations)
+      ? (c.locations.map(normalizeLocation).filter(Boolean) as Location[])
+      : [],
     services: Array.isArray(c.services) ? c.services : [],
     availability: (c.availability && typeof c.availability === "object" ? c.availability : {}) as CalendarConfig["availability"],
     blackout_dates: Array.isArray(c.blackout_dates) ? c.blackout_dates : [],
@@ -85,6 +117,56 @@ export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
       ? (c.staff.map(normalizeStaffMember).filter(Boolean) as StaffMember[])
       : [],
     messages: normalizeCalendarMessages(c.messages),
+  };
+}
+
+// ── Location scope helpers (used by the Settings/Staff UI) ─────────────────
+//
+// Once an owner adds locations, the existing Services / Staff / Availability
+// editors re-target from the top-level config to a single `config.locations[i]`
+// subtree instead — these two helpers are the single place that knows how to
+// read/write that subtree so the editors themselves stay unaware of whether
+// they're pointed at the legacy top level or a location.
+export type LocationScope = {
+  services: CalendarService[];
+  staff: StaffMember[];
+  availability: AvailabilityWindows;
+  blackout_dates: string[];
+};
+
+// `locationId` null/undefined ⇒ legacy top-level scope (unchanged behavior).
+export function getLocationScope(config: CalendarConfig, locationId?: string | null): LocationScope {
+  if (!locationId) {
+    return {
+      services: config.services,
+      staff: config.staff,
+      availability: config.availability,
+      blackout_dates: config.blackout_dates,
+    };
+  }
+  const loc = config.locations.find((l) => l.id === locationId);
+  if (!loc) return { services: [], staff: [], availability: {}, blackout_dates: [] };
+  return {
+    services: loc.services,
+    staff: loc.staff,
+    availability: loc.availability,
+    blackout_dates: loc.blackout_dates ?? [],
+  };
+}
+
+// Applies a partial scope patch to `config`, writing into the top level when
+// `locationId` is null/undefined, or into the matching `config.locations[i]`
+// otherwise. Unknown location ids are a no-op (defensive against a location
+// having been deleted elsewhere in the same edit session).
+export function withLocationScope(
+  config: CalendarConfig,
+  locationId: string | null | undefined,
+  patch: Partial<LocationScope>
+): CalendarConfig {
+  if (!locationId) return { ...config, ...patch };
+  return {
+    ...config,
+    locations: config.locations.map((l) => (l.id === locationId ? { ...l, ...patch } : l)),
   };
 }
 
@@ -111,6 +193,48 @@ function validateAvailabilityWindows(windows: AvailabilityWindows, label: string
   return errors;
 }
 
+// Validate a set of services against a known staff-id set. `label` prefixes
+// every message (e.g. `Location "Downtown"`) — pass "" for the top-level call
+// to keep its messages byte-for-byte identical to before this was extracted.
+function validateServices(services: CalendarService[], staffIds: Set<string>, label: string): string[] {
+  const p = label ? `${label}: ` : "";
+  const errors: string[] = [];
+  const ids = new Set<string>();
+  for (const s of services) {
+    if (!s.id) errors.push(`${p}Service "${s.name || "?"}" is missing an id.`);
+    if (ids.has(s.id)) errors.push(`${p}Duplicate service id "${s.id}".`);
+    ids.add(s.id);
+    if (!s.name?.trim()) errors.push(`${p}Every service needs a name.`);
+    if (!Number.isFinite(s.duration_min) || s.duration_min <= 0)
+      errors.push(`${p}Service "${s.name}" needs a positive duration.`);
+    for (const sid of s.staff_ids ?? []) {
+      if (!staffIds.has(sid))
+        errors.push(`${p}Service "${s.name}" references an unknown staff member.`);
+    }
+  }
+  return errors;
+}
+
+// Validate a set of staff members (id/name/availability/days off). Same
+// `label` convention as validateServices.
+function validateStaff(staff: StaffMember[], label: string): string[] {
+  const p = label ? `${label}: ` : "";
+  const errors: string[] = [];
+  const seenStaff = new Set<string>();
+  for (const st of staff) {
+    if (!st.id) errors.push(`${p}Staff "${st.name || "?"}" is missing an id.`);
+    if (seenStaff.has(st.id)) errors.push(`${p}Duplicate staff id "${st.id}".`);
+    seenStaff.add(st.id);
+    if (!st.name?.trim()) errors.push(`${p}Every staff member needs a name.`);
+    errors.push(...validateAvailabilityWindows(st.availability, `${p}Staff "${st.name || "?"}"`));
+    for (const d of st.blackout_dates ?? []) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d))
+        errors.push(`${p}Invalid day off "${d}" for staff "${st.name}".`);
+    }
+  }
+  return errors;
+}
+
 // Validate an owner-supplied config. Returns a list of human-readable errors
 // (empty ⇒ valid). Used by the instance CRUD route before persisting.
 export function validateCalendarConfig(config: CalendarConfig): string[] {
@@ -119,38 +243,34 @@ export function validateCalendarConfig(config: CalendarConfig): string[] {
   if (config.buffer_min < 0) errors.push("Buffer cannot be negative.");
 
   const staffIds = new Set((config.staff ?? []).map((s) => s.id));
-
-  const ids = new Set<string>();
-  for (const s of config.services) {
-    if (!s.id) errors.push(`Service "${s.name || "?"}" is missing an id.`);
-    if (ids.has(s.id)) errors.push(`Duplicate service id "${s.id}".`);
-    ids.add(s.id);
-    if (!s.name?.trim()) errors.push("Every service needs a name.");
-    if (!Number.isFinite(s.duration_min) || s.duration_min <= 0)
-      errors.push(`Service "${s.name}" needs a positive duration.`);
-    for (const sid of s.staff_ids ?? []) {
-      if (!staffIds.has(sid))
-        errors.push(`Service "${s.name}" references an unknown staff member.`);
-    }
-  }
-
-  const seenStaff = new Set<string>();
-  for (const st of config.staff ?? []) {
-    if (!st.id) errors.push(`Staff "${st.name || "?"}" is missing an id.`);
-    if (seenStaff.has(st.id)) errors.push(`Duplicate staff id "${st.id}".`);
-    seenStaff.add(st.id);
-    if (!st.name?.trim()) errors.push("Every staff member needs a name.");
-    errors.push(...validateAvailabilityWindows(st.availability, `Staff "${st.name || "?"}"`));
-    for (const d of st.blackout_dates ?? []) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(d))
-        errors.push(`Invalid day off "${d}" for staff "${st.name}".`);
-    }
-  }
+  errors.push(...validateServices(config.services, staffIds, ""));
+  errors.push(...validateStaff(config.staff ?? [], ""));
 
   errors.push(...validateAvailabilityWindows(config.availability, "Availability"));
 
   for (const d of config.blackout_dates) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) errors.push(`Invalid blackout date "${d}".`);
+  }
+
+  // Locations: each is independently validated against its own nested
+  // services/staff. Empty `locations` ⇒ nothing to do here (legacy mode).
+  const seenLocationIds = new Set<string>();
+  for (const loc of config.locations ?? []) {
+    const label = `Location "${loc.name || loc.id || "?"}"`;
+    if (!loc.id) errors.push(`${label} is missing an id.`);
+    else if (seenLocationIds.has(loc.id)) errors.push(`Duplicate location id "${loc.id}".`);
+    seenLocationIds.add(loc.id);
+    if (!loc.name?.trim()) errors.push("Every location needs a name.");
+
+    const locStaffIds = new Set((loc.staff ?? []).map((s) => s.id));
+    errors.push(...validateServices(loc.services ?? [], locStaffIds, label));
+    errors.push(...validateStaff(loc.staff ?? [], label));
+    errors.push(...validateAvailabilityWindows(loc.availability ?? {}, `${label} availability`));
+    for (const d of loc.blackout_dates ?? []) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) errors.push(`${label}: invalid blackout date "${d}".`);
+    }
+    if (loc.timezone !== undefined && !loc.timezone.trim())
+      errors.push(`${label}: timezone cannot be empty when set.`);
   }
 
   errors.push(...validateMessageTemplate(config.messages.confirmation, "Confirmation message"));
@@ -209,16 +329,21 @@ export type ComputeSlotsInput = {
   now?: Date;
   minLeadMinutes?: number; // don't offer slots sooner than this from now
   staffId?: string | null; // restrict to a single staff member (reschedule / filtered availability)
+  // When set, slots are computed against this location's own timezone (falling
+  // back to config.timezone when unset), availability, blackout_dates and
+  // staff instead of the top-level config fields. Undefined ⇒ today's
+  // byte-for-byte legacy behavior.
+  location?: Location;
 };
 
-// Staff members eligible to perform a service. A service with no `staff_ids`
-// (or an empty list) is performable by everyone; otherwise only the listed
-// staff. With no staff configured at all, returns [] (single-resource mode).
+// Staff members eligible to perform a service, out of `staff` (a location's
+// staff or the top-level config.staff). A service with no `staff_ids` (or an
+// empty list) is performable by everyone; otherwise only the listed staff.
+// With no staff at all, returns [] (single-resource mode).
 export function eligibleStaffForService(
-  config: CalendarConfig,
+  staff: StaffMember[],
   service: CalendarService
 ): StaffMember[] {
-  const staff = config.staff ?? [];
   if (staff.length === 0) return [];
   const ids = service.staff_ids;
   if (!ids || ids.length === 0) return staff;
@@ -250,7 +375,7 @@ function staffWorksSlot(
 // surviving staff ids ride along on each slot. Booking clashes are matched per
 // staff, so two customers can hold the same time with different staff.
 export function computeAvailableSlots(input: ComputeSlotsInput): Slot[] {
-  const { config, service, fromDate, days, existingBookings } = input;
+  const { config, service, fromDate, days, existingBookings, location } = input;
   const now = input.now ?? new Date();
   const minLead = input.minLeadMinutes ?? 0;
   const buffer = Math.max(0, config.buffer_min || 0);
@@ -258,7 +383,14 @@ export function computeAvailableSlots(input: ComputeSlotsInput): Slot[] {
   const earliest = now.getTime() + minLead * 60_000;
   const pad = buffer * 60_000;
 
-  const eligible = eligibleStaffForService(config, service);
+  // Location-scoped reads (tz/availability/blackout/staff) fall back to the
+  // top-level config fields exactly as before when no location is given.
+  const timezone = location?.timezone ?? config.timezone;
+  const availability = location ? location.availability : config.availability;
+  const blackoutDates = location ? location.blackout_dates ?? [] : config.blackout_dates;
+  const staffSource = location ? location.staff : config.staff ?? [];
+
+  const eligible = eligibleStaffForService(staffSource, service);
   const staffMode = eligible.length > 0;
   const restrict = input.staffId ? input.staffId : null;
 
@@ -272,10 +404,10 @@ export function computeAvailableSlots(input: ComputeSlotsInput): Slot[] {
 
   for (let i = 0; i < days; i++) {
     const dateStr = addDays(fromDate, i);
-    if (config.blackout_dates.includes(dateStr)) continue;
+    if (blackoutDates.includes(dateStr)) continue;
 
     const weekday = weekdayOf(dateStr);
-    const windows = config.availability[weekday] ?? [];
+    const windows = availability[weekday] ?? [];
     for (const [winStart, winEnd] of windows) {
       const winStartMin = minutesOf(winStart);
       const winEndMin = minutesOf(winEnd);
@@ -284,7 +416,7 @@ export function computeAvailableSlots(input: ComputeSlotsInput): Slot[] {
         const endMin = m + service.duration_min;
         const hh = String(Math.floor(m / 60)).padStart(2, "0");
         const mm = String(m % 60).padStart(2, "0");
-        const startUtc = zonedWallTimeToUtc(dateStr, `${hh}:${mm}`, config.timezone);
+        const startUtc = zonedWallTimeToUtc(dateStr, `${hh}:${mm}`, timezone);
         const startMs = startUtc.getTime();
         const endMs = startMs + service.duration_min * 60_000;
 

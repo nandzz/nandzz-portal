@@ -1,6 +1,8 @@
+import { PageShell } from "@/components/layout/PageShell";
+
 export default function CollectionDetailLoading() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
+    <PageShell width="content">
       {/* Back link */}
       <div className="h-4 w-28 rounded bg-muted animate-pulse mb-8" />
 
@@ -27,6 +29,6 @@ export default function CollectionDetailLoading() {
           </div>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

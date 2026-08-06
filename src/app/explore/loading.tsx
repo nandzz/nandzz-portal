@@ -1,18 +1,20 @@
 import { Compass } from "lucide-react";
+import { PageShell } from "@/components/layout/PageShell";
 
 export default function ExploreLoading() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
-      <div className="mb-10">
+    <PageShell width="content">
+      {/* Header — mirrors explore/page.tsx. Title/subtitle are neutral pulse
+          bars, not literal text, so no English flashes before the localized
+          page resolves. */}
+      <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
             <Compass className="h-5 w-5 text-violet-600 dark:text-violet-400" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Explore Spaces</h1>
+          <div className="h-9 w-56 rounded-lg bg-muted animate-pulse" />
         </div>
-        <p className="mt-2 text-muted-foreground text-lg">
-          Discover web apps shared by the community
-        </p>
+        <div className="mt-2 h-6 w-72 max-w-full rounded bg-muted animate-pulse" />
       </div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -28,6 +30,6 @@ export default function ExploreLoading() {
           </div>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

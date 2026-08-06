@@ -7,6 +7,8 @@ import { getOwnerWidgets, getWidgetCatalog } from "@/lib/widgets/server";
 import { SubscribeButton } from "@/components/widgets/SubscribeButton";
 import { renderWidgetIcon } from "@/components/widgets/widgetIcon";
 import { Blocks, Check, Settings, CircleAlert } from "lucide-react";
+import { getServerTranslations } from "@/lib/i18n/server";
+import { PageShell } from "@/components/layout/PageShell";
 
 export default async function WidgetsDashboardPage() {
   const supabase = await createClient();
@@ -15,27 +17,31 @@ export default async function WidgetsDashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [widgets, catalog] = await Promise.all([getOwnerWidgets(user.id), getWidgetCatalog()]);
+  const [widgets, catalog, t] = await Promise.all([
+    getOwnerWidgets(user.id),
+    getWidgetCatalog(),
+    getServerTranslations(),
+  ]);
 
   const ownedCatalogIds = new Set(widgets.map((w) => w.catalog_id));
   const available = catalog.filter((c) => !ownedCatalogIds.has(c.id));
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
+    <PageShell width="content">
       <div className="mb-10 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
           <Blocks className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Widgets</h1>
-          <p className="mt-1 text-muted-foreground">Interactive tools that live on top of your profile.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t.booking.widgetsPageTitle}</h1>
+          <p className="mt-1 text-muted-foreground">{t.booking.widgetsPageSubtitle}</p>
         </div>
       </div>
 
       {/* Your widgets */}
       {widgets.length > 0 && (
         <div className="mb-10">
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Your widgets</h2>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t.booking.yourWidgetsSection}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {widgets.map((w) => (
               <Link
@@ -51,7 +57,7 @@ export default async function WidgetsDashboardPage() {
                     <div>
                       <p className="font-semibold">{w.catalog.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {w.enabled ? "Shown on profile" : "Hidden"}
+                        {w.enabled ? t.booking.shownOnProfile : t.booking.hiddenStatus}
                       </p>
                     </div>
                   </div>
@@ -60,11 +66,11 @@ export default async function WidgetsDashboardPage() {
                 <div className="mt-4">
                   {w.has_access ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                      <Check className="h-3 w-3" /> Subscription active
+                      <Check className="h-3 w-3" /> {t.booking.subscriptionActive}
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
-                      <CircleAlert className="h-3 w-3" /> Inactive — subscribe to go live
+                      <CircleAlert className="h-3 w-3" /> {t.booking.inactiveSubscribe}
                     </span>
                   )}
                 </div>
@@ -77,7 +83,7 @@ export default async function WidgetsDashboardPage() {
       {/* Add a widget */}
       {available.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Add a widget</h2>
+          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t.booking.addWidgetSection}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {available.map((c) => (
               <div key={c.id} className="rounded-2xl border border-border bg-background p-5">
@@ -93,7 +99,7 @@ export default async function WidgetsDashboardPage() {
                     ${(c.price_cents / 100).toFixed(2)}
                     <span className="text-muted-foreground">/{c.billing_interval}</span>
                   </span>
-                  <SubscribeButton catalogId={c.id} label="Add widget" />
+                  <SubscribeButton catalogId={c.id} label={t.booking.addWidgetButton} />
                 </div>
               </div>
             ))}
@@ -102,8 +108,8 @@ export default async function WidgetsDashboardPage() {
       )}
 
       {widgets.length === 0 && available.length === 0 && (
-        <p className="text-muted-foreground">No widgets are available yet. Check back soon.</p>
+        <p className="text-muted-foreground">{t.booking.noWidgetsAvailable}</p>
       )}
-    </div>
+    </PageShell>
   );
 }

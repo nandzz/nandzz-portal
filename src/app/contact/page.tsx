@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { ContactForm } from "./ContactForm";
 import { getServerTranslations } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Contact | Nandzz",
-  description: "Get in touch with the Nandzz team.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.contactTitle,
+    description: t.meta.contactDescription,
+  };
+}
 
 export default async function ContactPage() {
   const t = await getServerTranslations();

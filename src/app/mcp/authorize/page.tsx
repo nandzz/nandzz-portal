@@ -17,9 +17,9 @@ type SP = {
 // things (e.g. `publish` also grants update/edit tools).
 const SCOPE_LABELS: Record<string, string[]> = {
   publish: [
-    "Publish HTML pages, PDFs, and images to your Nandzz space",
-    "Replace the content of spaces you already own",
-    "Edit a space's title, description, hashtags, or visibility",
+    "Publish HTML pages, PDFs, and images to your Nandzz content",
+    "Replace the content you already own",
+    "Edit content title, description, hashtags, or visibility",
   ],
   read: ["List your collections"],
 };

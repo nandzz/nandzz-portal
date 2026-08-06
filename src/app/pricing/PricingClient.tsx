@@ -18,15 +18,15 @@ export function PricingClient({
   const faqs: { q: string; a: string }[] = [
     {
       q: "How do credits work?",
-      a: `Every new account gets ${signupGrant} free credits, enough to publish ${signupPublishes} spaces. Publishing a space costs ${publishCost} credits. Chatting with the AI agent on your profile bills per token from your paid balance.`,
+      a: `Every new account gets ${signupGrant} free credits, enough to publish ${signupPublishes} pieces of content. Publishing content costs ${publishCost} credits. Chatting with the AI agent on your profile bills per token from your paid balance.`,
     },
     {
       q: "Do credits expire?",
-      a: "Paid credits never expire. Free signup credits are space-only and stay on your account indefinitely too.",
+      a: "Paid credits never expire. Free signup credits are content-only and stay on your account indefinitely too.",
     },
     {
       q: "What's the difference between free and paid credits?",
-      a: "Free credits can only be spent on publishing spaces. Paid credits can be spent on anything — spaces or AI chat. When you publish, free credits are used first.",
+      a: "Free credits can only be spent on publishing content. Paid credits can be spent on anything — content or AI chat. When you publish, free credits are used first.",
     },
     {
       q: "Can I get a refund?",
@@ -101,7 +101,7 @@ export function PricingClient({
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/50">
                         <Check className="h-3 w-3 text-violet-600 dark:text-violet-400" />
                       </div>
-                      <span>{publishCost > 0 ? Math.floor(pack.credits / publishCost) : pack.credits} space publishes</span>
+                      <span>{publishCost > 0 ? Math.floor(pack.credits / publishCost) : pack.credits} content publishes</span>
                     </li>
                     <li className="flex items-center gap-2.5">
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 dark:bg-violet-900/50">
@@ -138,7 +138,7 @@ export function PricingClient({
             <div>
               <p className="text-sm font-semibold">New here? Start free.</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Every new account gets {signupGrant} free credits — enough to publish {signupPublishes} spaces. No credit card required.
+                Every new account gets {signupGrant} free credits — enough to publish {signupPublishes} pieces of content. No credit card required.
               </p>
               <Link href="/login?tab=signup" className="text-xs font-semibold text-violet-600 dark:text-violet-400 mt-2 inline-flex items-center gap-1 hover:underline">
                 Create your account →

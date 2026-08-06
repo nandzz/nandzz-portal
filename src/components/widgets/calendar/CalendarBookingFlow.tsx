@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock, Loader2, Check, ChevronLeft, Pencil, Sparkles } from "lucide-react";
-import type { CalendarConfig, CalendarService, StaffMember } from "@/lib/types";
+import type { CalendarService, Location, StaffMember } from "@/lib/types";
 import { eligibleStaffForService, todayInZone, type Slot } from "@/lib/widgets/calendar";
+import { BOOKING_ERROR_KEYS } from "@/lib/widgets/booking-errors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // How far out the calendar lets visitors book. Wider than the old flat list so
 // the month grid feels real; the availability API caps `days` at 60.
@@ -13,6 +15,9 @@ const BOOKING_WINDOW_DAYS = 60;
 
 interface Props {
   instanceId: string;
+  // Multi-location config. Empty ⇒ legacy single-location mode, reading the
+  // services/staff/timezone props below exactly as before locations existed.
+  locations?: Location[];
   services: CalendarService[];
   timezone: string;
   businessName: string;
@@ -26,22 +31,49 @@ interface Props {
   onBooked?: (manageUrl: string) => void;
 }
 
-type Step = "service" | "slot" | "staff" | "details" | "done";
+type Step = "location" | "service" | "slot" | "staff" | "details" | "done";
 
 export function CalendarBookingFlow({
   instanceId,
-  services,
-  timezone,
+  locations = [],
+  services: legacyServices,
+  timezone: businessTimezone,
   businessName,
-  staff = [],
+  staff: legacyStaff = [],
   showPrices = true,
   initialServiceId,
   onBooked,
 }: Props) {
+  const { t, locale } = useLanguage();
+
+  // The chosen location (only meaningful when `locations` is non-empty). A
+  // single location is defaulted silently — no chooser step for it, mirroring
+  // the staff step's "skip when there's no real choice" idiom. Two or more
+  // locations start the flow at the "location" step instead (see `step` init
+  // below); none ⇒ legacy mode, `location` stays null throughout.
+  const [location, setLocation] = useState<Location | null>(() =>
+    locations.length === 1 ? locations[0] : null
+  );
+
+  // Effective services/staff/timezone for the current step of the flow: the
+  // chosen location's own subtree once one is picked (or auto-defaulted),
+  // empty arrays while a chooser is pending, or the legacy top-level props
+  // when the instance has no locations at all — byte-for-byte today's
+  // behavior in that last case.
+  const services = location ? location.services : locations.length > 0 ? [] : legacyServices;
+  const staff = location ? location.staff : locations.length > 0 ? [] : legacyStaff;
+  const tz = location?.timezone ?? businessTimezone;
+
   const preselected = initialServiceId
     ? services.find((s) => s.id === initialServiceId) ?? null
     : null;
-  const [step, setStep] = useState<Step>(preselected ? "slot" : "service");
+  // First real step of the flow — used both for the initial `step` and to
+  // decide when the back button's leftmost stop has been reached.
+  const firstStep: Step = locations.length > 1 ? "location" : "service";
+  const [step, setStep] = useState<Step>(() => {
+    if (locations.length > 1) return "location";
+    return preselected ? "slot" : "service";
+  });
   const [service, setService] = useState<CalendarService | null>(preselected);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -60,8 +92,6 @@ export function CalendarBookingFlow({
   const [error, setError] = useState<string | null>(null);
   const [manageUrl, setManageUrl] = useState<string | null>(null);
 
-  const tz = timezone;
-
   // If a service was preselected (e.g. from the AI chat), load its slots on mount.
   useEffect(() => {
     if (preselected) void loadSlots(preselected);
@@ -69,7 +99,7 @@ export function CalendarBookingFlow({
   }, []);
 
   function fmtDay(iso: string) {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(locale, {
       timeZone: tz,
       weekday: "short",
       month: "short",
@@ -77,7 +107,7 @@ export function CalendarBookingFlow({
     }).format(new Date(iso));
   }
   function fmtTime(iso: string) {
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(locale, {
       timeZone: tz,
       hour: "numeric",
       minute: "2-digit",
@@ -105,17 +135,29 @@ export function CalendarBookingFlow({
     setSelectedDate(null);
     setCalendarOpen(true);
     try {
-      const res = await fetch(
-        `/api/widgets/${instanceId}/availability?service_id=${encodeURIComponent(s.id)}&days=${BOOKING_WINDOW_DAYS}`
-      );
+      const params = new URLSearchParams({ service_id: s.id, days: String(BOOKING_WINDOW_DAYS) });
+      if (location) params.set("location_id", location.id);
+      const res = await fetch(`/api/widgets/${instanceId}/availability?${params.toString()}`);
       const data = await res.json();
       setSlots(res.ok ? data.slots ?? [] : []);
-      if (!res.ok) setError(data.error ?? "Could not load availability.");
+      if (!res.ok) setError(t.booking.errorLoadAvailability);
     } catch {
-      setError("Could not load availability.");
+      setError(t.booking.errorLoadAvailability);
     } finally {
       setLoadingSlots(false);
     }
+  }
+
+  // Location chosen (only reachable when locations.length > 1 — a single
+  // location is auto-defaulted on mount and never shows this step). No "any
+  // location" pseudo-option: a booking happens at one physical place.
+  function pickLocation(loc: Location) {
+    setLocation(loc);
+    setService(null);
+    setSlot(null);
+    setSlotStaff([]);
+    setStaffId("");
+    setStep("service");
   }
 
   async function pickService(s: CalendarService) {
@@ -137,7 +179,7 @@ export function CalendarBookingFlow({
     const freeIds = s.staff_ids;
     if (!freeIds || freeIds.length === 0) return [];
     const freeSet = new Set(freeIds);
-    const eligible = eligibleStaffForService({ staff } as CalendarConfig, service);
+    const eligible = eligibleStaffForService(staff, service);
     return eligible.filter((m) => freeSet.has(m.id));
   }
 
@@ -153,7 +195,7 @@ export function CalendarBookingFlow({
   async function submit() {
     if (!service || !slot) return;
     if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
-      setError("Name, email and phone are required.");
+      setError(t.booking.errorRequiredFields);
       return;
     }
     setSubmitting(true);
@@ -166,6 +208,7 @@ export function CalendarBookingFlow({
           service_id: service.id,
           starts_at: slot.start,
           staff_id: staffId,
+          location_id: location ? location.id : undefined,
           customer_name: form.name,
           customer_email: form.email,
           customer_phone: form.phone.trim(),
@@ -174,14 +217,15 @@ export function CalendarBookingFlow({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not complete the booking.");
+        const key = BOOKING_ERROR_KEYS[data.error as string] as keyof typeof t.booking | undefined;
+        setError(key ? t.booking[key] : t.booking.errorGeneric);
         return;
       }
       setManageUrl(data.manage_url);
       setStep("done");
       onBooked?.(data.manage_url);
     } catch {
-      setError("Could not complete the booking.");
+      setError(t.booking.errorBookingFailed);
     } finally {
       setSubmitting(false);
     }
@@ -237,16 +281,19 @@ export function CalendarBookingFlow({
     if (step === "details") setStep(slotStaff.length > 0 ? "staff" : "slot");
     else if (step === "staff") setStep("slot");
     else if (step === "slot") setStep("service");
+    // From service, return to the location chooser only when it was shown
+    // (locations.length > 1) — mirrors the staff step's skip symmetry.
+    else if (step === "service" && locations.length > 1) setStep("location");
   };
 
   return (
     <div className="space-y-4">
-      {step !== "service" && step !== "done" && (
+      {step !== firstStep && step !== "done" && (
         <button
           onClick={back}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
-          <ChevronLeft className="h-3.5 w-3.5" /> Back
+          <ChevronLeft className="h-3.5 w-3.5" /> {t.booking.back}
         </button>
       )}
 
@@ -259,12 +306,43 @@ export function CalendarBookingFlow({
         </p>
       )}
 
+      {/* Step 0 — location (only when there's a real choice: locations.length > 1).
+          A single location is auto-defaulted and never reaches this step; no
+          "any location" pseudo-option — a booking happens at one physical place. */}
+      {step === "location" && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">{t.booking.chooseLocation}</h3>
+          {locations.map((loc) => (
+            <button
+              key={loc.id}
+              onClick={() => pickLocation(loc)}
+              className="w-full text-left rounded-xl border border-border bg-background px-4 py-3 transition hover:border-emerald-400 hover:shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar size="lg" className="shrink-0">
+                  <AvatarImage src={loc.photo_url || undefined} alt={loc.name} />
+                  <AvatarFallback>{loc.name.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{loc.name}</span>
+                  {loc.address && (
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {loc.address}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Step 1 — service */}
       {step === "service" && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold">Choose a service</h3>
+          <h3 className="text-sm font-semibold">{t.booking.chooseService}</h3>
           {services.length === 0 && (
-            <p className="text-sm text-muted-foreground">No services available yet.</p>
+            <p className="text-sm text-muted-foreground">{t.booking.noServicesAvailable}</p>
           )}
           {services.map((s) => (
             <button
@@ -281,7 +359,7 @@ export function CalendarBookingFlow({
                 )}
               </div>
               <span className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" /> {s.duration_min} min
+                <Clock className="h-3 w-3" /> {t.booking.durationMin.replace("{min}", String(s.duration_min))}
               </span>
             </button>
           ))}
@@ -291,12 +369,14 @@ export function CalendarBookingFlow({
       {/* Step 2 — date + time */}
       {step === "slot" && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold">Pick a date &amp; time · {service?.name}</h3>
+          <h3 className="text-sm font-semibold">
+            {t.booking.pickDateTime.replace("{service}", service?.name ?? "")}
+          </h3>
           {loadingSlots ? (
             <CalendarSkeleton />
           ) : availableDates.size === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No open slots in the next {BOOKING_WINDOW_DAYS} days.
+              {t.booking.noOpenSlots.replace("{days}", String(BOOKING_WINDOW_DAYS))}
             </p>
           ) : (
             <>
@@ -312,7 +392,7 @@ export function CalendarBookingFlow({
               ) : (
                 <button
                   onClick={() => setCalendarOpen(true)}
-                  aria-label={`Selected date: ${activeDateLabel}. Change date`}
+                  aria-label={t.booking.selectedDateChange.replace("{date}", activeDateLabel)}
                   className="cursor-pointer flex w-full items-center justify-between rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 text-left transition hover:border-emerald-400"
                 >
                   <span className="flex items-center gap-2.5">
@@ -320,7 +400,7 @@ export function CalendarBookingFlow({
                     <span className="text-sm font-medium">{activeDateLabel}</span>
                   </span>
                   <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
-                    <Pencil className="h-3.5 w-3.5" /> Change
+                    <Pencil className="h-3.5 w-3.5" /> {t.booking.change}
                   </span>
                 </button>
               )}
@@ -354,7 +434,7 @@ export function CalendarBookingFlow({
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Select a date to see open times.</p>
+                  <p className="text-sm text-muted-foreground">{t.booking.selectDateToSeeTimes}</p>
                 )}
               </div>
             </>
@@ -366,9 +446,12 @@ export function CalendarBookingFlow({
       {step === "staff" && slot && (
         <div className="space-y-2">
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold">Choose your specialist</h3>
+            <h3 className="text-sm font-semibold">{t.booking.chooseSpecialist}</h3>
             <p className="text-sm text-muted-foreground">
-              {service?.name} · {fmtDay(slot.start)} at {fmtTime(slot.start)}
+              {t.booking.specialistSummary
+                .replace("{service}", service?.name ?? "")
+                .replace("{date}", fmtDay(slot.start))
+                .replace("{time}", fmtTime(slot.start))}
             </p>
           </div>
 
@@ -385,9 +468,9 @@ export function CalendarBookingFlow({
                 <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="min-w-0">
-                <span className="block text-sm font-medium">Any available</span>
+                <span className="block text-sm font-medium">{t.booking.anyAvailable}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  No preference — we&apos;ll assign a free specialist
+                  {t.booking.anyAvailableDesc}
                 </span>
               </div>
             </div>
@@ -424,27 +507,30 @@ export function CalendarBookingFlow({
       {/* Step 4 — details */}
       {step === "details" && slot && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold">Your details</h3>
+          <h3 className="text-sm font-semibold">{t.booking.yourDetails}</h3>
           <p className="text-sm text-muted-foreground">
-            {service?.name} · {fmtDay(slot.start)} at {fmtTime(slot.start)}
-            {chosenStaffName && <> · with {chosenStaffName}</>}
+            {t.booking.specialistSummary
+              .replace("{service}", service?.name ?? "")
+              .replace("{date}", fmtDay(slot.start))
+              .replace("{time}", fmtTime(slot.start))}
+            {chosenStaffName && <>{t.booking.withNameSuffix.replace("{name}", chosenStaffName)}</>}
           </p>
           <input
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Full name"
+            placeholder={t.booking.fullNamePlaceholder}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
           <input
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Email"
+            placeholder={t.booking.emailPlaceholder}
             type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
           <input
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Phone"
+            placeholder={t.booking.phonePlaceholder}
             type="tel"
             inputMode="tel"
             value={form.phone}
@@ -452,7 +538,7 @@ export function CalendarBookingFlow({
           />
           <textarea
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Notes (optional)"
+            placeholder={t.booking.notesPlaceholder}
             rows={2}
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -463,7 +549,7 @@ export function CalendarBookingFlow({
             className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Confirm booking
+            {t.booking.confirmBooking}
           </button>
         </div>
       )}
@@ -474,26 +560,26 @@ export function CalendarBookingFlow({
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
             <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h3 className="text-base font-semibold">You&apos;re booked!</h3>
+          <h3 className="text-base font-semibold">{t.booking.bookedTitle}</h3>
           {chosenStaffName && (
-            <p className="text-sm font-medium">with {chosenStaffName}</p>
+            <p className="text-sm font-medium">{t.booking.withName.replace("{name}", chosenStaffName)}</p>
           )}
           <p className="text-sm text-muted-foreground">
-            A confirmation was sent to {form.email}. You can reschedule or cancel anytime.
+            {t.booking.confirmationSent.replace("{email}", form.email)}
           </p>
           {manageUrl && (
             <a
               href={manageUrl}
               className="inline-block text-sm font-medium text-emerald-600 hover:underline"
             >
-              Manage your booking
+              {t.booking.manageBookingLink}
             </a>
           )}
         </div>
       )}
 
       <p className="pt-2 text-center text-[10px] text-muted-foreground">
-        Powered by {businessName}&apos;s calendar · times in {tz}
+        {t.booking.poweredBy.replace("{business}", businessName).replace("{tz}", tz)}
       </p>
     </div>
   );

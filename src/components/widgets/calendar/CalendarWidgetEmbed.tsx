@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { renderWidgetIcon } from "../widgetIcon";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   instance: WidgetInstanceWithCatalog;
@@ -12,6 +15,7 @@ interface Props {
 // destination page can offer a share link + QR — mirroring how spaces work.
 // The icon is driven by the catalog entry so any widget type reuses this pill.
 export function CalendarWidgetEmbed({ instance, profile }: Props) {
+  const { t } = useLanguage();
   const displayName = profile.display_name || profile.username;
   const firstName = displayName.split(" ")[0];
 
@@ -21,7 +25,7 @@ export function CalendarWidgetEmbed({ instance, profile }: Props) {
   return (
     <Link href={`/${profile.username}/widget/${instance.id}`} className={triggerClass}>
       {renderWidgetIcon(instance.catalog.icon, "h-4 w-4")}
-      Book with {firstName}
+      {t.booking.bookWithName.replace("{name}", firstName)}
     </Link>
   );
 }

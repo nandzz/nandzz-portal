@@ -3,24 +3,25 @@ import { createClient } from "@/lib/supabase/server";
 import { PricingClient } from "./PricingClient";
 import type { CreditPack } from "@/lib/types";
 import { getCreditsConfig } from "@/lib/credits-config";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 // Built from the live signup grant so the SEO copy doesn't drift from the
 // admin-configured value.
 export async function generateMetadata(): Promise<Metadata> {
-  const { signupGrant } = await getCreditsConfig();
-  const desc = `Pay as you go. ${signupGrant} free space credits on signup. Buy more whenever you need them — credits never expire.`;
-  const shortDesc = `Pay as you go. ${signupGrant} free credits on signup. Buy more anytime.`;
+  const [{ signupGrant }, t] = await Promise.all([getCreditsConfig(), getServerTranslations()]);
+  const desc = t.meta.pricingDescription.replace("{grant}", String(signupGrant));
+  const shortDesc = t.meta.pricingShortDescription.replace("{grant}", String(signupGrant));
   return {
-    title: "Credits | Nandzz",
+    title: t.meta.pricingTitle,
     description: desc,
     openGraph: {
-      title: "Credits | Nandzz",
+      title: t.meta.pricingTitle,
       description: shortDesc,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: "Credits | Nandzz",
+      title: t.meta.pricingTitle,
       description: shortDesc,
     },
   };

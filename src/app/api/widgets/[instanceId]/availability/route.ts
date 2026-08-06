@@ -18,6 +18,7 @@ export async function GET(
   const url = new URL(req.url);
   const serviceId = url.searchParams.get("service_id");
   const staffId = url.searchParams.get("staff_id");
+  const locationId = url.searchParams.get("location_id");
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") ?? 14)));
 
   if (!serviceId) {
@@ -43,23 +44,42 @@ export async function GET(
   if (!hasAccess) return NextResponse.json({ slots: [] });
 
   const config = normalizeCalendarConfig(instance.config);
-  const service = config.services.find((s) => s.id === serviceId);
+
+  // Resolve the location subtree when requested; falls back to the top-level
+  // config when `location_id` is absent (legacy single-location mode) or
+  // unknown. Everything below reads services/staff/tz from this scope.
+  const location = locationId ? config.locations.find((l) => l.id === locationId) : undefined;
+  if (locationId && !location) {
+    return NextResponse.json({ error: "Unknown location" }, { status: 400 });
+  }
+  const services = location ? location.services : config.services;
+
+  const service = services.find((s) => s.id === serviceId);
   if (!service) {
     return NextResponse.json({ error: "Unknown service" }, { status: 400 });
   }
 
-  const fromDate = url.searchParams.get("from") ?? todayInZone(config.timezone);
+  const timezone = location?.timezone ?? config.timezone;
+  const fromDate = url.searchParams.get("from") ?? todayInZone(timezone);
 
-  // Existing confirmed bookings that could clash within the window.
+  // Existing confirmed bookings that could clash within the window. Scoped to
+  // the same location bucket the DB exclusion constraint uses
+  // (coalesce(staff_id, 'loc:' || coalesce(location_id, ''))): staffed clashes
+  // are already disambiguated by staff_id (a staff member belongs to exactly
+  // one location), but an unstaffed location is its own independent resource,
+  // so its bookings must not be treated as busy for a different location (or
+  // for the legacy top-level resource, and vice versa).
   const windowStart = new Date(`${fromDate}T00:00:00Z`).toISOString();
   const windowEnd = new Date(Date.now() + (days + 2) * 86_400_000).toISOString();
-  const { data: bookings } = await admin
+  let bookingsQuery = admin
     .from("widget_bookings")
     .select("starts_at, ends_at, staff_id")
     .eq("instance_id", instanceId)
     .eq("status", "confirmed")
     .gte("starts_at", windowStart)
     .lte("starts_at", windowEnd);
+  bookingsQuery = location ? bookingsQuery.eq("location_id", location.id) : bookingsQuery.is("location_id", null);
+  const { data: bookings } = await bookingsQuery;
 
   const slots = computeAvailableSlots({
     config,
@@ -69,12 +89,13 @@ export async function GET(
     existingBookings: bookings ?? [],
     minLeadMinutes: 60,
     staffId: staffId || null,
+    location,
   });
 
   return NextResponse.json({
-    timezone: config.timezone,
+    timezone,
     service: { id: service.id, name: service.name, duration_min: service.duration_min },
-    staff: config.staff,
+    staff: location ? location.staff : config.staff,
     slots,
   });
 }

@@ -4,7 +4,8 @@ import { Trash2, CalendarOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { StaffMember, WeekdayKey } from "@/lib/types";
-import { WEEKDAYS, WEEKDAY_LABELS } from "@/lib/widgets/calendar";
+import { WEEKDAYS } from "@/lib/widgets/calendar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // One-letter weekday initials (M T W T F S S) for the at-a-glance schedule strip.
 const DAY_INITIALS: Record<WeekdayKey, string> = {
@@ -27,6 +28,16 @@ interface Props {
 // strip. The whole card opens the editor; the delete affordance is a sibling
 // button (not nested) so the markup stays valid and keyboard-navigable.
 export function StaffCard({ staff, onOpen, onDelete }: Props) {
+  const { t } = useLanguage();
+  const WEEKDAY_LABELS_T: Record<WeekdayKey, string> = {
+    mon: t.booking.weekdayMon,
+    tue: t.booking.weekdayTue,
+    wed: t.booking.weekdayWed,
+    thu: t.booking.weekdayThu,
+    fri: t.booking.weekdayFri,
+    sat: t.booking.weekdaySat,
+    sun: t.booking.weekdaySun,
+  };
   const workingDays = WEEKDAYS.filter((d) => (staff.availability[d]?.length ?? 0) > 0);
   const daysOff = staff.blackout_dates?.length ?? 0;
   const initial = staff.name?.trim()?.[0]?.toUpperCase() ?? "?";
@@ -36,7 +47,7 @@ export function StaffCard({ staff, onOpen, onDelete }: Props) {
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Edit ${staff.name || "staff member"}`}
+        aria-label={t.booking.editStaffAria.replace("{name}", staff.name || t.booking.unnamedStaff)}
         className="flex w-full flex-col gap-4 rounded-2xl p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
       >
         <div className="flex items-start gap-3">
@@ -47,9 +58,9 @@ export function StaffCard({ staff, onOpen, onDelete }: Props) {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1 pr-6">
-            <p className="truncate font-medium text-foreground">{staff.name || "Unnamed"}</p>
+            <p className="truncate font-medium text-foreground">{staff.name || t.booking.unnamedStaff}</p>
             <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-              {staff.info?.trim() || "No role set"}
+              {staff.info?.trim() || t.booking.noRoleSet}
             </p>
           </div>
         </div>
@@ -76,23 +87,28 @@ export function StaffCard({ staff, onOpen, onDelete }: Props) {
           </div>
           <span className="shrink-0 text-xs text-muted-foreground">
             {workingDays.length > 0
-              ? `${workingDays.length}${workingDays.length === 1 ? " day" : " days"}/wk`
-              : "Off"}
+              ? `${workingDays.length}${workingDays.length === 1 ? t.booking.daySuffix : t.booking.daysSuffix}`
+              : t.booking.off}
           </span>
         </div>
 
         {/* Screen-reader summary of the schedule strip above */}
         <span className="sr-only">
           {workingDays.length > 0
-            ? `Works ${workingDays.map((d) => WEEKDAY_LABELS[d]).join(", ")}.`
-            : "No weekly hours set."}
-          {daysOff > 0 ? ` ${daysOff} day${daysOff === 1 ? "" : "s"} off.` : ""}
+            ? t.booking.worksSr.replace(
+                "{days}",
+                workingDays.map((d) => WEEKDAY_LABELS_T[d]).join(", ")
+              )
+            : t.booking.noHoursSetSr}
+          {daysOff > 0
+            ? ` ${(daysOff === 1 ? t.booking.dayOffSrSingular : t.booking.dayOffSrPlural).replace("{count}", String(daysOff))}`
+            : ""}
         </span>
 
         {daysOff > 0 && (
           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             <CalendarOff className="h-3 w-3" />
-            {daysOff} {daysOff === 1 ? "day off" : "days off"}
+            {daysOff} {daysOff === 1 ? t.booking.dayOffBadgeSingular : t.booking.dayOffBadgePlural}
           </span>
         )}
       </button>
@@ -100,8 +116,8 @@ export function StaffCard({ staff, onOpen, onDelete }: Props) {
       <button
         type="button"
         onClick={onDelete}
-        aria-label={`Remove ${staff.name || "staff member"}`}
-        title="Remove"
+        aria-label={t.booking.removeStaffAria.replace("{name}", staff.name || t.booking.unnamedStaff)}
+        title={t.booking.removeTitle}
         className="absolute right-2.5 top-2.5 rounded-lg p-1.5 text-muted-foreground opacity-0 outline-none transition hover:bg-red-50 hover:text-red-600 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-emerald-400 group-hover:opacity-100 dark:hover:bg-red-950/30"
       >
         <Trash2 className="h-4 w-4" />

@@ -10,6 +10,8 @@ import { ProfileBackground } from "@/components/profile/ProfileBackground";
 import { FEATURES } from "@/lib/flags";
 import { getProfileWidgets } from "@/lib/widgets/server";
 import type { WidgetInstanceWithCatalog } from "@/lib/types";
+import { getServerTranslations } from "@/lib/i18n/server";
+import { PageShell } from "@/components/layout/PageShell";
 
 const fetchProfileByUsername = async (username: string) => {
   const admin = createAdminClient();
@@ -36,15 +38,15 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const profile = await getProfile(username);
+  const [profile, t] = await Promise.all([getProfile(username), getServerTranslations()]);
 
   if (!profile) {
-    return { title: "Profile Not Found | Nandzz" };
+    return { title: t.meta.profileNotFoundTitle };
   }
 
   const name = profile.display_name || profile.username;
 
-  const description = profile.tagline || `Check out ${name}'s web apps on nandzz.`;
+  const description = profile.tagline || t.meta.profileDescriptionFallback.replace("{name}", name);
 
   return {
     title: `${name} (@${profile.username})`,
@@ -59,7 +61,7 @@ export async function generateMetadata({
       url: `https://nandzz.com/${profile.username}`,
       siteName: "Nandzz",
       ...(profile.avatar_url && {
-        images: [{ url: profile.avatar_url, alt: `${name}'s avatar` }],
+        images: [{ url: profile.avatar_url, alt: t.meta.profileAvatarAlt.replace("{name}", name) }],
       }),
     },
     twitter: {
@@ -163,7 +165,7 @@ export default async function ProfilePage({
         displayName={profile.display_name || profile.username}
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <PageShell width="wide">
         <ProfileHeader
           profile={profile}
           isOwner={isOwner}
@@ -181,7 +183,7 @@ export default async function ProfilePage({
             currentUserId={user?.id}
           />
         </div>
-      </div>
+      </PageShell>
     </div>
   );
 }

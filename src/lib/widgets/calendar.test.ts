@@ -2,11 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   computeAvailableSlots,
   normalizeCalendarConfig,
+  normalizeLocation,
   validateCalendarConfig,
   zonedWallTimeToUtc,
   type Slot,
 } from "./calendar";
-import type { CalendarConfig, CalendarService } from "@/lib/types";
+import type { CalendarConfig, CalendarService, Location } from "@/lib/types";
 
 const service: CalendarService = { id: "svc_1", name: "Haircut", duration_min: 30 };
 
@@ -249,6 +250,91 @@ describe("computeAvailableSlots with staff", () => {
   });
 });
 
+describe("computeAvailableSlots with a location", () => {
+  const location: Location = {
+    id: "loc_a",
+    name: "Downtown",
+    timezone: "Europe/Lisbon",
+    services: [service],
+    staff: [],
+    availability: { mon: [["09:00", "11:00"]] },
+    blackout_dates: [],
+  };
+
+  it("uses the location's own timezone instead of the top-level config tz", () => {
+    const slots = computeAvailableSlots({
+      config: utcConfig(), // config.timezone === "UTC"
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+      location,
+    });
+    // Lisbon is UTC+1 in August → 09:00 local = 08:00 UTC (vs 09:00 UTC without a location).
+    expect(slots[0]?.start).toBe("2026-08-10T08:00:00.000Z");
+  });
+
+  it("falls back to config.timezone when the location has no timezone of its own", () => {
+    const slots = computeAvailableSlots({
+      config: utcConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+      location: { ...location, timezone: undefined },
+    });
+    expect(slots[0]?.start).toBe("2026-08-10T09:00:00.000Z");
+  });
+
+  it("reads availability/blackout_dates/staff from the location, not the top-level config", () => {
+    const cfg = utcConfig({
+      // Deliberately different top-level data — must be ignored while a
+      // location is given.
+      availability: { mon: [["13:00", "14:00"]] },
+      blackout_dates: [MONDAY],
+      staff: [{ id: "st_top", name: "Top-level Staff", availability: { mon: [["09:00", "11:00"]] } }],
+    });
+    const loc: Location = {
+      id: "loc_b",
+      name: "Uptown",
+      services: [service],
+      staff: [{ id: "st_loc", name: "Location Staff", availability: { mon: [["09:00", "11:00"]] } }],
+      availability: { mon: [["09:00", "11:00"]] },
+      blackout_dates: [], // NOT blacked out at this location, unlike the top-level config
+    };
+    const slots = computeAvailableSlots({
+      config: cfg,
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+      location: loc,
+    });
+    expect(slots.length).toBeGreaterThan(0);
+    expect(slots.every((s) => s.staff_ids?.length === 1 && s.staff_ids[0] === "st_loc")).toBe(true);
+  });
+
+  it("leaves the no-location behavior unchanged (byte-for-byte legacy path)", () => {
+    const withoutLocation = computeAvailableSlots({
+      config: utcConfig(),
+      service,
+      fromDate: MONDAY,
+      days: 1,
+      existingBookings: [],
+      now: farPast,
+    });
+    expect(withoutLocation.map((s) => s.start)).toEqual([
+      "2026-08-10T09:00:00.000Z",
+      "2026-08-10T09:30:00.000Z",
+      "2026-08-10T10:00:00.000Z",
+      "2026-08-10T10:30:00.000Z",
+    ]);
+  });
+});
+
 describe("zonedWallTimeToUtc", () => {
   it("converts a wall-clock time in a positive-offset zone to UTC", () => {
     // Lisbon is UTC+1 in August (WEST) → 09:00 local = 08:00 UTC.
@@ -270,6 +356,132 @@ describe("validateCalendarConfig", () => {
 
   it("accepts a well-formed config", () => {
     expect(validateCalendarConfig(utcConfig())).toEqual([]);
+  });
+});
+
+describe("normalizeLocation", () => {
+  it("returns null for an entry without a usable id", () => {
+    expect(normalizeLocation({ name: "No id" })).toBeNull();
+    expect(normalizeLocation("nope")).toBeNull();
+    expect(normalizeLocation(null)).toBeNull();
+  });
+
+  it("fills in missing fields with sane defaults", () => {
+    const loc = normalizeLocation({ id: "loc_1" });
+    expect(loc).toEqual({
+      id: "loc_1",
+      name: "",
+      address: undefined,
+      photo_url: undefined,
+      timezone: undefined,
+      services: [],
+      staff: [],
+      availability: {},
+      blackout_dates: undefined,
+    });
+  });
+
+  it("normalizes nested staff the same way as top-level staff (dropping entries without an id)", () => {
+    const loc = normalizeLocation({
+      id: "loc_2",
+      name: "Downtown",
+      staff: [{ id: "stf_1", name: "Alex" }, { name: "dropped: no id" }],
+    });
+    expect(loc?.staff).toEqual([
+      {
+        id: "stf_1",
+        name: "Alex",
+        photo_url: undefined,
+        info: undefined,
+        availability: {},
+        blackout_dates: undefined,
+      },
+    ]);
+  });
+});
+
+describe("normalizeCalendarConfig — locations", () => {
+  it("defaults locations to [] when absent (legacy mode)", () => {
+    expect(normalizeCalendarConfig({}).locations).toEqual([]);
+  });
+
+  it("normalizes each location, dropping entries without an id", () => {
+    const cfg = normalizeCalendarConfig({
+      locations: [{ id: "loc_1", name: "A" }, { name: "dropped: no id" }],
+    });
+    expect(cfg.locations.map((l) => l.id)).toEqual(["loc_1"]);
+  });
+});
+
+describe("validateCalendarConfig — locations", () => {
+  function locConfig(loc: Partial<Location>): CalendarConfig {
+    return utcConfig({
+      locations: [
+        {
+          id: "loc_1",
+          name: "Downtown",
+          services: [],
+          staff: [],
+          availability: {},
+          ...loc,
+        },
+      ],
+    });
+  }
+
+  it("accepts an empty locations array (legacy mode)", () => {
+    expect(validateCalendarConfig(utcConfig({ locations: [] }))).toEqual([]);
+  });
+
+  it("accepts a well-formed location", () => {
+    expect(validateCalendarConfig(locConfig({}))).toEqual([]);
+  });
+
+  it("flags a service inside a location referencing an unknown staff member", () => {
+    const cfg = locConfig({
+      services: [{ id: "svc_x", name: "Cut", duration_min: 30, staff_ids: ["nope"] }],
+    });
+    expect(validateCalendarConfig(cfg).some((e) => e.includes("unknown staff member"))).toBe(true);
+  });
+
+  it("flags a bad availability window inside a location", () => {
+    const cfg = locConfig({ availability: { mon: [["17:00", "09:00"]] } });
+    expect(validateCalendarConfig(cfg).some((e) => e.includes("before end"))).toBe(true);
+  });
+
+  it("flags duplicate location ids", () => {
+    const cfg = utcConfig({
+      locations: [
+        { id: "loc_1", name: "A", services: [], staff: [], availability: {} },
+        { id: "loc_1", name: "B", services: [], staff: [], availability: {} },
+      ],
+    });
+    expect(validateCalendarConfig(cfg).some((e) => e.includes('Duplicate location id "loc_1"'))).toBe(
+      true
+    );
+  });
+
+  it("does not let an unknown staff reference in one location interfere with another", () => {
+    const cfg = utcConfig({
+      locations: [
+        {
+          id: "loc_1",
+          name: "A",
+          services: [],
+          staff: [{ id: "stf_a", name: "Alex", availability: {} }],
+          availability: {},
+        },
+        {
+          id: "loc_2",
+          name: "B",
+          // References loc_1's staff id, which is out of scope for loc_2.
+          services: [{ id: "svc_b", name: "Cut", duration_min: 30, staff_ids: ["stf_a"] }],
+          staff: [],
+          availability: {},
+        },
+      ],
+    });
+    expect(validateCalendarConfig(cfg).some((e) => e.includes("unknown staff member"))).toBe(true);
   });
 });
 

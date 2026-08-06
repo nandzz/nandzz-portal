@@ -7,6 +7,14 @@ export type SocialLinks = {
   youtube?: string;
 };
 
+// Minimal profile shape used to seed the app shell (AppChrome/Sidebar) from
+// the server without a full `Profile` fetch.
+export type ProfileLite = {
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+};
+
 export type Profile = {
   id: string;
   username: string;
@@ -269,11 +277,28 @@ export type CalendarMessages = {
   cancellation: MessageTemplate; // sent when a booking is cancelled
 };
 
+// A physical shop/branch. Each location fully owns its own services, staff,
+// availability and blackout dates — a person working at two locations is two
+// staff records (one per location), not a shared pool. `timezone` falls back
+// to the business-level `CalendarConfig.timezone` when unset.
+export type Location = {
+  id: string; // "loc_..." generated like staff ids
+  name: string;
+  address?: string; // customer-visible
+  photo_url?: string; // same avatars bucket pattern as staff
+  timezone?: string; // falls back to config.timezone
+  services: CalendarService[];
+  staff: StaffMember[];
+  availability: AvailabilityWindows;
+  blackout_dates?: string[]; // "YYYY-MM-DD"
+};
+
 export type CalendarConfig = {
   timezone: string;
   buffer_min: number;
   show_prices: boolean; // whether service prices are shown on the public booking widget
-  services: CalendarService[];
+  locations: Location[]; // empty ⇒ legacy single-location mode (read the top-level fields below)
+  services: CalendarService[]; // legacy top-level (used only when locations is empty)
   availability: AvailabilityWindows;
   blackout_dates: string[]; // "YYYY-MM-DD"
   staff: StaffMember[]; // empty ⇒ business is a single bookable resource (legacy behavior)

@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Compass, Layers, Bot, Plug, Blocks } from "lucide-react";
+import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Compass, Bot, Plug, Blocks } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
@@ -140,27 +140,6 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="hidden md:flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                {t.nav.mySpaces}
-              </Link>
-              <Link
-                href="/dashboard/collections"
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                {t.nav.myCollections}
-              </Link>
-              {FEATURES.agent && profile?.username && (
-                <Link
-                  href={`/${profile.username}/agent`}
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                >
-                  <Bot className="h-3.5 w-3.5" />
-                  {t.nav.myAgent}
-                </Link>
-              )}
               {FEATURES.widgets && (
                 <Link
                   href="/dashboard/widgets"
@@ -170,6 +149,21 @@ export function Navbar() {
                   Widgets
                 </Link>
               )}
+              {FEATURES.agent && profile?.username && (
+                <Link
+                  href={`/${profile.username}/agent`}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Bot className="h-3.5 w-3.5" />
+                  {t.nav.myAgent}
+                </Link>
+              )}
+              <Link
+                href="/dashboard"
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                {t.nav.mySpaces}
+              </Link>
             </div>
           ) : (
             <div className="hidden md:flex items-center gap-2">
@@ -317,14 +311,16 @@ export function Navbar() {
 
                   {/* Navigation — Feed/Explore/Spaces/Profile live in the bottom tab bar */}
                   <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={() => router.push("/dashboard/collections")} className="gap-2">
-                      <Layers className="h-4 w-4 text-muted-foreground" />
-                      {t.nav.myCollections}
-                    </DropdownMenuItem>
                     {FEATURES.widgets && (
                       <DropdownMenuItem onClick={() => router.push("/dashboard/widgets")} className="gap-2">
                         <Blocks className="h-4 w-4 text-muted-foreground" />
                         Widgets
+                      </DropdownMenuItem>
+                    )}
+                    {FEATURES.agent && profile?.username && (
+                      <DropdownMenuItem onClick={() => router.push(`/${profile.username}/agent`)} className="gap-2">
+                        <Bot className="h-4 w-4 text-muted-foreground" />
+                        {t.nav.myAgent}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuGroup>
@@ -333,12 +329,6 @@ export function Navbar() {
 
                   {/* Account */}
                   <DropdownMenuGroup>
-                    {FEATURES.agent && profile?.username && (
-                      <DropdownMenuItem onClick={() => router.push(`/${profile.username}/agent`)} className="gap-2">
-                        <Bot className="h-4 w-4 text-muted-foreground" />
-                        {t.nav.myAgent}
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem onClick={() => router.push("/dashboard/settings")} className="gap-2">
                       <Settings className="h-4 w-4 text-muted-foreground" />
                       {t.nav.settings}

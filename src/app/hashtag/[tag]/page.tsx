@@ -14,7 +14,8 @@ export async function generateMetadata({
   params: Promise<{ tag: string }>;
 }): Promise<Metadata> {
   const { tag } = await params;
-  const description = `Browse the latest spaces tagged #${tag} on Nandzz.`;
+  const t = await getServerTranslations();
+  const description = t.meta.hashtagDescription.replace("{tag}", tag);
 
   const admin = createAdminClient();
   const { data: firstSpace } = await admin
@@ -40,7 +41,7 @@ export async function generateMetadata({
       url: `https://nandzz.com/hashtag/${tag}`,
       siteName: "Nandzz",
       ...(firstSpace?.preview_image_url && {
-        images: [{ url: firstSpace.preview_image_url, alt: `#${tag} spaces on Nandzz` }],
+        images: [{ url: firstSpace.preview_image_url, alt: `#${tag} content on Nandzz` }],
       }),
     },
     twitter: {

@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { HomeClient } from "./HomeClient";
 
-export const metadata: Metadata = {
-  title: "Nandzz | Share what you create.",
-  description:
-    "Nandzz | Share what you create. A gallery for web pages, PDFs, tools, and interactive AI creations.",
-  alternates: {
-    canonical: "https://nandzz.com",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.rootTitle,
+    description: t.meta.rootDescription,
+    alternates: {
+      canonical: "https://nandzz.com",
+    },
+  };
+}
 
 const websiteSchema = {
   "@context": "https://schema.org",
@@ -50,14 +53,14 @@ const websiteSchema = {
           name: "Free",
           price: "0",
           priceCurrency: "USD",
-          description: "5 Spaces, public sharing, community profile",
+          description: "5 pieces of content, public sharing, community profile",
         },
         {
           "@type": "Offer",
           name: "Pro",
           price: "9",
           priceCurrency: "USD",
-          description: "Unlimited Spaces, private spaces, Pro badge, HTML editor",
+          description: "Unlimited Content, private content, Pro badge, HTML editor",
         },
       ],
     },

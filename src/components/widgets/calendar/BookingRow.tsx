@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { ReschedulePicker } from "./ReschedulePicker";
 import type { Slot } from "@/lib/widgets/calendar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export type BookingRowData = {
   id: string;
@@ -40,6 +41,7 @@ export function BookingRow({
   dim?: boolean;
   cancellable?: boolean;
 }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
@@ -50,7 +52,10 @@ export function BookingRow({
   const wa = b.customer_phone
     ? whatsappLink(
         b.customer_phone,
-        `Hi ${firstName} 👋 — about your ${b.service_name} booking on ${when}:`
+        t.booking.whatsappGreeting
+          .replace("{name}", firstName)
+          .replace("{service}", b.service_name)
+          .replace("{when}", when)
       )
     : null;
 
@@ -64,32 +69,38 @@ export function BookingRow({
         body: JSON.stringify({ starts_at: slot.start }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setRescheduleError(data.error ?? "Could not reschedule this booking.");
+        setRescheduleError(t.booking.errorRescheduleThis);
         return;
       }
       setRescheduling(false);
       router.refresh(); // re-run the server page → tiles, chart & lists all update
     } catch {
-      setRescheduleError("Could not reschedule this booking.");
+      setRescheduleError(t.booking.errorRescheduleThis);
     } finally {
       setBusy(false);
     }
   }
 
   async function cancel() {
-    if (!confirm(`Cancel ${b.customer_name}'s ${b.service_name} booking on ${when}?`)) return;
+    if (
+      !confirm(
+        t.booking.confirmCancelThis
+          .replace("{name}", b.customer_name)
+          .replace("{service}", b.service_name)
+          .replace("{when}", when)
+      )
+    )
+      return;
     setBusy(true);
     try {
       const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, { method: "DELETE" });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        alert(data.error ?? "Could not cancel this booking.");
+        alert(t.booking.errorCancelThis);
         return;
       }
       router.refresh(); // re-run the server page → tiles, chart & lists all update
     } catch {
-      alert("Could not cancel this booking.");
+      alert(t.booking.errorCancelThis);
     } finally {
       setBusy(false);
     }
@@ -117,7 +128,7 @@ export function BookingRow({
       <div className="flex shrink-0 items-center gap-1.5">
         {b.status === "cancelled" && (
           <span className="mr-1 rounded-full bg-muted px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground">
-            Cancelled
+            {t.booking.cancelledBadge}
           </span>
         )}
         {b.price_cents != null && b.price_cents > 0 && (
@@ -129,8 +140,8 @@ export function BookingRow({
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30"
-            aria-label={`WhatsApp ${b.customer_name}`}
-            title="Message on WhatsApp"
+            aria-label={t.booking.whatsappAria.replace("{name}", b.customer_name)}
+            title={t.booking.whatsappTitle}
           >
             <MessageCircle className="h-4 w-4" />
           </a>
@@ -138,8 +149,8 @@ export function BookingRow({
         <a
           href={`mailto:${b.customer_email}`}
           className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label={`Email ${b.customer_name}`}
-          title="Send email"
+          aria-label={t.booking.emailAria.replace("{name}", b.customer_name)}
+          title={t.booking.emailTitle}
         >
           <Mail className="h-4 w-4" />
         </a>
@@ -151,8 +162,8 @@ export function BookingRow({
             }}
             disabled={busy}
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
-            aria-label={`Reschedule ${b.customer_name}'s booking`}
-            title="Reschedule booking"
+            aria-label={t.booking.rescheduleAria.replace("{name}", b.customer_name)}
+            title={t.booking.rescheduleTitle}
           >
             <CalendarClock className="h-4 w-4" />
           </button>
@@ -162,8 +173,8 @@ export function BookingRow({
             onClick={cancel}
             disabled={busy}
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
-            aria-label={`Cancel ${b.customer_name}'s booking`}
-            title="Cancel booking"
+            aria-label={t.booking.cancelAria.replace("{name}", b.customer_name)}
+            title={t.booking.cancelTitle}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
           </button>
@@ -173,10 +184,12 @@ export function BookingRow({
       <Dialog
         open={rescheduling}
         onClose={() => setRescheduling(false)}
-        title={`Reschedule — ${b.customer_name}`}
+        title={t.booking.rescheduleDialogTitle.replace("{name}", b.customer_name)}
       >
         <p className="mb-4 text-sm text-muted-foreground">
-          {b.service_name} · currently {when}
+          {t.booking.rescheduleDialogSubtitle
+            .replace("{service}", b.service_name)
+            .replace("{when}", when)}
         </p>
         <ReschedulePicker
           instanceId={b.instance_id}

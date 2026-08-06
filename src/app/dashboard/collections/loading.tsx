@@ -1,6 +1,8 @@
+import { PageShell } from "@/components/layout/PageShell";
+
 export default function CollectionsLoading() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12">
+    <PageShell width="content">
       <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -41,6 +43,6 @@ export default function CollectionsLoading() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

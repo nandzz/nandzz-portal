@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Pencil } from "lucide-react";
 import { todayInZone, type Slot } from "@/lib/widgets/calendar";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Availability-aware "pick a new time" picker, shared by the customer self-serve
 // manage page (ManageBooking) and the owner dashboard (BookingRow). It fetches
@@ -29,6 +30,7 @@ export function ReschedulePicker({
   error?: string | null; // commit error, owned by the parent
   onPick: (slot: Slot) => void;
 }) {
+  const { t, locale } = useLanguage();
   const tz = timezone;
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +55,13 @@ export function ReschedulePicker({
         if (!active) return;
         if (!res.ok) {
           setSlots([]);
-          setLoadError(data.error ?? "Could not load availability.");
+          setLoadError(t.booking.errorLoadAvailability);
         } else {
           setSlots(data.slots ?? []);
         }
       })
       .catch(() => {
-        if (active) setLoadError("Could not load availability.");
+        if (active) setLoadError(t.booking.errorLoadAvailability);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -70,14 +72,14 @@ export function ReschedulePicker({
   }, [instanceId, serviceId]);
 
   const fmtDay = (iso: string) =>
-    new Intl.DateTimeFormat("en-US", {
+    new Intl.DateTimeFormat(locale, {
       timeZone: tz,
       weekday: "short",
       month: "short",
       day: "numeric",
     }).format(new Date(iso));
   const fmtTime = (iso: string) =>
-    new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(
+    new Intl.DateTimeFormat(locale, { timeZone: tz, hour: "numeric", minute: "2-digit" }).format(
       new Date(iso)
     );
 
@@ -142,7 +144,7 @@ export function ReschedulePicker({
   if (availableDates.size === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No open slots in the next {BOOKING_WINDOW_DAYS} days.
+        {t.booking.noOpenSlots.replace("{days}", String(BOOKING_WINDOW_DAYS))}
       </p>
     );
   }
@@ -161,7 +163,7 @@ export function ReschedulePicker({
       ) : (
         <button
           onClick={() => setCalendarOpen(true)}
-          aria-label={`Selected date: ${activeDateLabel}. Change date`}
+          aria-label={t.booking.selectedDateChange.replace("{date}", activeDateLabel)}
           className="cursor-pointer flex w-full items-center justify-between rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3 text-left transition hover:border-emerald-400"
         >
           <span className="flex items-center gap-2.5">
@@ -169,7 +171,7 @@ export function ReschedulePicker({
             <span className="text-sm font-medium">{activeDateLabel}</span>
           </span>
           <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
-            <Pencil className="h-3.5 w-3.5" /> Change
+            <Pencil className="h-3.5 w-3.5" /> {t.booking.change}
           </span>
         </button>
       )}
@@ -200,7 +202,7 @@ export function ReschedulePicker({
             </div>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">Select a date to see open times.</p>
+          <p className="text-sm text-muted-foreground">{t.booking.selectDateToSeeTimes}</p>
         )}
       </div>
     </div>

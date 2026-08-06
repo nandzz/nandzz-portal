@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Search, MessageCircle, Mail, Users } from "lucide-react";
 import { whatsappLink } from "@/lib/widgets/contact";
+import { useLanguage } from "@/contexts/LanguageContext";
+import type { Translations } from "@/lib/i18n/translations";
 
 export type CustomerSummary = {
   email: string;
@@ -23,6 +25,7 @@ export type WidgetCustomersData = {
 };
 
 export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
+  const { t, locale } = useLanguage();
   const [query, setQuery] = useState("");
 
   const money = (cents: number) =>
@@ -33,13 +36,13 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
 
   const fmtDay = useMemo(
     () =>
-      new Intl.DateTimeFormat("en-US", {
+      new Intl.DateTimeFormat(locale, {
         timeZone: data.timezone,
         month: "short",
         day: "numeric",
         year: "numeric",
       }),
-    [data.timezone]
+    [data.timezone, locale]
   );
 
   const filtered = useMemo(() => {
@@ -57,10 +60,8 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
     return (
       <div className="rounded-2xl border border-border bg-background px-5 py-12 text-center">
         <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
-        <p className="mt-3 text-sm font-medium">No customers yet</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Everyone who books an appointment will appear here.
-        </p>
+        <p className="mt-3 text-sm font-medium">{t.booking.noCustomersYetTitle}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t.booking.noCustomersYetDesc}</p>
       </div>
     );
   }
@@ -73,12 +74,13 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search customers…"
+            placeholder={t.booking.searchCustomersPlaceholder}
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-400"
           />
         </div>
         <span className="shrink-0 text-sm text-muted-foreground">
-          {data.customers.length} {data.customers.length === 1 ? "customer" : "customers"}
+          {data.customers.length}{" "}
+          {data.customers.length === 1 ? t.booking.customerSingular : t.booking.customerPlural}
         </span>
       </div>
 
@@ -90,11 +92,12 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
               c={c}
               money={money}
               fmtDay={(iso) => fmtDay.format(new Date(iso))}
+              t={t}
             />
           ))}
           {filtered.length === 0 && (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
-              No customers match “{query}”.
+              {t.booking.noCustomersMatch.replace("{query}", query)}
             </p>
           )}
         </div>
@@ -107,10 +110,12 @@ function CustomerRow({
   c,
   money,
   fmtDay,
+  t,
 }: {
   c: CustomerSummary;
   money: (cents: number) => string;
   fmtDay: (iso: string) => string;
+  t: Translations;
 }) {
   const initials = c.name
     .split(" ")
@@ -121,7 +126,7 @@ function CustomerRow({
     .toUpperCase();
 
   const firstName = c.name.split(" ")[0] || c.name;
-  const wa = c.phone ? whatsappLink(c.phone, `Hi ${firstName} 👋`) : null;
+  const wa = c.phone ? whatsappLink(c.phone, t.booking.whatsappSimpleGreeting.replace("{name}", firstName)) : null;
 
   return (
     <div className="flex items-center gap-4 px-5 py-4">
@@ -134,7 +139,7 @@ function CustomerRow({
           <p className="truncate font-medium">{c.name}</p>
           {c.upcoming > 0 && (
             <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-              {c.upcoming} upcoming
+              {t.booking.upcomingBadge.replace("{count}", String(c.upcoming))}
             </span>
           )}
         </div>
@@ -143,13 +148,13 @@ function CustomerRow({
 
       <div className="hidden text-right sm:block">
         <p className="text-sm font-medium tabular-nums">
-          {c.bookings} {c.bookings === 1 ? "booking" : "bookings"}
+          {c.bookings} {c.bookings === 1 ? t.booking.bookingCountSingular : t.booking.bookingCountPlural}
         </p>
         <p className="text-xs text-muted-foreground">
           {c.nextVisit
-            ? `Next ${fmtDay(c.nextVisit)}`
+            ? t.booking.nextVisit.replace("{date}", fmtDay(c.nextVisit))
             : c.lastVisit
-              ? `Last ${fmtDay(c.lastVisit)}`
+              ? t.booking.lastVisit.replace("{date}", fmtDay(c.lastVisit))
               : "—"}
         </p>
       </div>
@@ -157,7 +162,7 @@ function CustomerRow({
       {c.revenueCents > 0 && (
         <div className="hidden w-24 text-right md:block">
           <p className="text-sm font-medium tabular-nums">{money(c.revenueCents)}</p>
-          <p className="text-xs text-muted-foreground">revenue</p>
+          <p className="text-xs text-muted-foreground">{t.booking.revenueLower}</p>
         </div>
       )}
 
@@ -168,8 +173,8 @@ function CustomerRow({
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30"
-            aria-label={`WhatsApp ${c.name}`}
-            title="Message on WhatsApp"
+            aria-label={t.booking.whatsappAria.replace("{name}", c.name)}
+            title={t.booking.whatsappTitle}
           >
             <MessageCircle className="h-4 w-4" />
           </a>
@@ -177,8 +182,8 @@ function CustomerRow({
         <a
           href={`mailto:${c.email}`}
           className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label={`Email ${c.name}`}
-          title="Send email"
+          aria-label={t.booking.emailAria.replace("{name}", c.name)}
+          title={t.booking.emailTitle}
         >
           <Mail className="h-4 w-4" />
         </a>

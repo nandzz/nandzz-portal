@@ -23,6 +23,7 @@ export async function POST(
     customer_phone?: string;
     notes?: string;
     staff_id?: string | null;
+    location_id?: string | null;
   };
 
   // The public web form requires a phone number (the MCP/AI programmatic path
@@ -65,13 +66,14 @@ export async function POST(
       p_notes: body.notes ?? null,
       p_created_by: createdBy,
       p_staff_id: body.staff_id ?? null,
+      p_location_id: body.location_id ?? null,
     })
     .single<WidgetBooking>();
 
   if (error || !booking) {
     console.error("[widgets/book] create_booking_tx failed:", error);
     const mapped = mapBookingError(error?.message);
-    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+    return NextResponse.json({ error: mapped.code }, { status: mapped.status });
   }
 
   // Build the manage link + send a confirmation (fire-and-forget on failure).

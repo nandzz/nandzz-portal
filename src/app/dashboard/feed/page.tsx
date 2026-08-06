@@ -9,11 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Compass, Rss } from "lucide-react";
 import type { SpaceWithProfile } from "@/lib/types";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { PageShell } from "@/components/layout/PageShell";
 
-export const metadata: Metadata = {
-  title: "Feed | Nandzz",
-  description: "Spaces from people you follow.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.feedTitle,
+    description: t.meta.feedDescription,
+  };
+}
 
 const PAGE_SIZE = 24;
 
@@ -70,7 +74,7 @@ export default async function FeedPage({
         <div className="absolute left-0 top-0 h-[300px] w-[300px] rounded-full bg-violet-100/30 blur-3xl dark:bg-violet-950/15" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <PageShell width="content">
         <div className="mb-10 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
             <Rss className="h-5 w-5 text-violet-600 dark:text-violet-400" />
@@ -134,7 +138,7 @@ export default async function FeedPage({
             )}
           </>
         )}
-      </div>
+      </PageShell>
     </div>
   );
 }

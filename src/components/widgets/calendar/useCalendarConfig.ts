@@ -3,6 +3,7 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import type { CalendarConfig } from "@/lib/types";
 import { normalizeCalendarConfig, validateCalendarConfig } from "@/lib/widgets/calendar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface CalendarConfigController {
   config: CalendarConfig;
@@ -24,6 +25,7 @@ export function useCalendarConfig(
   initialConfig: CalendarConfig,
   initialEnabled: boolean
 ): CalendarConfigController {
+  const { t } = useLanguage();
   const [config, setConfig] = useState<CalendarConfig>(() => normalizeCalendarConfig(initialConfig));
   const [enabled, setEnabled] = useState(initialEnabled);
   const [saving, setSaving] = useState(false);
@@ -45,18 +47,18 @@ export function useCalendarConfig(
       });
       const data = await res.json();
       if (!res.ok) {
-        setStatus({ ok: false, msg: data.error ?? "Could not save." });
+        setStatus({ ok: false, msg: data.error ?? t.booking.errorCouldNotSave });
         return false;
       }
-      setStatus({ ok: true, msg: "Saved." });
+      setStatus({ ok: true, msg: t.booking.savedMsg });
       return true;
     } catch {
-      setStatus({ ok: false, msg: "Could not save." });
+      setStatus({ ok: false, msg: t.booking.errorCouldNotSave });
       return false;
     } finally {
       setSaving(false);
     }
-  }, [config, enabled, instanceId]);
+  }, [config, enabled, instanceId, t]);
 
   return { config, setConfig, enabled, setEnabled, saving, status, save };
 }

@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getServerTranslations } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Cookie Policy | Nandzz",
-  description: "Cookie policy for the nandzz platform.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.cookiesTitle,
+    description: t.meta.cookiesDescription,
+  };
+}
 
 export default function CookiesPage() {
   return (

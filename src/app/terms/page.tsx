@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getServerTranslations } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Terms & Conditions | Nandzz",
-  description: "Terms and conditions for using the nandzz platform.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.termsTitle,
+    description: t.meta.termsDescription,
+  };
+}
 
 export default function TermsPage() {
   return (
@@ -54,7 +58,7 @@ export default function TermsPage() {
             nandzz is a neutral hosting and sharing platform that allows users
             to upload, save, and share web content — including HTML
             applications, PDFs, external URLs, and interactive creations
-            (&quot;Spaces&quot;). Spaces may be set to public or private
+            (&quot;Content&quot;). Content may be set to public or private
             visibility.
           </p>
           <p className="mt-3">
@@ -93,7 +97,7 @@ export default function TermsPage() {
             integrity of any content rendered through the Platform.
           </p>
           <p className="mt-3">
-            When you access a Space containing third-party code, URLs, or
+            When you access Content containing third-party code, URLs, or
             embedded content, you do so entirely at your own risk. nandzz is
             not responsible for any damage to your device, data loss, privacy
             breaches, or any other harm resulting from executing or viewing
@@ -365,7 +369,7 @@ export default function TermsPage() {
             <a href="/privacy" className="text-violet-600 hover:underline">
               Privacy Policy
             </a>
-            . Public Spaces associated with your account may be removed or
+            . Public Content associated with your account may be removed or
             rendered inaccessible upon account deletion.
           </p>
         </section>

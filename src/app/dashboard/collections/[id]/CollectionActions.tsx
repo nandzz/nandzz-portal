@@ -42,7 +42,7 @@ export function CollectionActions({ collection }: CollectionActionsProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Delete collection "${collection.name}"? Spaces won't be deleted.`)) return;
+    if (!confirm(`Delete collection "${collection.name}"? Content won't be deleted.`)) return;
     await supabase.from("collections").delete().eq("id", collection.id);
     router.push("/dashboard/collections");
   };
@@ -55,7 +55,7 @@ export function CollectionActions({ collection }: CollectionActionsProps) {
           className={cn(buttonVariants({ variant: "outline", size: "sm" }), "border-violet-400/60 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/30 gap-1.5")}
         >
           <Plus className="h-3.5 w-3.5" />
-          New Space
+          New Content
         </Link>
         <Button
           variant="outline"

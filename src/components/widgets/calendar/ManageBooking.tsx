@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarDays, Clock, User, X } from "lucide-react";
 import type { Slot } from "@/lib/widgets/calendar";
 import { ReschedulePicker } from "./ReschedulePicker";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export type ManageBookingData = {
   service_name: string;
@@ -19,6 +20,7 @@ export type ManageBookingData = {
 };
 
 export function ManageBooking({ token, initial }: { token: string; initial: ManageBookingData }) {
+  const { t, locale } = useLanguage();
   const [booking, setBooking] = useState(initial);
   const [mode, setMode] = useState<"view" | "reschedule">("view");
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
 
   const tz = booking.timezone;
   const fmt = (iso: string) =>
-    new Intl.DateTimeFormat("en-US", {
+    new Intl.DateTimeFormat(locale, {
       timeZone: tz,
       weekday: "long",
       month: "long",
@@ -46,33 +48,32 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not reschedule.");
+        setError(t.booking.errorReschedule);
         return;
       }
       setBooking({ ...booking, starts_at: data.starts_at });
       setMode("view");
     } catch {
-      setError("Could not reschedule.");
+      setError(t.booking.errorReschedule);
     } finally {
       setBusy(false);
     }
   }
 
   async function cancel() {
-    if (!confirm("Cancel this booking?")) return;
+    if (!confirm(t.booking.confirmCancelBooking)) return;
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/widgets/bookings/${token}`, { method: "DELETE" });
-      const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not cancel.");
+        setError(t.booking.errorCancel);
         return;
       }
       setBooking({ ...booking, status: "cancelled" });
       setMode("view");
     } catch {
-      setError("Could not cancel.");
+      setError(t.booking.errorCancel);
     } finally {
       setBusy(false);
     }
@@ -86,14 +87,16 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
             <CalendarDays className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold">Your booking</h1>
-            <p className="text-sm text-muted-foreground">with {booking.business_name}</p>
+            <h1 className="text-lg font-semibold">{t.booking.yourBooking}</h1>
+            <p className="text-sm text-muted-foreground">
+              {t.booking.withBusiness.replace("{business}", booking.business_name)}
+            </p>
           </div>
         </div>
 
         {booking.status === "cancelled" ? (
           <div className="mt-6 rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
-            This booking has been cancelled.
+            {t.booking.cancelledNotice}
           </div>
         ) : (
           <div className="mt-6 space-y-1">
@@ -103,7 +106,7 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
             </p>
             {booking.staff_name && (
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" /> with {booking.staff_name}
+                <User className="h-4 w-4" /> {t.booking.withName.replace("{name}", booking.staff_name)}
               </p>
             )}
           </div>
@@ -124,14 +127,14 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
               }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"
             >
-              <CalendarDays className="h-4 w-4" /> Reschedule
+              <CalendarDays className="h-4 w-4" /> {t.booking.reschedule}
             </button>
             <button
               onClick={cancel}
               disabled={busy}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:hover:bg-red-950/30"
             >
-              <X className="h-4 w-4" /> Cancel
+              <X className="h-4 w-4" /> {t.booking.cancel}
             </button>
           </div>
         )}
@@ -139,12 +142,12 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
         {mode === "reschedule" && (
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Pick a new time</h2>
+              <h2 className="text-sm font-semibold">{t.booking.pickNewTime}</h2>
               <button
                 onClick={() => setMode("view")}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                Cancel
+                {t.booking.cancel}
               </button>
             </div>
             <ReschedulePicker
@@ -162,7 +165,7 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       {booking.business_username && (
         <p className="mt-4 text-center text-sm">
           <a href={`/${booking.business_username}`} className="text-emerald-600 hover:underline">
-            ← Back to {booking.business_name}
+            {t.booking.backToBusiness.replace("{business}", booking.business_name)}
           </a>
         </p>
       )}

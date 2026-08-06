@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getServerTranslations } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | Nandzz",
-  description: "Privacy policy for the nandzz platform.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.privacyTitle,
+    description: t.meta.privacyDescription,
+  };
+}
 
 export default function PrivacyPage() {
   return (
@@ -53,7 +57,7 @@ export default function PrivacyPage() {
             When you create an account, we collect your email address,
             username, and any profile information you choose to add. We also
             collect content you upload or create on the Platform
-            (&quot;Spaces&quot;).
+            (&quot;Content&quot;).
           </p>
           <p className="mt-3">
             <span className="font-medium text-foreground">
@@ -78,7 +82,7 @@ export default function PrivacyPage() {
               <span className="font-medium text-foreground">
                 Contract performance:
               </span>{" "}
-              to create and manage your account, display your Spaces, and
+              to create and manage your account, display your Content, and
               process your subscription.
             </li>
             <li>

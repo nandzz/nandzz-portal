@@ -14,6 +14,8 @@ import { ShareMenu } from "@/components/spaces/ShareMenu";
 import { BackButton } from "@/components/ui/BackButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Profile } from "@/lib/types";
+import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n/translations";
 
 // react.cache dedupes the fetch between generateMetadata and the page render.
 const getData = cache(async (username: string, instanceId: string) => {
@@ -29,8 +31,8 @@ const getData = cache(async (username: string, instanceId: string) => {
 });
 
 // Friendly heading per widget type; falls back to the catalog name.
-function widgetHeading(slug: string, name: string, displayName: string) {
-  if (slug === "calendar") return `Book with ${displayName}`;
+function widgetHeading(t: Translations, slug: string, name: string, displayName: string) {
+  if (slug === "calendar") return t.booking.bookWithName.replace("{name}", displayName);
   return name;
 }
 
@@ -40,13 +42,17 @@ export async function generateMetadata({
   params: Promise<{ username: string; instanceId: string }>;
 }): Promise<Metadata> {
   const { username, instanceId } = await params;
-  const { profile, widget } = await getData(username, instanceId);
-  if (!profile || !widget) return { title: "Widget Not Found | Nandzz" };
+  const [{ profile, widget }, t] = await Promise.all([
+    getData(username, instanceId),
+    getServerTranslations(),
+  ]);
+  if (!profile || !widget) return { title: t.booking.widgetNotFound };
 
   const displayName = profile.display_name || profile.username;
-  const heading = widgetHeading(widget.catalog.slug, widget.catalog.name, displayName);
+  const heading = widgetHeading(t, widget.catalog.slug, widget.catalog.name, displayName);
   const description =
-    widget.catalog.description || `${heading} directly from ${displayName}'s profile on nandzz.`;
+    widget.catalog.description ||
+    t.booking.widgetDescriptionFallback.replace("{heading}", heading).replace("{name}", displayName);
   const url = `https://nandzz.com/${username}/widget/${instanceId}`;
 
   return {
@@ -76,7 +82,10 @@ export default async function WidgetPage({
   params: Promise<{ username: string; instanceId: string }>;
 }) {
   const { username, instanceId } = await params;
-  const { profile, widget } = await getData(username, instanceId);
+  const [{ profile, widget }, t] = await Promise.all([
+    getData(username, instanceId),
+    getServerTranslations(),
+  ]);
 
   // Not found unless the profile exists and the widget is live (enabled + entitled).
   if (!profile || !widget) notFound();
@@ -90,7 +99,7 @@ export default async function WidgetPage({
   const isOwner = user?.id === profile.id;
 
   const displayName = profile.display_name || profile.username;
-  const heading = widgetHeading(widget.catalog.slug, widget.catalog.name, displayName);
+  const heading = widgetHeading(t, widget.catalog.slug, widget.catalog.name, displayName);
   const config = normalizeCalendarConfig(widget.config);
 
   return (
@@ -138,6 +147,7 @@ export default async function WidgetPage({
         {widget.catalog.slug === "calendar" ? (
           <CalendarBookingFlow
             instanceId={widget.id}
+            locations={config.locations}
             services={config.services}
             timezone={config.timezone}
             businessName={displayName}
@@ -146,7 +156,7 @@ export default async function WidgetPage({
           />
         ) : (
           <p className="py-12 text-center text-sm text-muted-foreground">
-            This widget can&apos;t be displayed yet.
+            {t.booking.widgetUnavailable}
           </p>
         )}
       </div>

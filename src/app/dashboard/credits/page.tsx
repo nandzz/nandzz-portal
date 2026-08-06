@@ -8,6 +8,7 @@ import { Coins, Sparkles, Check, History, LayoutGrid } from "lucide-react";
 import { BuyCreditsButton } from "./BuyCreditsButton";
 import type { CreditPack, CreditLedgerEntry } from "@/lib/types";
 import { getCreditsConfig } from "@/lib/credits-config";
+import { PageShell } from "@/components/layout/PageShell";
 
 export default async function CreditsPage({
   searchParams,
@@ -58,7 +59,7 @@ export default async function CreditsPage({
         <div className="absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-violet-100/30 blur-3xl dark:bg-violet-950/15" />
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-12">
+      <PageShell width="content">
         {/* Header */}
         <div className="mb-10 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
@@ -67,7 +68,7 @@ export default async function CreditsPage({
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Credits</h1>
             <p className="text-muted-foreground mt-0.5">
-              Buy credits to publish spaces and chat with your AI agent.
+              Buy credits to publish content and chat with your AI agent.
             </p>
           </div>
         </div>
@@ -100,7 +101,7 @@ export default async function CreditsPage({
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="rounded-lg bg-muted/40 border border-border/40 px-3 py-2">
-                <p className="text-xs text-muted-foreground">Free (spaces only)</p>
+                <p className="text-xs text-muted-foreground">Free (content only)</p>
                 <p className="font-semibold text-base mt-0.5">{freeCredits.toLocaleString()}</p>
               </div>
               <div className="rounded-lg bg-violet-50/40 dark:bg-violet-950/30 border border-violet-200/40 dark:border-violet-800/40 px-3 py-2">
@@ -112,7 +113,7 @@ export default async function CreditsPage({
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-4">
-            Publishing a space costs {publishCost} credits. LLM chat is billed per token from your paid balance.
+            Publishing content costs {publishCost} credits. LLM chat is billed per token from your paid balance.
           </p>
         </div>
 
@@ -220,7 +221,7 @@ export default async function CreditsPage({
           <Link href="/dashboard">
             <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
               <LayoutGrid className="h-4 w-4" />
-              Back to spaces
+              Back to content
             </Button>
           </Link>
         </div>
@@ -236,7 +237,7 @@ export default async function CreditsPage({
             </button>
           </form>
         </div>
-      </div>
+      </PageShell>
     </div>
   );
 }
@@ -247,7 +248,7 @@ function formatReason(reason: string): string {
     admin_grant: "Admin grant",
     admin_revoke: "Admin revoke",
     stripe_purchase: "Pack purchase",
-    publish_space: "Published space",
+    publish_space: "Published content",
     llm_agent_chat: "AI chat",
     llm_page_editor: "Page editor",
     refund: "Refund",

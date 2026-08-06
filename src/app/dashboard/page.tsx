@@ -10,6 +10,7 @@ import type { Space } from "@/lib/types";
 import { FEATURES } from "@/lib/flags";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { getCreditsConfig } from "@/lib/credits-config";
+import { PageShell } from "@/components/layout/PageShell";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
         <div className="absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-violet-100/30 blur-3xl dark:bg-violet-950/15" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <PageShell width="content">
         {/* Page header */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -99,7 +100,7 @@ export default async function DashboardPage() {
                   You&apos;re out of credits
                 </p>
                 <p className="text-xs text-orange-700/80 dark:text-orange-400/80 mt-0.5">
-                  Publishing a space costs {publishCost} credits. Top up to keep sharing.
+                  Publishing content costs {publishCost} credits. Top up to keep sharing.
                 </p>
               </div>
             </div>
@@ -145,7 +146,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         )}
-      </div>
+      </PageShell>
     </div>
   );
 }

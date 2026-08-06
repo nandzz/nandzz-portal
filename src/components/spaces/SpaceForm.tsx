@@ -360,7 +360,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
       }
 
       if (spaceType === "url" && !url) {
-        setError("URL is required for URL spaces");
+        setError("URL is required for URL content");
         setLoading(false);
         return;
       }
@@ -502,7 +502,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           .from("space-html")
           .upload(filePath, stubBlob, { contentType: "text/html", upsert: false });
         if (uploadError) {
-          setError("Failed to create space: " + uploadError.message);
+          setError("Failed to create content: " + uploadError.message);
           return;
         }
         const { data: publicUrlData } = supabase.storage.from("space-html").getPublicUrl(filePath);
@@ -685,7 +685,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
           </div>
           <div>
             <CardTitle className="text-xl">
-              {isEditing ? "Edit Space" : "Create a New Space"}
+              {isEditing ? "Edit Content" : "Create New Content"}
             </CardTitle>
             <CardDescription>
               Share a website, image, video, note, HTML, or PDF.
@@ -697,7 +697,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Space Type Toggle */}
           <div className="space-y-2">
-            <Label>Space Type</Label>
+            <Label>Content Type</Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {typeButtons.map(({ type, icon: Icon, label, description, beta }) => (
                 <button
@@ -750,7 +750,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                   Generate content after creating
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Give your space a title, then create it. Once inside, use the <span className="font-medium text-foreground">AI Edit</span> button to describe what you want and AI will build it for you.
+                  Give your content a title, then create it. Once inside, use the <span className="font-medium text-foreground">AI Edit</span> button to describe what you want and AI will build it for you.
                 </p>
               </div>
             </div>
@@ -1400,7 +1400,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
                     )}
 
                     {hasImage && (
-                      <p className="text-xs text-muted-foreground">Shown as the space thumbnail</p>
+                      <p className="text-xs text-muted-foreground">Shown as the content thumbnail</p>
                     )}
                   </>
                 );
@@ -1456,7 +1456,7 @@ export function SpaceForm({ space, collectionId }: SpaceFormProps) {
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={isSubmitDisabled}>
-              {loading ? "Saving..." : isEditing ? "Save Changes" : "Create Space"}
+              {loading ? "Saving..." : isEditing ? "Save Changes" : "Create Content"}
             </Button>
             <Button
               type="button"

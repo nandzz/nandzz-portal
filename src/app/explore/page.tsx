@@ -6,23 +6,25 @@ import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/explore/SearchBar";
 import { Compass, Plus } from "lucide-react";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { PageShell } from "@/components/layout/PageShell";
 
-export const metadata: Metadata = {
-  title: "Explore Spaces",
-  description:
-    "Discover web apps, interactive tools, PDFs, and AI-generated creations shared by the nandzz community.",
-  openGraph: {
-    title: "Explore Spaces | Nandzz",
-    description:
-      "Discover web apps, interactive tools, PDFs, and AI-generated creations shared by the community.",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Explore Spaces | Nandzz",
-    description: "Discover web apps and AI creations shared by the nandzz community.",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslations();
+  return {
+    title: t.meta.exploreTitle,
+    description: t.meta.exploreDescription,
+    openGraph: {
+      title: t.meta.exploreOgTitle,
+      description: t.meta.exploreOgDescription,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t.meta.exploreOgTitle,
+      description: t.meta.exploreTwitterDescription,
+    },
+  };
+}
 
 const PAGE_SIZE = 24;
 
@@ -92,7 +94,7 @@ export default async function ExplorePage({
         <div className="absolute left-0 bottom-0 h-[300px] w-[300px] rounded-full bg-fuchsia-100/30 blur-3xl dark:bg-fuchsia-950/15" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-12">
+      <PageShell width="content">
         {/* Page header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -171,7 +173,7 @@ export default async function ExplorePage({
             )}
           </div>
         )}
-      </div>
+      </PageShell>
     </div>
   );
 }

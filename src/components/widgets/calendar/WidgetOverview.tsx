@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { type BookingRowData } from "./BookingRow";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export type OverviewBooking = BookingRowData;
 
@@ -42,6 +43,7 @@ const REALIZED = "hsl(160 84% 39%)"; // emerald-600
 const UPCOMING = "hsl(152 76% 80%)"; // emerald-200
 
 export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
+  const { t } = useLanguage();
   const money = (cents: number) =>
     `${data.currencySymbol}${(cents / 100).toLocaleString(undefined, {
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
@@ -52,27 +54,29 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
 
   const tiles = [
     {
-      label: "Upcoming",
+      label: t.booking.filterUpcoming,
       value: String(data.totals.upcoming),
-      hint: `${data.totals.next7} in the next 7 days`,
+      hint: t.booking.tileUpcomingHint.replace("{count}", String(data.totals.next7)),
       icon: CalendarClock,
     },
     {
-      label: "All-time bookings",
+      label: t.booking.tileAllTime,
       value: String(data.totals.confirmedAllTime),
-      hint: data.totals.cancelled ? `${data.totals.cancelled} cancelled` : "confirmed",
+      hint: data.totals.cancelled
+        ? t.booking.tileAllTimeHintCancelled.replace("{count}", String(data.totals.cancelled))
+        : t.booking.tileAllTimeHintConfirmed,
       icon: CalendarCheck,
     },
     {
-      label: "Revenue",
+      label: t.booking.revenue,
       value: money(data.totals.revenueCents),
-      hint: "from priced services",
+      hint: t.booking.tileRevenueHint,
       icon: Wallet,
     },
     {
-      label: "Next 7 days",
+      label: t.booking.tileNext7,
       value: String(data.totals.next7),
-      hint: "bookings on the calendar",
+      hint: t.booking.tileNext7Hint,
       icon: TrendingUp,
     },
   ];
@@ -87,7 +91,7 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline"
           >
-            Preview booking page <ArrowUpRight className="h-3.5 w-3.5" />
+            {t.booking.previewBookingPage} <ArrowUpRight className="h-3.5 w-3.5" />
           </a>
         </div>
       )}
@@ -111,15 +115,15 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
         <div className="rounded-2xl border border-border bg-background p-5 lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold">Booking volume</h3>
-              <p className="text-xs text-muted-foreground">By week · past &amp; upcoming</p>
+              <h3 className="font-semibold">{t.booking.bookingVolume}</h3>
+              <p className="text-xs text-muted-foreground">{t.booking.byWeekCaption}</p>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: REALIZED }} /> Realized
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: REALIZED }} /> {t.booking.realized}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: UPCOMING }} /> Upcoming
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: UPCOMING }} /> {t.booking.filterUpcoming}
               </span>
             </div>
           </div>
@@ -146,7 +150,7 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
                   borderRadius: "8px",
                   fontSize: 12,
                 }}
-                formatter={(value) => [Number(value), "Bookings"]}
+                formatter={(value) => [Number(value), t.booking.appointments]}
               />
               <Bar dataKey="count" radius={[3, 3, 0, 0]} maxBarSize={28}>
                 {data.weekly.map((w, i) => (
@@ -159,9 +163,9 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
 
         {/* Service breakdown */}
         <div className="rounded-2xl border border-border bg-background p-5 lg:col-span-2">
-          <h3 className="mb-4 font-semibold">Top services</h3>
+          <h3 className="mb-4 font-semibold">{t.booking.topServices}</h3>
           {data.services.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No bookings by service yet.</p>
+            <p className="text-sm text-muted-foreground">{t.booking.noServicesYet}</p>
           ) : (
             <div className="space-y-3">
               {data.services.slice(0, 5).map((s) => (

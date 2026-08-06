@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Self-contained month-grid date picker for the booking overlay. No date-picker
 // dependency — the app already carries no such lib and the interaction is small
@@ -21,7 +22,12 @@ interface Props {
   countFor?: (dateKey: string) => number; // open-slot count, for aria labels
 }
 
-const WEEKDAY_HEADERS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// 2024-01-01 was a Monday (UTC) — a stable anchor for deriving locale-aware
+// short weekday names (Mon..Sun) via Intl instead of hardcoding English.
+function weekdayHeaders(locale: string): string[] {
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(Date.UTC(2024, 0, 1 + i))));
+}
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -53,24 +59,26 @@ function clampKey(key: string, min: string, max: string) {
   return key < min ? min : key > max ? max : key;
 }
 
-const monthLabelFmt = new Intl.DateTimeFormat("en-US", {
-  timeZone: "UTC",
-  month: "long",
-  year: "numeric",
-});
-const dayLabelFmt = new Intl.DateTimeFormat("en-US", {
-  timeZone: "UTC",
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-});
-function labelForKey(key: string) {
-  return dayLabelFmt.format(new Date(`${key}T12:00:00Z`));
+function monthLabelFmt(locale: string) {
+  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", month: "long", year: "numeric" });
+}
+function dayLabelFmt(locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+function labelForKey(locale: string, key: string) {
+  return dayLabelFmt(locale).format(new Date(`${key}T12:00:00Z`));
 }
 
 // Calendar-shaped placeholder shown while availability loads — same footprint as
 // MonthCalendar so the layout doesn't jump when the real grid arrives.
 export function CalendarSkeleton() {
+  const { locale } = useLanguage();
+  const headers = weekdayHeaders(locale);
   return (
     <div className="rounded-2xl border border-border bg-background p-3" aria-hidden="true">
       <div className="mb-2 flex items-center justify-between">
@@ -79,8 +87,8 @@ export function CalendarSkeleton() {
         <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
       </div>
       <div className="grid grid-cols-7 gap-1 mb-1">
-        {WEEKDAY_HEADERS.map((w) => (
-          <div key={w} className="text-center text-[11px] font-medium text-muted-foreground/40">
+        {headers.map((w, i) => (
+          <div key={i} className="text-center text-[11px] font-medium text-muted-foreground/40">
             {w}
           </div>
         ))}
@@ -102,6 +110,8 @@ export function MonthCalendar({
   maxDate,
   countFor,
 }: Props) {
+  const { t, locale } = useLanguage();
+  const headers = useMemo(() => weekdayHeaders(locale), [locale]);
   // Only the user's own focus movement is stored; until they move, focus (and so
   // the visible month) follows the controlled `selected` date. The visible month
   // is derived from the focused date — no state to keep in sync.
@@ -191,19 +201,19 @@ export function MonthCalendar({
           type="button"
           onClick={() => goMonth(-1)}
           disabled={atMinMonth}
-          aria-label="Previous month"
+          aria-label={t.booking.previousMonthAria}
           className="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span aria-live="polite" className="text-sm font-semibold">
-          {monthLabelFmt.format(new Date(Date.UTC(view.y, view.m, 1, 12)))}
+          {monthLabelFmt(locale).format(new Date(Date.UTC(view.y, view.m, 1, 12)))}
         </span>
         <button
           type="button"
           onClick={() => goMonth(1)}
           disabled={atMaxMonth}
-          aria-label="Next month"
+          aria-label={t.booking.nextMonthAria}
           className="cursor-pointer inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
         >
           <ChevronRight className="h-4 w-4" />
@@ -211,8 +221,8 @@ export function MonthCalendar({
       </div>
 
       <div className="grid grid-cols-7 gap-1 mb-1" aria-hidden="true">
-        {WEEKDAY_HEADERS.map((w) => (
-          <div key={w} className="text-center text-[11px] font-medium text-muted-foreground">
+        {headers.map((w, i) => (
+          <div key={i} className="text-center text-[11px] font-medium text-muted-foreground">
             {w}
           </div>
         ))}
@@ -221,7 +231,7 @@ export function MonthCalendar({
       <div
         ref={gridRef}
         role="grid"
-        aria-label="Choose a date"
+        aria-label={t.booking.chooseDateAria}
         onKeyDown={onKeyDown}
         className="grid grid-cols-7 gap-1"
       >
@@ -234,8 +244,10 @@ export function MonthCalendar({
           const count = countFor?.(key) ?? 0;
 
           const label = selectable
-            ? `${labelForKey(key)} — ${count} ${count === 1 ? "time" : "times"} available`
-            : `${labelForKey(key)} — unavailable`;
+            ? `${labelForKey(locale, key)} — ${count} ${
+                count === 1 ? t.booking.timeSingular : t.booking.timePlural
+              } ${t.booking.availableSuffix}`
+            : `${labelForKey(locale, key)} — ${t.booking.unavailableSuffix}`;
 
           const base =
             "relative flex h-11 w-full items-center justify-center rounded-lg text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500";

@@ -14,7 +14,7 @@ export default function ExploreError({
       <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20">
         <AlertTriangle className="h-8 w-8 text-destructive" />
       </div>
-      <h2 className="text-xl font-semibold mb-2">Failed to load spaces</h2>
+      <h2 className="text-xl font-semibold mb-2">Failed to load content</h2>
       <p className="text-muted-foreground max-w-sm mb-6">
         Something went wrong loading the explore page. Please try again.
       </p>

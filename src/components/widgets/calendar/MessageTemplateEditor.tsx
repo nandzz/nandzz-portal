@@ -2,8 +2,9 @@
 
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
-import type { MessageTemplate } from "@/lib/types";
+import type { MessageChannel, MessageTemplate } from "@/lib/types";
 import { MESSAGE_CHANNELS, MESSAGE_VARIABLES } from "@/lib/widgets/messages";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   title: string;
@@ -13,7 +14,14 @@ interface Props {
 }
 
 export function MessageTemplateEditor({ title, description, value, onChange }: Props) {
+  const { t } = useLanguage();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const channelLabels: Record<MessageChannel, string> = {
+    off: t.booking.channelOff,
+    whatsapp: t.booking.channelWhatsapp,
+    email: t.booking.channelEmail,
+    both: t.booking.channelBoth,
+  };
 
   const showEmail = value.channel === "email" || value.channel === "both";
   const disabled = value.channel === "off";
@@ -58,29 +66,29 @@ export function MessageTemplateEditor({ title, description, value, onChange }: P
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {c.label}
+              {channelLabels[c.value]}
             </button>
           ))}
         </div>
       </div>
 
       {disabled ? (
-        <p className="text-xs text-muted-foreground">This message is turned off — customers won’t receive it.</p>
+        <p className="text-xs text-muted-foreground">{t.booking.messageOffNotice}</p>
       ) : (
         <>
           {showEmail && (
             <label className="block">
-              <span className="mb-1 block text-xs text-muted-foreground">Email subject</span>
+              <span className="mb-1 block text-xs text-muted-foreground">{t.booking.emailSubjectLabel}</span>
               <input
                 className={`${inputCls} w-full`}
                 value={value.subject}
                 onChange={(e) => onChange({ ...value, subject: e.target.value })}
-                placeholder="Booking confirmed"
+                placeholder={t.booking.emailSubjectPlaceholder}
               />
             </label>
           )}
           <label className="block">
-            <span className="mb-1 block text-xs text-muted-foreground">Message</span>
+            <span className="mb-1 block text-xs text-muted-foreground">{t.booking.messageBodyLabel}</span>
             <textarea
               ref={bodyRef}
               rows={5}
@@ -90,7 +98,7 @@ export function MessageTemplateEditor({ title, description, value, onChange }: P
             />
           </label>
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Insert:</span>
+            <span className="text-xs text-muted-foreground">{t.booking.insertLabel}</span>
             {MESSAGE_VARIABLES.map((v) => (
               <button
                 key={v.key}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const { t } = useLanguage();
+  // Unique per mount so multiple instances (e.g. Navbar + Sidebar) don't
+  // collide on the same realtime topic.
+  const instanceId = useId();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -73,7 +76,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`notifications:${userId}`)
+      .channel(`notifications:${userId}:${instanceId}`)
       .on(
         "postgres_changes",
         {
@@ -93,7 +96,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, userId]);
+  }, [supabase, userId, instanceId]);
 
   const markAllRead = useCallback(async () => {
     const unreadIds = notifications.filter((n) => !n.read_at).map((n) => n.id);

@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Kicks off Stripe Checkout (subscription) for a widget type.
 export function SubscribeButton({
   catalogId,
-  label = "Subscribe",
+  label,
   className,
 }: {
   catalogId: string;
   label?: string;
   className?: string;
 }) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,13 +30,13 @@ export function SubscribeButton({
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
-        setError(data.error ?? "Could not start checkout.");
+        setError(t.booking.errorCheckoutFailed);
         setLoading(false);
         return;
       }
       window.location.href = data.url;
     } catch {
-      setError("Could not start checkout.");
+      setError(t.booking.errorCheckoutFailed);
       setLoading(false);
     }
   }
@@ -43,7 +45,7 @@ export function SubscribeButton({
     <div className={className}>
       <Button onClick={subscribe} disabled={loading} size="sm">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-        {label}
+        {label ?? t.booking.subscribeDefaultLabel}
       </Button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

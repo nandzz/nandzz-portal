@@ -77,16 +77,16 @@ export function HomeClient({ spaces }: { spaces: SpaceWithProfile[] | null }) {
                 {/* Gallery preview */}
                 <div className="p-4 grid grid-cols-2 gap-2.5 bg-background/50">
                   <div className="aspect-video rounded-lg bg-gradient-to-br from-violet-100 to-violet-50 dark:from-violet-900/40 dark:to-violet-800/20 flex items-center justify-center">
-                    <span className="text-[10px] font-mono text-violet-400/70">space #1</span>
+                    <span className="text-[10px] font-mono text-violet-400/70">content #1</span>
                   </div>
                   <div className="aspect-video rounded-lg bg-gradient-to-br from-sky-100 to-sky-50 dark:from-sky-900/40 dark:to-sky-800/20 flex items-center justify-center">
-                    <span className="text-[10px] font-mono text-sky-400/70">space #2</span>
+                    <span className="text-[10px] font-mono text-sky-400/70">content #2</span>
                   </div>
                   <div className="aspect-video rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-800/20 flex items-center justify-center">
-                    <span className="text-[10px] font-mono text-emerald-400/70">space #3</span>
+                    <span className="text-[10px] font-mono text-emerald-400/70">content #3</span>
                   </div>
                   <div className="aspect-video rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-800/20 flex items-center justify-center">
-                    <span className="text-[10px] font-mono text-amber-400/70">space #4</span>
+                    <span className="text-[10px] font-mono text-amber-400/70">content #4</span>
                   </div>
                 </div>
 

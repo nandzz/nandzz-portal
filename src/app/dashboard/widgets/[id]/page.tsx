@@ -13,6 +13,7 @@ import type { WidgetBookingsData } from "@/components/widgets/calendar/WidgetBoo
 import type { WidgetCustomersData, CustomerSummary } from "@/components/widgets/calendar/WidgetCustomers";
 import { ChevronLeft } from "lucide-react";
 import type { WidgetBooking } from "@/lib/types";
+import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 
 const CURRENCY_SYMBOLS: Record<string, string> = { usd: "$", eur: "€", gbp: "£" };
 
@@ -28,8 +29,8 @@ function startOfWeekUtc(d: Date): number {
   return x.getTime();
 }
 
-function weekLabel(ms: number): string {
-  return new Date(ms).toLocaleDateString("en-US", {
+function weekLabel(ms: number, locale: string): string {
+  return new Date(ms).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     timeZone: "UTC",
@@ -58,7 +59,8 @@ function buildOverview(
   bookings: WidgetBooking[],
   timezone: string,
   currencySymbol: string,
-  shareUrl: string | null
+  shareUrl: string | null,
+  locale: string
 ): WidgetOverviewData {
   const now = Date.now();
   const confirmed = bookings.filter((b) => b.status === "confirmed");
@@ -83,7 +85,7 @@ function buildOverview(
       const t = new Date(b.starts_at).getTime();
       return t >= start && t < end;
     }).length;
-    return { label: weekLabel(start), count, isFuture: start > currentWeek };
+    return { label: weekLabel(start, locale), count, isFuture: start > currentWeek };
   });
 
   // Bookings by service.
@@ -216,13 +218,15 @@ export default async function WidgetStudioPage({
   if (!isCalendar) notFound();
 
   const admin = createAdminClient();
-  const [{ data: bookingRows }, { data: profile }] = await Promise.all([
+  const [{ data: bookingRows }, { data: profile }, t, locale] = await Promise.all([
     admin
       .from("widget_bookings")
       .select("*")
       .eq("instance_id", id)
       .order("starts_at", { ascending: true }),
     admin.from("profiles").select("username").eq("id", user.id).maybeSingle(),
+    getServerTranslations(),
+    getCurrentLocale(),
   ]);
 
   const bookings = (bookingRows ?? []) as WidgetBooking[];
@@ -233,7 +237,7 @@ export default async function WidgetStudioPage({
   const canShare = widget.has_access && widget.enabled && !!profile?.username;
   const shareUrl = canShare ? `/${profile!.username}/widget/${id}` : null;
 
-  const overview = buildOverview(bookings, config.timezone, currencySymbol, shareUrl);
+  const overview = buildOverview(bookings, config.timezone, currencySymbol, shareUrl, locale);
   const bookingList = buildBookings(bookings, config.timezone, currencySymbol);
   const customers = buildCustomers(bookings, config.timezone, currencySymbol);
 
@@ -243,7 +247,7 @@ export default async function WidgetStudioPage({
         href="/dashboard/widgets"
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ChevronLeft className="h-4 w-4" /> All widgets
+        <ChevronLeft className="h-4 w-4" /> {t.booking.allWidgetsLink}
       </Link>
 
       <div className="mb-8 flex items-center gap-3">
@@ -255,9 +259,9 @@ export default async function WidgetStudioPage({
           <p className="text-sm text-muted-foreground">
             {widget.has_access
               ? widget.enabled
-                ? "Live on your profile"
-                : "Active — hidden from your profile"
-              : "Inactive — subscribe to go live"}
+                ? t.booking.liveOnProfile
+                : t.booking.activeHiddenFromProfile
+              : t.booking.inactiveSubscribe}
           </p>
         </div>
       </div>

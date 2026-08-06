@@ -2,17 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, UserCog, Settings, CircleAlert } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Settings, CircleAlert } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 import { SubscribeButton } from "@/components/widgets/SubscribeButton";
 import { CalendarWidgetStudio } from "@/components/widgets/calendar/CalendarWidgetStudio";
 import { StaffManager } from "@/components/widgets/calendar/StaffManager";
+import { LocationManager } from "@/components/widgets/calendar/LocationManager";
 import { useCalendarConfig } from "@/components/widgets/calendar/useCalendarConfig";
 import { WidgetOverview, type WidgetOverviewData } from "@/components/widgets/calendar/WidgetOverview";
 import { WidgetBookings, type WidgetBookingsData } from "@/components/widgets/calendar/WidgetBookings";
 import { WidgetCustomers, type WidgetCustomersData } from "@/components/widgets/calendar/WidgetCustomers";
 import type { CalendarConfig, WidgetBooking } from "@/lib/types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Live-count new confirmed bookings whose start falls on "today" in the widget's
 // timezone and is still upcoming. Subscribes to INSERTs on widget_bookings for
@@ -101,6 +103,7 @@ export function WidgetWorkspace({
   bookings,
   customers,
 }: Props) {
+  const { t } = useLanguage();
   const [tab, setTab] = useState("overview");
   // Single shared config controller — instantiated ONCE here so the Settings
   // studio (services + per-service staff_ids) and the Staff tab (config.staff)
@@ -109,6 +112,21 @@ export function WidgetWorkspace({
   // Badge subscription keys off the instance's initial timezone (stable across
   // config edits), matching the pre-refactor behavior.
   const [newToday, resetNewToday] = useNewBookingsToday(instanceId, config.timezone);
+
+  // Which location the Staff tab and the Settings studio's Services/
+  // Availability sections are scoped to — shared here so both stay in sync.
+  // `selectedLocationId` only records an explicit pick; `currentLocationId` is
+  // derived at render time so it's always valid (falls back to the first
+  // location when nothing/something stale is selected, and to null — legacy
+  // top-level config — once config.locations is empty), with no effect needed
+  // to "correct" it after a location is added/removed elsewhere (e.g. the
+  // Locations tab).
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const locations = controller.config.locations;
+  const currentLocationId =
+    selectedLocationId && locations.some((l) => l.id === selectedLocationId)
+      ? selectedLocationId
+      : locations[0]?.id ?? null;
 
   const handleTabChange = useCallback(
     (value: unknown) => {
@@ -123,10 +141,10 @@ export function WidgetWorkspace({
     <Tabs value={tab} onValueChange={handleTabChange} className="gap-6">
       <TabsList variant="line" className="h-9">
         <TabsTrigger value="overview">
-          <LayoutDashboard className="h-4 w-4" /> Dashboard
+          <LayoutDashboard className="h-4 w-4" /> {t.booking.tabDashboard}
         </TabsTrigger>
         <TabsTrigger value="bookings">
-          <CalendarDays className="h-4 w-4" /> Bookings
+          <CalendarDays className="h-4 w-4" /> {t.booking.tabBookings}
           {newToday > 0 && (
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
               {newToday}
@@ -134,13 +152,16 @@ export function WidgetWorkspace({
           )}
         </TabsTrigger>
         <TabsTrigger value="customers">
-          <Users className="h-4 w-4" /> Customers
+          <Users className="h-4 w-4" /> {t.booking.tabCustomers}
         </TabsTrigger>
         <TabsTrigger value="staff">
-          <UserCog className="h-4 w-4" /> Staff
+          <UserCog className="h-4 w-4" /> {t.booking.staffSectionTitle}
+        </TabsTrigger>
+        <TabsTrigger value="locations">
+          <MapPin className="h-4 w-4" /> {t.booking.locationsTabLabel}
         </TabsTrigger>
         <TabsTrigger value="settings">
-          <Settings className="h-4 w-4" /> Settings
+          <Settings className="h-4 w-4" /> {t.booking.tabSettings}
         </TabsTrigger>
       </TabsList>
 
@@ -148,9 +169,9 @@ export function WidgetWorkspace({
         {!hasAccess && (
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/50 dark:bg-orange-950/20 sm:flex-row sm:items-center sm:justify-between">
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 dark:text-orange-300">
-              <CircleAlert className="h-4 w-4" /> This widget is hidden — subscribe to accept bookings.
+              <CircleAlert className="h-4 w-4" /> {t.booking.widgetHiddenNotice}
             </span>
-            <SubscribeButton catalogId={catalogId} label="Subscribe to activate" />
+            <SubscribeButton catalogId={catalogId} label={t.booking.subscribeToActivate} />
           </div>
         )}
         <WidgetOverview data={overview} />
@@ -165,7 +186,15 @@ export function WidgetWorkspace({
       </TabsContent>
 
       <TabsContent value="staff">
-        <StaffManager controller={controller} />
+        <StaffManager
+          controller={controller}
+          currentLocationId={currentLocationId}
+          onChangeLocationId={setSelectedLocationId}
+        />
+      </TabsContent>
+
+      <TabsContent value="locations">
+        <LocationManager controller={controller} />
       </TabsContent>
 
       <TabsContent value="settings">
@@ -173,6 +202,8 @@ export function WidgetWorkspace({
           catalogId={catalogId}
           hasAccess={hasAccess}
           controller={controller}
+          currentLocationId={currentLocationId}
+          onChangeLocationId={setSelectedLocationId}
         />
       </TabsContent>
     </Tabs>

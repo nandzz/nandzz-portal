@@ -64,17 +64,17 @@ describe("SpaceGrid", () => {
 
     it("shows create card when showCreateCard is true", () => {
       render(<SpaceGrid spaces={[]} showCreateCard />);
-      expect(screen.getByText("Create New Space")).toBeInTheDocument();
+      expect(screen.getByText("Create New Content")).toBeInTheDocument();
     });
 
     it("does not show create card by default", () => {
       render(<SpaceGrid spaces={allSpaces} />);
-      expect(screen.queryByText("Create New Space")).not.toBeInTheDocument();
+      expect(screen.queryByText("Create New Content")).not.toBeInTheDocument();
     });
 
     it("shows the empty state when filtered list is empty", () => {
       render(<SpaceGrid spaces={[]} />);
-      expect(screen.getByText(/no spaces match this filter/i)).toBeInTheDocument();
+      expect(screen.getByText(/no content matches this filter/i)).toBeInTheDocument();
     });
   });
 
