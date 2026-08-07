@@ -5,20 +5,28 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardAnalytics } from "@/lib/analytics";
 import { ViewsChart } from "@/components/analytics/ViewsChart";
+import { AnalyticsPeriodControl } from "@/components/analytics/AnalyticsPeriodControl";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/button";
 import { BarChart2, Eye, Heart, TrendingUp, ExternalLink } from "lucide-react";
-import { getServerTranslations } from "@/lib/i18n/server";
+import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
+import { parseStatsPeriod } from "@/lib/period";
 
-export default async function AnalyticsDashboardPage() {
+export default async function AnalyticsDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const period = parseStatsPeriod((await searchParams).period);
+  const locale = await getCurrentLocale();
   const [analytics, t] = await Promise.all([
-    getDashboardAnalytics(user.id),
+    getDashboardAnalytics(user.id, locale, period),
     getServerTranslations(),
   ]);
 
@@ -44,10 +52,21 @@ export default async function AnalyticsDashboardPage() {
             <StatCard icon={<Heart className="h-4 w-4" />} label={t.analytics.totalLikes} value={analytics.totalLikes} />
           </div>
 
-          {/* Daily chart */}
+          {/* Views chart */}
           <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground">{t.analytics.chart30d}</h2>
-            <ViewsChart data={analytics.dailyViews} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-medium text-muted-foreground">{t.analytics.chartViews}</h2>
+                {analytics.viewsSeries.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {analytics.viewsSeries[0].label} –{" "}
+                    {analytics.viewsSeries[analytics.viewsSeries.length - 1].label}
+                  </p>
+                )}
+              </div>
+              <AnalyticsPeriodControl period={period} />
+            </div>
+            <ViewsChart data={analytics.viewsSeries} />
           </div>
 
           {/* Per-space table */}

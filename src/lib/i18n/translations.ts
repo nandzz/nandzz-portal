@@ -193,6 +193,9 @@ export type Translations = {
     loading: string;
     cancel: string;
     error: string;
+    periodWeek: string;
+    periodMonth: string;
+    period6Months: string;
   };
   space: {
     public: string;
@@ -281,7 +284,7 @@ export type Translations = {
     views30d: string;
     views7d: string;
     totalLikes: string;
-    chart30d: string;
+    chartViews: string;
     spacesTable: string;
   };
   billing: {
@@ -1123,6 +1126,9 @@ const en: Translations = {
     loading: "Loading...",
     cancel: "Cancel",
     error: "Something went wrong",
+    periodWeek: "Week",
+    periodMonth: "Month",
+    period6Months: "6 Months",
   },
   space: {
     public: "Public",
@@ -1211,7 +1217,7 @@ const en: Translations = {
     views30d: "Views (30d)",
     views7d: "Views (7d)",
     totalLikes: "Total likes",
-    chart30d: "Views — last 30 days",
+    chartViews: "Views",
     spacesTable: "Content",
   },
   billing: {
@@ -2053,6 +2059,9 @@ const pt: Translations = {
     loading: "Carregando...",
     cancel: "Cancelar",
     error: "Algo deu errado",
+    periodWeek: "Semana",
+    periodMonth: "Mês",
+    period6Months: "6 meses",
   },
   space: {
     public: "Público",
@@ -2141,7 +2150,7 @@ const pt: Translations = {
     views30d: "Visualizações (30d)",
     views7d: "Visualizações (7d)",
     totalLikes: "Total de curtidas",
-    chart30d: "Visualizações — últimos 30 dias",
+    chartViews: "Visualizações",
     spacesTable: "Conteúdos",
   },
   billing: {
@@ -2983,6 +2992,9 @@ const fr: Translations = {
     loading: "Chargement...",
     cancel: "Annuler",
     error: "Une erreur s'est produite",
+    periodWeek: "Semaine",
+    periodMonth: "Mois",
+    period6Months: "6 mois",
   },
   space: {
     public: "Public",
@@ -3071,7 +3083,7 @@ const fr: Translations = {
     views30d: "Vues (30j)",
     views7d: "Vues (7j)",
     totalLikes: "Total des likes",
-    chart30d: "Vues — 30 derniers jours",
+    chartViews: "Vues",
     spacesTable: "Contenus",
   },
   billing: {
@@ -3913,6 +3925,9 @@ const es: Translations = {
     loading: "Cargando...",
     cancel: "Cancelar",
     error: "Algo salió mal",
+    periodWeek: "Semana",
+    periodMonth: "Mes",
+    period6Months: "6 meses",
   },
   space: {
     public: "Público",
@@ -4001,7 +4016,7 @@ const es: Translations = {
     views30d: "Vistas (30d)",
     views7d: "Vistas (7d)",
     totalLikes: "Total de likes",
-    chart30d: "Vistas — últimos 30 días",
+    chartViews: "Vistas",
     spacesTable: "Contenidos",
   },
   billing: {
@@ -4843,6 +4858,9 @@ const ja: Translations = {
     loading: "読み込み中...",
     cancel: "キャンセル",
     error: "問題が発生しました",
+    periodWeek: "週",
+    periodMonth: "月",
+    period6Months: "6ヶ月",
   },
   space: {
     public: "公開",
@@ -4931,7 +4949,7 @@ const ja: Translations = {
     views30d: "閲覧数（30日）",
     views7d: "閲覧数（7日）",
     totalLikes: "総いいね数",
-    chart30d: "閲覧数 — 過去30日間",
+    chartViews: "閲覧数",
     spacesTable: "コンテンツ",
   },
   billing: {
@@ -5773,6 +5791,9 @@ const de: Translations = {
     loading: "Laden...",
     cancel: "Abbrechen",
     error: "Etwas ist schiefgelaufen",
+    periodWeek: "Woche",
+    periodMonth: "Monat",
+    period6Months: "6 Monate",
   },
   space: {
     public: "Öffentlich",
@@ -5861,7 +5882,7 @@ const de: Translations = {
     views30d: "Aufrufe (30T)",
     views7d: "Aufrufe (7T)",
     totalLikes: "Likes gesamt",
-    chart30d: "Aufrufe — letzte 30 Tage",
+    chartViews: "Aufrufe",
     spacesTable: "Inhalte",
   },
   billing: {
@@ -6703,6 +6724,9 @@ const it: Translations = {
     loading: "Caricamento...",
     cancel: "Annulla",
     error: "Qualcosa è andato storto",
+    periodWeek: "Settimana",
+    periodMonth: "Mese",
+    period6Months: "6 mesi",
   },
   space: {
     public: "Pubblico",
@@ -6791,7 +6815,7 @@ const it: Translations = {
     views30d: "Visualizzazioni (30g)",
     views7d: "Visualizzazioni (7g)",
     totalLikes: "Like totali",
-    chart30d: "Visualizzazioni — ultimi 30 giorni",
+    chartViews: "Visualizzazioni",
     spacesTable: "Contenuti",
   },
   billing: {

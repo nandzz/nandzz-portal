@@ -20,6 +20,7 @@ import { NewBookingBanner } from "@/components/widgets/calendar/NewBookingBanner
 import { buildOverview, buildBookings, buildCustomers } from "@/lib/widgets/calendarStats";
 import { playBookingChime } from "@/lib/widgets/chime";
 import type { CalendarConfig, WidgetBooking } from "@/lib/types";
+import type { StatsPeriod } from "@/lib/period";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const VALID_TABS = new Set([
@@ -219,9 +220,10 @@ export function WidgetWorkspace({
     () => allBookings.filter((b) => b.location_id === currentLocationId),
     [allBookings, currentLocationId]
   );
+  const [trendPeriod, setTrendPeriod] = useState<StatsPeriod>("month");
   const overview = useMemo(
-    () => buildOverview(scopedBookings, effectiveTimezone, currencySymbol, shareUrl, locale),
-    [scopedBookings, effectiveTimezone, currencySymbol, shareUrl, locale]
+    () => buildOverview(scopedBookings, effectiveTimezone, currencySymbol, shareUrl, locale, trendPeriod),
+    [scopedBookings, effectiveTimezone, currencySymbol, shareUrl, locale, trendPeriod]
   );
   const bookingsData = useMemo(
     () => buildBookings(scopedBookings, effectiveTimezone, currencySymbol),
@@ -346,7 +348,7 @@ export function WidgetWorkspace({
               <SubscribeButton catalogId={catalogId} label={t.booking.subscribeToActivate} />
             </div>
           )}
-          <WidgetOverview data={overview} />
+          <WidgetOverview data={overview} period={trendPeriod} onPeriodChange={setTrendPeriod} />
         </TabsContent>
 
         <TabsContent value="bookings">

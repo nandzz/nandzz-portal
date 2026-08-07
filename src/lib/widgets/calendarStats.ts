@@ -2,6 +2,7 @@ import type { WidgetBooking } from "@/lib/types";
 import type { WidgetOverviewData, OverviewBooking } from "@/components/widgets/calendar/WidgetOverview";
 import type { WidgetBookingsData } from "@/components/widgets/calendar/WidgetBookings";
 import type { WidgetCustomersData, CustomerSummary } from "@/components/widgets/calendar/WidgetCustomers";
+import { buildPeriodBuckets, type StatsPeriod } from "@/lib/period";
 
 // Aggregation builders for the widget dashboard tabs (Overview/Bookings/
 // Customers). Pure functions over a bookings array so they can run either
@@ -9,24 +10,6 @@ import type { WidgetCustomersData, CustomerSummary } from "@/components/widgets/
 // when the owner switches the scoped location) with identical results.
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-// Monday 00:00 UTC of the week containing `d`. Weekly buckets are coarse enough
-// that UTC anchoring (vs. the owner's tz) is fine for a volume trend.
-function startOfWeekUtc(d: Date): number {
-  const x = new Date(d);
-  const dow = (x.getUTCDay() + 6) % 7; // Mon = 0
-  x.setUTCDate(x.getUTCDate() - dow);
-  x.setUTCHours(0, 0, 0, 0);
-  return x.getTime();
-}
-
-function weekLabel(ms: number, locale: string): string {
-  return new Date(ms).toLocaleDateString(locale, {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
 
 function toOverviewBooking(b: WidgetBooking): OverviewBooking {
   return {
@@ -52,37 +35,50 @@ export function buildOverview(
   timezone: string,
   currencySymbol: string,
   shareUrl: string | null,
-  locale: string
+  locale: string,
+  period: StatsPeriod = "month"
 ): WidgetOverviewData {
   const now = Date.now();
   const confirmed = bookings.filter((b) => b.status === "confirmed");
 
-  const upcomingCount = confirmed.filter((b) => new Date(b.starts_at).getTime() >= now).length;
-
+  // "Next 7 days" is a fixed live window by definition (it says so on the
+  // tile) — it stays put regardless of which period is selected.
   const in7 = now + WEEK_MS;
   const next7 = confirmed.filter((b) => {
     const t = new Date(b.starts_at).getTime();
     return t >= now && t < in7;
   }).length;
 
-  const revenueCents = confirmed.reduce((sum, b) => sum + (b.price_cents ?? 0), 0);
-  const cancelled = bookings.filter((b) => b.status === "cancelled").length;
-
-  // Weekly volume: 6 weeks back through 1 week ahead (8 buckets).
-  const currentWeek = startOfWeekUtc(new Date(now));
-  const weekly = Array.from({ length: 8 }, (_, i) => {
-    const start = currentWeek + (i - 6) * WEEK_MS;
-    const end = start + WEEK_MS;
+  // Booking volume trend, bucketed by the selected period (day/week/month
+  // granularity), with one extra bucket ahead since bookings can be forward-dated.
+  const buckets = buildPeriodBuckets(period, locale, { includeFuture: true });
+  const rangeStart = buckets[0].start;
+  const rangeEnd = buckets[buckets.length - 1].end;
+  const trend = buckets.map((bucket) => {
     const count = confirmed.filter((b) => {
       const t = new Date(b.starts_at).getTime();
-      return t >= start && t < end;
+      return t >= bucket.start && t < bucket.end;
     }).length;
-    return { label: weekLabel(start, locale), count, isFuture: start > currentWeek };
+    return { label: bucket.label, count, isFuture: bucket.isFuture };
   });
+
+  // Everything below shares the trend chart's start–end window, so the KPI
+  // tiles and service breakdown move together with the period selector.
+  const inRange = confirmed.filter((b) => {
+    const t = new Date(b.starts_at).getTime();
+    return t >= rangeStart && t < rangeEnd;
+  });
+  const upcomingCount = inRange.filter((b) => new Date(b.starts_at).getTime() >= now).length;
+  const revenueCents = inRange.reduce((sum, b) => sum + (b.price_cents ?? 0), 0);
+  const cancelled = bookings.filter((b) => {
+    if (b.status !== "cancelled") return false;
+    const t = new Date(b.starts_at).getTime();
+    return t >= rangeStart && t < rangeEnd;
+  }).length;
 
   // Bookings by service.
   const byService = new Map<string, { count: number; revenueCents: number }>();
-  for (const b of confirmed) {
+  for (const b of inRange) {
     const cur = byService.get(b.service_name) ?? { count: 0, revenueCents: 0 };
     cur.count += 1;
     cur.revenueCents += b.price_cents ?? 0;
@@ -97,12 +93,12 @@ export function buildOverview(
     currencySymbol,
     totals: {
       upcoming: upcomingCount,
-      confirmedAllTime: confirmed.length,
+      confirmedInPeriod: inRange.length,
       revenueCents,
       next7,
       cancelled,
     },
-    weekly,
+    trend,
     services,
     shareUrl,
   };

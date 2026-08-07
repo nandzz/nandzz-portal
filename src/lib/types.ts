@@ -128,8 +128,8 @@ export type SpaceView = {
   viewed_at: string;
 };
 
-export type DailyViews = {
-  date: string;
+export type ViewsSeriesPoint = {
+  label: string;
   views: number;
 };
 
@@ -138,7 +138,7 @@ export type SpaceAnalytics = {
   totalViews: number;
   views7d: number;
   views30d: number;
-  dailyViews: DailyViews[];
+  viewsSeries: ViewsSeriesPoint[];
   likesCount: number;
 };
 

@@ -5,14 +5,18 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSpaceAnalytics } from "@/lib/analytics";
 import { ViewsChart } from "@/components/analytics/ViewsChart";
+import { AnalyticsPeriodControl } from "@/components/analytics/AnalyticsPeriodControl";
 import { BackButton } from "@/components/ui/BackButton";
 import { Eye, Heart, TrendingUp, BarChart2 } from "lucide-react";
-import { getServerTranslations } from "@/lib/i18n/server";
+import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
+import { parseStatsPeriod } from "@/lib/period";
 
 export default async function SpaceAnalyticsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ spaceId: string }>;
+  searchParams: Promise<{ period?: string }>;
 }) {
   const { spaceId } = await params;
 
@@ -30,8 +34,10 @@ export default async function SpaceAnalyticsPage({
 
   if (!space || space.user_id !== user.id) notFound();
 
+  const period = parseStatsPeriod((await searchParams).period);
+  const locale = await getCurrentLocale();
   const [analytics, t] = await Promise.all([
-    getSpaceAnalytics(spaceId),
+    getSpaceAnalytics(spaceId, locale, period),
     getServerTranslations(),
   ]);
 
@@ -65,8 +71,19 @@ export default async function SpaceAnalyticsPage({
 
           {/* Chart */}
           <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground">{t.analytics.chart30d}</h2>
-            <ViewsChart data={analytics.dailyViews} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-medium text-muted-foreground">{t.analytics.chartViews}</h2>
+                {analytics.viewsSeries.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {analytics.viewsSeries[0].label} –{" "}
+                    {analytics.viewsSeries[analytics.viewsSeries.length - 1].label}
+                  </p>
+                )}
+              </div>
+              <AnalyticsPeriodControl period={period} />
+            </div>
+            <ViewsChart data={analytics.viewsSeries} />
           </div>
         </>
       )}

@@ -1,15 +1,14 @@
 "use client";
 
+import { Bar } from "react-chartjs-2";
 import {
-  BarChart,
-  Bar,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip as ChartTooltip,
+  type ChartOptions,
+} from "chart.js";
 import {
   CalendarClock,
   CalendarCheck,
@@ -19,6 +18,11 @@ import {
 } from "lucide-react";
 import { type BookingRowData } from "./BookingRow";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useThemeColors } from "@/lib/charts/useThemeColors";
+import { PeriodSelector } from "@/components/ui/PeriodSelector";
+import type { StatsPeriod } from "@/lib/period";
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, ChartTooltip);
 
 export type OverviewBooking = BookingRowData;
 
@@ -27,12 +31,12 @@ export type WidgetOverviewData = {
   currencySymbol: string;
   totals: {
     upcoming: number;
-    confirmedAllTime: number;
+    confirmedInPeriod: number;
     revenueCents: number;
     next7: number;
     cancelled: number;
   };
-  weekly: { label: string; count: number; isFuture: boolean }[];
+  trend: { label: string; count: number; isFuture: boolean }[];
   services: { name: string; count: number; revenueCents: number }[];
   shareUrl: string | null;
 };
@@ -42,8 +46,22 @@ export type WidgetOverviewData = {
 const REALIZED = "hsl(160 84% 39%)"; // emerald-600
 const UPCOMING = "hsl(152 76% 80%)"; // emerald-200
 
-export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
+export function WidgetOverview({
+  data,
+  period,
+  onPeriodChange,
+}: {
+  data: WidgetOverviewData;
+  period: StatsPeriod;
+  onPeriodChange: (period: StatsPeriod) => void;
+}) {
   const { t } = useLanguage();
+  const colors = useThemeColors({
+    grid: "--border",
+    axis: "--muted-foreground",
+    tooltipBg: "--background",
+    tooltipBorder: "--border",
+  });
   const money = (cents: number) =>
     `${data.currencySymbol}${(cents / 100).toLocaleString(undefined, {
       minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
@@ -61,7 +79,7 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
     },
     {
       label: t.booking.tileAllTime,
-      value: String(data.totals.confirmedAllTime),
+      value: String(data.totals.confirmedInPeriod),
       hint: data.totals.cancelled
         ? t.booking.tileAllTimeHintCancelled.replace("{count}", String(data.totals.cancelled))
         : t.booking.tileAllTimeHintConfirmed,
@@ -80,6 +98,56 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
       icon: TrendingUp,
     },
   ];
+
+  // The bucket labels are already localized dates (e.g. "22 giu"), so the
+  // actual range covered is just the first and last of them — no separate
+  // "last N days" copy to translate or keep in sync with the bucketing math.
+  const rangeCaption =
+    data.trend.length > 0 ? `${data.trend[0].label} – ${data.trend[data.trend.length - 1].label}` : "";
+
+  const chartData = {
+    labels: data.trend.map((w) => w.label),
+    datasets: [
+      {
+        data: data.trend.map((w) => w.count),
+        backgroundColor: data.trend.map((w) => (w.isFuture ? UPCOMING : REALIZED)),
+        borderRadius: 3,
+        maxBarThickness: 28,
+      },
+    ],
+  };
+
+  const chartOptions: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: colors.axis, font: { size: 11 } },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: colors.axis, font: { size: 11 }, precision: 0 },
+        grid: { color: colors.grid },
+      },
+    },
+    plugins: {
+      tooltip: {
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.tooltipBorder,
+        borderWidth: 1,
+        titleColor: colors.axis,
+        bodyColor: colors.axis,
+        padding: 8,
+        cornerRadius: 8,
+        titleFont: { size: 12 },
+        bodyFont: { size: 12 },
+        callbacks: {
+          label: (ctx) => `${ctx.parsed.y} ${t.booking.appointments}`,
+        },
+      },
+    },
+  };
 
   return (
     <div className="space-y-6">
@@ -113,52 +181,26 @@ export function WidgetOverview({ data }: { data: WidgetOverviewData }) {
       <div className="grid gap-4 lg:grid-cols-5">
         {/* Trend chart */}
         <div className="rounded-2xl border border-border bg-background p-5 lg:col-span-3">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold">{t.booking.bookingVolume}</h3>
-              <p className="text-xs text-muted-foreground">{t.booking.byWeekCaption}</p>
+              <p className="text-xs text-muted-foreground">{rangeCaption}</p>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: REALIZED }} /> {t.booking.realized}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: UPCOMING }} /> {t.booking.filterUpcoming}
-              </span>
+            <div className="flex items-center gap-3">
+              <PeriodSelector value={period} onChange={onPeriodChange} />
+              <div className="hidden items-center gap-3 text-xs text-muted-foreground sm:flex">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: REALIZED }} /> {t.booking.realized}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: UPCOMING }} /> {t.booking.filterUpcoming}
+                </span>
+              </div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={data.weekly} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                allowDecimals={false}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                cursor={{ fill: "hsl(var(--muted))" }}
-                contentStyle={{
-                  background: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  fontSize: 12,
-                }}
-                formatter={(value) => [Number(value), t.booking.appointments]}
-              />
-              <Bar dataKey="count" radius={[3, 3, 0, 0]} maxBarSize={28}>
-                {data.weekly.map((w, i) => (
-                  <Cell key={i} fill={w.isFuture ? UPCOMING : REALIZED} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ height: 200 }}>
+            <Bar data={chartData} options={chartOptions} />
+          </div>
         </div>
 
         {/* Service breakdown */}

@@ -1,63 +1,78 @@
 "use client";
 
+import { Bar } from "react-chartjs-2";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
   Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import type { DailyViews } from "@/lib/types";
+  type ChartOptions,
+} from "chart.js";
+import type { ViewsSeriesPoint } from "@/lib/types";
+import { useThemeColors } from "@/lib/charts/useThemeColors";
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 
 interface ViewsChartProps {
-  data: DailyViews[];
-}
-
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  data: ViewsSeriesPoint[];
 }
 
 export function ViewsChart({ data }: ViewsChartProps) {
-  const labelled = data.map((d) => ({ ...d, label: formatDate(d.date) }));
+  const colors = useThemeColors({
+    grid: "--border",
+    axis: "--muted-foreground",
+    tooltipBg: "--background",
+    tooltipBorder: "--border",
+  });
 
-  // Show every 5th label to avoid crowding
-  const ticks = labelled
-    .filter((_, i) => i % 5 === 0 || i === labelled.length - 1)
-    .map((d) => d.label);
+  const chartData = {
+    labels: data.map((d) => d.label),
+    datasets: [
+      {
+        data: data.map((d) => d.views),
+        backgroundColor: "hsl(263 70% 60%)",
+        borderRadius: 3,
+        maxBarThickness: 24,
+      },
+    ],
+  };
+
+  const options: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: colors.axis, font: { size: 11 } },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: colors.axis, font: { size: 11 }, precision: 0 },
+        grid: { color: colors.grid },
+      },
+    },
+    plugins: {
+      tooltip: {
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.tooltipBorder,
+        borderWidth: 1,
+        titleColor: colors.axis,
+        bodyColor: colors.axis,
+        padding: 8,
+        cornerRadius: 8,
+        titleFont: { size: 12 },
+        bodyFont: { size: 12 },
+        callbacks: {
+          label: (ctx) => `${ctx.parsed.y} Views`,
+        },
+      },
+    },
+  };
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
-      <BarChart data={labelled} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-        <XAxis
-          dataKey="label"
-          ticks={ticks}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          allowDecimals={false}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <Tooltip
-          cursor={{ fill: "hsl(var(--muted))" }}
-          contentStyle={{
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: "8px",
-            fontSize: 12,
-          }}
-          labelFormatter={(label) => label}
-          formatter={(value) => [Number(value), "Views"]}
-        />
-        <Bar dataKey="views" fill="hsl(263 70% 60%)" radius={[3, 3, 0, 0]} maxBarSize={24} />
-      </BarChart>
-    </ResponsiveContainer>
+    <div style={{ height: 200 }}>
+      <Bar data={chartData} options={options} />
+    </div>
   );
 }
