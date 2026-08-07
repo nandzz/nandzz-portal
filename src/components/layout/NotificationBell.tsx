@@ -30,19 +30,28 @@ interface NotificationBellProps {
 }
 
 function notificationText(n: Notification, t: ReturnType<typeof useLanguage>["t"]): string {
-  const title = n.payload.space_title;
-  if (n.type === "ai_edit_ready") {
-    return t.notifications.aiEditReady.replace("{title}", title);
-  }
-  const p = n.payload as { commenter_display_name: string | null; commenter_username: string };
-  const name = p.commenter_display_name || p.commenter_username;
   switch (n.type) {
+    case "ai_edit_ready": {
+      const { space_title } = n.payload as { space_title: string };
+      return t.notifications.aiEditReady.replace("{title}", space_title);
+    }
     case "new_comment":
-      return t.notifications.newComment.replace("{name}", name).replace("{title}", title);
     case "new_reply":
-      return t.notifications.newReply.replace("{name}", name).replace("{title}", title);
-    case "comment_mention":
-      return t.notifications.mention.replace("{name}", name).replace("{title}", title);
+    case "comment_mention": {
+      const { space_title, commenter_display_name, commenter_username } = n.payload as {
+        space_title: string;
+        commenter_display_name: string | null;
+        commenter_username: string;
+      };
+      const name = commenter_display_name || commenter_username;
+      const key =
+        n.type === "new_comment" ? "newComment" : n.type === "new_reply" ? "newReply" : "mention";
+      return t.notifications[key].replace("{name}", name).replace("{title}", space_title);
+    }
+    case "new_booking": {
+      const { customer_name, service_name } = n.payload as { customer_name: string; service_name: string };
+      return t.notifications.newBooking.replace("{name}", customer_name).replace("{service}", service_name);
+    }
   }
 }
 
@@ -143,10 +152,19 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                 key={n.id}
                 type="button"
                 onClick={() => {
+                  if (n.type === "new_booking") {
+                    const { instance_id } = n.payload as { instance_id: string };
+                    router.push(`/dashboard/widgets/${instance_id}?tab=bookings`);
+                    setOpen(false);
+                    return;
+                  }
                   const isComment = n.type === "new_comment" || n.type === "new_reply" || n.type === "comment_mention";
                   const suffix = isComment ? "?comments=open" : "";
-                  const ownerUsername = (n.payload as { space_owner_username: string }).space_owner_username;
-                  router.push(`/${ownerUsername}/space/${n.payload.space_id}${suffix}`);
+                  const { space_owner_username, space_id } = n.payload as {
+                    space_owner_username: string;
+                    space_id: string;
+                  };
+                  router.push(`/${space_owner_username}/space/${space_id}${suffix}`);
                   setOpen(false);
                 }}
                 className={cn(

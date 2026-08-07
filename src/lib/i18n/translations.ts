@@ -240,6 +240,8 @@ export type Translations = {
     newReply: string;
     mention: string;
     aiEditReady: string;
+    newBooking: string;
+    dismiss: string;
   };
   error: {
     title: string;
@@ -773,7 +775,6 @@ export type Translations = {
     dayOffBadgeSingular: string;
     dayOffBadgePlural: string;
 
-    locationsTabLabel: string;
     locationsSectionTitle: string;
     locationsSectionDesc: string;
     noLocationsYetTitle: string;
@@ -799,8 +800,12 @@ export type Translations = {
     noAddressSet: string;
     removeLocationAria: string;
     locationServicesStaffSummary: string;
-    locationContextLabel: string;
     chooseLocation: string;
+    locationGateSubtitle: string;
+    workingInLocationAria: string;
+    manageLocationsLink: string;
+    currentLocationPillLabel: string;
+    switchLocationAria: string;
 
     weekdayMon: string;
     weekdayTue: string;
@@ -812,13 +817,13 @@ export type Translations = {
     tabDashboard: string;
     tabBookings: string;
     tabCustomers: string;
-    tabSettings: string;
+    tabAvailability: string;
+    tabServices: string;
+    tabNotifications: string;
     widgetHiddenNotice: string;
     subscribeToActivate: string;
     sectionBilling: string;
     sectionVisibility: string;
-    sectionBookingSetup: string;
-    sectionNotifications: string;
     billingHint: string;
     billingActive: string;
     manageSubscription: string;
@@ -827,7 +832,6 @@ export type Translations = {
     showOnProfile: string;
     showOnProfileDescActive: string;
     showOnProfileDescInactive: string;
-    bookingSetupHint: string;
     generalSection: string;
     timezoneLabel: string;
     bufferLabel: string;
@@ -844,7 +848,6 @@ export type Translations = {
     removeWindowAriaShort: string;
     blackoutDatesSection: string;
     removeDateAria: string;
-    notificationsHint: string;
     automatedMessagesTitle: string;
     automatedMessagesDesc: string;
     confirmationMsgTitle: string;
@@ -897,6 +900,8 @@ export type Translations = {
     addWidgetButton: string;
     noWidgetsAvailable: string;
     allWidgetsLink: string;
+    widgetSettingsTitle: string;
+    backToWidgetLink: string;
     liveOnProfile: string;
     activeHiddenFromProfile: string;
   };
@@ -1165,6 +1170,8 @@ const en: Translations = {
     newReply: "{name} replied to your comment in \"{title}\"",
     mention: "{name} mentioned you in \"{title}\"",
     aiEditReady: "AI edit ready for your content \"{title}\"",
+    newBooking: "New booking from {name} for {service}",
+    dismiss: "Dismiss",
   },
   error: {
     title: "Something went wrong",
@@ -1698,7 +1705,6 @@ const en: Translations = {
     dayOffBadgeSingular: "day off",
     dayOffBadgePlural: "days off",
 
-    locationsTabLabel: "Locations",
     locationsSectionTitle: "Locations",
     locationsSectionDesc: "Manage the shops or branches customers can book at.",
     noLocationsYetTitle: "No locations yet",
@@ -1724,8 +1730,12 @@ const en: Translations = {
     noAddressSet: "No address set",
     removeLocationAria: "Remove {name}",
     locationServicesStaffSummary: "{services} services · {staff} staff",
-    locationContextLabel: "Editing location:",
     chooseLocation: "Choose a location",
+    locationGateSubtitle: "Everything below is scoped to this location.",
+    workingInLocationAria: "Work in {name}",
+    manageLocationsLink: "Manage locations",
+    currentLocationPillLabel: "Location: {name}",
+    switchLocationAria: "Switch location",
 
     weekdayMon: "Monday",
     weekdayTue: "Tuesday",
@@ -1737,13 +1747,13 @@ const en: Translations = {
     tabDashboard: "Dashboard",
     tabBookings: "Bookings",
     tabCustomers: "Customers",
-    tabSettings: "Settings",
+    tabAvailability: "Availability",
+    tabServices: "Services",
+    tabNotifications: "Notifications",
     widgetHiddenNotice: "This widget is hidden — subscribe to accept bookings.",
     subscribeToActivate: "Subscribe to activate",
     sectionBilling: "Billing",
     sectionVisibility: "Visibility",
-    sectionBookingSetup: "Booking setup",
-    sectionNotifications: "Notifications",
     billingHint: "Your subscription keeps the widget live on your profile.",
     billingActive: "Active — your widget is live.",
     manageSubscription: "Manage subscription",
@@ -1752,7 +1762,6 @@ const en: Translations = {
     showOnProfile: "Show on profile",
     showOnProfileDescActive: "When on, visitors can book from your profile.",
     showOnProfileDescInactive: "Requires an active subscription to appear on your profile.",
-    bookingSetupHint: "Services, hours, and the rules visitors book against.",
     generalSection: "General",
     timezoneLabel: "Timezone (IANA)",
     bufferLabel: "Buffer between bookings (min)",
@@ -1769,7 +1778,6 @@ const en: Translations = {
     removeWindowAriaShort: "Remove window",
     blackoutDatesSection: "Blackout dates",
     removeDateAria: "Remove date",
-    notificationsHint: "Messages sent to customers automatically around their booking.",
     automatedMessagesTitle: "Automated messages",
     automatedMessagesDesc: "Sent to customers automatically. Personalize with the variable chips, and choose a channel — or turn a message off.",
     confirmationMsgTitle: "Booking confirmation",
@@ -1822,6 +1830,8 @@ const en: Translations = {
     addWidgetButton: "Add widget",
     noWidgetsAvailable: "No widgets are available yet. Check back soon.",
     allWidgetsLink: "All widgets",
+    widgetSettingsTitle: "Widget settings",
+    backToWidgetLink: "Back to widget",
     liveOnProfile: "Live on your profile",
     activeHiddenFromProfile: "Active — hidden from your profile",
   },
@@ -2090,6 +2100,8 @@ const pt: Translations = {
     newReply: "{name} respondeu ao seu comentário em \"{title}\"",
     mention: "{name} mencionou você em \"{title}\"",
     aiEditReady: "Edição por IA pronta para \"{title}\"",
+    newBooking: "Novo agendamento de {name} para {service}",
+    dismiss: "Dispensar",
   },
   error: {
     title: "Algo deu errado",
@@ -2623,7 +2635,6 @@ const pt: Translations = {
     dayOffBadgeSingular: "folga",
     dayOffBadgePlural: "folgas",
 
-    locationsTabLabel: "Locais",
     locationsSectionTitle: "Locais",
     locationsSectionDesc: "Gerencie as lojas ou filiais onde os clientes podem agendar.",
     noLocationsYetTitle: "Nenhum local ainda",
@@ -2649,8 +2660,12 @@ const pt: Translations = {
     noAddressSet: "Nenhum endereço definido",
     removeLocationAria: "Remover {name}",
     locationServicesStaffSummary: "{services} serviços · {staff} equipe",
-    locationContextLabel: "Editando local:",
     chooseLocation: "Escolha um local",
+    locationGateSubtitle: "Tudo abaixo está vinculado a este local.",
+    workingInLocationAria: "Trabalhar em {name}",
+    manageLocationsLink: "Gerenciar locais",
+    currentLocationPillLabel: "Local: {name}",
+    switchLocationAria: "Trocar de local",
 
     weekdayMon: "Segunda-feira",
     weekdayTue: "Terça-feira",
@@ -2662,13 +2677,13 @@ const pt: Translations = {
     tabDashboard: "Painel",
     tabBookings: "Agendamentos",
     tabCustomers: "Clientes",
-    tabSettings: "Configurações",
+    tabAvailability: "Disponibilidade",
+    tabServices: "Serviços",
+    tabNotifications: "Notificações",
     widgetHiddenNotice: "Este widget está oculto — assine para aceitar agendamentos.",
     subscribeToActivate: "Assinar para ativar",
     sectionBilling: "Cobrança",
     sectionVisibility: "Visibilidade",
-    sectionBookingSetup: "Configuração de agendamento",
-    sectionNotifications: "Notificações",
     billingHint: "Sua assinatura mantém o widget ativo no seu perfil.",
     billingActive: "Ativo — seu widget está no ar.",
     manageSubscription: "Gerenciar assinatura",
@@ -2677,7 +2692,6 @@ const pt: Translations = {
     showOnProfile: "Mostrar no perfil",
     showOnProfileDescActive: "Quando ativado, os visitantes podem agendar pelo seu perfil.",
     showOnProfileDescInactive: "Requer uma assinatura ativa para aparecer no seu perfil.",
-    bookingSetupHint: "Serviços, horários e as regras que os visitantes seguem ao agendar.",
     generalSection: "Geral",
     timezoneLabel: "Fuso horário (IANA)",
     bufferLabel: "Intervalo entre agendamentos (min)",
@@ -2694,7 +2708,6 @@ const pt: Translations = {
     removeWindowAriaShort: "Remover horário",
     blackoutDatesSection: "Datas bloqueadas",
     removeDateAria: "Remover data",
-    notificationsHint: "Mensagens enviadas automaticamente aos clientes em torno do agendamento.",
     automatedMessagesTitle: "Mensagens automáticas",
     automatedMessagesDesc: "Enviadas automaticamente aos clientes. Personalize com os chips de variáveis e escolha um canal — ou desative uma mensagem.",
     confirmationMsgTitle: "Confirmação de agendamento",
@@ -2747,6 +2760,8 @@ const pt: Translations = {
     addWidgetButton: "Adicionar widget",
     noWidgetsAvailable: "Nenhum widget disponível ainda. Volte em breve.",
     allWidgetsLink: "Todos os widgets",
+    widgetSettingsTitle: "Configurações do widget",
+    backToWidgetLink: "Voltar ao widget",
     liveOnProfile: "No ar no seu perfil",
     activeHiddenFromProfile: "Ativo — oculto do seu perfil",
   },
@@ -3015,6 +3030,8 @@ const fr: Translations = {
     newReply: "{name} a répondu à votre commentaire dans \"{title}\"",
     mention: "{name} vous a mentionné dans \"{title}\"",
     aiEditReady: "Modification IA prête pour \"{title}\"",
+    newBooking: "Nouvelle réservation de {name} pour {service}",
+    dismiss: "Ignorer",
   },
   error: {
     title: "Une erreur s'est produite",
@@ -3548,7 +3565,6 @@ const fr: Translations = {
     dayOffBadgeSingular: "jour de congé",
     dayOffBadgePlural: "jours de congé",
 
-    locationsTabLabel: "Établissements",
     locationsSectionTitle: "Établissements",
     locationsSectionDesc: "Gérez les boutiques ou succursales où les clients peuvent réserver.",
     noLocationsYetTitle: "Aucun établissement pour l'instant",
@@ -3574,8 +3590,12 @@ const fr: Translations = {
     noAddressSet: "Aucune adresse définie",
     removeLocationAria: "Supprimer {name}",
     locationServicesStaffSummary: "{services} services · {staff} membres",
-    locationContextLabel: "Établissement en cours d'édition :",
     chooseLocation: "Choisissez un établissement",
+    locationGateSubtitle: "Tout ce qui suit est lié à cet établissement.",
+    workingInLocationAria: "Travailler dans {name}",
+    manageLocationsLink: "Gérer les établissements",
+    currentLocationPillLabel: "Établissement : {name}",
+    switchLocationAria: "Changer d'établissement",
 
     weekdayMon: "Lundi",
     weekdayTue: "Mardi",
@@ -3587,13 +3607,13 @@ const fr: Translations = {
     tabDashboard: "Tableau de bord",
     tabBookings: "Réservations",
     tabCustomers: "Clients",
-    tabSettings: "Réglages",
+    tabAvailability: "Disponibilité",
+    tabServices: "Services",
+    tabNotifications: "Notifications",
     widgetHiddenNotice: "Ce widget est masqué — abonnez-vous pour accepter des réservations.",
     subscribeToActivate: "S'abonner pour activer",
     sectionBilling: "Facturation",
     sectionVisibility: "Visibilité",
-    sectionBookingSetup: "Configuration des réservations",
-    sectionNotifications: "Notifications",
     billingHint: "Votre abonnement garde le widget actif sur votre profil.",
     billingActive: "Actif — votre widget est en ligne.",
     manageSubscription: "Gérer l'abonnement",
@@ -3602,7 +3622,6 @@ const fr: Translations = {
     showOnProfile: "Afficher sur le profil",
     showOnProfileDescActive: "Une fois activé, les visiteurs peuvent réserver depuis votre profil.",
     showOnProfileDescInactive: "Nécessite un abonnement actif pour apparaître sur votre profil.",
-    bookingSetupHint: "Services, horaires et règles de réservation pour les visiteurs.",
     generalSection: "Général",
     timezoneLabel: "Fuseau horaire (IANA)",
     bufferLabel: "Intervalle entre les réservations (min)",
@@ -3619,7 +3638,6 @@ const fr: Translations = {
     removeWindowAriaShort: "Supprimer le créneau",
     blackoutDatesSection: "Dates bloquées",
     removeDateAria: "Supprimer la date",
-    notificationsHint: "Messages envoyés automatiquement aux clients autour de leur réservation.",
     automatedMessagesTitle: "Messages automatiques",
     automatedMessagesDesc: "Envoyés automatiquement aux clients. Personnalisez avec les variables, choisissez un canal — ou désactivez un message.",
     confirmationMsgTitle: "Confirmation de réservation",
@@ -3672,6 +3690,8 @@ const fr: Translations = {
     addWidgetButton: "Ajouter le widget",
     noWidgetsAvailable: "Aucun widget disponible pour le moment. Revenez bientôt.",
     allWidgetsLink: "Tous les widgets",
+    widgetSettingsTitle: "Paramètres du widget",
+    backToWidgetLink: "Retour au widget",
     liveOnProfile: "En ligne sur votre profil",
     activeHiddenFromProfile: "Actif — masqué de votre profil",
   },
@@ -3940,6 +3960,8 @@ const es: Translations = {
     newReply: "{name} respondió a tu comentario en \"{title}\"",
     mention: "{name} te mencionó en \"{title}\"",
     aiEditReady: "Edición IA lista para \"{title}\"",
+    newBooking: "Nueva reserva de {name} para {service}",
+    dismiss: "Descartar",
   },
   error: {
     title: "Algo salió mal",
@@ -4473,7 +4495,6 @@ const es: Translations = {
     dayOffBadgeSingular: "día libre",
     dayOffBadgePlural: "días libres",
 
-    locationsTabLabel: "Ubicaciones",
     locationsSectionTitle: "Ubicaciones",
     locationsSectionDesc: "Administra las tiendas o sucursales donde los clientes pueden reservar.",
     noLocationsYetTitle: "Aún no hay ubicaciones",
@@ -4499,8 +4520,12 @@ const es: Translations = {
     noAddressSet: "Sin dirección definida",
     removeLocationAria: "Eliminar {name}",
     locationServicesStaffSummary: "{services} servicios · {staff} personal",
-    locationContextLabel: "Editando ubicación:",
     chooseLocation: "Elige una ubicación",
+    locationGateSubtitle: "Todo lo siguiente está vinculado a esta ubicación.",
+    workingInLocationAria: "Trabajar en {name}",
+    manageLocationsLink: "Administrar ubicaciones",
+    currentLocationPillLabel: "Ubicación: {name}",
+    switchLocationAria: "Cambiar de ubicación",
 
     weekdayMon: "Lunes",
     weekdayTue: "Martes",
@@ -4512,13 +4537,13 @@ const es: Translations = {
     tabDashboard: "Panel",
     tabBookings: "Reservas",
     tabCustomers: "Clientes",
-    tabSettings: "Configuración",
+    tabAvailability: "Disponibilidad",
+    tabServices: "Servicios",
+    tabNotifications: "Notificaciones",
     widgetHiddenNotice: "Este widget está oculto — suscríbete para aceptar reservas.",
     subscribeToActivate: "Suscribirse para activar",
     sectionBilling: "Facturación",
     sectionVisibility: "Visibilidad",
-    sectionBookingSetup: "Configuración de reservas",
-    sectionNotifications: "Notificaciones",
     billingHint: "Tu suscripción mantiene el widget activo en tu perfil.",
     billingActive: "Activo — tu widget está en línea.",
     manageSubscription: "Gestionar suscripción",
@@ -4527,7 +4552,6 @@ const es: Translations = {
     showOnProfile: "Mostrar en el perfil",
     showOnProfileDescActive: "Cuando está activado, los visitantes pueden reservar desde tu perfil.",
     showOnProfileDescInactive: "Requiere una suscripción activa para aparecer en tu perfil.",
-    bookingSetupHint: "Servicios, horarios y las reglas con las que reservan los visitantes.",
     generalSection: "General",
     timezoneLabel: "Zona horaria (IANA)",
     bufferLabel: "Intervalo entre reservas (min)",
@@ -4544,7 +4568,6 @@ const es: Translations = {
     removeWindowAriaShort: "Eliminar horario",
     blackoutDatesSection: "Fechas bloqueadas",
     removeDateAria: "Eliminar fecha",
-    notificationsHint: "Mensajes enviados automáticamente a los clientes en torno a su reserva.",
     automatedMessagesTitle: "Mensajes automáticos",
     automatedMessagesDesc: "Se envían automáticamente a los clientes. Personalízalos con las variables, elige un canal — o desactiva un mensaje.",
     confirmationMsgTitle: "Confirmación de reserva",
@@ -4597,6 +4620,8 @@ const es: Translations = {
     addWidgetButton: "Añadir widget",
     noWidgetsAvailable: "Aún no hay widgets disponibles. Vuelve pronto.",
     allWidgetsLink: "Todos los widgets",
+    widgetSettingsTitle: "Configuración del widget",
+    backToWidgetLink: "Volver al widget",
     liveOnProfile: "En línea en tu perfil",
     activeHiddenFromProfile: "Activo — oculto de tu perfil",
   },
@@ -4865,6 +4890,8 @@ const ja: Translations = {
     newReply: "{name}が「{title}」のコメントに返信しました",
     mention: "{name}が「{title}」であなたをメンションしました",
     aiEditReady: "「{title}」のAI編集が完了しました",
+    newBooking: "{name}様から{service}の新しい予約が入りました",
+    dismiss: "閉じる",
   },
   error: {
     title: "問題が発生しました",
@@ -5398,7 +5425,6 @@ const ja: Translations = {
     dayOffBadgeSingular: "休日",
     dayOffBadgePlural: "休日",
 
-    locationsTabLabel: "店舗",
     locationsSectionTitle: "店舗",
     locationsSectionDesc: "お客様が予約できる店舗や支店を管理します。",
     noLocationsYetTitle: "店舗はまだありません",
@@ -5424,8 +5450,12 @@ const ja: Translations = {
     noAddressSet: "住所未設定",
     removeLocationAria: "{name}を削除",
     locationServicesStaffSummary: "サービス{services}件・スタッフ{staff}名",
-    locationContextLabel: "編集中の店舗：",
     chooseLocation: "店舗を選択",
+    locationGateSubtitle: "以降の操作はすべてこの店舗に関連付けられます。",
+    workingInLocationAria: "{name}で作業する",
+    manageLocationsLink: "店舗を管理",
+    currentLocationPillLabel: "店舗：{name}",
+    switchLocationAria: "店舗を切り替える",
 
     weekdayMon: "月曜日",
     weekdayTue: "火曜日",
@@ -5437,13 +5467,13 @@ const ja: Translations = {
     tabDashboard: "ダッシュボード",
     tabBookings: "予約",
     tabCustomers: "顧客",
-    tabSettings: "設定",
+    tabAvailability: "空き状況",
+    tabServices: "サービス",
+    tabNotifications: "通知",
     widgetHiddenNotice: "このウィジェットは非表示です — 予約を受け付けるには登録してください。",
     subscribeToActivate: "登録して有効化",
     sectionBilling: "お支払い",
     sectionVisibility: "表示設定",
-    sectionBookingSetup: "予約設定",
-    sectionNotifications: "通知",
     billingHint: "サブスクリプションにより、プロフィール上でウィジェットが有効になります。",
     billingActive: "有効 — ウィジェットは公開中です。",
     manageSubscription: "サブスクリプションを管理",
@@ -5452,7 +5482,6 @@ const ja: Translations = {
     showOnProfile: "プロフィールに表示",
     showOnProfileDescActive: "オンにすると、訪問者はプロフィールから予約できます。",
     showOnProfileDescInactive: "プロフィールに表示するには有効なサブスクリプションが必要です。",
-    bookingSetupHint: "サービス、営業時間、訪問者が予約する際のルール。",
     generalSection: "一般",
     timezoneLabel: "タイムゾーン（IANA）",
     bufferLabel: "予約間の間隔（分）",
@@ -5469,7 +5498,6 @@ const ja: Translations = {
     removeWindowAriaShort: "時間帯を削除",
     blackoutDatesSection: "休業日",
     removeDateAria: "日付を削除",
-    notificationsHint: "予約に関連して顧客へ自動送信されるメッセージ。",
     automatedMessagesTitle: "自動メッセージ",
     automatedMessagesDesc: "顧客へ自動的に送信されます。変数チップでカスタマイズし、チャネルを選択するか — メッセージをオフにできます。",
     confirmationMsgTitle: "予約確認",
@@ -5522,6 +5550,8 @@ const ja: Translations = {
     addWidgetButton: "ウィジェットを追加",
     noWidgetsAvailable: "利用可能なウィジェットはまだありません。またご確認ください。",
     allWidgetsLink: "すべてのウィジェット",
+    widgetSettingsTitle: "ウィジェット設定",
+    backToWidgetLink: "ウィジェットに戻る",
     liveOnProfile: "プロフィールで公開中",
     activeHiddenFromProfile: "有効 — プロフィールでは非表示",
   },
@@ -5790,6 +5820,8 @@ const de: Translations = {
     newReply: "{name} hat auf deinen Kommentar in \"{title}\" geantwortet",
     mention: "{name} hat dich in \"{title}\" erwähnt",
     aiEditReady: "KI-Bearbeitung für \"{title}\" fertig",
+    newBooking: "Neue Buchung von {name} für {service}",
+    dismiss: "Schließen",
   },
   error: {
     title: "Etwas ist schiefgelaufen",
@@ -6323,7 +6355,6 @@ const de: Translations = {
     dayOffBadgeSingular: "freier Tag",
     dayOffBadgePlural: "freie Tage",
 
-    locationsTabLabel: "Standorte",
     locationsSectionTitle: "Standorte",
     locationsSectionDesc: "Verwalte die Filialen oder Standorte, an denen Kunden buchen können.",
     noLocationsYetTitle: "Noch keine Standorte",
@@ -6349,8 +6380,12 @@ const de: Translations = {
     noAddressSet: "Keine Adresse hinterlegt",
     removeLocationAria: "{name} entfernen",
     locationServicesStaffSummary: "{services} Leistungen · {staff} Mitarbeiter",
-    locationContextLabel: "Bearbeiteter Standort:",
     chooseLocation: "Wähle einen Standort",
+    locationGateSubtitle: "Alles Folgende ist diesem Standort zugeordnet.",
+    workingInLocationAria: "In {name} arbeiten",
+    manageLocationsLink: "Standorte verwalten",
+    currentLocationPillLabel: "Standort: {name}",
+    switchLocationAria: "Standort wechseln",
 
     weekdayMon: "Montag",
     weekdayTue: "Dienstag",
@@ -6362,13 +6397,13 @@ const de: Translations = {
     tabDashboard: "Übersicht",
     tabBookings: "Buchungen",
     tabCustomers: "Kunden",
-    tabSettings: "Einstellungen",
+    tabAvailability: "Verfügbarkeit",
+    tabServices: "Dienstleistungen",
+    tabNotifications: "Benachrichtigungen",
     widgetHiddenNotice: "Dieses Widget ist ausgeblendet — abonniere, um Buchungen anzunehmen.",
     subscribeToActivate: "Abonnieren zum Aktivieren",
     sectionBilling: "Abrechnung",
     sectionVisibility: "Sichtbarkeit",
-    sectionBookingSetup: "Buchungseinrichtung",
-    sectionNotifications: "Benachrichtigungen",
     billingHint: "Dein Abo hält das Widget auf deinem Profil aktiv.",
     billingActive: "Aktiv — dein Widget ist live.",
     manageSubscription: "Abo verwalten",
@@ -6377,7 +6412,6 @@ const de: Translations = {
     showOnProfile: "Auf Profil anzeigen",
     showOnProfileDescActive: "Wenn aktiviert, können Besucher über dein Profil buchen.",
     showOnProfileDescInactive: "Erfordert ein aktives Abo, um auf deinem Profil zu erscheinen.",
-    bookingSetupHint: "Leistungen, Zeiten und die Regeln, nach denen Besucher buchen.",
     generalSection: "Allgemein",
     timezoneLabel: "Zeitzone (IANA)",
     bufferLabel: "Puffer zwischen Buchungen (Min.)",
@@ -6394,7 +6428,6 @@ const de: Translations = {
     removeWindowAriaShort: "Zeitfenster entfernen",
     blackoutDatesSection: "Gesperrte Termine",
     removeDateAria: "Datum entfernen",
-    notificationsHint: "Nachrichten, die automatisch rund um die Buchung an Kunden gesendet werden.",
     automatedMessagesTitle: "Automatische Nachrichten",
     automatedMessagesDesc: "Werden automatisch an Kunden gesendet. Personalisiere mit den Variablen-Chips und wähle einen Kanal — oder schalte eine Nachricht aus.",
     confirmationMsgTitle: "Buchungsbestätigung",
@@ -6447,6 +6480,8 @@ const de: Translations = {
     addWidgetButton: "Widget hinzufügen",
     noWidgetsAvailable: "Noch keine Widgets verfügbar. Schau bald wieder vorbei.",
     allWidgetsLink: "Alle Widgets",
+    widgetSettingsTitle: "Widget-Einstellungen",
+    backToWidgetLink: "Zurück zum Widget",
     liveOnProfile: "Live auf deinem Profil",
     activeHiddenFromProfile: "Aktiv — auf deinem Profil ausgeblendet",
   },
@@ -6715,6 +6750,8 @@ const it: Translations = {
     newReply: "{name} ha risposto al tuo commento in \"{title}\"",
     mention: "{name} ti ha menzionato in \"{title}\"",
     aiEditReady: "Modifica AI pronta per \"{title}\"",
+    newBooking: "Nuova prenotazione da {name} per {service}",
+    dismiss: "Ignora",
   },
   error: {
     title: "Qualcosa è andato storto",
@@ -7248,7 +7285,6 @@ const it: Translations = {
     dayOffBadgeSingular: "giorno libero",
     dayOffBadgePlural: "giorni liberi",
 
-    locationsTabLabel: "Sedi",
     locationsSectionTitle: "Sedi",
     locationsSectionDesc: "Gestisci i negozi o le filiali in cui i clienti possono prenotare.",
     noLocationsYetTitle: "Nessuna sede ancora",
@@ -7274,8 +7310,12 @@ const it: Translations = {
     noAddressSet: "Nessun indirizzo impostato",
     removeLocationAria: "Rimuovi {name}",
     locationServicesStaffSummary: "{services} servizi · {staff} staff",
-    locationContextLabel: "Sede in modifica:",
     chooseLocation: "Scegli una sede",
+    locationGateSubtitle: "Tutto ciò che segue è collegato a questa sede.",
+    workingInLocationAria: "Lavora in {name}",
+    manageLocationsLink: "Gestisci sedi",
+    currentLocationPillLabel: "Sede: {name}",
+    switchLocationAria: "Cambia sede",
 
     weekdayMon: "Lunedì",
     weekdayTue: "Martedì",
@@ -7287,13 +7327,13 @@ const it: Translations = {
     tabDashboard: "Dashboard",
     tabBookings: "Prenotazioni",
     tabCustomers: "Clienti",
-    tabSettings: "Impostazioni",
+    tabAvailability: "Disponibilità",
+    tabServices: "Servizi",
+    tabNotifications: "Notifiche",
     widgetHiddenNotice: "Questo widget è nascosto — abbonati per accettare prenotazioni.",
     subscribeToActivate: "Abbonati per attivare",
     sectionBilling: "Fatturazione",
     sectionVisibility: "Visibilità",
-    sectionBookingSetup: "Configurazione prenotazioni",
-    sectionNotifications: "Notifiche",
     billingHint: "Il tuo abbonamento mantiene il widget attivo sul tuo profilo.",
     billingActive: "Attivo — il tuo widget è online.",
     manageSubscription: "Gestisci abbonamento",
@@ -7302,7 +7342,6 @@ const it: Translations = {
     showOnProfile: "Mostra sul profilo",
     showOnProfileDescActive: "Se attivo, i visitatori possono prenotare dal tuo profilo.",
     showOnProfileDescInactive: "Richiede un abbonamento attivo per apparire sul tuo profilo.",
-    bookingSetupHint: "Servizi, orari e le regole con cui i visitatori prenotano.",
     generalSection: "Generale",
     timezoneLabel: "Fuso orario (IANA)",
     bufferLabel: "Intervallo tra prenotazioni (min)",
@@ -7319,7 +7358,6 @@ const it: Translations = {
     removeWindowAriaShort: "Rimuovi fascia oraria",
     blackoutDatesSection: "Date bloccate",
     removeDateAria: "Rimuovi data",
-    notificationsHint: "Messaggi inviati automaticamente ai clienti in relazione alla prenotazione.",
     automatedMessagesTitle: "Messaggi automatici",
     automatedMessagesDesc: "Inviati automaticamente ai clienti. Personalizza con le variabili e scegli un canale — o disattiva un messaggio.",
     confirmationMsgTitle: "Conferma di prenotazione",
@@ -7372,6 +7410,8 @@ const it: Translations = {
     addWidgetButton: "Aggiungi widget",
     noWidgetsAvailable: "Nessun widget disponibile per ora. Ricontrolla presto.",
     allWidgetsLink: "Tutti i widget",
+    widgetSettingsTitle: "Impostazioni widget",
+    backToWidgetLink: "Torna al widget",
     liveOnProfile: "Online sul tuo profilo",
     activeHiddenFromProfile: "Attivo — nascosto dal tuo profilo",
   },

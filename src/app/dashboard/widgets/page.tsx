@@ -44,12 +44,18 @@ export default async function WidgetsDashboardPage() {
           <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t.booking.yourWidgetsSection}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {widgets.map((w) => (
-              <Link
+              <div
                 key={w.id}
-                href={`/dashboard/widgets/${w.id}`}
-                className="group rounded-2xl border border-border bg-background p-5 transition hover:border-emerald-400 hover:shadow-sm"
+                className="group relative rounded-2xl border border-border bg-background p-5 transition hover:border-emerald-400 hover:shadow-sm"
               >
-                <div className="flex items-start justify-between">
+                {/* Stretched link — the whole card opens the widget; the gear
+                    (above, at a higher z-index) opens widget-level settings instead. */}
+                <Link
+                  href={`/dashboard/widgets/${w.id}`}
+                  className="absolute inset-0 z-0 rounded-2xl"
+                  aria-label={w.catalog.name}
+                />
+                <div className="relative z-[1] flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
                       {renderWidgetIcon(w.catalog.icon, "h-4 w-4 text-emerald-600 dark:text-emerald-400")}
@@ -61,9 +67,15 @@ export default async function WidgetsDashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <Settings className="h-4 w-4 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                  <Link
+                    href={`/dashboard/widgets/${w.id}/settings`}
+                    aria-label={t.booking.widgetSettingsTitle}
+                    className="relative z-10 rounded-lg p-1 text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Link>
                 </div>
-                <div className="mt-4">
+                <div className="relative z-[1] mt-4">
                   {w.has_access ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                       <Check className="h-3 w-3" /> {t.booking.subscriptionActive}
@@ -74,7 +86,7 @@ export default async function WidgetsDashboardPage() {
                     </span>
                   )}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>

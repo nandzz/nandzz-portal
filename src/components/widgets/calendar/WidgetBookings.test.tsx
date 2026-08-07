@@ -42,6 +42,7 @@ function makeBooking(overrides: Partial<BookingRowData> = {}): BookingRowData {
     manage_token: "token_1",
     staff_id: null,
     staff_name: null,
+    location_id: null,
     ...overrides,
   };
 }

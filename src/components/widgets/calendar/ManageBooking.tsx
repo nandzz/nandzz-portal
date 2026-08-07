@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export type ManageBookingData = {
   service_name: string;
   service_id: string;
+  location_id: string | null;
   instance_id: string;
   starts_at: string;
   status: "confirmed" | "cancelled";
@@ -37,21 +38,21 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       minute: "2-digit",
     }).format(new Date(iso));
 
-  async function reschedule(slot: Slot) {
+  async function reschedule(slot: Slot, staffId: string) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/widgets/bookings/${token}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starts_at: slot.start }),
+        body: JSON.stringify({ starts_at: slot.start, staff_id: staffId || null }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(t.booking.errorReschedule);
         return;
       }
-      setBooking({ ...booking, starts_at: data.starts_at });
+      setBooking({ ...booking, starts_at: data.starts_at, staff_name: data.staff_name ?? null });
       setMode("view");
     } catch {
       setError(t.booking.errorReschedule);
@@ -153,6 +154,7 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
             <ReschedulePicker
               instanceId={booking.instance_id}
               serviceId={booking.service_id}
+              locationId={booking.location_id}
               timezone={tz}
               busy={busy}
               error={error}

@@ -30,6 +30,7 @@ export default async function BookingManagePage({
   const initial: ManageBookingData = {
     service_name: data.service_name as string,
     service_id: data.service_id as string,
+    location_id: (data.location_id as string | null) ?? null,
     instance_id: data.instance_id as string,
     starts_at: data.starts_at as string,
     status: data.status as "confirmed" | "cancelled",

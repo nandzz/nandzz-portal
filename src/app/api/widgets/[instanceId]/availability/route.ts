@@ -70,7 +70,9 @@ export async function GET(
   // so its bookings must not be treated as busy for a different location (or
   // for the legacy top-level resource, and vice versa).
   const windowStart = new Date(`${fromDate}T00:00:00Z`).toISOString();
-  const windowEnd = new Date(Date.now() + (days + 2) * 86_400_000).toISOString();
+  const windowEnd = new Date(
+    new Date(`${fromDate}T00:00:00Z`).getTime() + (days + 2) * 86_400_000
+  ).toISOString();
   let bookingsQuery = admin
     .from("widget_bookings")
     .select("starts_at, ends_at, staff_id")
@@ -94,7 +96,12 @@ export async function GET(
 
   return NextResponse.json({
     timezone,
-    service: { id: service.id, name: service.name, duration_min: service.duration_min },
+    service: {
+      id: service.id,
+      name: service.name,
+      duration_min: service.duration_min,
+      staff_ids: service.staff_ids,
+    },
     staff: location ? location.staff : config.staff,
     slots,
   });

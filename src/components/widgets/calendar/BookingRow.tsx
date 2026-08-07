@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, MessageCircle, Ban, CalendarClock, Loader2 } from "lucide-react";
+import { Mail, MessageCircle, Ban, CalendarClock, Clock, Loader2 } from "lucide-react";
 import { whatsappLink } from "@/lib/widgets/contact";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ export type BookingRowData = {
   customer_phone: string | null;
   staff_id: string | null;
   staff_name: string | null;
+  location_id: string | null;
   manage_token: string;
 };
 
@@ -59,14 +60,14 @@ export function BookingRow({
       )
     : null;
 
-  async function reschedule(slot: Slot) {
+  async function reschedule(slot: Slot, staffId: string) {
     setBusy(true);
     setRescheduleError(null);
     try {
       const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starts_at: slot.start }),
+        body: JSON.stringify({ starts_at: slot.start, staff_id: staffId || null }),
       });
       if (!res.ok) {
         setRescheduleError(t.booking.errorRescheduleThis);
@@ -95,7 +96,8 @@ export function BookingRow({
     try {
       const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, { method: "DELETE" });
       if (!res.ok) {
-        alert(t.booking.errorCancelThis);
+        const data = await res.json().catch(() => null);
+        alert(data?.error || t.booking.errorCancelThis);
         return;
       }
       router.refresh(); // re-run the server page → tiles, chart & lists all update
@@ -110,9 +112,13 @@ export function BookingRow({
     <div className={`flex items-center justify-between gap-3 px-5 py-3.5 ${dim ? "opacity-70" : ""}`}>
       <div className="min-w-0">
         <p className="truncate font-medium">{b.customer_name}</p>
-        <p className="truncate text-sm text-muted-foreground">
-          {b.service_name} · {when}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <p className="truncate text-sm text-muted-foreground">{b.service_name}</p>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <Clock className="h-3 w-3" />
+            {when}
+          </span>
+        </div>
         {b.staff_name && (
           <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <Avatar size="sm" className="h-4 w-4">
@@ -194,6 +200,7 @@ export function BookingRow({
         <ReschedulePicker
           instanceId={b.instance_id}
           serviceId={b.service_id}
+          locationId={b.location_id}
           timezone={timezone}
           busy={busy}
           error={rescheduleError}

@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Pencil } from "lucide-react";
-import { todayInZone, type Slot } from "@/lib/widgets/calendar";
+import { CalendarDays, ChevronLeft, Pencil, Sparkles } from "lucide-react";
+import { eligibleStaffForService, todayInZone, type Slot } from "@/lib/widgets/calendar";
+import type { CalendarService, StaffMember } from "@/lib/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Availability-aware "pick a new time" picker, shared by the customer self-serve
 // manage page (ManageBooking) and the owner dashboard (BookingRow). It fetches
 // open slots for one service on one instance, renders a month grid + a time
-// picker for the chosen day, and hands the chosen slot back via `onPick`. The
+// picker for the chosen day, then — when the picked slot has eligible free
+// staff — a specialist step (mirroring CalendarBookingFlow's), before handing
+// the slot and chosen staff id ("" ⇒ any available) back via `onPick`. The
 // parent owns the commit (PATCH) and shows any commit error via `busy`/`error`.
 //
 // Matches the main booking flow's window; the availability API caps `days` at 60.
@@ -18,6 +22,7 @@ const BOOKING_WINDOW_DAYS = 60;
 export function ReschedulePicker({
   instanceId,
   serviceId,
+  locationId,
   timezone,
   busy,
   error,
@@ -25,30 +30,38 @@ export function ReschedulePicker({
 }: {
   instanceId: string;
   serviceId: string;
+  locationId?: string | null;
   timezone: string;
   busy?: boolean;
   error?: string | null; // commit error, owned by the parent
-  onPick: (slot: Slot) => void;
+  onPick: (slot: Slot, staffId: string) => void;
 }) {
   const { t, locale } = useLanguage();
   const tz = timezone;
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [service, setService] = useState<CalendarService | null>(null);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   // Whether the full month grid is showing. Collapses to a compact summary once
   // the user actively picks a day (auto-selecting the first day keeps it open).
   const [calendarOpen, setCalendarOpen] = useState(true);
+  // Slot awaiting a specialist choice — only set when that slot has eligible
+  // free staff (mirrors CalendarBookingFlow's "staff" step gating).
+  const [pendingSlot, setPendingSlot] = useState<Slot | null>(null);
+  const [pendingStaff, setPendingStaff] = useState<StaffMember[]>([]);
 
   // Fetch availability for the service once, on mount. The picker mounts fresh
   // each time it opens, so initial state already reflects the loading defaults —
   // no synchronous reset needed here.
   useEffect(() => {
     let active = true;
+    const locationParam = locationId ? `&location_id=${encodeURIComponent(locationId)}` : "";
     fetch(
       `/api/widgets/${instanceId}/availability?service_id=${encodeURIComponent(
         serviceId
-      )}&days=${BOOKING_WINDOW_DAYS}`
+      )}&days=${BOOKING_WINDOW_DAYS}${locationParam}`
     )
       .then(async (res) => {
         const data = await res.json();
@@ -58,6 +71,8 @@ export function ReschedulePicker({
           setLoadError(t.booking.errorLoadAvailability);
         } else {
           setSlots(data.slots ?? []);
+          setService(data.service ?? null);
+          setStaffList(data.staff ?? []);
         }
       })
       .catch(() => {
@@ -69,7 +84,7 @@ export function ReschedulePicker({
     return () => {
       active = false;
     };
-  }, [instanceId, serviceId]);
+  }, [instanceId, serviceId, locationId]);
 
   const fmtDay = (iso: string) =>
     new Intl.DateTimeFormat(locale, {
@@ -131,6 +146,29 @@ export function ReschedulePicker({
     setCalendarOpen(false);
   }
 
+  // Eligible staff free at a given slot — intersects the slot's free-staff list
+  // (from the availability API) with the service's eligible staff. Empty ⇒ no
+  // staff choice for this slot (unstaffed service, or no staff data attached).
+  function freeStaffForSlot(s: Slot): StaffMember[] {
+    if (!service || staffList.length === 0) return [];
+    const freeIds = s.staff_ids;
+    if (!freeIds || freeIds.length === 0) return [];
+    const freeSet = new Set(freeIds);
+    return eligibleStaffForService(staffList, service).filter((m) => freeSet.has(m.id));
+  }
+
+  // Time slot picked → branch into the specialist step when a choice exists,
+  // otherwise commit straight away with "" (no staff to assign/keep).
+  function pickSlot(s: Slot) {
+    const free = freeStaffForSlot(s);
+    if (free.length > 0) {
+      setPendingSlot(s);
+      setPendingStaff(free);
+    } else {
+      onPick(s, "");
+    }
+  }
+
   if (loading) return <CalendarSkeleton />;
 
   if (loadError) {
@@ -146,6 +184,76 @@ export function ReschedulePicker({
       <p className="text-sm text-muted-foreground">
         {t.booking.noOpenSlots.replace("{days}", String(BOOKING_WINDOW_DAYS))}
       </p>
+    );
+  }
+
+  // Specialist step — only reached when the picked slot has eligible free staff.
+  if (pendingSlot) {
+    return (
+      <div className="space-y-3">
+        <button
+          onClick={() => {
+            setPendingSlot(null);
+            setPendingStaff([]);
+          }}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" /> {t.booking.back}
+        </button>
+
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold">{t.booking.chooseSpecialist}</h3>
+          <p className="text-sm text-muted-foreground">
+            {fmtDay(pendingSlot.start)} · {fmtTime(pendingSlot.start)}
+          </p>
+        </div>
+
+        {error && (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+            {error}
+          </p>
+        )}
+
+        <button
+          disabled={busy}
+          onClick={() => onPick(pendingSlot, "")}
+          className="w-full text-left rounded-xl border border-border bg-background px-4 py-3 transition hover:border-emerald-400 hover:shadow-sm disabled:opacity-60"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+              <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-sm font-medium">{t.booking.anyAvailable}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {t.booking.anyAvailableDesc}
+              </span>
+            </div>
+          </div>
+        </button>
+
+        {pendingStaff.map((m) => (
+          <button
+            key={m.id}
+            disabled={busy}
+            onClick={() => onPick(pendingSlot, m.id)}
+            className="w-full text-left rounded-xl border border-border bg-background px-4 py-3 transition hover:border-emerald-400 hover:shadow-sm disabled:opacity-60"
+          >
+            <div className="flex items-center gap-3">
+              <Avatar size="lg" className="shrink-0">
+                <AvatarImage src={m.photo_url || undefined} alt={m.name} />
+                <AvatarFallback>{m.name.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <span className="block truncate text-sm font-medium">{m.name}</span>
+                {m.info && (
+                  <span className="mt-0.5 block truncate text-xs text-muted-foreground">{m.info}</span>
+                )}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
     );
   }
 
@@ -193,7 +301,7 @@ export function ReschedulePicker({
                 <button
                   key={s.start}
                   disabled={busy}
-                  onClick={() => onPick(s)}
+                  onClick={() => pickSlot(s)}
                   className="rounded-lg border border-border px-2 py-2 text-sm transition hover:border-emerald-400 hover:bg-emerald-50 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-emerald-950/30"
                 >
                   {fmtTime(s.start)}

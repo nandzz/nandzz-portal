@@ -7,8 +7,14 @@
 // gets no sidebar. Matches "/<username>/space/<id>" and "/space/<id>".
 const IMMERSIVE_ROUTE_RE = /^\/(?:[^/]+\/)?space\/[^/]+/;
 
+// Public booking widget viewer — has its own sticky header (assumes the
+// Navbar's 64px reserves the space above it), so it needs the same
+// always-show-Navbar/never-swap-in-Sidebar treatment as the space viewer.
+// Matches "/<username>/widget/<instanceId>".
+const WIDGET_ROUTE_RE = /^\/[^/]+\/widget\/[^/]+/;
+
 export function isImmersiveRoute(pathname: string): boolean {
-  return IMMERSIVE_ROUTE_RE.test(pathname);
+  return IMMERSIVE_ROUTE_RE.test(pathname) || WIDGET_ROUTE_RE.test(pathname);
 }
 
 // Reserved single-segment routes that are NOT a user profile page.

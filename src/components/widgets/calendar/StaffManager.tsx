@@ -10,7 +10,6 @@ import { getLocationScope, withLocationScope } from "@/lib/widgets/calendar";
 import type { CalendarConfigController } from "@/components/widgets/calendar/useCalendarConfig";
 import { StaffCard } from "@/components/widgets/calendar/StaffCard";
 import { StaffEditor } from "@/components/widgets/calendar/StaffEditor";
-import { LocationScopeBar } from "@/components/widgets/calendar/LocationScopeBar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Profile pictures must be under this size (mirrors ProfileHeader's uploader).
@@ -20,10 +19,10 @@ interface Props {
   controller: CalendarConfigController;
   // Which location's staff roster is showing. null/undefined ⇒ the legacy
   // top-level config.staff (unchanged behavior — also what's used when
-  // config.locations is empty). Owned by WidgetWorkspace so the Staff tab and
-  // the Settings studio's Services/Availability sections stay in sync.
+  // config.locations is empty). Picked once up front by WidgetWorkspace's
+  // location gate, shared here and with the Settings studio so both stay in
+  // sync.
   currentLocationId?: string | null;
-  onChangeLocationId?: (id: string) => void;
 }
 
 type Mode = "list" | "edit";
@@ -36,7 +35,7 @@ type Mode = "list" | "edit";
 // scoped to the selected location (getLocationScope/withLocationScope) instead of
 // the top-level config — the data model, controller and save path are otherwise
 // untouched.
-export function StaffManager({ controller, currentLocationId = null, onChangeLocationId }: Props) {
+export function StaffManager({ controller, currentLocationId = null }: Props) {
   const { t } = useLanguage();
   const { config, setConfig, saving, status, save } = controller;
   const scope = getLocationScope(config, currentLocationId);
@@ -293,14 +292,6 @@ export function StaffManager({ controller, currentLocationId = null, onChangeLoc
         </h2>
         <p className="mt-0.5 text-xs text-muted-foreground">{t.booking.staffSectionDesc}</p>
       </div>
-
-      {onChangeLocationId && (
-        <LocationScopeBar
-          locations={config.locations}
-          currentLocationId={currentLocationId}
-          onChange={onChangeLocationId}
-        />
-      )}
 
       {photoError && <p className="text-xs text-red-600">{photoError}</p>}
 

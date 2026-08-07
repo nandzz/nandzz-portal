@@ -48,19 +48,19 @@ export function MessageTemplateEditor({ title, description, value, onChange }: P
 
   return (
     <div className="space-y-3 rounded-xl border border-border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="font-medium">{title}</p>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
-        <div className="flex shrink-0 rounded-lg border border-border p-0.5 text-xs">
+        <div className="grid grid-cols-4 gap-0.5 rounded-lg border border-border p-0.5 text-xs sm:inline-flex sm:shrink-0 sm:gap-0">
           {MESSAGE_CHANNELS.map((c) => (
             <button
               key={c.value}
               type="button"
               onClick={() => onChange({ ...value, channel: c.value })}
               className={cn(
-                "rounded-md px-2 py-1 font-medium transition",
+                "rounded-md px-2 py-1.5 text-center font-medium transition sm:py-1",
                 value.channel === c.value
                   ? "bg-emerald-600 text-white"
                   : "text-muted-foreground hover:text-foreground"

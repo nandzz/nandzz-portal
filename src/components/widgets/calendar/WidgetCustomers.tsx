@@ -166,7 +166,7 @@ function CustomerRow({
         </div>
       )}
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex w-16 shrink-0 items-center justify-end gap-1.5">
         {wa && (
           <a
             href={wa}

@@ -167,7 +167,7 @@ export type SpaceCommentWithProfile = SpaceComment & {
 
 export type CommentWithLike = SpaceCommentWithProfile & { liked: boolean };
 
-export type NotificationType = 'new_comment' | 'new_reply' | 'comment_mention' | 'ai_edit_ready';
+export type NotificationType = 'new_comment' | 'new_reply' | 'comment_mention' | 'ai_edit_ready' | 'new_booking';
 
 export type NotificationPayload = {
   space_id: string;
@@ -182,6 +182,12 @@ export type NotificationPayload = {
   space_owner_username: string;
   job_id: string;
   instruction: string;
+} | {
+  instance_id: string;
+  booking_id: string;
+  customer_name: string;
+  service_name: string;
+  starts_at: string;
 };
 
 export type Notification = {
@@ -336,6 +342,8 @@ export type WidgetBooking = {
   price_cents: number | null;
   staff_id: string | null; // snapshot of the assigned staff member (config id)
   staff_name: string | null;
+  location_id: string | null; // snapshot of the booked location (config id)
+  location_name: string | null;
   starts_at: string;
   ends_at: string;
   customer_name: string;
