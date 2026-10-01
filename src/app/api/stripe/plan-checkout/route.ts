@@ -44,9 +44,11 @@ export async function POST(request: Request) {
   }
 
   // Reuse / lazily create the Stripe customer, same as the credit-pack flow.
+  // has_used_trial gates the one-time free trial so it can't be farmed by
+  // cancelling and resubscribing.
   const { data: profile } = await admin
     .from("profiles")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, has_used_trial")
     .eq("id", user.id)
     .single();
 
@@ -66,9 +68,13 @@ export async function POST(request: Request) {
 
   // A free trial (trial_days > 0) delays the first charge; the subscription
   // starts in `trialing` and the webhook maps that to plan_status the same way.
+  // Only the FIRST subscription gets the trial — once a user has trialed (or
+  // ever reached Stripe, per the backfill) has_used_trial stays true, so a
+  // resubscribe is charged immediately.
   const trialDays = plan.trial_days ?? 0;
+  const grantTrial = trialDays > 0 && !profile?.has_used_trial;
   const subscriptionData =
-    trialDays > 0 ? { metadata, trial_period_days: trialDays } : { metadata };
+    grantTrial ? { metadata, trial_period_days: trialDays } : { metadata };
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",

@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import {
   updateBackgroundSchema,
   updateBackgroundPositionSchema,
+  updateBackgroundColorSchema,
+  updateButtonColorSchema,
+  updateTextColorSchema,
 } from "../schemas";
 
 export type UpdateBackgroundResult =
@@ -58,6 +61,92 @@ export async function updateBackgroundPosition(input: {
   const { error } = await supabase
     .from("profiles")
     .update({ background_position: parsed.data.backgroundPosition })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "FAILED", message: error.message };
+
+  return { ok: true };
+}
+
+// Sets or clears the page background color (a hex string, or null to reset to
+// the default theme background). This is independent of the cover image — a
+// profile can have a tinted page with or without a cover.
+export async function updateBackgroundColor(input: {
+  backgroundColor: string | null;
+}): Promise<UpdateBackgroundResult> {
+  const parsed = updateBackgroundColorSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ background_color: parsed.data.backgroundColor })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "FAILED", message: error.message };
+
+  return { ok: true };
+}
+
+// Sets or clears the button/pill surface color (hex, or null to reset to the
+// default theme surface).
+export async function updateButtonColor(input: {
+  buttonColor: string | null;
+}): Promise<UpdateBackgroundResult> {
+  const parsed = updateButtonColorSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ button_color: parsed.data.buttonColor })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "FAILED", message: error.message };
+
+  return { ok: true };
+}
+
+// Sets or clears the header text color (hex, or null to reset to theme text).
+export async function updateTextColor(input: {
+  textColor: string | null;
+}): Promise<UpdateBackgroundResult> {
+  const parsed = updateTextColorSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ text_color: parsed.data.textColor })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "FAILED", message: error.message };
+
+  return { ok: true };
+}
+
+// Resets all profile style customizations back to the default theme in one shot.
+export async function resetProfileStyle(): Promise<UpdateBackgroundResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ background_color: null, button_color: null, text_color: null })
     .eq("id", user.id);
   if (error) return { ok: false, error: "FAILED", message: error.message };
 

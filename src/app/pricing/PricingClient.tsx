@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Check, Minus, HelpCircle, ArrowRight, Sparkles, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CreditPack, SubscriptionPlan } from "@/lib/types";
-import { pricingFaqs } from "./faqs";
+import type { PricingFaq } from "./faqs";
 
 function formatPrice(cents: number, currency: string): string {
   return new Intl.NumberFormat(undefined, {
@@ -17,11 +17,25 @@ function formatPrice(cents: number, currency: string): string {
 export function PricingClient({
   plans,
   packs,
+  faqs,
+  aiEnabled,
 }: {
   plans: SubscriptionPlan[];
   packs: CreditPack[];
+  faqs: PricingFaq[];
+  aiEnabled: boolean;
 }) {
-  const faqs = pricingFaqs;
+  // Only badge a "most popular" plan when there's an actual choice between paid
+  // tiers — with a single paid plan the badge is noise.
+  const paidPlanCount = plans.filter((p) => p.price_cents > 0).length;
+  // Responsive card grid: fit the number of plans without stranding one card in
+  // a 3-wide row.
+  const gridClass =
+    plans.length <= 1
+      ? "max-w-sm mx-auto"
+      : plans.length === 2
+        ? "grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto"
+        : "grid sm:grid-cols-3 gap-6";
 
   return (
     <div className="relative">
@@ -43,16 +57,18 @@ export function PricingClient({
           <span className="text-violet-600">Every tool.</span>
         </h1>
         <p className="mt-5 text-lg text-muted-foreground max-w-md mx-auto">
-          Start free. Upgrade when you want widgets, AI and analytics on your branded page.
+          {aiEnabled
+            ? "Start free. Upgrade when you want widgets, AI and analytics on your branded page."
+            : "Start free. Upgrade when you want widgets and analytics on your branded page."}
         </p>
       </section>
 
       {/* Plan cards */}
       <section className="mx-auto max-w-5xl px-4 pb-12">
         {plans.length > 0 ? (
-          <div className="grid sm:grid-cols-3 gap-6">
+          <div className={gridClass}>
             {plans.map((plan) => {
-              const isPopular = plan.slug === "starter";
+              const isPopular = paidPlanCount > 1 && plan.slug === "starter";
               return (
                 <div
                   key={plan.id}
@@ -94,12 +110,16 @@ export function PricingClient({
                       {plan.space_limit === null ? "Unlimited spaces" : `Up to ${plan.space_limit} spaces`}
                     </Feature>
                     <Feature ok>Content, gallery &amp; links sections</Feature>
-                    <Feature ok={plan.has_widgets}>Widgets (booking + AI agent)</Feature>
-                    <Feature ok={plan.monthly_credits > 0}>
-                      {plan.monthly_credits > 0
-                        ? `${plan.monthly_credits.toLocaleString()} AI credits / month`
-                        : "No AI credits"}
+                    <Feature ok={plan.has_widgets}>
+                      {aiEnabled ? "Widgets (booking + AI agent)" : "Widgets (booking)"}
                     </Feature>
+                    {aiEnabled && (
+                      <Feature ok={plan.monthly_credits > 0}>
+                        {plan.monthly_credits > 0
+                          ? `${plan.monthly_credits.toLocaleString()} AI credits / month`
+                          : "No AI credits"}
+                      </Feature>
+                    )}
                     <Feature ok={plan.has_mcp}>MCP access (connect Claude)</Feature>
                     <Feature ok={plan.has_analytics}>Analytics</Feature>
                   </ul>

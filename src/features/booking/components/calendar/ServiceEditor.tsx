@@ -158,6 +158,28 @@ export function ServiceEditor({ service, staff, categories, currencySymbol, onBa
           </div>
         )}
 
+        {/* Parallel — whether this service can run concurrently with others in a
+            multi-service booking (each handled by its own staff). Only meaningful
+            when the business has staff; a single resource can't parallelize. */}
+        {staff.length > 0 && (
+          <label
+            htmlFor={`svc-parallel-${service.id}`}
+            className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-4"
+          >
+            <input
+              id={`svc-parallel-${service.id}`}
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
+              checked={!!service.parallel}
+              onChange={(e) => onUpdate(service.id, { parallel: e.target.checked })}
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{t.booking.parallelLabel}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{t.booking.parallelHint}</span>
+            </span>
+          </label>
+        )}
+
         {/* Danger zone */}
         <div className="flex justify-end border-t border-border pt-4">
           <Button variant="destructive" size="sm" onClick={() => onRemove(service.id)}>

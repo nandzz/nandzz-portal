@@ -3,22 +3,32 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReschedulePicker } from "./ReschedulePicker";
 
-const slotNoStaff = { start: "2026-08-10T09:00:00.000Z", end: "2026-08-10T09:30:00.000Z" };
-const slotWithStaff = {
-  start: "2026-08-10T09:00:00.000Z",
-  end: "2026-08-10T09:30:00.000Z",
-  staff_ids: ["st_a", "st_b"],
-};
-const service = { id: "svc_1", name: "Haircut", duration_min: 30 };
-const staffA = { id: "st_a", name: "Alex", availability: {} };
-const staffB = { id: "st_b", name: "Bella", availability: {} };
+// The picker fetches /reschedule-context (staff choice), then /slots (scoped to
+// the chosen staff), then commits a slot + staff map — mirroring the booking
+// flow. No specialist choice ⇒ it skips straight to the time grid.
+const slot = { start: "2026-08-10T09:00:00.000Z", end: "2026-08-10T09:30:00.000Z" };
+
+const alex = { id: "st_a", name: "Alex", photo_url: null, info: null };
+const bella = { id: "st_b", name: "Bella", photo_url: null, info: null };
 
 function jsonResponse(body: unknown, ok = true) {
   return Promise.resolve({ ok, json: async () => body } as Response);
 }
 
-function setupFetch(body: unknown, ok = true) {
-  const fetchMock = vi.fn((_input: RequestInfo | URL) => jsonResponse(body, ok));
+// Wire a fetch mock that answers context + slots by URL.
+function setupFetch(opts: { context?: unknown; contextOk?: boolean; slots?: unknown[]; slotsOk?: boolean } = {}) {
+  const {
+    context = { services: [], needs_staff_step: false },
+    contextOk = true,
+    slots = [slot],
+    slotsOk = true,
+  } = opts;
+  const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.includes("/reschedule-context")) return jsonResponse(context, contextOk);
+    if (url.includes("/slots")) return jsonResponse({ timezone: "UTC", slots }, slotsOk);
+    throw new Error(`unexpected fetch ${url}`);
+  });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -28,134 +38,85 @@ beforeEach(() => {
 });
 
 describe("ReschedulePicker", () => {
-  it("shows a loading skeleton, then the load error message when the fetch fails", async () => {
-    setupFetch(null, false);
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={vi.fn()} />
-    );
-    await waitFor(() => expect(screen.getByText("Could not load availability.")).toBeInTheDocument());
+  it("skips the staff step and shows times when no service has a real staff choice", async () => {
+    setupFetch();
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={vi.fn()} />);
+    const slotButton = await screen.findByRole("button", { name: /9:00/ });
+    expect(slotButton).toBeInTheDocument();
+    expect(screen.queryByText("Any available")).not.toBeInTheDocument();
   });
 
-  it("shows the load error message when fetch throws", async () => {
-    const fetchMock = vi.fn().mockRejectedValue(new Error("network down"));
-    vi.stubGlobal("fetch", fetchMock);
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={vi.fn()} />
+  it("commits the picked slot with the (preserved) staff map", async () => {
+    setupFetch();
+    const onPick = vi.fn();
+    const user = userEvent.setup();
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={onPick} />);
+    const slotButton = await screen.findByRole("button", { name: /9:00/ });
+    await user.click(slotButton);
+    expect(onPick).toHaveBeenCalledWith(slot, {});
+  });
+
+  it("shows the per-service staff step first when a service has 2+ eligible staff", async () => {
+    setupFetch({
+      context: {
+        services: [{ service_id: "svc_1", name: "Haircut", current_staff_id: "st_a", eligible_staff: [alex, bella] }],
+        needs_staff_step: true,
+      },
+    });
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={vi.fn()} />);
+
+    // Staff step (not the time grid) shows first.
+    expect(await screen.findByText("Any available")).toBeInTheDocument();
+    expect(screen.getByText("Alex")).toBeInTheDocument();
+    expect(screen.getByText("Bella")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /9:00/ })).not.toBeInTheDocument();
+  });
+
+  it("commits with the chosen per-service staff after the staff step", async () => {
+    const fetchMock = setupFetch({
+      context: {
+        services: [{ service_id: "svc_1", name: "Haircut", current_staff_id: "st_a", eligible_staff: [alex, bella] }],
+        needs_staff_step: true,
+      },
+    });
+    const onPick = vi.fn();
+    const user = userEvent.setup();
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={onPick} />);
+
+    await screen.findByText("Bella");
+    await user.click(screen.getByText("Bella"));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    const slotButton = await screen.findByRole("button", { name: /9:00/ });
+    // The slots request carries the chosen staff.
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) => String(url).includes("/slots") && String(url).includes("svc_1%3Ast_b"))
+      ).toBe(true)
     );
+    await user.click(slotButton);
+    expect(onPick).toHaveBeenCalledWith(slot, { svc_1: "st_b" });
+  });
+
+  it("shows the load error when /slots fails", async () => {
+    setupFetch({ slotsOk: false });
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={vi.fn()} />);
     await waitFor(() => expect(screen.getByText("Could not load availability.")).toBeInTheDocument());
   });
 
   it("shows the no-slots message when there are no open slots", async () => {
-    setupFetch({ slots: [], service, staff: [] });
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={vi.fn()} />
-    );
+    setupFetch({ slots: [] });
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={vi.fn()} />);
     await waitFor(() =>
       expect(screen.getByText("No open slots in the next 60 days.")).toBeInTheDocument()
     );
   });
 
-  it("requests availability for the given service/location", async () => {
-    const fetchMock = setupFetch({ slots: [slotNoStaff], service, staff: [] });
-    render(
-      <ReschedulePicker
-        instanceId="inst_1"
-        serviceId="svc_1"
-        locationId="loc_1"
-        timezone="UTC"
-        onPick={vi.fn()}
-      />
-    );
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [calledUrl] = fetchMock.mock.calls[0];
-    expect(String(calledUrl)).toBe(
-      "/api/widgets/inst_1/availability?service_id=svc_1&days=60&location_id=loc_1"
-    );
-  });
-
-  it("commits immediately with staffId '' when the picked slot has no eligible free staff", async () => {
-    setupFetch({ slots: [slotNoStaff], service, staff: [] });
-    const onPick = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={onPick} />
-    );
-
-    const slotButton = await screen.findByRole("button", { name: /9:00/ });
-    await user.click(slotButton);
-
-    expect(onPick).toHaveBeenCalledWith(slotNoStaff, "");
-  });
-
-  it("shows the specialist step for a slot with eligible free staff instead of committing immediately", async () => {
-    setupFetch({ slots: [slotWithStaff], service, staff: [staffA, staffB] });
-    const onPick = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={onPick} />
-    );
-
-    const slotButton = await screen.findByRole("button", { name: /9:00/ });
-    await user.click(slotButton);
-
-    expect(onPick).not.toHaveBeenCalled();
-    expect(screen.getByText("Choose your specialist")).toBeInTheDocument();
-    expect(screen.getByText("Alex")).toBeInTheDocument();
-    expect(screen.getByText("Bella")).toBeInTheDocument();
-  });
-
-  it("commits with the chosen staff id from the specialist step", async () => {
-    setupFetch({ slots: [slotWithStaff], service, staff: [staffA, staffB] });
-    const onPick = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={onPick} />
-    );
-
-    const slotButton = await screen.findByRole("button", { name: /9:00/ });
-    await user.click(slotButton);
-    await user.click(screen.getByText("Alex"));
-
-    expect(onPick).toHaveBeenCalledWith(slotWithStaff, "st_a");
-  });
-
-  it("commits with '' from the specialist step's 'Any available' option", async () => {
-    setupFetch({ slots: [slotWithStaff], service, staff: [staffA, staffB] });
-    const onPick = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={onPick} />
-    );
-
-    const slotButton = await screen.findByRole("button", { name: /9:00/ });
-    await user.click(slotButton);
-    await user.click(screen.getByText("Any available"));
-
-    expect(onPick).toHaveBeenCalledWith(slotWithStaff, "");
-  });
-
-  it("lets the user back out of the specialist step to the time picker", async () => {
-    setupFetch({ slots: [slotWithStaff], service, staff: [staffA, staffB] });
-    const user = userEvent.setup();
-    render(
-      <ReschedulePicker instanceId="inst_1" serviceId="svc_1" locationId={null} timezone="UTC" onPick={vi.fn()} />
-    );
-
-    const slotButton = await screen.findByRole("button", { name: /9:00/ });
-    await user.click(slotButton);
-    expect(screen.getByText("Choose your specialist")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.queryByText("Choose your specialist")).not.toBeInTheDocument();
-  });
-
   it("surfaces the parent-owned commit error alongside the time grid", async () => {
-    setupFetch({ slots: [slotNoStaff], service, staff: [] });
+    setupFetch();
     render(
       <ReschedulePicker
-        instanceId="inst_1"
-        serviceId="svc_1"
-        locationId={null}
+        token="tok_1"
         timezone="UTC"
         error="That slot was just taken. Please pick another."
         onPick={vi.fn()}

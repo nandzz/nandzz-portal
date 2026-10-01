@@ -1,4 +1,5 @@
 import { getPublicPricing } from "@/lib/pricing";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 export const revalidate = 300;
 
@@ -13,7 +14,10 @@ function formatPrice(cents: number, currency: string): string {
 // Machine-readable pricing for AI agents comparing tools on a buyer's behalf.
 // Mirrors the human /pricing page but stays trivially parseable (no JS, no auth).
 export async function GET() {
-  const { plans, packs } = await getPublicPricing();
+  const [{ plans, packs }, { ai: aiEnabled }] = await Promise.all([
+    getPublicPricing(),
+    getFeatureFlags(),
+  ]);
 
   const lines: string[] = ["# Pricing — Nandzz", ""];
 
@@ -35,20 +39,24 @@ export async function GET() {
         `- Spaces: ${plan.space_limit === null ? "Unlimited" : `Up to ${plan.space_limit}`}`
       );
       lines.push(`- Content, gallery & links sections: Yes`);
-      lines.push(`- Widgets (booking + AI agent): ${plan.has_widgets ? "Yes" : "No"}`);
       lines.push(
-        `- AI credits: ${
-          plan.monthly_credits > 0
-            ? `${plan.monthly_credits.toLocaleString("en-US")} per month`
-            : "None"
-        }`
+        `- Widgets (${aiEnabled ? "booking + AI agent" : "booking"}): ${plan.has_widgets ? "Yes" : "No"}`
       );
+      if (aiEnabled) {
+        lines.push(
+          `- AI credits: ${
+            plan.monthly_credits > 0
+              ? `${plan.monthly_credits.toLocaleString("en-US")} per month`
+              : "None"
+          }`
+        );
+      }
       lines.push(`- MCP access (connect Claude): ${plan.has_mcp ? "Yes" : "No"}`);
       lines.push(`- Analytics: ${plan.has_analytics ? "Yes" : "No"}`);
       lines.push("");
     }
 
-    if (packs.length > 0) {
+    if (aiEnabled && packs.length > 0) {
       lines.push("## Top-up AI credit packs");
       lines.push(
         "Available on paid plans. Purchased credits never expire and are used only after the monthly plan allowance runs out."

@@ -50,6 +50,28 @@ export const updateBackgroundPositionSchema = z.object({
   backgroundPosition: z.string(),
 });
 
+// A #rgb / #rrggbb hex string, or null to clear back to the default theme.
+// The regex mirrors the brand page's isValidHex.
+const hexColor = z
+  .string()
+  .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
+  .nullable();
+
+// Page background color.
+export const updateBackgroundColorSchema = z.object({
+  backgroundColor: hexColor,
+});
+
+// Button/pill surface color.
+export const updateButtonColorSchema = z.object({
+  buttonColor: hexColor,
+});
+
+// Header text color.
+export const updateTextColorSchema = z.object({
+  textColor: hexColor,
+});
+
 export const updateBrandSchema = z.object({
   logoUrl: z.string().nullable(),
   brandColors: z.record(z.string(), z.string()),

@@ -19,6 +19,7 @@ import { LocaleSelect } from "@/components/layout/LocaleSelect";
 import { ChevronLeft } from "lucide-react";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { tabFromSegment } from "@/features/booking/widgetTabs";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 export default async function WidgetStudioPage({
   params,
@@ -35,6 +36,8 @@ export default async function WidgetStudioPage({
 
   const slug = widget.catalog.slug;
   if (slug !== "calendar" && slug !== "agent") notFound();
+  // The agent widget is an AI surface — its workspace 404s while AI is off.
+  if (slug === "agent" && !(await getFeatureFlags()).ai) notFound();
 
   // The tab lives in the path as a single segment
   // (`/dashboard/widgets/{id}/{segment}`); anything deeper, or an unknown

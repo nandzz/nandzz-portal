@@ -38,14 +38,14 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       minute: "2-digit",
     }).format(new Date(iso));
 
-  async function reschedule(slot: Slot, staffId: string) {
+  async function reschedule(slot: Slot, staffByService: Record<string, string>) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/widgets/bookings/${token}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starts_at: slot.start, staff_id: staffId || null }),
+        body: JSON.stringify({ starts_at: slot.start, staff_by_service: staffByService }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -152,9 +152,7 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
               </button>
             </div>
             <ReschedulePicker
-              instanceId={booking.instance_id}
-              serviceId={booking.service_id}
-              locationId={booking.location_id}
+              token={token}
               timezone={tz}
               busy={busy}
               error={error}

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { CORE_TEMPLATES } from "@/lib/agent/templates";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 type Message = { role: string; content: string };
 type DocSummary = { title: string; visibility: string; status: string };
@@ -165,6 +166,14 @@ What specific part of your agent would you like to work on?`;
 }
 
 export async function POST(req: NextRequest) {
+  // AI master switch — the agent setup advisor is hidden while off.
+  if (!(await getFeatureFlags()).ai) {
+    return new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

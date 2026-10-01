@@ -1,17 +1,58 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "./route";
-import type { WidgetBooking } from "@/lib/types";
+import type { CalendarConfig, WidgetBooking } from "@/lib/types";
 
 const mockGetUser = vi.fn();
 const mockRpcSingle = vi.fn();
 const mockRpc = vi.fn(() => ({ single: mockRpcSingle }));
 const mockInstanceMaybeSingle = vi.fn();
-const mockFrom = vi.fn(() => ({
-  select: () => ({
-    eq: () => ({ maybeSingle: mockInstanceMaybeSingle }),
-  }),
-}));
+
+// Chainable stand-in for the busy-segments read (widget_booking_segments).
+function segmentsBuilder(): unknown {
+  const builder: Record<string, unknown> = {};
+  const chain = () => () => builder;
+  for (const m of ["select", "eq", "gte", "lte", "is"]) builder[m] = chain();
+  builder.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+    Promise.resolve({ data: [] }).then(resolve, reject);
+  return builder;
+}
+
+const mockFrom = vi.fn((table: string) => {
+  if (table === "widget_booking_segments") return segmentsBuilder();
+  return { select: () => ({ eq: () => ({ maybeSingle: mockInstanceMaybeSingle }) }) };
+});
 const mockDispatch = vi.fn();
+
+// Minimal calendar config: a single unstaffed service open Mondays, plus a
+// location carrying the same service (for the location-scoped assertion).
+const bookConfig: CalendarConfig = {
+  timezone: "UTC",
+  currency: "usd",
+  buffer_min: 0,
+  show_prices: true,
+  collect_address: false,
+  address_required: false,
+  services: [{ id: "svc_1", name: "Haircut", duration_min: 30 }],
+  availability: { mon: [["09:00", "17:00"]] },
+  blackout_dates: [],
+  staff: [],
+  locations: [
+    {
+      id: "loc_1",
+      name: "Downtown",
+      services: [{ id: "svc_1", name: "Haircut", duration_min: 30 }],
+      staff: [],
+      availability: { mon: [["09:00", "17:00"]] },
+      blackout_dates: [],
+    },
+  ],
+  messages: {
+    confirmation: { channel: "off", subject: "", body: "" },
+    cancellation: { channel: "off", subject: "", body: "" },
+    reschedule: { channel: "off", subject: "", body: "" },
+    reminder: { channel: "off", subject: "", body: "" },
+  },
+};
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getUser: mockGetUser } }),
@@ -78,7 +119,7 @@ beforeEach(() => {
   mockGetUser.mockResolvedValue({ data: { user: null } });
   mockRpc.mockImplementation(() => ({ single: mockRpcSingle }));
   mockInstanceMaybeSingle.mockResolvedValue({
-    data: { config: {}, owner: { display_name: "Acme", username: "acme" }, catalog: { currency: "usd" } },
+    data: { config: bookConfig, owner: { display_name: "Acme", username: "acme" } },
   });
 });
 

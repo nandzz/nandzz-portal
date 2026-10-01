@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, MessageCircle, Ban, CalendarClock, Clock, Loader2, MapPin } from "lucide-react";
+import { Mail, MessageCircle, Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
 import { whatsappLink } from "@/lib/widgets/contact";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { ReschedulePicker } from "./ReschedulePicker";
+import { AssignStaffDialog } from "./AssignStaffDialog";
 import type { Slot } from "@/lib/widgets/calendar";
+import type { BookingServiceSnapshot } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export type BookingRowData = {
@@ -25,6 +27,9 @@ export type BookingRowData = {
   customer_address?: string | null;
   staff_id: string | null;
   staff_name: string | null;
+  // Per-service staff breakdown (multi-service bookings); null ⇒ single service
+  // described by the aggregate staff_id/staff_name.
+  services?: BookingServiceSnapshot[] | null;
   location_id: string | null;
   manage_token: string;
 };
@@ -51,6 +56,7 @@ export function BookingRow({
   now,
   dim,
   cancellable,
+  hasStaff = false,
 }: {
   b: BookingRowData;
   money: (cents: number) => string;
@@ -59,12 +65,31 @@ export function BookingRow({
   now: number; // reference "now" (ms) the chronological tag is computed against
   dim?: boolean;
   cancellable?: boolean;
+  // Whether the instance has any staff — gates the "Assign staff" action. The
+  // dialog itself fetches the full roster + availability from the server.
+  hasStaff?: boolean;
 }) {
   const { t } = useLanguage();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState(false);
+
+  // The booked services with their assigned staff: the per-service breakdown
+  // when present, else the single aggregate line. Drives the row's staff display.
+  const bookedServices: { service_id: string; name: string; staff_id: string | null; staff_name: string | null }[] =
+    b.services && b.services.length > 0
+      ? b.services.map((s) => ({
+          service_id: s.service_id,
+          name: s.name,
+          staff_id: s.staff_id ?? null,
+          staff_name: s.staff_name ?? null,
+        }))
+      : [{ service_id: b.service_id, name: b.service_name, staff_id: b.staff_id, staff_name: b.staff_name }];
+
+  const anyStaff = bookedServices.some((s) => s.staff_name);
+  const canReassign = Boolean(cancellable) && hasStaff;
 
   const when = fmt(b.starts_at);
   const firstName = b.customer_name.split(" ")[0] || b.customer_name;
@@ -119,14 +144,14 @@ export function BookingRow({
       )
     : null;
 
-  async function reschedule(slot: Slot, staffId: string) {
+  async function reschedule(slot: Slot, staffByService: Record<string, string>) {
     setBusy(true);
     setRescheduleError(null);
     try {
       const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starts_at: slot.start, staff_id: staffId || null }),
+        body: JSON.stringify({ starts_at: slot.start, staff_by_service: staffByService }),
       });
       if (!res.ok) {
         setRescheduleError(t.booking.errorRescheduleThis);
@@ -140,6 +165,7 @@ export function BookingRow({
       setBusy(false);
     }
   }
+
 
   async function cancel() {
     if (
@@ -190,16 +216,24 @@ export function BookingRow({
             {when}
           </span>
         </div>
-        {b.staff_name && (
-          <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Avatar size="sm" className="h-4 w-4">
-              <AvatarImage src={undefined} />
-              <AvatarFallback className="text-[9px]">
-                {b.staff_name[0]?.toUpperCase() ?? "?"}
-              </AvatarFallback>
-            </Avatar>
-            {b.staff_name}
-          </span>
+        {anyStaff && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {bookedServices
+              .filter((s) => s.staff_name)
+              .map((s) => (
+                <span
+                  key={s.service_id}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <Avatar size="sm" className="h-4 w-4">
+                    <AvatarFallback className="text-[9px]">
+                      {s.staff_name![0]?.toUpperCase() ?? "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {bookedServices.length > 1 ? `${s.name}: ${s.staff_name}` : s.staff_name}
+                </span>
+              ))}
+          </div>
         )}
         {b.customer_address && (
           <span className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
@@ -232,6 +266,17 @@ export function BookingRow({
         >
           <Mail className="h-4 w-4" />
         </a>
+        {canReassign && (
+          <button
+            onClick={() => setAssigning(true)}
+            disabled={busy}
+            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
+            aria-label={t.booking.assignStaff}
+            title={t.booking.assignStaff}
+          >
+            <Users className="h-4 w-4" />
+          </button>
+        )}
         {cancellable && (
           <button
             onClick={() => {
@@ -270,15 +315,21 @@ export function BookingRow({
             .replace("{when}", when)}
         </p>
         <ReschedulePicker
-          instanceId={b.instance_id}
-          serviceId={b.service_id}
-          locationId={b.location_id}
+          token={b.manage_token}
           timezone={timezone}
           busy={busy}
           error={rescheduleError}
           onPick={reschedule}
         />
       </Dialog>
+
+      <AssignStaffDialog
+        token={b.manage_token}
+        timezone={timezone}
+        open={assigning}
+        onClose={() => setAssigning(false)}
+        onDone={() => router.refresh()}
+      />
     </div>
   );
 }

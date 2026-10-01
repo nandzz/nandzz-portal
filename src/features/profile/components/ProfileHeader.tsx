@@ -19,6 +19,7 @@ import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { uploadAvatar } from "../storage";
 import { updateAvatar } from "../actions/update-avatar";
 import { FEATURES } from "@/lib/flags";
+import { isColorDark } from "@/lib/color";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const MAX_AVATAR_SIZE = 1.5 * 1024 * 1024;
@@ -29,6 +30,10 @@ interface ProfileHeaderProps {
   currentUserId?: string | null;
   isFollowing?: boolean;
   widgets?: WidgetInstanceWithCatalog[];
+  /** Owner-chosen tint for the neutral button/pill surfaces. null = theme. */
+  buttonColor?: string | null;
+  /** Owner-chosen color for the header texts. null = theme. */
+  textColor?: string | null;
 }
 
 function buildUrl(key: string, value: string): string {
@@ -57,10 +62,23 @@ function buildMapsUrl(formatted: string, placeId?: string): string {
   return `https://www.google.com/maps/search/?${params.toString()}`;
 }
 
-export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [] }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor = null, textColor = null }: ProfileHeaderProps) {
   const { t } = useLanguage();
   const router = useRouter();
   const socialLinks = profile.social_links || {};
+
+  // When the owner tints the buttons, override the surface + a readable text
+  // color inline (inline wins over the theme `bg-background` / hover classes).
+  const buttonStyle: React.CSSProperties | undefined = buttonColor
+    ? { backgroundColor: buttonColor, color: isColorDark(buttonColor) ? "#ffffff" : "#111827", borderColor: "transparent" }
+    : undefined;
+
+  // Header text color. Primary elements use the full color; secondary ones
+  // (handle, bio, labels) drop to 65% opacity to keep the visual hierarchy.
+  const textStyle: React.CSSProperties | undefined = textColor ? { color: textColor } : undefined;
+  const textMutedStyle: React.CSSProperties | undefined = textColor
+    ? { color: textColor, opacity: 0.65 }
+    : undefined;
 
   // Optimistic avatar url so upload reflects immediately, before server refresh
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(profile.avatar_url ?? null);
@@ -221,19 +239,19 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
           onCrop={handleCroppedAvatar}
         />
       )}
-      <h1 className="mt-5 text-2xl font-bold tracking-tight">
+      <h1 className="mt-5 text-2xl font-bold tracking-tight" style={textStyle}>
         {profile.display_name || profile.username}
       </h1>
-      <p className="mt-0.5 text-sm text-muted-foreground">
+      <p className="mt-0.5 text-sm text-muted-foreground" style={textMutedStyle}>
         @{profile.username}
       </p>
       {profile.tagline && (
-        <p className="mt-2 text-sm font-medium text-violet-600 dark:text-violet-400">
+        <p className="mt-2 text-sm font-medium text-violet-600 dark:text-violet-400" style={textStyle}>
           {profile.tagline}
         </p>
       )}
       {profile.bio && (
-        <p className="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed break-words">
+        <p className="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed break-words" style={textMutedStyle}>
           {profile.bio}
         </p>
       )}
@@ -243,6 +261,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
           href={buildMapsUrl(profile.address.formatted, profile.address.place_id)}
           target="_blank"
           rel="noopener noreferrer"
+          style={buttonStyle}
           className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/50 bg-background px-3 py-1.5 text-sm text-muted-foreground transition-[color,box-shadow,transform] duration-200 hover:text-violet-600 hover:shadow-sm motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:hover:text-violet-400"
         >
           <MapPin className="h-4 w-4 shrink-0" />
@@ -253,14 +272,14 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       <div className="mt-4 flex items-center gap-5">
         <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-semibold">{profile.followers_count ?? 0}</span>
-            <span className="text-muted-foreground">{t.profile.followers}</span>
+            <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
+            <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.followers}</span>
           </div>
         </FollowersDialog>
         <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
           <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-semibold">{profile.following_count ?? 0}</span>
-            <span className="text-muted-foreground">{t.profile.following}</span>
+            <span className="font-semibold" style={textStyle}>{profile.following_count ?? 0}</span>
+            <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.following}</span>
           </div>
         </FollowersDialog>
         {!isOwner && currentUserId && (
@@ -282,6 +301,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
                 rel={
                   link.key === "email" ? undefined : "noopener noreferrer"
                 }
+                style={buttonStyle}
                 className={`flex h-9 w-9 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground transition-[color,box-shadow,transform] duration-200 hover:shadow-sm motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${link.hoverClass}`}
               >
                 <Icon className="h-4 w-4" />

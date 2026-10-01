@@ -564,3 +564,433 @@ export function computeAvailableSlots(input: ComputeSlotsInput): Slot[] {
 
   return slots;
 }
+
+// ── Segmented (per-service staff) scheduling ────────────────────────────────
+//
+// A multi-service booking is scheduled as a set of SEGMENTS — one per selected
+// service — each handled by its OWN staff member. Sequential services take
+// back-to-back slices of the booking; services flagged `parallel` run
+// concurrently (each still needs its own free staff, so overlapping segments
+// must be assigned DISTINCT people). This replaces the old "one combined block,
+// one staff eligible for everything" model, which blocked any booking whose
+// services had no single common staff member.
+//
+// The functions below are pure: the availability route feeds them the busy
+// ranges (read from widget_booking_segments), and the book/reschedule routes
+// use `resolveSegmentPlan` to turn a chosen start into the concrete per-segment
+// staff plan handed to the create/reschedule RPC.
+
+// A service the visitor wants, paired with their per-service staff choice.
+// `staffId` empty/undefined ⇒ "any available" (auto-assigned); a concrete id ⇒
+// that specialist only. Ignored when the business has no staff at all.
+export type ServiceChoice = { service: CalendarService; staffId?: string };
+
+// One selected service laid out inside the booking: its order (`seq`), its
+// offset from the booking start in minutes, and whether it runs concurrently.
+export type PlannedSegment = {
+  service: CalendarService;
+  seq: number;
+  offsetMin: number;
+  parallel: boolean;
+  staffId?: string;
+};
+
+// Lay the selected services out on the booking timeline. Sequential services
+// stack back-to-back (in selection order); parallel services all start at the
+// booking's start (offset 0) and thus overlap the sequential chain's beginning.
+// A single-resource business (no staff) can't do two things at once, so
+// `parallel` is ignored there — everything is sequential.
+export function layoutServiceSegments(
+  choices: ServiceChoice[],
+  hasStaff: boolean
+): { segments: PlannedSegment[]; totalMin: number } {
+  let seqCursor = 0;
+  let maxParallel = 0;
+  const segments = choices.map((c, i) => {
+    const dur = c.service.duration_min || 0;
+    const parallel = hasStaff && !!c.service.parallel;
+    let offsetMin: number;
+    if (parallel) {
+      offsetMin = 0;
+      maxParallel = Math.max(maxParallel, dur);
+    } else {
+      offsetMin = seqCursor;
+      seqCursor += dur;
+    }
+    return { service: c.service, seq: i, offsetMin, parallel, staffId: c.staffId };
+  });
+  return { segments, totalMin: Math.max(seqCursor, maxParallel) };
+}
+
+// Do two laid-out segments overlap in time (relative to the booking start)?
+function segmentsOverlap(a: PlannedSegment, b: PlannedSegment): boolean {
+  const aEnd = a.offsetMin + (a.service.duration_min || 0);
+  const bEnd = b.offsetMin + (b.service.duration_min || 0);
+  return a.offsetMin < bEnd && b.offsetMin < aEnd;
+}
+
+// The staff eligible AND allowed for a segment: the service's eligible staff,
+// narrowed to the visitor's chosen specialist when they picked one. Empty when
+// the picked specialist can't do the service (defensive) or none are eligible.
+function allowedStaffForSegment(seg: PlannedSegment, staffSource: StaffMember[]): StaffMember[] {
+  const eligible = eligibleStaffForService(staffSource, seg.service);
+  if (!seg.staffId) return eligible;
+  return eligible.filter((s) => s.id === seg.staffId);
+}
+
+type BusyRange = { staffId: string | null; start: number; end: number };
+
+// Confirmed segments that could clash with a candidate booking. `staff_id` null
+// ⇒ the single-resource / unstaffed bucket. Location scoping is applied by the
+// caller's query (mirroring the legacy availability read), so only staff_id is
+// matched here.
+export type ExistingSegmentBusy = {
+  staff_id: string | null;
+  starts_at: string;
+  ends_at: string;
+};
+
+// Can we pick one candidate staff per segment such that any two OVERLAPPING
+// segments get different people (and the shared single-resource "null" bucket is
+// likewise never double-used by overlapping segments)? Tiny N (a handful of
+// services), so a plain backtracking search is more than fast enough.
+function assignmentExists(candidates: (string | null)[][], overlaps: boolean[][]): boolean {
+  const chosen: (string | null)[] = new Array(candidates.length).fill(undefined);
+  const bt = (i: number): boolean => {
+    if (i === candidates.length) return true;
+    for (const c of candidates[i]) {
+      let ok = true;
+      for (let j = 0; j < i; j++) {
+        if (overlaps[i][j] && chosen[j] === c) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+      chosen[i] = c;
+      if (bt(i + 1)) return true;
+    }
+    chosen[i] = undefined as unknown as string | null;
+    return false;
+  };
+  return bt(0);
+}
+
+// Shared per-start core: for a booking starting at `startMs`, compute each
+// segment's free-eligible staff and whether a full distinct-staff assignment
+// exists. Returns the per-segment free candidate ids (ordered as `staffSource`)
+// when feasible, or null when the start is unbookable (out of hours, blackout,
+// too soon, or some segment has no free eligible staff / no valid assignment).
+function feasibleAtStart(args: {
+  segments: PlannedSegment[];
+  totalMin: number;
+  startMs: number;
+  dateStr: string;
+  weekday: WeekdayKey;
+  winStartMin: number;
+  winEndMin: number;
+  startMin: number; // booking start, owner-local minutes
+  hasStaff: boolean;
+  staffSource: StaffMember[];
+  busy: BusyRange[];
+  padMs: number;
+}): (string | null)[][] | null {
+  const { segments, totalMin, startMs, dateStr, weekday, winStartMin, winEndMin, startMin, hasStaff, staffSource, busy, padMs } = args;
+
+  // The whole booking must fit inside this single availability window.
+  if (startMin < winStartMin || startMin + totalMin > winEndMin) return null;
+
+  const perSegment: (string | null)[][] = [];
+  for (const seg of segments) {
+    const segStartMin = startMin + seg.offsetMin;
+    const segEndMin = segStartMin + (seg.service.duration_min || 0);
+    const segStartMs = startMs + seg.offsetMin * 60_000;
+    const segEndMs = segStartMs + (seg.service.duration_min || 0) * 60_000;
+    const clashes = (staffId: string | null) =>
+      busy.some((b) => b.staffId === staffId && segStartMs < b.end + padMs && segEndMs + padMs > b.start);
+
+    if (!hasStaff) {
+      // Single-resource: the one (null) resource must be free for the segment.
+      if (clashes(null)) return null;
+      perSegment.push([null]);
+      continue;
+    }
+
+    const allowed = allowedStaffForSegment(seg, staffSource);
+    const free = allowed
+      .filter((st) => staffWorksSlot(st, weekday, dateStr, segStartMin, segEndMin) && !clashes(st.id))
+      .map((st) => st.id);
+    if (free.length === 0) return null;
+    perSegment.push(free);
+  }
+
+  const overlaps = segments.map((a, i) => segments.map((b, j) => i !== j && segmentsOverlap(a, b)));
+  if (!assignmentExists(perSegment, overlaps)) return null;
+  return perSegment;
+}
+
+export type SegmentedSlotsInput = {
+  config: CalendarConfig;
+  choices: ServiceChoice[];
+  fromDate: string; // owner-local "YYYY-MM-DD"
+  days: number;
+  existingBusy: ExistingSegmentBusy[];
+  now?: Date;
+  minLeadMinutes?: number;
+  location?: Location;
+};
+
+// Open whole-booking slots for a per-service-staffed multi-service selection.
+// A slot is offered when the whole booking fits one availability window and a
+// valid distinct-staff assignment exists across its segments given the current
+// bookings. Returns the booking-level slots ({start,end}); the concrete
+// per-segment staff is resolved at book time via `resolveSegmentPlan`.
+export function computeSegmentedSlots(input: SegmentedSlotsInput): Slot[] {
+  const { config, choices, fromDate, days, existingBusy, location } = input;
+  if (choices.length === 0) return [];
+  const now = input.now ?? new Date();
+  const minLead = input.minLeadMinutes ?? 0;
+  const buffer = Math.max(0, config.buffer_min || 0);
+  const earliest = now.getTime() + minLead * 60_000;
+  const padMs = buffer * 60_000;
+
+  const timezone = location?.timezone ?? config.timezone;
+  const availability = location ? location.availability : config.availability;
+  const blackoutDates = location ? location.blackout_dates ?? [] : config.blackout_dates;
+  const staffSource = location ? location.staff : config.staff ?? [];
+  const hasStaff = staffSource.length > 0;
+
+  const { segments, totalMin } = layoutServiceSegments(choices, hasStaff);
+  if (totalMin <= 0) return [];
+  const step = totalMin + buffer;
+
+  const busy: BusyRange[] = existingBusy.map((b) => ({
+    staffId: b.staff_id ?? null,
+    start: new Date(b.starts_at).getTime(),
+    end: new Date(b.ends_at).getTime(),
+  }));
+
+  const slots: Slot[] = [];
+  for (let i = 0; i < days; i++) {
+    const dateStr = addDays(fromDate, i);
+    if (blackoutDates.includes(dateStr)) continue;
+    const weekday = weekdayOf(dateStr);
+    const windows = availability[weekday] ?? [];
+    for (const [winStart, winEnd] of windows) {
+      const winStartMin = minutesOf(winStart);
+      const winEndMin = minutesOf(winEnd);
+      for (let m = winStartMin; m + totalMin <= winEndMin; m += step) {
+        const hh = String(Math.floor(m / 60)).padStart(2, "0");
+        const mm = String(m % 60).padStart(2, "0");
+        const startMs = zonedWallTimeToUtc(dateStr, `${hh}:${mm}`, timezone).getTime();
+        if (startMs < earliest) continue;
+        const feasible = feasibleAtStart({
+          segments, totalMin, startMs, dateStr, weekday,
+          winStartMin, winEndMin, startMin: m, hasStaff, staffSource, busy, padMs,
+        });
+        if (!feasible) continue;
+        slots.push({
+          start: new Date(startMs).toISOString(),
+          end: new Date(startMs + totalMin * 60_000).toISOString(),
+        });
+      }
+    }
+  }
+  return slots;
+}
+
+// The concrete per-segment plan for a booking, as handed to create_booking_tx /
+// reschedule_booking_tx. `staff_ids` is the ORDERED candidate list for the
+// segment (the resolved assignment first, then other free-eligible staff as
+// race fallbacks); empty ⇒ an unstaffed/single-resource segment (staff null).
+export type ResolvedSegment = {
+  service_id: string;
+  name: string;
+  duration_min: number;
+  price_cents: number | null;
+  parallel: boolean;
+  seq: number;
+  offset_min: number;
+  staff_ids: string[];
+};
+
+// Resolve a chosen booking start into its concrete segment plan, or a typed
+// error reason when that start is unbookable. Used by the book + reschedule
+// routes: the returned segments (with candidate staff per segment) go straight
+// to the RPC, which inserts them transactionally under the exclusion
+// constraint. Reasons mirror the create_booking_tx error codes.
+export type SegmentPlanResult =
+  | { ok: true; segments: ResolvedSegment[]; totalMin: number }
+  | { ok: false; reason: "BLACKOUT" | "OUT_OF_HOURS" | "STAFF_UNAVAILABLE" };
+
+export function resolveSegmentPlan(input: {
+  config: CalendarConfig;
+  choices: ServiceChoice[];
+  startIso: string;
+  existingBusy: ExistingSegmentBusy[];
+  location?: Location;
+}): SegmentPlanResult {
+  const { config, choices, startIso, existingBusy, location } = input;
+  const buffer = Math.max(0, config.buffer_min || 0);
+  const padMs = buffer * 60_000;
+  const timezone = location?.timezone ?? config.timezone;
+  const availability = location ? location.availability : config.availability;
+  const blackoutDates = location ? location.blackout_dates ?? [] : config.blackout_dates;
+  const staffSource = location ? location.staff : config.staff ?? [];
+  const hasStaff = staffSource.length > 0;
+
+  const { segments, totalMin } = layoutServiceSegments(choices, hasStaff);
+  const startMs = new Date(startIso).getTime();
+
+  // Owner-local wall clock of the requested start, to test it against the day's
+  // windows / blackout the same way computeSegmentedSlots generates them.
+  const dateStr = todayInZone(timezone, new Date(startMs));
+  if (blackoutDates.includes(dateStr)) return { ok: false, reason: "BLACKOUT" };
+  const weekday = weekdayOf(dateStr);
+  // Reconstruct the owner-local start-minute from the instant.
+  const localMinutesFmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const [hh, mm] = localMinutesFmt.format(new Date(startMs)).split(":").map(Number);
+  const startMin = hh * 60 + mm;
+
+  const busy: BusyRange[] = existingBusy.map((b) => ({
+    staffId: b.staff_id ?? null,
+    start: new Date(b.starts_at).getTime(),
+    end: new Date(b.ends_at).getTime(),
+  }));
+
+  // Find the availability window containing the whole booking.
+  const windows = availability[weekday] ?? [];
+  const win = windows.find(([s, e]) => startMin >= minutesOf(s) && startMin + totalMin <= minutesOf(e));
+  if (!win) return { ok: false, reason: "OUT_OF_HOURS" };
+
+  const perSegment = feasibleAtStart({
+    segments, totalMin, startMs, dateStr, weekday,
+    winStartMin: minutesOf(win[0]), winEndMin: minutesOf(win[1]),
+    startMin, hasStaff, staffSource, busy, padMs,
+  });
+  if (!perSegment) return { ok: false, reason: "STAFF_UNAVAILABLE" };
+
+  // Pick a concrete valid assignment (assigned-first ordering per segment) so
+  // the RPC's greedy insert lands on it when there's no concurrent race.
+  const overlaps = segments.map((a, i) => segments.map((b, j) => i !== j && segmentsOverlap(a, b)));
+  const chosen = pickAssignment(perSegment, overlaps);
+  if (!chosen) return { ok: false, reason: "STAFF_UNAVAILABLE" };
+
+  const resolved: ResolvedSegment[] = segments.map((seg, i) => {
+    const assigned = chosen[i];
+    // Assigned first, then the segment's other free staff as fallbacks.
+    const ordered = assigned === null ? [] : [assigned, ...perSegment[i].filter((id) => id !== assigned && id !== null)] as string[];
+    return {
+      service_id: seg.service.id,
+      name: seg.service.name,
+      duration_min: seg.service.duration_min || 0,
+      price_cents: typeof seg.service.price_cents === "number" ? seg.service.price_cents : null,
+      parallel: seg.parallel,
+      seq: seg.seq,
+      offset_min: seg.offsetMin,
+      staff_ids: ordered,
+    };
+  });
+  return { ok: true, segments: resolved, totalMin };
+}
+
+// ── Per-staff availability status (owner reassignment picker) ───────────────
+//
+// For a FIXED window (an existing booking's service segment), classify EVERY
+// in-scope staff member: can they perform the service, are they working then,
+// and are they free — or which existing booking are they busy with. Powers the
+// owner's "Assign staff" dialog, which shows the full roster (not just eligible
+// staff) with the reason each unavailable person can't take the slot. Pure: the
+// route supplies the busy segments (carrying their own metadata) and maps
+// `conflict_index` back to the clashing booking for display.
+export type StaffWindowStatus = {
+  staff_id: string;
+  // Can perform the service (service.staff_ids allows them, or it's unrestricted).
+  eligible: boolean;
+  // Has a working window covering the slot on that weekday and isn't on a day off.
+  working: boolean;
+  // Index into the provided busy array of the segment clashing for this staff,
+  // or null when they have no clashing booking.
+  conflict_index: number | null;
+  // Free to take the slot (no time clash). Eligibility/working are advisory —
+  // the owner may override them, but a time clash is a hard block.
+  assignable: boolean;
+};
+
+export function staffAvailabilityForWindow(input: {
+  config: CalendarConfig;
+  service: CalendarService;
+  startIso: string;
+  endIso: string;
+  existingBusy: ExistingSegmentBusy[];
+  location?: Location;
+}): StaffWindowStatus[] {
+  const { config, service, startIso, endIso, existingBusy, location } = input;
+  const timezone = location?.timezone ?? config.timezone;
+  const staffSource = location ? location.staff : config.staff ?? [];
+  const buffer = Math.max(0, config.buffer_min || 0);
+  const padMs = buffer * 60_000;
+  const startMs = new Date(startIso).getTime();
+  const endMs = new Date(endIso).getTime();
+
+  const dateStr = todayInZone(timezone, new Date(startMs));
+  const weekday = weekdayOf(dateStr);
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const [sh, sm] = fmt.format(new Date(startMs)).split(":").map(Number);
+  const startMin = sh * 60 + sm;
+  // Derive the window length from the instants (robust across a midnight/local
+  // boundary) rather than re-parsing the end wall-clock.
+  const endMin = startMin + Math.round((endMs - startMs) / 60_000);
+
+  const eligibleIds = new Set(eligibleStaffForService(staffSource, service).map((s) => s.id));
+
+  return staffSource.map((st) => {
+    const eligible = eligibleIds.has(st.id);
+    const working = staffWorksSlot(st, weekday, dateStr, startMin, endMin);
+    let conflict_index: number | null = null;
+    for (let i = 0; i < existingBusy.length; i++) {
+      const b = existingBusy[i];
+      if ((b.staff_id ?? null) !== st.id) continue;
+      const bs = new Date(b.starts_at).getTime();
+      const be = new Date(b.ends_at).getTime();
+      if (startMs < be + padMs && endMs + padMs > bs) {
+        conflict_index = i;
+        break;
+      }
+    }
+    return { staff_id: st.id, eligible, working, conflict_index, assignable: conflict_index === null };
+  });
+}
+
+// Like assignmentExists, but returns the actual chosen assignment (or null).
+function pickAssignment(candidates: (string | null)[][], overlaps: boolean[][]): (string | null)[] | null {
+  const chosen: (string | null)[] = new Array(candidates.length).fill(undefined);
+  const bt = (i: number): boolean => {
+    if (i === candidates.length) return true;
+    for (const c of candidates[i]) {
+      let ok = true;
+      for (let j = 0; j < i; j++) {
+        if (overlaps[i][j] && chosen[j] === c) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+      chosen[i] = c;
+      if (bt(i + 1)) return true;
+    }
+    chosen[i] = undefined as unknown as string | null;
+    return false;
+  };
+  return bt(0) ? chosen : null;
+}

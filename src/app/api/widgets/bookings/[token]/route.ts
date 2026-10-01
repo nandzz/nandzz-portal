@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import {
-  combineServices,
-  computeAvailableSlots,
-  eligibleStaffForService,
-  normalizeCalendarConfig,
-  todayInZone,
-} from "@/lib/widgets/calendar";
+import { normalizeCalendarConfig, resolveSegmentPlan } from "@/lib/widgets/calendar";
+import { BOOKING_ERROR_STATUS } from "@/lib/widgets/booking-errors";
 import { currencySymbol } from "@/lib/widgets/messages";
 import { dispatchBookingMessage } from "@/lib/widgets/notify";
+import { loadRescheduleContext, isLoadError } from "./_shared";
 import type { WidgetBooking } from "@/lib/types";
 
 // Customer self-serve: view / reschedule / cancel a booking by its unguessable
@@ -68,6 +64,8 @@ function present(booking: WidgetBooking, instance: { owner?: { display_name?: st
     location_id: booking.location_id,
     staff_id: booking.staff_id,
     staff_name: booking.staff_name,
+    // Per-service staff breakdown (multi-service bookings); null ⇒ single service.
+    services: booking.services ?? null,
   };
 }
 
@@ -147,149 +145,78 @@ export async function PATCH(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  // `staff_id` is optional: omitted ⇒ keep the booking's current staff (back-compat);
-  // "" ⇒ "any available" (auto-assign, mirroring create_booking_tx); a specific id ⇒
-  // that specialist, validated against the target slot's free candidates below.
-  const { starts_at, staff_id: staffIdRaw } = (await req.json()) as {
+  // `staff_by_service` (optional) lets the reschedule ALSO change who handles a
+  // service — mirroring the booking flow — while defaulting to the current staff
+  // for any service left out. Absent ⇒ pure time move, staff preserved.
+  const { starts_at, staff_by_service } = (await req.json()) as {
     starts_at?: string;
-    staff_id?: string | null;
+    staff_by_service?: Record<string, string>;
   };
   if (!starts_at) return NextResponse.json({ error: "starts_at is required" }, { status: 400 });
 
-  const { admin, data, error: loadError } = await loadBooking(token);
-  if (loadError) return NextResponse.json({ error: "Unable to load booking." }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+  const ctx = await loadRescheduleContext(token, staff_by_service);
+  if (isLoadError(ctx)) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
+  const { admin, booking, config, location, choices } = ctx;
 
-  const booking = data as unknown as WidgetBooking;
   if (booking.status === "cancelled") {
     return NextResponse.json({ error: "This booking was cancelled." }, { status: 409 });
   }
 
-  const instance = (data as { instance?: { config?: unknown; enabled?: boolean } }).instance;
-  if (!instance?.enabled) {
-    return NextResponse.json({ error: "Booking widget unavailable." }, { status: 409 });
-  }
-
-  const config = normalizeCalendarConfig(instance.config);
-  const location = booking.location_id
-    ? config.locations.find((l) => l.id === booking.location_id)
-    : undefined;
-  const services = location ? location.services : config.services;
-  const staffSourceForCombine = location ? location.staff : config.staff;
-
-  // Multi-service bookings reschedule as one unit: resolve every booked service
-  // and fold them into a combined service (summed duration, intersected staff).
-  // The stored `services` breakdown is the source of truth; single-service
-  // bookings fall back to `service_id`.
-  const bookedServiceIds = booking.services?.map((s) => s.service_id) ?? [booking.service_id];
-  const resolvedServices = bookedServiceIds.map((id) => services.find((s) => s.id === id));
-  if (resolvedServices.some((s) => !s)) {
-    return NextResponse.json({ error: "This service is no longer offered." }, { status: 409 });
-  }
-  const combined = combineServices(
-    resolvedServices as NonNullable<(typeof resolvedServices)[number]>[],
-    staffSourceForCombine
-  );
-  if (!combined) {
-    return NextResponse.json({ error: "This service is no longer offered." }, { status: 409 });
-  }
-  // Preserve the originally reserved span even if the config's durations were
-  // edited after the booking was made.
-  const service = { ...combined, duration_min: booking.duration_min };
-
   const requestedIso = new Date(starts_at).toISOString();
-  const fromDate = todayInZone(config.timezone, new Date(starts_at));
+  const startMs = new Date(requestedIso).getTime();
 
-  // Other confirmed bookings (exclude this one) in the target date's neighborhood,
-  // scoped to the same location bucket as the availability route (see its comment).
-  let othersQuery = admin
-    .from("widget_bookings")
-    .select("starts_at, ends_at, staff_id")
+  // Other confirmed segments (exclude THIS booking's own) near the target date,
+  // scoped to the same location bucket the exclusion constraint uses.
+  let busyQuery = admin
+    .from("widget_booking_segments")
+    .select("staff_id, starts_at, ends_at")
     .eq("instance_id", booking.instance_id)
     .eq("status", "confirmed")
-    .neq("id", booking.id);
-  othersQuery = location
-    ? othersQuery.eq("location_id", location.id)
-    : othersQuery.is("location_id", null);
-  const { data: others } = await othersQuery;
+    .neq("booking_id", booking.id)
+    .gte("starts_at", new Date(startMs - 2 * 86_400_000).toISOString())
+    .lte("starts_at", new Date(startMs + 2 * 86_400_000).toISOString());
+  busyQuery = location ? busyQuery.eq("location_id", location.id) : busyQuery.is("location_id", null);
+  const { data: busy } = await busyQuery;
 
-  // Unrestricted (no staffId filter) so each slot's `staff_ids` lists every
-  // free-and-eligible candidate — that list doubles as who's available to
-  // (re)assign below, the same set create_booking_tx would auto-pick from.
-  const slots = computeAvailableSlots({
+  // Re-resolve the booking's segments (same per-service staff) at the new start.
+  const plan = resolveSegmentPlan({
     config,
-    service,
-    fromDate,
-    days: 2,
-    existingBookings: others ?? [],
-    minLeadMinutes: 60,
+    choices,
+    startIso: requestedIso,
+    existingBusy: busy ?? [],
     location,
   });
-
-  const targetSlot = slots.find((s) => s.start === requestedIso);
-  if (!targetSlot) {
-    return NextResponse.json({ error: "That time isn't available." }, { status: 409 });
+  if (!plan.ok) {
+    const status = BOOKING_ERROR_STATUS[plan.reason] ?? 409;
+    return NextResponse.json({ error: "That time isn't available." }, { status });
   }
 
-  const staffSource = location ? location.staff : config.staff;
-  const eligible = eligibleStaffForService(staffSource, service);
-  const staffMode = eligible.length > 0;
-
-  // Explicit request wins ("" ⇒ any available); omitted ⇒ keep the current staff.
-  const requestedStaffId = staffIdRaw !== undefined ? staffIdRaw || null : booking.staff_id;
-
-  let candidateIds: (string | null)[];
-  if (!staffMode) {
-    candidateIds = [null];
-  } else if (requestedStaffId) {
-    if (!targetSlot.staff_ids?.includes(requestedStaffId)) {
-      return NextResponse.json(
-        { error: "That specialist isn't free at that time." },
-        { status: 409 }
-      );
-    }
-    candidateIds = [requestedStaffId];
-  } else {
-    candidateIds = targetSlot.staff_ids ?? [];
-  }
-
-  const newEnds = new Date(new Date(requestedIso).getTime() + service.duration_min * 60_000).toISOString();
-
-  // Record who is rescheduling in the same UPDATE: the DB trigger reads
-  // notify_actor to pick the email recipient and fires the edge function itself.
+  // Record who is rescheduling: the DB trigger reads notify_actor (written inside
+  // reschedule_booking_tx's single UPDATE) to pick the email recipient.
   const actor = await resolveActor(booking.owner_user_id);
 
-  // Try each free candidate in turn — the exclusion constraint rejects one that
-  // was just grabbed for an overlapping range, so we fall through to the next
-  // (same optimistic-retry shape as create_booking_tx's candidate loop).
-  let updated: { starts_at: string; ends_at: string; staff_id: string | null; staff_name: string | null } | null =
-    null;
-  let lastErrorCode: string | undefined;
-  for (const candidateId of candidateIds) {
-    const candidateName = candidateId ? staffSource.find((m) => m.id === candidateId)?.name ?? null : null;
-    const { data: row, error } = await admin
-      .from("widget_bookings")
-      .update({ starts_at: requestedIso, ends_at: newEnds, staff_id: candidateId, staff_name: candidateName, notify_actor: actor })
-      .eq("manage_token", token)
-      .eq("status", "confirmed")
-      .select("starts_at, ends_at, staff_id, staff_name")
-      .maybeSingle();
-    if (!error && row) {
-      updated = row;
-      break;
-    }
-    lastErrorCode = (error as { code?: string } | null)?.code;
-    if (lastErrorCode !== "23P01") break; // not a slot clash — no point retrying
+  const { data: row, error } = await admin
+    .rpc("reschedule_booking_tx", {
+      p_token: token,
+      p_starts_at: requestedIso,
+      p_segments: plan.segments,
+      p_actor: actor,
+    })
+    .single<WidgetBooking>();
+
+  if (error || !row) {
+    const clash = error?.message?.includes("SLOT_TAKEN");
+    return NextResponse.json(
+      { error: clash ? "That slot was just taken. Please pick another." : "Failed to reschedule." },
+      { status: clash ? 409 : 500 }
+    );
   }
 
-  if (!updated) {
-    // 23P01 = exclusion_violation → every candidate was grabbed first.
-    const status = lastErrorCode === "23P01" ? 409 : 500;
-    const message = status === 409 ? "That slot was just taken. Please pick another." : "Failed to reschedule.";
-    return NextResponse.json({ error: message }, { status });
-  }
-
-  // Reschedule email is handled by the DB trigger (it reads the notify_actor we
-  // wrote into the UPDATE above) → edge function. Nothing to send from here.
-  return NextResponse.json({ ok: true, ...updated });
+  return NextResponse.json({
+    ok: true,
+    starts_at: row.starts_at,
+    ends_at: row.ends_at,
+    staff_id: row.staff_id,
+    staff_name: row.staff_name,
+  });
 }

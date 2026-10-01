@@ -43,6 +43,9 @@ export type Profile = {
   avatar_url: string | null;
   background_url: string | null;
   background_position: string | null;
+  background_color: string | null;
+  button_color: string | null;
+  text_color: string | null;
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;
@@ -350,6 +353,13 @@ export type CalendarService = {
   // The category this service is grouped under. Undefined/null (or an id that no
   // longer resolves) ⇒ shown under "Uncategorized".
   category_id?: string | null;
+  // Whether this service may run CONCURRENTLY with the other services in a
+  // multi-service booking (each concurrent service is handled by its own staff
+  // member at the same time). Undefined/false ⇒ sequential: it takes its own
+  // back-to-back slice of the booking. Owner-controlled per service; only
+  // meaningful when the business has staff (a single-resource business can't do
+  // two things at once, so it's always treated as sequential there).
+  parallel?: boolean;
 };
 
 // Weekday key → list of [start, end] "HH:MM" windows (owner-local time).
@@ -451,6 +461,15 @@ export type BookingServiceSnapshot = {
   name: string;
   duration_min: number;
   price_cents: number | null;
+  // The staff member handling THIS service (per-service assignment). Null ⇒ any
+  // available / single-resource. Present on multi-service bookings created since
+  // per-service staffing; older rows may omit it (falls back to the booking's
+  // top-level staff_id/staff_name).
+  staff_id?: string | null;
+  staff_name?: string | null;
+  // Whether this line ran concurrently with the others (mirrors the service's
+  // `parallel` flag at booking time). Absent ⇒ sequential.
+  parallel?: boolean;
 };
 
 export type WidgetBooking = {

@@ -58,9 +58,15 @@ export function ProfileLinks({
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">
+        <h2
+          className="text-lg font-semibold"
+          style={profile.text_color ? { color: profile.text_color } : undefined}
+        >
           {t.profile.linksTitle}
-          <span className="ml-1.5 text-sm font-normal text-muted-foreground tabular-nums">
+          <span
+            className="ml-1.5 text-sm font-normal text-muted-foreground tabular-nums"
+            style={profile.text_color ? { color: profile.text_color, opacity: 0.65 } : undefined}
+          >
             {totalCount}
           </span>
         </h2>

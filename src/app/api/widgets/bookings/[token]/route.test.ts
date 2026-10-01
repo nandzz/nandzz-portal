@@ -4,67 +4,50 @@ import type { CalendarConfig, WidgetBooking } from "@/lib/types";
 
 const mockLoadMaybeSingle = vi.fn();
 const mockUpdateStatusResult = vi.fn();
-const mockOthersResult = vi.fn();
-const mockRescheduleUpdateResults: { data: unknown; error: unknown }[] = [];
-let rescheduleCallIndex = 0;
+const mockSegmentsResult = vi.fn(() => ({ data: [] }));
+const mockBusyResult = vi.fn(() => ({ data: [] }));
+const mockRpcSingle = vi.fn();
+const mockRpc = vi.fn(() => ({ single: mockRpcSingle }));
 const mockDispatch = vi.fn();
 const mockUpdatePatch = vi.fn();
 
-// `widget_bookings` is queried three shapes in this route:
-//  1. loadBooking: select(...).eq("manage_token", token).maybeSingle()
-//  2. DELETE: update({status:"cancelled"}).eq("manage_token", token)              -> {error}
-//  3. PATCH "others": select(...).eq().eq().neq() [+ .eq/.is location]           -> {data}
-//  4. PATCH update loop: update({...}).eq().eq().select().maybeSingle()          -> {data, error}
-// We branch on which method chain is entered by tagging the builder per call.
-function chainable(terminal: () => unknown) {
-  const builder: Record<string, unknown> = {};
-  const chain = () => builder;
-  for (const m of ["select", "eq", "neq", "gte", "lte", "is", "update"]) builder[m] = chain;
-  builder.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
-    Promise.resolve(terminal()).then(resolve, reject);
-  builder.maybeSingle = () => Promise.resolve(terminal());
-  return builder;
+// Chainable stand-in for widget_booking_segments. The reschedule context loads
+// segments via `.select().eq().eq().order()` (resolves to mockSegmentsResult);
+// the PATCH/slots busy read ends by awaiting the builder (mockBusyResult).
+function segmentsBuilder(): Record<string, unknown> {
+  const b: Record<string, unknown> = {};
+  for (const m of ["select", "eq", "neq", "gte", "lte", "is"]) b[m] = () => b;
+  b.order = () => ({
+    then: (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
+      Promise.resolve(mockSegmentsResult()).then(res, rej),
+  });
+  b.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
+    Promise.resolve(mockBusyResult()).then(res, rej);
+  return b;
 }
 
-const mockFrom = vi.fn(() => ({
-  select: (sel: string) => {
-    if (typeof sel === "string" && sel.includes("instance:widget_instances")) {
-      // loadBooking's shape: select(...).eq("manage_token", token).maybeSingle()
-      return { eq: () => ({ maybeSingle: mockLoadMaybeSingle }) };
-    }
-    // The PATCH "others" query: select(...).eq().eq().neq()[.eq/.is]
-    return chainable(mockOthersResult);
-  },
-  update: (patch: Record<string, unknown>) => {
-    mockUpdatePatch(patch);
-    if ("status" in patch && patch.status === "cancelled") {
-      // DELETE: update(...).eq("manage_token", token) -> {error}
+const mockFrom = vi.fn((table: string) => {
+  if (table === "widget_booking_segments") return segmentsBuilder();
+  // widget_bookings: loadBooking / loadRescheduleContext select(...).eq().maybeSingle();
+  // DELETE update({status}).eq().
+  return {
+    select: () => ({ eq: () => ({ maybeSingle: mockLoadMaybeSingle }) }),
+    update: (patch: Record<string, unknown>) => {
+      mockUpdatePatch(patch);
       return { eq: () => Promise.resolve(mockUpdateStatusResult()) };
-    }
-    // PATCH reschedule: update(...).eq().eq().select().maybeSingle()
-    return {
-      eq: () => ({
-        eq: () => ({
-          select: () => ({
-            maybeSingle: () => Promise.resolve(mockRescheduleUpdateResults[rescheduleCallIndex++]),
-          }),
-        }),
-      }),
-    };
-  },
-}));
+    },
+  };
+});
 
 vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ from: mockFrom }),
+  createAdminClient: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 
 vi.mock("@/lib/widgets/notify", () => ({
   dispatchBookingMessage: (...args: unknown[]) => mockDispatch(...args),
 }));
 
-// Cancel/reschedule email now flows from a DB trigger; Next only records who
-// acted via `notify_actor` in the UPDATE. resolveActor() reads the SSR session —
-// default it to "no user" so the resolved actor is "customer".
+// resolveActor() reads the SSR session — default "no user" ⇒ actor "customer".
 const mockGetUser = vi.fn(async () => ({ data: { user: null } }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getUser: mockGetUser } }),
@@ -137,17 +120,26 @@ function loadRow(bookingOverrides: Partial<WidgetBooking> = {}, instanceOverride
       config,
       enabled: true,
       owner: { display_name: "Acme", username: "acme" },
-      catalog: { currency: "usd" },
       ...instanceOverrides,
     },
   };
 }
 
+function rescheduled(overrides: Partial<WidgetBooking> = {}) {
+  return {
+    data: booking({
+      starts_at: "2026-08-11T09:00:00.000Z",
+      ends_at: "2026-08-11T09:30:00.000Z",
+      ...overrides,
+    }),
+    error: null,
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  rescheduleCallIndex = 0;
-  mockRescheduleUpdateResults.length = 0;
-  mockOthersResult.mockReturnValue({ data: [] });
+  mockSegmentsResult.mockReturnValue({ data: [] });
+  mockBusyResult.mockReturnValue({ data: [] });
 });
 
 describe("GET /api/widgets/bookings/[token]", () => {
@@ -194,7 +186,6 @@ describe("DELETE /api/widgets/bookings/[token]", () => {
     expect(res.status).toBe(200);
     expect(body).toEqual({ ok: true, status: "cancelled" });
     expect(mockDispatch).toHaveBeenCalledTimes(1);
-    // Email is fired by the DB trigger off notify_actor written into the UPDATE.
     expect(mockUpdatePatch).toHaveBeenCalledWith(
       expect.objectContaining({ status: "cancelled", notify_actor: "customer" })
     );
@@ -223,9 +214,8 @@ describe("DELETE /api/widgets/bookings/[token]", () => {
 });
 
 describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
-  // The fixtures target Aug 2026 slots; freeze "now" just before them so the
-  // reschedule's lead-time filter treats those slots as bookable regardless of
-  // the wall clock (otherwise the suite rots once real time passes the dates).
+  // Fixtures target Aug 2026; freeze "now" just before them so the lead-time
+  // filter treats those slots as bookable regardless of the wall clock.
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date("2026-08-05T00:00:00.000Z"));
@@ -257,12 +247,6 @@ describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
     expect(res.status).toBe(409);
   });
 
-  it("409s when the service no longer exists on the config", async () => {
-    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({ service_id: "svc_removed" }) });
-    const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
-    expect(res.status).toBe(409);
-  });
-
   it("409s when the requested time isn't an open slot", async () => {
     mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
     // Tuesday 03:00 UTC is outside the 09:00-17:00 window.
@@ -270,29 +254,32 @@ describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
     const body = await res.json();
     expect(res.status).toBe(409);
     expect(body.error).toBe("That time isn't available.");
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
-  it("reschedules to a valid slot and returns the new time", async () => {
+  it("reschedules to a valid slot via reschedule_booking_tx and records the actor", async () => {
     mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
-    mockRescheduleUpdateResults.push({
-      data: { starts_at: "2026-08-11T09:00:00.000Z", ends_at: "2026-08-11T09:30:00.000Z", staff_id: null, staff_name: null },
-      error: null,
-    });
+    mockRpcSingle.mockResolvedValue(rescheduled());
 
     const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
     const body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body).toMatchObject({ ok: true, starts_at: "2026-08-11T09:00:00.000Z" });
-    // Email is fired by the DB trigger off notify_actor written into the UPDATE.
-    expect(mockUpdatePatch).toHaveBeenCalledWith(
-      expect.objectContaining({ notify_actor: "customer" })
+    expect(mockRpc).toHaveBeenCalledWith(
+      "reschedule_booking_tx",
+      expect.objectContaining({
+        p_token: "tok_1",
+        p_starts_at: "2026-08-11T09:00:00.000Z",
+        p_actor: "customer",
+        p_segments: expect.any(Array),
+      })
     );
   });
 
-  it("409s with 'just taken' when every update attempt hits the exclusion constraint", async () => {
+  it("409s with 'just taken' when the RPC reports SLOT_TAKEN", async () => {
     mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
-    mockRescheduleUpdateResults.push({ data: null, error: { code: "23P01" } });
+    mockRpcSingle.mockResolvedValue({ data: null, error: { message: "SLOT_TAKEN" } });
 
     const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
     const body = await res.json();
@@ -301,9 +288,9 @@ describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
     expect(body.error).toBe("That slot was just taken. Please pick another.");
   });
 
-  it("500s on a non-clash update failure without retrying", async () => {
+  it("500s on a non-clash RPC failure", async () => {
     mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
-    mockRescheduleUpdateResults.push({ data: null, error: { code: "other" } });
+    mockRpcSingle.mockResolvedValue({ data: null, error: { message: "boom" } });
 
     const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
     const body = await res.json();
@@ -312,73 +299,30 @@ describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
     expect(body.error).toBe("Failed to reschedule.");
   });
 
-  describe("staff targeting", () => {
+  it("still reschedules using the stored segment even if the config service was later removed", async () => {
+    // Reschedule reads the booking's own segments (here the aggregate fallback),
+    // so a config edit doesn't strand an existing booking.
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({ service_id: "svc_removed" }) });
+    mockRpcSingle.mockResolvedValue(rescheduled({ service_id: "svc_removed" }));
+
+    const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
+    expect(res.status).toBe(200);
+  });
+
+  it("preserves the booking's assigned staff on reschedule (pins it in the segment plan)", async () => {
     const staffConfig: CalendarConfig = {
       ...config,
-      staff: [
-        { id: "st_a", name: "Alex", availability: { tue: [["09:00", "17:00"]] } },
-        { id: "st_b", name: "Bella", availability: { tue: [["09:00", "17:00"]] } },
-      ],
+      staff: [{ id: "st_a", name: "Alex", availability: { tue: [["09:00", "17:00"]] } }],
     };
-
-    it("keeps the booking's current staff when staff_id is omitted", async () => {
-      mockLoadMaybeSingle.mockResolvedValue({
-        data: loadRow({ staff_id: "st_a" }, { config: staffConfig }),
-      });
-      mockRescheduleUpdateResults.push({
-        data: { starts_at: "2026-08-11T09:00:00.000Z", ends_at: "2026-08-11T09:30:00.000Z", staff_id: "st_a", staff_name: "Alex" },
-        error: null,
-      });
-
-      const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
-      const body = await res.json();
-      expect(res.status).toBe(200);
-      expect(body.staff_id).toBe("st_a");
+    mockLoadMaybeSingle.mockResolvedValue({
+      data: loadRow({ staff_id: "st_a", staff_name: "Alex" }, { config: staffConfig }),
     });
+    mockRpcSingle.mockResolvedValue(rescheduled({ staff_id: "st_a", staff_name: "Alex" }));
 
-    it("409s when the explicitly requested staff isn't free at the target slot", async () => {
-      mockLoadMaybeSingle.mockResolvedValue({
-        data: loadRow({ staff_id: "st_a" }, { config: staffConfig }),
-      });
-      // Only st_a is free (st_b has no availability window at all in this config).
-      const res = await PATCH(
-        patchReq({ starts_at: "2026-08-11T09:00:00.000Z", staff_id: "st_b_missing_from_config" }),
-        params()
-      );
-      const body = await res.json();
-      expect(res.status).toBe(409);
-      expect(body.error).toBe("That specialist isn't free at that time.");
-    });
+    const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
+    expect(res.status).toBe(200);
 
-    it("treats staff_id: '' as any-available and tries each free candidate", async () => {
-      mockLoadMaybeSingle.mockResolvedValue({
-        data: loadRow({ staff_id: "st_a" }, { config: staffConfig }),
-      });
-      mockRescheduleUpdateResults.push({
-        data: { starts_at: "2026-08-11T09:00:00.000Z", ends_at: "2026-08-11T09:30:00.000Z", staff_id: "st_a", staff_name: "Alex" },
-        error: null,
-      });
-
-      const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z", staff_id: "" }), params());
-      expect(res.status).toBe(200);
-    });
-
-    it("falls through to the next candidate when the first hits an exclusion clash", async () => {
-      mockLoadMaybeSingle.mockResolvedValue({
-        data: loadRow({ staff_id: "st_a" }, { config: staffConfig }),
-      });
-      mockRescheduleUpdateResults.push(
-        { data: null, error: { code: "23P01" } },
-        {
-          data: { starts_at: "2026-08-11T09:00:00.000Z", ends_at: "2026-08-11T09:30:00.000Z", staff_id: "st_b", staff_name: "Bella" },
-          error: null,
-        }
-      );
-
-      const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z", staff_id: "" }), params());
-      const body = await res.json();
-      expect(res.status).toBe(200);
-      expect(body.staff_id).toBe("st_b");
-    });
+    const [, args] = mockRpc.mock.calls[0] as unknown as [string, { p_segments: { staff_ids: string[] }[] }];
+    expect(args.p_segments[0].staff_ids).toEqual(["st_a"]);
   });
 });

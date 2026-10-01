@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
+import { getFeatureFlags } from "@/lib/featureFlags";
 import { defaultCalendarConfig } from "@/lib/widgets/calendar";
 import { suggestedCurrencyForLocale } from "@/lib/widgets/messages";
 import { getCurrentLocale } from "@/lib/i18n/server";
@@ -53,6 +54,11 @@ export async function createWidgetInstance(input: {
     .eq("id", catalogId)
     .single();
   if (widgetErr || !widget || !widget.active) {
+    return { ok: false, error: "NOT_AVAILABLE" };
+  }
+
+  // The agent widget is an AI surface — unavailable while the AI flag is off.
+  if (widget.slug === "agent" && !(await getFeatureFlags()).ai) {
     return { ok: false, error: "NOT_AVAILABLE" };
   }
 

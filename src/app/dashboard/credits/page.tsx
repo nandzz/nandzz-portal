@@ -10,6 +10,7 @@ import { PlanCheckoutButton } from "./PlanCheckoutButton";
 import { ManageBillingButton } from "./ManageBillingButton";
 import type { CreditPack, CreditLedgerEntry, SubscriptionPlan } from "@/lib/types";
 import { getUserPlan } from "@/lib/plan";
+import { getFeatureFlags } from "@/lib/featureFlags";
 import { PageShell } from "@/components/layout/PageShell";
 
 const PAGE_SIZE = 25;
@@ -66,6 +67,7 @@ export default async function SubscriptionPage({
       .range(offset, offset + PAGE_SIZE - 1),
   ]);
 
+  const { ai: aiEnabled } = await getFeatureFlags();
   const subscriptionPlans = (plans ?? []) as SubscriptionPlan[];
   const isPaid = plan.slug !== "free";
   const periodEnd = formatDate(plan.periodEnd);
@@ -93,7 +95,7 @@ export default async function SubscriptionPage({
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Subscription</h1>
             <p className="text-muted-foreground mt-0.5">
-              Manage your plan and AI credits.
+              {aiEnabled ? "Manage your plan and AI credits." : "Manage your plan."}
             </p>
           </div>
         </div>
@@ -170,7 +172,8 @@ export default async function SubscriptionPage({
                   <div>
                     <p className="font-semibold">You&apos;re on our top plan</p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      You have access to every feature. Need more AI credits? Grab a credit pack below.
+                      You have access to every feature.
+                      {aiEnabled && " Need more AI credits? Grab a credit pack below."}
                     </p>
                   </div>
                 </div>
@@ -218,9 +221,11 @@ export default async function SubscriptionPage({
                         <ul className="mt-4 mb-6 space-y-2 text-sm flex-1">
                           <PlanFeature ok>{p.space_limit === null ? "Unlimited spaces" : `${p.space_limit} spaces`}</PlanFeature>
                           <PlanFeature ok={p.has_widgets}>Widgets</PlanFeature>
-                          <PlanFeature ok={p.monthly_credits > 0}>
-                            {p.monthly_credits > 0 ? `${p.monthly_credits.toLocaleString()} AI credits/mo` : "No AI credits"}
-                          </PlanFeature>
+                          {aiEnabled && (
+                            <PlanFeature ok={p.monthly_credits > 0}>
+                              {p.monthly_credits > 0 ? `${p.monthly_credits.toLocaleString()} AI credits/mo` : "No AI credits"}
+                            </PlanFeature>
+                          )}
                           <PlanFeature ok={p.has_mcp}>MCP access</PlanFeature>
                           <PlanFeature ok={p.has_analytics}>Analytics</PlanFeature>
                         </ul>
@@ -246,7 +251,8 @@ export default async function SubscriptionPage({
           );
         })()}
 
-        {/* Credit balances */}
+        {/* Credit balances — AI only */}
+        {aiEnabled && (
         <div className="rounded-2xl border border-border/60 bg-card p-6 mb-8">
           <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">AI credits</p>
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -269,9 +275,10 @@ export default async function SubscriptionPage({
             Plan credits are spent first; purchased credits are used only after they run out.
           </p>
         </div>
+        )}
 
-        {/* Buy more credits — paid plans only */}
-        {isPaid ? (
+        {/* Buy more credits — paid plans only. AI only. */}
+        {aiEnabled && (isPaid ? (
           packs && packs.length > 0 ? (
             <div className="mb-10">
               <h2 className="text-lg font-semibold mb-4">Buy more credits</h2>
@@ -319,9 +326,10 @@ export default async function SubscriptionPage({
               AI credits are included on the Starter and Pro plans. Upgrade to chat with your agent and edit pages with AI.
             </p>
           </div>
-        )}
+        ))}
 
-        {/* Ledger */}
+        {/* Ledger — AI usage/credit activity only */}
+        {aiEnabled && (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <History className="h-4 w-4 text-muted-foreground" />
@@ -406,6 +414,7 @@ export default async function SubscriptionPage({
             <p className="text-sm text-muted-foreground">No activity yet.</p>
           )}
         </div>
+        )}
 
         <div className="pt-8">
           <Link href="/dashboard/contents">

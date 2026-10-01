@@ -314,6 +314,7 @@ export function WidgetBookings({
             money={money}
             fmtDate={(iso) => fmtDate.format(new Date(iso))}
             onNewBooking={openManual}
+            hasStaff={manual.staff.length > 0}
           />
         </div>
       ) : (
@@ -341,6 +342,7 @@ export function WidgetBookings({
                       timezone={timezone}
                       now={now}
                       cancellable={upcoming}
+                      hasStaff={manual.staff.length > 0}
                     />
                   );
                 })}

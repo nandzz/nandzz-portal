@@ -24,9 +24,15 @@ import type Stripe from "https://esm.sh/stripe@17?target=denonext";
 export interface QueryBuilder {
   select(cols: string): QueryBuilder;
   eq(col: string, val: unknown): QueryBuilder;
+  update(values: Record<string, unknown>): UpdateBuilder;
   // deno-lint-ignore no-explicit-any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   maybeSingle(): Promise<{ data: any; error: unknown }>;
+}
+
+// A trimmed update chain: `.update({…}).eq(col, val)` resolves to { error }.
+export interface UpdateBuilder {
+  eq(col: string, val: unknown): Promise<{ error: unknown }>;
 }
 
 export interface AdminClientLike {
@@ -213,6 +219,18 @@ async function handlePlanSubscription(
   if (error) {
     logger.error(`set_user_plan failed`, error);
     return { status: 500, body: { error: "plan_update_failed" } };
+  }
+
+  // Burn the one-time trial the moment a subscription is seen trialing, so a
+  // later cancel + resubscribe is charged immediately instead of trialing again.
+  if (status === "trialing") {
+    const { error: trialErr } = await admin
+      .from("profiles")
+      .update({ has_used_trial: true })
+      .eq("id", userId);
+    if (trialErr) {
+      logger.warn(`marking has_used_trial failed for user=${userId}: ${JSON.stringify(trialErr)}`);
+    }
   }
 
   logger.info(`plan sub ${subId} → user=${userId} slug=${slug} status=${status}`);

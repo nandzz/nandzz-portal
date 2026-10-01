@@ -9,6 +9,7 @@ import { type Locale } from "@/lib/i18n/translations";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { getChromeProfile } from "@/features/analytics/server";
+import { getFeatureFlags } from "@/lib/featureFlags";
 import type { Profile } from "@/lib/types";
 import "./globals.css";
 
@@ -113,6 +114,8 @@ export default async function RootLayout({
     initialProfile = await getChromeProfile(supabase, initialUserId);
   }
 
+  const initialFlags = await getFeatureFlags();
+
   return (
     <html
       lang={initialLocale}
@@ -128,7 +131,7 @@ export default async function RootLayout({
         >
           <LanguageProvider initialLocale={initialLocale}>
             <ChromeProvider>
-              <AuthProvider initialUserId={initialUserId} initialProfile={initialProfile}>
+              <AuthProvider initialUserId={initialUserId} initialProfile={initialProfile} initialFlags={initialFlags}>
                 <AppChrome>{children}</AppChrome>
               </AuthProvider>
             </ChromeProvider>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 async function fireEdgeFunction(jobId: string) {
   const edgeUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/space-ai-edit`;
@@ -20,6 +21,11 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ spaceId: string; jobId: string }> }
 ) {
+  // AI master switch — the AI page editor is hidden while off.
+  if (!(await getFeatureFlags()).ai) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const { spaceId, jobId } = await params;
 
   const supabase = await createClient();

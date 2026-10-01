@@ -13,6 +13,7 @@
 export { Navbar } from "./components/Navbar";
 export { Sidebar } from "./components/Sidebar";
 export { MobileTabBar } from "./components/MobileTabBar";
+export { ProfileVisitorCta } from "./components/ProfileVisitorCta";
 export { NotificationBell } from "./components/NotificationBell";
 export { AiJobsIndicator } from "./components/AiJobsIndicator";
 

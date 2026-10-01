@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Navbar, Sidebar, MobileTabBar } from "@/features/analytics";
+import { Navbar, Sidebar, MobileTabBar, ProfileVisitorCta } from "@/features/analytics";
 import { useAuth } from "@/features/analytics/AuthContext";
 import { ConditionalFooter } from "./ConditionalFooter";
 import { isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
@@ -64,6 +64,11 @@ export function AppChrome({ children }: AppChromeProps) {
   // immersive space viewer (which keeps its own chrome-hide gesture).
   const showSidebar = !!userId && !isImmersiveRoute(pathname) && !onBareAuthPage;
 
+  // A logged-out visitor on someone's profile: suppress ALL Nandzz chrome (top
+  // Navbar + footer) so the page reads as the owner's own branded page
+  // (Linktree-style). Their only Nandzz affordance is the floating CTA pill.
+  const isVisitorProfile = !userId && onProfilePage;
+
   return (
     <>
       {showSidebar && (
@@ -71,10 +76,11 @@ export function AppChrome({ children }: AppChromeProps) {
       )}
 
       {/* Top Navbar only when the sidebar isn't taking over (logged out). On
-          mobile it stays visible since the sidebar is desktop-only. Profile,
-          widget, and immersive space pages never show the Navbar — they render
-          their own chrome. */}
-      {!onProfilePage && !onWidgetPage && !onImmersivePage && !onBareAuthPage && (
+          mobile it stays visible since the sidebar is desktop-only. Widget and
+          immersive space pages never show it — they render their own chrome —
+          and neither does a logged-out visitor on a profile (clean branded
+          page; the floating CTA pill is their only Nandzz affordance). */}
+      {!onWidgetPage && !onImmersivePage && !onBareAuthPage && !isVisitorProfile && (
         <div className={cn(showSidebar && "md:hidden")}>
           <Navbar />
         </div>
@@ -82,19 +88,31 @@ export function AppChrome({ children }: AppChromeProps) {
 
       <main
         className={cn(
-          "flex-1 md:pb-0 transition-[padding] duration-300 ease-out motion-reduce:transition-none",
-          (!userId && onProfilePage) || onWidgetPage || onBareAuthPage ? "pb-0" : "pb-16",
+          "flex-1 transition-[padding] duration-300 ease-out motion-reduce:transition-none",
+          // Bottom clearance: the floating CTA pill shows on every breakpoint for
+          // a logged-out profile visitor, so reserve space on all sizes; the
+          // MobileTabBar is mobile-only (hidden at md+), so its clearance resets
+          // at md+; widget/onboarding own their viewport (none).
+          isVisitorProfile
+            ? "pb-24"
+            : onWidgetPage || onBareAuthPage
+              ? "pb-0"
+              : "pb-16 md:pb-0",
           showSidebar && (collapsed ? "md:pl-16" : "md:pl-64")
         )}
       >
         {children}
       </main>
 
-      {!showSidebar && !onWidgetPage && !onBareAuthPage && <ConditionalFooter />}
+      {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && <ConditionalFooter />}
 
       {/* Hidden for logged-out visitors on a profile page, on the widget page
           (which owns its whole viewport), and during post-signup onboarding. */}
-      {!(!userId && onProfilePage) && !onWidgetPage && !onBareAuthPage && <MobileTabBar />}
+      {!isVisitorProfile && !onWidgetPage && !onBareAuthPage && <MobileTabBar />}
+
+      {/* The lone Nandzz affordance on a clean, logged-out profile page:
+          a floating "Sign in / Create your page" pill. */}
+      {isVisitorProfile && <ProfileVisitorCta />}
     </>
   );
 }

@@ -22,6 +22,7 @@ import { getServerTranslations } from "@/lib/i18n/server";
 import { getIsFollowing, getLikedSpaceIds } from "@/features/social/server";
 import { getSavedSpaceIds } from "@/features/collections/server";
 import { PageShell } from "@/components/layout/PageShell";
+import { isColorDark } from "@/lib/color";
 
 const fetchProfileByUsername = async (username: string) => {
   const admin = createAdminClient();
@@ -188,11 +189,28 @@ export default async function ProfilePage({
   const hasLinks = (linkSpaces?.length ?? 0) > 0;
   const hasGallery = (galleryImages?.length ?? 0) > 0;
 
+  // A custom background color locks the profile to a light/dark theme derived
+  // from that color's brightness, so all chrome + text stay legible regardless
+  // of the visitor's device theme. Computed server-side → no flash.
+  const bgColor = profile.background_color ?? null;
+  const profileTheme = bgColor ? (isColorDark(bgColor) ? "dark" : "light") : "";
+
+  // Logged-in users get a sticky top Navbar here (mobile only; the Sidebar
+  // takes over at md+). Pull the whole profile up behind it (h-16) and add back
+  // matching top padding, so the cover photo extends under the bar and its
+  // translucent/blur reads at rest (iOS-style) instead of solid white. Reset at
+  // md+ where there's no top bar. Logged-out visitors get no Navbar (clean
+  // branded page), so no pull-up — their floating-pill clearance lives in <main>.
+  const coverUnderNav = user ? "-mt-16 pt-16 md:mt-0 md:pt-0" : "";
+
   return (
-    <div className="relative min-h-[calc(100vh-8rem)]">
+    <div className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav} ${profileTheme}`}>
       <ProfileBackground
         backgroundUrl={profile.background_url ?? null}
         backgroundPosition={profile.background_position ?? null}
+        backgroundColor={bgColor}
+        buttonColor={profile.button_color ?? null}
+        textColor={profile.text_color ?? null}
         isOwner={isOwner}
         profileId={profile.id}
         username={profile.username}
@@ -207,6 +225,8 @@ export default async function ProfilePage({
           currentUserId={user?.id ?? null}
           isFollowing={isFollowing}
           widgets={widgets}
+          buttonColor={profile.button_color ?? null}
+          textColor={profile.text_color ?? null}
         />
         <ProfileSections
           order={resolveSectionOrder(profile)}

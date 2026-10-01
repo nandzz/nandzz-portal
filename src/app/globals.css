@@ -48,7 +48,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
+/* `:root` = default light theme. `.light` mirrors it so a light-scoped subtree
+   (a theme-locked profile with a light background) restores light vars even when
+   the document root is `.dark`. Custom props resolve from the nearest ancestor
+   that declares them, so the inner `.light` wins for its subtree. */
+:root,
+.light {
   --background: oklch(0.995 0.002 280);
   --foreground: oklch(0.145 0.005 280);
   --card: oklch(1 0 0);
@@ -147,7 +152,8 @@
 }
 
 /* Custom scrollbar — matches design system */
-:root {
+:root,
+.light {
   --scrollbar-thumb: oklch(0.75 0.005 280 / 0.5);
   --scrollbar-thumb-hover: oklch(0.60 0.008 280 / 0.7);
   --scrollbar-track: transparent;
@@ -159,31 +165,51 @@
   --scrollbar-track: transparent;
 }
 
+/* GLOBAL RULE: components NEVER show a scrollbar. Any element that scrolls
+   (overflow-auto / overflow-scroll, in any direction) keeps its scroll fully
+   usable but paints no scrollbar. The ONLY visible scrollbar in the app is the
+   page's own (the document root), re-enabled on `html` below. This is intentional
+   and app-wide — do not add per-component scrollbars. The `.scrollbar-hide`
+   utility is now redundant (the default already hides) but kept for explicitness. */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-}
-
-*::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 9999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* The page itself keeps a slim scrollbar so the whole document stays navigable.
+   `html` (the root scroller) beats the `*` rules above on specificity. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  display: block;
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 9999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Kept UNLAYERED on purpose: the global `*::-webkit-scrollbar` rules above are

@@ -28,6 +28,9 @@ interface Props {
   // Opens the owner's manual-booking flow, seeded with the given day
   // ("YYYY-MM-DD") — the day the owner clicked "Add booking" on.
   onNewBooking?: (dateKey: string) => void;
+  // Whether the instance has staff — gates the per-service "Assign staff" action
+  // on each agenda row (same as the list view).
+  hasStaff?: boolean;
 }
 
 // 2024-01-01 was a Monday (UTC) — a stable anchor for deriving locale-aware
@@ -70,7 +73,7 @@ function labelForKey(locale: string, key: string) {
   return dayLabelFmt(locale).format(new Date(`${key}T12:00:00Z`));
 }
 
-export function BookingsCalendar({ bookings, monthKey, onMonthChange, timezone, now, money, fmtDate, onNewBooking }: Props) {
+export function BookingsCalendar({ bookings, monthKey, onMonthChange, timezone, now, money, fmtDate, onNewBooking, hasStaff = false }: Props) {
   const { t, locale } = useLanguage();
   const headers = useMemo(() => weekdayHeaders(locale), [locale]);
   // Civil date-key ("YYYY-MM-DD") for an instant in the widget timezone. Always
@@ -163,6 +166,7 @@ export function BookingsCalendar({ bookings, monthKey, onMonthChange, timezone, 
               now={now}
               cancellable={upcoming}
               dim={!upcoming}
+              hasStaff={hasStaff}
             />
           );
         })}

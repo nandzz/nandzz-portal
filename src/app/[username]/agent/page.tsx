@@ -4,14 +4,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getProfileWidgets } from "@/features/booking/server";
 import { getPublicAgentDocCount } from "@/features/agent/server";
 import { AgentPublic } from "@/features/agent";
-import { FEATURES } from "@/lib/flags";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 export default async function AgentPage({
   params,
 }: {
   params: Promise<{ username: string }>;
 }) {
-  if (!FEATURES.agent) notFound();
+  if (!(await getFeatureFlags()).ai) notFound();
 
   const { username } = await params;
 

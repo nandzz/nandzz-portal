@@ -6,6 +6,7 @@ import { Pencil, X, Save, Loader2, Sparkles, Check, AlertCircle, ArrowRight } fr
 import { sandboxHtml } from "@/lib/sandbox-html";
 import { AiAssistantPanel } from "./AiAssistantPanel";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFeatureFlags } from "@/features/analytics/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   fetchPendingAiEditJob,
@@ -67,6 +68,8 @@ type FailedJob = { id: string; instruction: string; errorCode: string };
 export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEditorProps) {
   const { t } = useLanguage();
   const ai = t.aiAssistant;
+  // AI page editor is hidden while the AI master flag is off.
+  const { ai: aiEnabled } = useFeatureFlags();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
@@ -441,15 +444,17 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
 
       {/* Desktop buttons */}
       <div className="absolute bottom-4 right-4 hidden lg:flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowAssistant(true)}
-          className="gap-1.5"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          AI Edit
-        </Button>
+        {aiEnabled && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAssistant(true)}
+            className="gap-1.5"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            AI Edit
+          </Button>
+        )}
         <Button
           size="sm"
           onClick={handleEdit}
@@ -468,7 +473,7 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
       {/* Mobile prompt pill — replaces the icon-only FAB so the affordance is
           obvious and readable. Doubles as the AI panel opener. Hidden while a
           proposal is under review (top banner takes over) or the panel is open. */}
-      {!pendingJob && !showAssistant && (
+      {aiEnabled && !pendingJob && !showAssistant && (
         <button
           type="button"
           onClick={() => setShowAssistant(true)}
@@ -492,12 +497,14 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
         </button>
       )}
 
-      <AiAssistantPanel
-        spaceId={spaceId}
-        htmlUrl={htmlUrl}
-        isOpen={showAssistant}
-        onClose={() => setShowAssistant(false)}
-      />
+      {aiEnabled && (
+        <AiAssistantPanel
+          spaceId={spaceId}
+          htmlUrl={htmlUrl}
+          isOpen={showAssistant}
+          onClose={() => setShowAssistant(false)}
+        />
+      )}
     </div>
   );
 }

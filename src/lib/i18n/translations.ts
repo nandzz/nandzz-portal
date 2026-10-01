@@ -37,10 +37,12 @@ export type Translations = {
     myAgent: string;
     login: string;
     signup: string;
+    createYours: string;
     profile: string;
     viewProfile: string;
     settings: string;
     billing: string;
+    subscription: string;
     logout: string;
     switchDark: string;
     switchLight: string;
@@ -308,6 +310,11 @@ export type Translations = {
     create: string;
     spaces: string;
     profile: string;
+    bookings: string;
+    following: string;
+    booking: string;
+    analytics: string;
+    shortcuts: string;
   };
   notifications: {
     title: string;
@@ -865,6 +872,18 @@ export type Translations = {
     selectDateToSeeTimes: string;
     chooseSpecialist: string;
     specialistForService: string;
+    specialistPerServiceHint: string;
+    assignStaff: string;
+    errorAssignStaff: string;
+    parallelLabel: string;
+    parallelHint: string;
+    staffCurrent: string;
+    staffAvailableLabel: string;
+    staffBusyWith: string;
+    staffOffHours: string;
+    staffNotEligible: string;
+    assignStaffLoadError: string;
+    assignStaffHint: string;
     summaryService: string;
     summaryWhen: string;
     summarySpecialist: string;
@@ -1294,9 +1313,11 @@ const en: Translations = {
     login: "Log in",
     signup: "Sign up",
     profile: "My Profile",
+    createYours: "Create your page",
     viewProfile: "View Profile",
     settings: "Settings",
     billing: "Billing & Plans",
+    subscription: "Subscription",
     logout: "Log out",
     switchDark: "Switch to Dark",
     switchLight: "Switch to Light",
@@ -1364,7 +1385,7 @@ const en: Translations = {
       },
       {
         q: "Is Nandzz free?",
-        a: "Yes, you can start free with a branded page and content sections. Paid plans add widgets like booking and the AI agent, analytics, and monthly AI credits.",
+        a: "Yes, you can start free with a branded page and content sections. The paid plan adds widgets like booking, analytics and MCP access.",
       },
     ],
   },
@@ -1579,6 +1600,11 @@ const en: Translations = {
     create: "Create",
     spaces: "Content",
     profile: "Profile",
+    bookings: "Bookings",
+    following: "Following",
+    booking: "Booking",
+    analytics: "Analytics",
+    shortcuts: "Shortcuts",
   },
   notifications: {
     title: "Notifications",
@@ -2136,6 +2162,18 @@ const en: Translations = {
     selectDateToSeeTimes: "Select a date to see open times.",
     chooseSpecialist: "Choose your specialist",
     specialistForService: "For {service}",
+    specialistPerServiceHint: "Pick who handles each service, or leave it to us.",
+    assignStaff: "Assign staff",
+    errorAssignStaff: "Couldn't reassign staff — they may be busy at that time.",
+    parallelLabel: "Runs in parallel",
+    parallelHint: "Can happen at the same time as other booked services, handled by its own staff — instead of back-to-back.",
+    staffCurrent: "Current",
+    staffAvailableLabel: "Available",
+    staffBusyWith: "Busy — {name} · {time}",
+    staffOffHours: "Outside working hours",
+    staffNotEligible: "Not usually assigned to this",
+    assignStaffLoadError: "Couldn't load staff availability.",
+    assignStaffHint: "Everyone on your team is shown. Unavailable staff show why.",
     summaryService: "Service",
     summaryWhen: "When",
     summarySpecialist: "Specialist",
@@ -2524,8 +2562,8 @@ const en: Translations = {
     feedTitle: "Feed | Nandzz",
     feedDescription: "Content from people you follow.",
     pricingTitle: "Pricing | Nandzz",
-    pricingDescription: "Simple plans for your branded page. Start free, or upgrade to Starter or Pro for widgets, AI credits and analytics.",
-    pricingShortDescription: "Simple plans. Start free, upgrade for widgets, AI and analytics.",
+    pricingDescription: "Simple plans for your branded page. Start free, or upgrade for widgets, booking and analytics.",
+    pricingShortDescription: "Simple plans. Start free, upgrade for widgets and analytics.",
     hashtagDescription: "Browse the latest content tagged #{tag} on Nandzz.",
     profileNotFoundTitle: "Profile Not Found | Nandzz",
     profileDescriptionFallback: "Check out {name}'s web apps on nandzz.",
@@ -2565,9 +2603,11 @@ const pt: Translations = {
     login: "Entrar",
     signup: "Cadastrar",
     profile: "Meu Perfil",
+    createYours: "Crie sua página",
     viewProfile: "Ver Perfil",
     settings: "Configurações",
     billing: "Planos e Faturamento",
+    subscription: "Assinatura",
     logout: "Sair",
     switchDark: "Modo Escuro",
     switchLight: "Modo Claro",
@@ -2850,6 +2890,11 @@ const pt: Translations = {
     create: "Criar",
     spaces: "Conteúdos",
     profile: "Perfil",
+    bookings: "Reservas",
+    following: "Seguindo",
+    booking: "Booking",
+    analytics: "Análises",
+    shortcuts: "Atalhos",
   },
   notifications: {
     title: "Notificações",
@@ -3413,6 +3458,18 @@ const pt: Translations = {
     summaryLocation: "Local",
     anyAvailable: "Qualquer um disponível",
     anyAvailableDesc: "Sem preferência — vamos atribuir um especialista livre",
+    specialistPerServiceHint: "Escolha quem faz cada serviço, ou deixe conosco.",
+    assignStaff: "Atribuir profissional",
+    errorAssignStaff: "Não foi possível reatribuir — o profissional pode estar ocupado nesse horário.",
+    parallelLabel: "Executa em paralelo",
+    parallelHint: "Pode acontecer ao mesmo tempo que outros serviços reservados, com seu próprio profissional — em vez de em sequência.",
+    staffCurrent: "Atual",
+    staffAvailableLabel: "Disponível",
+    staffBusyWith: "Ocupado — {name} · {time}",
+    staffOffHours: "Fora do horário de trabalho",
+    staffNotEligible: "Normalmente não faz este serviço",
+    assignStaffLoadError: "Não foi possível carregar a disponibilidade.",
+    assignStaffHint: "Toda a equipe é mostrada. Quem não está disponível mostra o motivo.",
     yourDetails: "Seus dados",
     withNameSuffix: " · com {name}",
     fullNamePlaceholder: "Nome completo",
@@ -3836,9 +3893,11 @@ const fr: Translations = {
     login: "Connexion",
     signup: "S'inscrire",
     profile: "Mon Profil",
+    createYours: "Créez votre page",
     viewProfile: "Voir le profil",
     settings: "Paramètres",
     billing: "Facturation",
+    subscription: "Abonnement",
     logout: "Déconnexion",
     switchDark: "Mode Sombre",
     switchLight: "Mode Clair",
@@ -4121,6 +4180,11 @@ const fr: Translations = {
     create: "Créer",
     spaces: "Contenus",
     profile: "Profil",
+    bookings: "Réservations",
+    following: "Abonnements",
+    booking: "Booking",
+    analytics: "Analyses",
+    shortcuts: "Raccourcis",
   },
   notifications: {
     title: "Notifications",
@@ -4684,6 +4748,18 @@ const fr: Translations = {
     summaryLocation: "Lieu",
     anyAvailable: "Peu importe qui",
     anyAvailableDesc: "Aucune préférence — nous attribuerons un spécialiste disponible",
+    specialistPerServiceHint: "Choisissez qui réalise chaque service, ou laissez-nous faire.",
+    assignStaff: "Attribuer un membre",
+    errorAssignStaff: "Réattribution impossible — la personne est peut-être occupée à ce moment.",
+    parallelLabel: "S'exécute en parallèle",
+    parallelHint: "Peut avoir lieu en même temps que d'autres services réservés, avec son propre personnel — au lieu d'à la suite.",
+    staffCurrent: "Actuel",
+    staffAvailableLabel: "Disponible",
+    staffBusyWith: "Occupé — {name} · {time}",
+    staffOffHours: "En dehors des heures de travail",
+    staffNotEligible: "Habituellement pas affecté à ceci",
+    assignStaffLoadError: "Impossible de charger la disponibilité.",
+    assignStaffHint: "Toute votre équipe est affichée. Le personnel indisponible en indique la raison.",
     yourDetails: "Vos informations",
     withNameSuffix: " · avec {name}",
     fullNamePlaceholder: "Nom complet",
@@ -5107,9 +5183,11 @@ const es: Translations = {
     login: "Iniciar sesión",
     signup: "Registrarse",
     profile: "Mi Perfil",
+    createYours: "Crea tu página",
     viewProfile: "Ver Perfil",
     settings: "Configuración",
     billing: "Facturación",
+    subscription: "Suscripción",
     logout: "Cerrar sesión",
     switchDark: "Modo Oscuro",
     switchLight: "Modo Claro",
@@ -5392,6 +5470,11 @@ const es: Translations = {
     create: "Crear",
     spaces: "Contenidos",
     profile: "Perfil",
+    bookings: "Reservas",
+    following: "Siguiendo",
+    booking: "Booking",
+    analytics: "Analíticas",
+    shortcuts: "Accesos",
   },
   notifications: {
     title: "Notificaciones",
@@ -5955,6 +6038,18 @@ const es: Translations = {
     summaryLocation: "Ubicación",
     anyAvailable: "Cualquiera disponible",
     anyAvailableDesc: "Sin preferencia — asignaremos un especialista libre",
+    specialistPerServiceHint: "Elige quién realiza cada servicio, o déjalo en nuestras manos.",
+    assignStaff: "Asignar personal",
+    errorAssignStaff: "No se pudo reasignar — puede estar ocupado a esa hora.",
+    parallelLabel: "Se realiza en paralelo",
+    parallelHint: "Puede realizarse al mismo tiempo que otros servicios reservados, con su propio personal — en lugar de uno tras otro.",
+    staffCurrent: "Actual",
+    staffAvailableLabel: "Disponible",
+    staffBusyWith: "Ocupado — {name} · {time}",
+    staffOffHours: "Fuera del horario laboral",
+    staffNotEligible: "Normalmente no asignado a esto",
+    assignStaffLoadError: "No se pudo cargar la disponibilidad.",
+    assignStaffHint: "Se muestra todo tu equipo. El personal no disponible indica el motivo.",
     yourDetails: "Tus datos",
     withNameSuffix: " · con {name}",
     fullNamePlaceholder: "Nombre completo",
@@ -6378,9 +6473,11 @@ const ja: Translations = {
     login: "ログイン",
     signup: "登録",
     profile: "マイプロフィール",
+    createYours: "ページを作成",
     viewProfile: "プロフィールを見る",
     settings: "設定",
     billing: "請求・プラン",
+    subscription: "サブスクリプション",
     logout: "ログアウト",
     switchDark: "ダークモード",
     switchLight: "ライトモード",
@@ -6663,6 +6760,11 @@ const ja: Translations = {
     create: "作成",
     spaces: "コンテンツ",
     profile: "プロフィール",
+    bookings: "予約",
+    following: "フォロー中",
+    booking: "Booking",
+    analytics: "分析",
+    shortcuts: "ショートカット",
   },
   notifications: {
     title: "通知",
@@ -7226,6 +7328,18 @@ const ja: Translations = {
     summaryLocation: "場所",
     anyAvailable: "指定なし",
     anyAvailableDesc: "希望なし — 空いている担当者を自動で割り当てます",
+    specialistPerServiceHint: "各サービスの担当者を選ぶか、お任せください。",
+    assignStaff: "担当者を割り当て",
+    errorAssignStaff: "担当者を変更できませんでした。その時間は予約が入っている可能性があります。",
+    parallelLabel: "並行して実施",
+    parallelHint: "他の予約サービスと同時に、専任の担当者が対応します（順番ではなく）。",
+    staffCurrent: "現在",
+    staffAvailableLabel: "対応可能",
+    staffBusyWith: "予約あり — {name}・{time}",
+    staffOffHours: "勤務時間外",
+    staffNotEligible: "通常この担当ではありません",
+    assignStaffLoadError: "空き状況を読み込めませんでした。",
+    assignStaffHint: "チーム全員を表示します。対応できない担当は理由を表示します。",
     yourDetails: "お客様情報",
     withNameSuffix: " · {name}担当",
     fullNamePlaceholder: "氏名",
@@ -7649,9 +7763,11 @@ const de: Translations = {
     login: "Anmelden",
     signup: "Registrieren",
     profile: "Mein Profil",
+    createYours: "Eigene Seite erstellen",
     viewProfile: "Profil ansehen",
     settings: "Einstellungen",
     billing: "Abrechnung",
+    subscription: "Abonnement",
     logout: "Abmelden",
     switchDark: "Dunkelmodus",
     switchLight: "Hellmodus",
@@ -7934,6 +8050,11 @@ const de: Translations = {
     create: "Erstellen",
     spaces: "Inhalte",
     profile: "Profil",
+    bookings: "Buchungen",
+    following: "Folge ich",
+    booking: "Booking",
+    analytics: "Analysen",
+    shortcuts: "Shortcuts",
   },
   notifications: {
     title: "Benachrichtigungen",
@@ -8497,6 +8618,18 @@ const de: Translations = {
     summaryLocation: "Ort",
     anyAvailable: "Egal wer",
     anyAvailableDesc: "Keine Präferenz — wir weisen eine freie Fachkraft zu",
+    specialistPerServiceHint: "Wählen Sie, wer welche Leistung übernimmt – oder überlassen Sie es uns.",
+    assignStaff: "Mitarbeiter zuweisen",
+    errorAssignStaff: "Zuweisung nicht möglich – die Person ist zu dieser Zeit möglicherweise belegt.",
+    parallelLabel: "Läuft parallel",
+    parallelHint: "Kann gleichzeitig mit anderen gebuchten Leistungen stattfinden, mit eigenem Personal – statt nacheinander.",
+    staffCurrent: "Aktuell",
+    staffAvailableLabel: "Verfügbar",
+    staffBusyWith: "Belegt — {name} · {time}",
+    staffOffHours: "Außerhalb der Arbeitszeit",
+    staffNotEligible: "Normalerweise nicht dafür zuständig",
+    assignStaffLoadError: "Verfügbarkeit konnte nicht geladen werden.",
+    assignStaffHint: "Das gesamte Team wird angezeigt. Nicht verfügbares Personal zeigt den Grund.",
     yourDetails: "Deine Angaben",
     withNameSuffix: " · mit {name}",
     fullNamePlaceholder: "Vollständiger Name",
@@ -8920,9 +9053,11 @@ const it: Translations = {
     login: "Accedi",
     signup: "Registrati",
     profile: "Il mio Profilo",
+    createYours: "Crea la tua pagina",
     viewProfile: "Visualizza profilo",
     settings: "Impostazioni",
     billing: "Fatturazione",
+    subscription: "Abbonamento",
     logout: "Esci",
     switchDark: "Modalità Scura",
     switchLight: "Modalità Chiara",
@@ -9205,6 +9340,11 @@ const it: Translations = {
     create: "Crea",
     spaces: "Contenuti",
     profile: "Profilo",
+    bookings: "Prenotazioni",
+    following: "Seguiti",
+    booking: "Booking",
+    analytics: "Analisi",
+    shortcuts: "Scorciatoie",
   },
   notifications: {
     title: "Notifiche",
@@ -9768,6 +9908,18 @@ const it: Translations = {
     summaryLocation: "Sede",
     anyAvailable: "Chiunque sia disponibile",
     anyAvailableDesc: "Nessuna preferenza — assegneremo uno specialista libero",
+    specialistPerServiceHint: "Scegli chi esegue ogni servizio, o lascia fare a noi.",
+    assignStaff: "Assegna staff",
+    errorAssignStaff: "Riassegnazione non riuscita — potrebbe essere occupato in quell'orario.",
+    parallelLabel: "Si svolge in parallelo",
+    parallelHint: "Può avvenire contemporaneamente ad altri servizi prenotati, con il proprio staff — invece che in sequenza.",
+    staffCurrent: "Attuale",
+    staffAvailableLabel: "Disponibile",
+    staffBusyWith: "Occupato — {name} · {time}",
+    staffOffHours: "Fuori orario di lavoro",
+    staffNotEligible: "Di solito non assegnato a questo",
+    assignStaffLoadError: "Impossibile caricare la disponibilità.",
+    assignStaffHint: "Viene mostrato tutto il team. Chi non è disponibile ne mostra il motivo.",
     yourDetails: "I tuoi dati",
     withNameSuffix: " · con {name}",
     fullNamePlaceholder: "Nome completo",

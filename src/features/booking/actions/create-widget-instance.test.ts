@@ -7,6 +7,7 @@ let entitlements: { hasWidgets: boolean };
 let catalogRow: { id: string; slug: string; active: boolean } | null;
 let existingRow: { id: string } | null;
 let insertResult: { data: { id: string } | null; error: { message: string } | null };
+let aiEnabled: boolean;
 
 function adminBuilder(table: string) {
   const b: Record<string, unknown> = {};
@@ -45,6 +46,10 @@ vi.mock("@/lib/i18n/server", () => ({
   getCurrentLocale: async () => "en",
 }));
 
+vi.mock("@/lib/featureFlags", () => ({
+  getFeatureFlags: async () => ({ ai: aiEnabled }),
+}));
+
 import { createWidgetInstance } from "./create-widget-instance";
 
 beforeEach(() => {
@@ -53,6 +58,7 @@ beforeEach(() => {
   catalogRow = { id: CATALOG_ID, slug: "calendar", active: true };
   existingRow = null;
   insertResult = { data: { id: "new_instance" }, error: null };
+  aiEnabled = false;
 });
 
 describe("createWidgetInstance", () => {
@@ -94,5 +100,19 @@ describe("createWidgetInstance", () => {
     insertResult = { data: null, error: { message: "boom" } };
     const res = await createWidgetInstance({ catalogId: CATALOG_ID });
     expect(res).toEqual({ ok: false, error: "FAILED", message: "boom" });
+  });
+
+  it("returns NOT_AVAILABLE for the agent widget while AI is off", async () => {
+    catalogRow = { id: CATALOG_ID, slug: "agent", active: true };
+    aiEnabled = false;
+    const res = await createWidgetInstance({ catalogId: CATALOG_ID });
+    expect(res).toEqual({ ok: false, error: "NOT_AVAILABLE" });
+  });
+
+  it("provisions the agent widget when AI is on", async () => {
+    catalogRow = { id: CATALOG_ID, slug: "agent", active: true };
+    aiEnabled = true;
+    const res = await createWidgetInstance({ catalogId: CATALOG_ID });
+    expect(res).toEqual({ ok: true, id: "new_instance" });
   });
 });

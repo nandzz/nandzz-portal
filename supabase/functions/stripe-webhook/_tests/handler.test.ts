@@ -19,6 +19,7 @@ interface RpcCall {
 
 interface FakeAdminOptions {
   rpcError?: unknown;
+  updateError?: unknown;
   // deno-lint-ignore no-explicit-any
   lookups?: Record<string, { data: any; error: unknown }>;
 }
@@ -27,10 +28,20 @@ function makeAdmin(opts: FakeAdminOptions = {}): {
   admin: AdminClientLike;
   rpcCalls: RpcCall[];
   lookupCalls: Array<{ table: string; filters: Array<[string, unknown]> }>;
+  updateCalls: Array<{
+    table: string;
+    values: Record<string, unknown>;
+    filters: Array<[string, unknown]>;
+  }>;
 } {
   const rpcCalls: RpcCall[] = [];
   const lookupCalls: Array<{ table: string; filters: Array<[string, unknown]> }> =
     [];
+  const updateCalls: Array<{
+    table: string;
+    values: Record<string, unknown>;
+    filters: Array<[string, unknown]>;
+  }> = [];
 
   const admin: AdminClientLike = {
     rpc: (name, args) => {
@@ -51,12 +62,18 @@ function makeAdmin(opts: FakeAdminOptions = {}): {
             opts.lookups?.[table] ?? { data: null, error: null },
           );
         },
+        update: (values: Record<string, unknown>) => ({
+          eq: (col: string, val: unknown) => {
+            updateCalls.push({ table, values, filters: [[col, val]] });
+            return Promise.resolve({ error: opts.updateError ?? null });
+          },
+        }),
       };
       return chain as ReturnType<AdminClientLike["from"]>;
     },
   };
 
-  return { admin, rpcCalls, lookupCalls };
+  return { admin, rpcCalls, lookupCalls, updateCalls };
 }
 
 // ---- Event factories --------------------------------------------------------
@@ -286,6 +303,35 @@ Deno.test("subscription.created: maps price→plan and calls set_user_plan", asy
     rpcCalls[0].args.p_period_end,
     new Date(1_700_100_000 * 1000).toISOString(),
   );
+});
+
+Deno.test("subscription trialing: burns the one-time trial (has_used_trial=true)", async () => {
+  const { admin, rpcCalls, updateCalls } = makeAdmin({
+    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+  });
+  const result = await handleStripeEvent(
+    subscriptionEvent({ status: "trialing" }),
+    admin,
+  );
+
+  assertEquals(result.status, 200);
+  assertEquals(result.body.plan_status, "trialing");
+  assertEquals(rpcCalls[0].name, "set_user_plan");
+  // The profile is flagged so a later resubscribe can't trial again.
+  assertEquals(updateCalls.length, 1);
+  assertEquals(updateCalls[0].table, "profiles");
+  assertObjectMatch(updateCalls[0].values, { has_used_trial: true });
+  assertEquals(updateCalls[0].filters, [["id", "user-1"]]);
+});
+
+Deno.test("subscription active: does NOT touch has_used_trial", async () => {
+  const { admin, updateCalls } = makeAdmin({
+    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+  });
+  const result = await handleStripeEvent(subscriptionEvent({ status: "active" }), admin);
+
+  assertEquals(result.status, 200);
+  assertEquals(updateCalls.length, 0);
 });
 
 Deno.test("subscription.deleted: downgrades to free without a price lookup", async () => {

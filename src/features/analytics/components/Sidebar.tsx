@@ -10,7 +10,7 @@ import {
   PanelLeftOpen,
   Rss,
   LayoutGrid,
-  Blocks,
+  CalendarDays,
   CreditCard,
   Palette,
   Settings,
@@ -56,7 +56,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
-  const { userId, profile, entitlements } = useAuth();
+  const { userId, profile, entitlements, flags } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -150,14 +150,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     // Business — only for business accounts. Personal accounts see the
     // "Switch to Business Account" CTA instead (rendered below the group).
     const business: NavItem[] = [];
-    // Widgets is shown to every business account regardless of plan. Accounts
-    // without the entitlement still see the entry; the page itself renders the
-    // catalog in a locked state and opens the subscription modal on tap.
+    // Booking (the calendar/booking setup, served from /dashboard/widgets) is
+    // shown to every business account regardless of plan. Accounts without the
+    // entitlement still see the entry; the page itself renders the catalog in a
+    // locked state and opens the subscription modal on tap.
     if (isBusiness && FEATURES.widgets) {
       business.push({
         href: "/dashboard/widgets",
-        label: "Widgets",
-        icon: Blocks,
+        label: "Booking",
+        icon: CalendarDays,
         isActive: (p) => p.startsWith("/dashboard/widgets"),
       });
     }
@@ -269,7 +270,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </div>
               {userId && (
                 <div className="flex items-center gap-0.5 shrink-0">
-                  <AiJobsIndicator userId={userId} />
+                  {flags.ai && <AiJobsIndicator userId={userId} />}
                   <NotificationBell userId={userId} />
                 </div>
               )}

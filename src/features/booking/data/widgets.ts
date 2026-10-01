@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
+import { getFeatureFlags } from "@/lib/featureFlags";
 import type {
   WidgetCatalogEntry,
   WidgetInstance,
@@ -108,13 +109,18 @@ export async function ownerHasWidgetAccess(ownerId: string): Promise<boolean> {
   return entitlements.hasWidgets;
 }
 
-// Active widget types available to add.
+// Active widget types available to add. The `agent` widget is an AI surface, so
+// it's filtered out of the catalog while the AI feature flag is off.
 export async function getWidgetCatalog(): Promise<WidgetCatalogEntry[]> {
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("widget_catalog")
-    .select("*")
-    .eq("active", true)
-    .order("sort_order", { ascending: true });
-  return (data ?? []) as WidgetCatalogEntry[];
+  const [{ data }, { ai }] = await Promise.all([
+    admin
+      .from("widget_catalog")
+      .select("*")
+      .eq("active", true)
+      .order("sort_order", { ascending: true }),
+    getFeatureFlags(),
+  ]);
+  const catalog = (data ?? []) as WidgetCatalogEntry[];
+  return ai ? catalog : catalog.filter((c) => c.slug !== "agent");
 }

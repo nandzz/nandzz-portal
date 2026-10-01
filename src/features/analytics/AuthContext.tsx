@@ -11,6 +11,7 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, PlanEntitlements } from "@/lib/types";
+import { DEFAULT_FLAGS, type FeatureFlags } from "@/lib/flags";
 
 // Free-plan entitlements — the safe default while loading and the fallback when
 // the catalog is unseeded. Mirrors FREE_FALLBACK in lib/plan.ts.
@@ -26,6 +27,8 @@ type AuthContextValue = {
   userId: string | null;
   profile: Profile | null;
   entitlements: PlanEntitlements;
+  /** Runtime, admin-controlled flags (e.g. the AI master switch). */
+  flags: FeatureFlags;
   /** Re-reads the signed-in user's profile row + plan entitlements. */
   refetchProfile: () => Promise<void>;
 };
@@ -35,6 +38,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 interface AuthProviderProps {
   initialUserId: string | null;
   initialProfile: Profile | null;
+  /** Resolved server-side from `app_settings` and seeded so the chrome renders
+      the right surfaces on first paint (no flash, no client round-trip). */
+  initialFlags?: FeatureFlags;
   children: React.ReactNode;
 }
 
@@ -49,11 +55,14 @@ interface AuthProviderProps {
 // Lives OUTSIDE `components/` (like `auth.ts` / `realtime.ts`) so it can touch
 // `@/lib/supabase/*` directly without tripping the `no-restricted-imports`
 // guardrail that applies to `src/features/*/components/**`.
-export function AuthProvider({ initialUserId, initialProfile, children }: AuthProviderProps) {
+export function AuthProvider({ initialUserId, initialProfile, initialFlags, children }: AuthProviderProps) {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(initialUserId);
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [entitlements, setEntitlements] = useState<PlanEntitlements>(FREE_ENTITLEMENTS);
+  // Flags are server-resolved and stable for the page's lifetime, so they're
+  // held as-is (no refetch); default OFF until the server seeds them.
+  const flags = initialFlags ?? DEFAULT_FLAGS;
 
   // The user id the currently-held `profile` was fetched (or SSR-seeded) for.
   // Lets the first INITIAL_SESSION event below skip re-fetching the profile
@@ -175,8 +184,8 @@ export function AuthProvider({ initialUserId, initialProfile, children }: AuthPr
   }, [userId, loadForUser]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ userId, profile, entitlements, refetchProfile }),
-    [userId, profile, entitlements, refetchProfile]
+    () => ({ userId, profile, entitlements, flags, refetchProfile }),
+    [userId, profile, entitlements, flags, refetchProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -188,4 +197,9 @@ export function useAuth(): AuthContextValue {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return ctx;
+}
+
+/** Convenience accessor for the runtime feature flags. */
+export function useFeatureFlags(): FeatureFlags {
+  return useAuth().flags;
 }

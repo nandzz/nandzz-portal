@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Home, Plus, LayoutGrid, User, LogIn, Rss } from "lucide-react";
+import { Home, LayoutGrid, LogIn, Rss, Calendar, CalendarDays, User } from "lucide-react";
+import { FEATURES } from "@/lib/flags";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { useAuth } from "../AuthContext";
@@ -13,7 +14,6 @@ type TabDef = {
   labelKey: string;
   icon: React.ElementType;
   isActive: (pathname: string) => boolean;
-  highlight?: boolean;
 };
 
 const UNAUTH_TAB_DEFS: TabDef[] = [
@@ -21,16 +21,76 @@ const UNAUTH_TAB_DEFS: TabDef[] = [
   { href: "/login", labelKey: "signIn", icon: LogIn, isActive: (p) => p.startsWith("/login") },
 ];
 
-function getAuthTabDefs(username: string | null, isBusiness: boolean): TabDef[] {
+// Content tab: active on any /dashboard/contents route (including the create
+// flow, which is reached from the Content page's own button, not a tab).
+const spacesTab: TabDef = {
+  href: "/dashboard/contents",
+  labelKey: "spaces",
+  icon: LayoutGrid,
+  isActive: (p) => p.startsWith("/dashboard/contents"),
+};
+
+// A business's bookings live inside the calendar widget, so /dashboard/bookings
+// server-redirects them to this sub-route. The tab bar must still read that as
+// "Bookings" (not "Widgets"), hence the shared matcher below.
+const WIDGET_BOOKINGS = /^\/dashboard\/widgets\/[^/]+\/bookings/;
+
+// Bookings is a first-class destination for both personas — the whole product is
+// "get found & booked", so appointments belong in the thumb zone, not nested in a
+// drop-up. For a business these are received appointments; for a client, their own.
+const bookingsTab: TabDef = {
+  href: "/dashboard/bookings",
+  labelKey: "bookings",
+  icon: Calendar,
+  isActive: (p) => p.startsWith("/dashboard/bookings") || WIDGET_BOOKINGS.test(p),
+};
+
+// Persona-tuned bottom bar — a few frequent destinations only. Followers/Following
+// live on the profile (tappable counts), so they're not tabs; Analytics/Brand live
+// in the account menu. A business runs the operation; a client consumes and manages
+// their own page.
+function getAuthTabDefs(isBusiness: boolean, profileHref: string): TabDef[] {
+  if (isBusiness) {
+    const tabs: TabDef[] = [
+      { href: "/", labelKey: "home", icon: Home, isActive: (p) => p === "/" },
+    ];
+    if (FEATURES.widgets) {
+      // The booking/calendar setup lives under /dashboard/widgets; surfaced as
+      // its own feature "Booking" (not "Widgets"). The received-appointments
+      // route (/dashboard/widgets/<id>/bookings) belongs to the Bookings tab, so
+      // it's excluded here via WIDGET_BOOKINGS.
+      tabs.push({ href: "/dashboard/widgets", labelKey: "booking", icon: CalendarDays, isActive: (p) => p.startsWith("/dashboard/widgets") && !WIDGET_BOOKINGS.test(p) });
+    }
+    tabs.push(spacesTab, bookingsTab);
+    return tabs;
+  }
+
   return [
-    // Feed is personal-only; a business leads with Home instead.
-    isBusiness
-      ? { href: "/", labelKey: "home", icon: Home, isActive: (p) => p === "/" }
-      : { href: "/dashboard/feed", labelKey: "feed", icon: Rss, isActive: (p) => p.startsWith("/dashboard/feed") },
-    { href: "/dashboard/contents/create-space", labelKey: "create", icon: Plus, isActive: (p) => p.startsWith("/dashboard/contents/create-space"), highlight: true },
-    { href: "/dashboard/contents", labelKey: "spaces", icon: LayoutGrid, isActive: (p) => p === "/dashboard/contents" || (p.startsWith("/dashboard/contents") && !p.startsWith("/dashboard/contents/create-space")) },
-    { href: username ? `/${username}` : "/dashboard/settings", labelKey: "profile", icon: User, isActive: (p) => username ? p === `/${username}` : false },
+    { href: "/dashboard/feed", labelKey: "feed", icon: Rss, isActive: (p) => p.startsWith("/dashboard/feed") },
+    spacesTab,
+    bookingsTab,
+    { href: profileHref, labelKey: "profile", icon: User, isActive: (p) => p === profileHref },
   ];
+}
+
+// Shared tab visual.
+function tabInner(Icon: React.ElementType, label: string, active: boolean) {
+  return (
+    <>
+      <Icon
+        className={cn("h-5 w-5 shrink-0 transition-colors", active ? "text-violet-600" : "text-muted-foreground")}
+        strokeWidth={active ? 2.5 : 1.75}
+      />
+      <span
+        className={cn(
+          "text-[10px] font-medium transition-colors w-full text-center truncate px-0.5",
+          active ? "text-violet-600" : "text-muted-foreground"
+        )}
+      >
+        {label}
+      </span>
+    </>
+  );
 }
 
 export function MobileTabBar() {
@@ -39,9 +99,13 @@ export function MobileTabBar() {
   const { isHidden } = useChrome();
   const { userId, profile } = useAuth();
 
-  const tabDefs = userId
-    ? getAuthTabDefs(profile?.username ?? null, profile?.account_type === "business")
-    : UNAUTH_TAB_DEFS;
+  const isBusiness = profile?.account_type === "business";
+  // Mirror the top-bar avatar's target: public profile once a username exists,
+  // settings during onboarding.
+  const profileHref = profile?.username ? `/${profile.username}` : "/dashboard/settings";
+  const tabDefs = userId ? getAuthTabDefs(isBusiness, profileHref) : UNAUTH_TAB_DEFS;
+
+  const tabClass = "flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2";
 
   return (
     <nav
@@ -56,45 +120,11 @@ export function MobileTabBar() {
       <div className="flex h-16 items-center justify-around px-1">
         {tabDefs.map((tab) => {
           const active = tab.isActive(pathname);
-          const Icon = tab.icon;
           const label = t.mobileTab[tab.labelKey as keyof typeof t.mobileTab];
 
-          if (tab.highlight) {
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                aria-label={label}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30 transition-transform active:scale-95">
-                  <Icon className="h-5 w-5" />
-                </span>
-              </Link>
-            );
-          }
-
           return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2"
-            >
-              <Icon
-                className={cn(
-                  "h-5 w-5 shrink-0 transition-colors",
-                  active ? "text-violet-600" : "text-muted-foreground"
-                )}
-                strokeWidth={active ? 2.5 : 1.75}
-              />
-              <span
-                className={cn(
-                  "text-[10px] font-medium transition-colors w-full text-center truncate px-0.5",
-                  active ? "text-violet-600" : "text-muted-foreground"
-                )}
-              >
-                {label}
-              </span>
+            <Link key={tab.href} href={tab.href} className={cn(tabClass, "transition-transform active:scale-95")}>
+              {tabInner(tab.icon, label, active)}
             </Link>
           );
         })}

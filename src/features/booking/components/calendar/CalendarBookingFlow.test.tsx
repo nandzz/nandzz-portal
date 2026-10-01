@@ -74,7 +74,11 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const [calledUrl] = fetchMock.mock.calls[0];
-    expect(String(calledUrl)).toBe("/api/widgets/inst_1/availability?service_ids=svc_1&days=60");
+    // The per-service staff map rides along as `staff=svcId:staffId` pairs; an
+    // unstaffed service sends an empty choice (`svc_1:`).
+    expect(String(calledUrl)).toBe(
+      "/api/widgets/inst_1/availability?service_ids=svc_1&days=60&staff=svc_1%3A"
+    );
   });
 
   it("skips the specialist step and goes straight to details for a single-resource (unstaffed) slot", async () => {
@@ -112,10 +116,12 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     expect(screen.getByText("Any available")).toBeInTheDocument();
     expect(screen.getByText("Alex")).toBeInTheDocument();
     expect(screen.getByText("Bella")).toBeInTheDocument();
-    // No time slots yet — availability is only loaded after the staff pick.
+    // No time slots yet — availability is only loaded after the staff step.
     expect(screen.queryByRole("button", { name: /9:00/ })).not.toBeInTheDocument();
 
+    // Pick a specialist for the service, then continue to day/time.
     await user.click(screen.getByText("Alex"));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     const slotButton = await screen.findByRole("button", { name: /9:00/ });
     await user.click(slotButton);
 
@@ -125,7 +131,7 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     expect(screen.getByText("Alex")).toBeInTheDocument();
   });
 
-  it("scopes the availability request to the chosen specialist (staff_id)", async () => {
+  it("scopes the availability request to the chosen specialist (per-service staff map)", async () => {
     const fetchMock = setupFetch({ slots: [slotWithStaff] });
     const user = userEvent.setup();
     render(
@@ -141,10 +147,12 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     await user.click(screen.getByText("Haircut"));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByText("Alex"));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const availCall = fetchMock.mock.calls.find(([url]) => String(url).includes("/availability"))!;
-    expect(String(availCall[0])).toContain("staff_id=st_a");
+    // svc_1 pinned to st_a: `staff=svc_1:st_a` (colon percent-encoded).
+    expect(String(availCall[0])).toContain("staff=svc_1%3Ast_a");
   });
 
   it("skips the specialist step when only one staff is eligible for the service", async () => {
@@ -170,7 +178,7 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     await screen.findByRole("button", { name: /9:00/ });
   });
 
-  it("submits 'any available' (staff_id: \"\") when that option is chosen", async () => {
+  it("submits 'any available' (empty per-service choice) when that option is chosen", async () => {
     const fetchMock = setupFetch({ slots: [slotWithStaff] });
     const user = userEvent.setup();
     render(
@@ -185,7 +193,9 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
 
     await user.click(screen.getByText("Haircut"));
     await user.click(screen.getByRole("button", { name: "Continue" }));
+    // "Any available" is the default; pick it explicitly, then continue.
     await user.click(screen.getByText("Any available"));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     const slotButton = await screen.findByRole("button", { name: /9:00/ });
     await user.click(slotButton);
     await fillDetailsAndSubmit(user);
@@ -193,7 +203,7 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/book"), expect.anything()));
     const bookCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/book"))!;
     const body = JSON.parse((bookCall[1] as RequestInit).body as string);
-    expect(body.staff_id).toBe("");
+    expect(body.staff_by_service).toEqual({ svc_1: "" });
   });
 
   it("validates required fields before submitting", async () => {
@@ -299,6 +309,7 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     await user.click(screen.getByText("Haircut"));
     await user.click(screen.getByRole("button", { name: "Continue" }));
     await user.click(screen.getByText("Alex"));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findByRole("button", { name: /9:00/ });
 
     // slot → staff

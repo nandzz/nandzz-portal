@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 // Thin proxy → Supabase Edge Function (agent-chat).
 // Business logic lives in supabase/functions/agent-chat/index.ts:
@@ -71,6 +72,14 @@ async function resolveAgentInstanceId(
 }
 
 export async function POST(req: NextRequest) {
+  // AI master switch — the agent is fully hidden while off.
+  if (!(await getFeatureFlags()).ai) {
+    return new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const { messages, username, preview } = await req.json();
 
   if (

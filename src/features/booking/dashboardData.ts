@@ -23,14 +23,14 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // The exact BookingRowData column set — nothing wider crosses the wire.
 const ROW_COLUMNS =
-  "id, instance_id, service_id, customer_name, customer_email, service_name, starts_at, ends_at, price_cents, status, customer_phone, customer_address, staff_id, staff_name, location_id, manage_token";
+  "id, instance_id, service_id, customer_name, customer_email, service_name, starts_at, ends_at, price_cents, status, customer_phone, customer_address, staff_id, staff_name, services, location_id, manage_token";
 
 type RowRecord = Pick<
   WidgetBooking,
   | "id" | "instance_id" | "service_id" | "customer_name" | "customer_email"
   | "service_name" | "starts_at" | "ends_at" | "price_cents" | "status"
   | "customer_phone" | "customer_address" | "staff_id" | "staff_name"
-  | "location_id" | "manage_token"
+  | "services" | "location_id" | "manage_token"
 >;
 
 function toRow(r: RowRecord): BookingRowData {
@@ -49,6 +49,7 @@ function toRow(r: RowRecord): BookingRowData {
     customer_address: r.customer_address,
     staff_id: r.staff_id,
     staff_name: r.staff_name,
+    services: r.services ?? null,
     location_id: r.location_id,
     manage_token: r.manage_token,
   };

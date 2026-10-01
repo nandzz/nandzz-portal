@@ -95,7 +95,8 @@ describe("ManageBooking", () => {
   it("opens the reschedule picker, commits a new slot, and returns to view mode with the updated time", async () => {
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("/availability")) return jsonResponse({ slots: [slot], service: { id: "svc_1" }, staff: [] });
+      if (url.includes("/reschedule-context")) return jsonResponse({ services: [], needs_staff_step: false });
+      if (url.includes("/slots")) return jsonResponse({ timezone: "UTC", slots: [slot] });
       if (init?.method === "PATCH")
         return jsonResponse({ ok: true, starts_at: slot.start, ends_at: slot.end, staff_id: null, staff_name: null });
       throw new Error(`unexpected fetch ${url}`);
@@ -115,7 +116,7 @@ describe("ManageBooking", () => {
         "/api/widgets/bookings/tok_1",
         expect.objectContaining({
           method: "PATCH",
-          body: JSON.stringify({ starts_at: slot.start, staff_id: null }),
+          body: JSON.stringify({ starts_at: slot.start, staff_by_service: {} }),
         })
       )
     );
@@ -125,7 +126,8 @@ describe("ManageBooking", () => {
   it("shows a reschedule error and stays in the picker on failure", async () => {
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("/availability")) return jsonResponse({ slots: [slot], service: { id: "svc_1" }, staff: [] });
+      if (url.includes("/reschedule-context")) return jsonResponse({ services: [], needs_staff_step: false });
+      if (url.includes("/slots")) return jsonResponse({ timezone: "UTC", slots: [slot] });
       if (init?.method === "PATCH") return jsonResponse({ error: "That slot was just taken." }, false);
       throw new Error(`unexpected fetch ${url}`);
     });

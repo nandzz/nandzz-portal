@@ -56,6 +56,11 @@ export function CommentsPanel({
   const [mounted, setMounted] = useState(false);
   // Flip visible on the next paint so CSS transitions play on entry and exit.
   const [visible, setVisible] = useState(false);
+  // The desktop panel is portaled to <body>, so it can't inherit the space
+  // viewer's layout. It must start flush with the bottom of the in-page top bar
+  // (`.space-viewer-topbar`), whose height varies with its content — measure it
+  // rather than hardcode, otherwise the content behind shows through the gap.
+  const [topOffset, setTopOffset] = useState<number | null>(null);
 
   useEffect(() => {
     // Mount/unmount-with-transition pattern: sync mount + visibility to `open`
@@ -75,6 +80,21 @@ export function CommentsPanel({
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [open]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    const bar = document.querySelector<HTMLElement>(".space-viewer-topbar");
+    if (!bar) return;
+    const measure = () => setTopOffset(bar.getBoundingClientRect().bottom);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(bar);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [mounted]);
 
   useEffect(() => {
     if (!open) return;
@@ -101,9 +121,10 @@ export function CommentsPanel({
       {/* ── Desktop: right slide-in panel ── */}
       <div
         className={cn(
-          "fixed top-16 right-0 bottom-0 w-[380px] z-50 hidden md:flex flex-col bg-background border-l shadow-2xl transition-transform duration-300 ease-in-out",
+          "fixed right-0 bottom-0 w-[380px] z-50 hidden md:flex flex-col bg-background border-l shadow-2xl transition-transform duration-300 ease-in-out",
           visible ? "translate-x-0" : "translate-x-full"
         )}
+        style={{ top: topOffset ?? 64 }}
       >
         <PanelHeader title={t.comment.panelTitle} onClose={onClose} />
         <CommentsList key="desktop" {...listProps} />

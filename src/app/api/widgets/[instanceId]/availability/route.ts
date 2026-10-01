@@ -2,34 +2,52 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
 import {
-  combineServices,
-  computeAvailableSlots,
+  computeSegmentedSlots,
   normalizeCalendarConfig,
   todayInZone,
+  type ServiceChoice,
 } from "@/lib/widgets/calendar";
 
-// Public: open slots for a service on a calendar widget over a date window.
-// No auth — visitors (and the AI chat) need to see availability. Reads with the
-// service-role client; entitlement is enforced here so an unpaid widget shows
-// nothing bookable.
+// Public: open whole-booking slots for a per-service-staffed selection over a
+// date window. No auth — visitors (and the AI chat) need to see availability.
+// Reads with the service-role client; entitlement is enforced here so an unpaid
+// widget shows nothing bookable.
+//
+// Query params:
+//   service_ids  — comma-separated, ORDER-preserving (drives sequential layout).
+//                  `service_id` (single) stays supported for the legacy/AI path.
+//   staff        — per-service staff choices as `svcId:staffId` pairs joined by
+//                  commas; an empty staffId (`svcId:`) or an omitted service ⇒
+//                  "any available" (auto-assigned). e.g. `s1:st_a,s2:`.
+//   location_id  — the location subtree, when the instance uses locations.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
 ) {
   const { instanceId } = await params;
   const url = new URL(req.url);
-  // Multi-service: `service_ids` (comma-separated) sums the selected services'
-  // durations so the reserved slot spans the whole booking. `service_id` (single)
-  // stays supported for the legacy/AI path.
   const serviceIdsParam = url.searchParams.get("service_ids");
   const serviceId = url.searchParams.get("service_id");
   const requestedServiceIds = (serviceIdsParam ?? serviceId ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const staffId = url.searchParams.get("staff_id");
   const locationId = url.searchParams.get("location_id");
   const days = Math.min(60, Math.max(1, Number(url.searchParams.get("days") ?? 14)));
+
+  // Parse the per-service staff choices.
+  const staffByService = new Map<string, string>();
+  for (const pair of (url.searchParams.get("staff") ?? "").split(",")) {
+    if (!pair) continue;
+    const idx = pair.indexOf(":");
+    if (idx < 0) continue;
+    const svc = pair.slice(0, idx).trim();
+    const st = pair.slice(idx + 1).trim();
+    if (svc) staffByService.set(svc, st);
+  }
+  // Legacy single-staff choice (manual booking modal): apply it to every service
+  // when no per-service map is given.
+  const legacyStaffId = (url.searchParams.get("staff_id") ?? "").trim();
 
   if (requestedServiceIds.length === 0) {
     return NextResponse.json({ error: "service_id is required" }, { status: 400 });
@@ -53,72 +71,56 @@ export async function GET(
 
   const config = normalizeCalendarConfig(instance.config);
 
-  // Resolve the location subtree when requested; falls back to the top-level
-  // config when `location_id` is absent (legacy single-location mode) or
-  // unknown. Everything below reads services/staff/tz from this scope.
   const location = locationId ? config.locations.find((l) => l.id === locationId) : undefined;
   if (locationId && !location) {
     return NextResponse.json({ error: "Unknown location" }, { status: 400 });
   }
   const services = location ? location.services : config.services;
-  const staffSource = location ? location.staff : config.staff;
 
-  // Resolve every requested service (order preserved), then fold them into one
-  // combined service whose duration is the sum and whose eligible-staff set is
-  // the intersection — the availability engine then treats the whole booking as
-  // a single unit reserving the summed span.
+  // Resolve every requested service (order preserved) and pair it with its
+  // per-service staff choice.
   const selected = requestedServiceIds.map((id) => services.find((s) => s.id === id));
   if (selected.some((s) => !s)) {
     return NextResponse.json({ error: "Unknown service" }, { status: 400 });
   }
-  const service = combineServices(selected as NonNullable<(typeof selected)[number]>[], staffSource);
-  if (!service) {
-    return NextResponse.json({ error: "Unknown service" }, { status: 400 });
-  }
+  const choices: ServiceChoice[] = (selected as NonNullable<(typeof selected)[number]>[]).map((s) => ({
+    service: s,
+    staffId: staffByService.get(s.id) || legacyStaffId || undefined,
+  }));
 
   const timezone = location?.timezone ?? config.timezone;
   const fromDate = url.searchParams.get("from") ?? todayInZone(timezone);
 
-  // Existing confirmed bookings that could clash within the window. Scoped to
-  // the same location bucket the DB exclusion constraint uses
-  // (coalesce(staff_id, 'loc:' || coalesce(location_id, ''))): staffed clashes
-  // are already disambiguated by staff_id (a staff member belongs to exactly
-  // one location), but an unstaffed location is its own independent resource,
-  // so its bookings must not be treated as busy for a different location (or
-  // for the legacy top-level resource, and vice versa).
+  // Existing confirmed SEGMENTS that could clash within the window — the source
+  // of overlap truth (see 20260901120000). Scoped to the same location bucket as
+  // the booking (staffed clashes are disambiguated by staff_id; an unstaffed
+  // location is its own resource).
   const windowStart = new Date(`${fromDate}T00:00:00Z`).toISOString();
   const windowEnd = new Date(
     new Date(`${fromDate}T00:00:00Z`).getTime() + (days + 2) * 86_400_000
   ).toISOString();
-  let bookingsQuery = admin
-    .from("widget_bookings")
-    .select("starts_at, ends_at, staff_id")
+  let busyQuery = admin
+    .from("widget_booking_segments")
+    .select("staff_id, starts_at, ends_at")
     .eq("instance_id", instanceId)
     .eq("status", "confirmed")
     .gte("starts_at", windowStart)
     .lte("starts_at", windowEnd);
-  bookingsQuery = location ? bookingsQuery.eq("location_id", location.id) : bookingsQuery.is("location_id", null);
-  const { data: bookings } = await bookingsQuery;
+  busyQuery = location ? busyQuery.eq("location_id", location.id) : busyQuery.is("location_id", null);
+  const { data: busy } = await busyQuery;
 
-  const slots = computeAvailableSlots({
+  const slots = computeSegmentedSlots({
     config,
-    service,
+    choices,
     fromDate,
     days,
-    existingBookings: bookings ?? [],
+    existingBusy: busy ?? [],
     minLeadMinutes: 60,
-    staffId: staffId || null,
     location,
   });
 
   return NextResponse.json({
     timezone,
-    service: {
-      id: service.id,
-      name: service.name,
-      duration_min: service.duration_min,
-      staff_ids: service.staff_ids,
-    },
     staff: location ? location.staff : config.staff,
     slots,
   });

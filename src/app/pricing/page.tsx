@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { PricingClient } from "./PricingClient";
-import { pricingFaqs } from "./faqs";
+import { pricingFaqsFor } from "./faqs";
 import type { CreditPack, SubscriptionPlan } from "@/lib/types";
 import { getServerTranslations } from "@/lib/i18n/server";
-
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: pricingFaqs.map((item) => ({
-    "@type": "Question",
-    name: item.q,
-    acceptedAnswer: { "@type": "Answer", text: item.a },
-  })),
-};
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerTranslations();
@@ -37,7 +28,7 @@ export const revalidate = 300;
 
 export default async function PricingPage() {
   const supabase = await createClient();
-  const [{ data: plans }, { data: packs }] = await Promise.all([
+  const [{ data: plans }, { data: packs }, { ai: aiEnabled }] = await Promise.all([
     supabase
       .from("subscription_plans")
       .select("*")
@@ -48,7 +39,19 @@ export default async function PricingPage() {
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true }),
+    getFeatureFlags(),
   ]);
+
+  const faqs = pricingFaqsFor(aiEnabled);
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
 
   return (
     <>
@@ -58,7 +61,9 @@ export default async function PricingPage() {
       />
       <PricingClient
         plans={(plans ?? []) as SubscriptionPlan[]}
-        packs={(packs ?? []) as CreditPack[]}
+        packs={aiEnabled ? ((packs ?? []) as CreditPack[]) : []}
+        faqs={faqs}
+        aiEnabled={aiEnabled}
       />
     </>
   );

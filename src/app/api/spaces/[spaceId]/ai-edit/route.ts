@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 const MAX_INSTRUCTION_CHARS = 500;
 const MAX_ATTACHMENTS = 3;
@@ -57,6 +58,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ spaceId: string }> }
 ) {
+  // AI master switch — the AI page editor is hidden while off.
+  if (!(await getFeatureFlags()).ai) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const { spaceId } = await params;
   const body = await req.json().catch(() => ({}));
   const { instruction, htmlUrl, attachments: rawAttachments } = body;

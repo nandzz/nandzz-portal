@@ -1,10 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { AgentStudio } from "@/features/agent";
-import { FEATURES } from "@/lib/flags";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 export default async function DashboardAgentPage() {
-  if (!FEATURES.agent) notFound();
+  if (!(await getFeatureFlags()).ai) notFound();
 
   const supabase = await createClient();
   const userId = await getUserIdFromClaims(supabase);

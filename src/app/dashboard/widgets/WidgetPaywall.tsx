@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { renderWidgetIcon } from "@/features/booking";
 import { PlanCheckoutButton } from "../credits/PlanCheckoutButton";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFeatureFlags } from "@/features/analytics/AuthContext";
 import type { SubscriptionPlan, WidgetCatalogEntry } from "@/lib/types";
 
 function formatPrice(cents: number, currency: string): string {
@@ -49,6 +50,7 @@ export function WidgetPaywall({
   widgetPlans: SubscriptionPlan[];
 }) {
   const { t } = useLanguage();
+  const { ai: aiEnabled } = useFeatureFlags();
   const [open, setOpen] = useState(false);
 
   const planNames = widgetPlans.map((p) => p.name).join(", ");
@@ -127,9 +129,11 @@ export function WidgetPaywall({
                 <ul className="mt-4 mb-5 space-y-2 text-sm">
                   <PlanFeature ok>{plan.space_limit === null ? "Unlimited spaces" : `${plan.space_limit} spaces`}</PlanFeature>
                   <PlanFeature ok={plan.has_widgets}>Widgets</PlanFeature>
-                  <PlanFeature ok={plan.monthly_credits > 0}>
-                    {plan.monthly_credits > 0 ? `${plan.monthly_credits.toLocaleString()} AI credits/mo` : "No AI credits"}
-                  </PlanFeature>
+                  {aiEnabled && (
+                    <PlanFeature ok={plan.monthly_credits > 0}>
+                      {plan.monthly_credits > 0 ? `${plan.monthly_credits.toLocaleString()} AI credits/mo` : "No AI credits"}
+                    </PlanFeature>
+                  )}
                   <PlanFeature ok={plan.has_mcp}>MCP access</PlanFeature>
                   <PlanFeature ok={plan.has_analytics}>Analytics</PlanFeature>
                 </ul>

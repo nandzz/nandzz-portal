@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, MessageCircle, Mail, Users } from "lucide-react";
+import { Search, MessageCircle, Mail, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { whatsappLink } from "@/lib/widgets/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Translations } from "@/lib/i18n/translations";
+
+const PAGE_SIZE = 12;
 
 export type CustomerSummary = {
   // Stable rollup key: the lowercased email, or `phone:<phone>` for a phone-in
@@ -30,6 +32,7 @@ export type WidgetCustomersData = {
 export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
   const { t, locale } = useLanguage();
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
 
   const money = (cents: number) =>
     `${data.currencySymbol}${(cents / 100).toLocaleString(undefined, {
@@ -59,6 +62,14 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
     );
   }, [data.customers, query]);
 
+  // Client-side pagination over the already-rolled-up customer rows (the RPC
+  // returns one row per customer, so the full set is bounded by headcount).
+  // Search filters the whole set first, then we page the result.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const start = safePage * PAGE_SIZE;
+  const shown = filtered.slice(start, start + PAGE_SIZE);
+
   if (data.customers.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-background px-5 py-12 text-center">
@@ -76,7 +87,10 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(0);
+            }}
             placeholder={t.booking.searchCustomersPlaceholder}
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-400"
           />
@@ -89,7 +103,7 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
 
       <div className="overflow-hidden rounded-2xl border border-border bg-background">
         <div className="divide-y divide-border">
-          {filtered.map((c) => (
+          {shown.map((c) => (
             <CustomerRow
               key={c.id}
               c={c}
@@ -105,6 +119,36 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
           )}
         </div>
       </div>
+
+      {filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground tabular-nums">
+            {t.booking.rangeOfTotal
+              .replace("{start}", String(start + 1))
+              .replace("{end}", String(start + shown.length))
+              .replace("{total}", String(filtered.length))}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(0, safePage - 1))}
+              disabled={safePage === 0}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium disabled:opacity-40 enabled:hover:bg-muted"
+            >
+              <ChevronLeft className="h-4 w-4" /> {t.booking.prev}
+            </button>
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground tabular-nums">
+              {safePage + 1} / {pageCount}
+            </span>
+            <button
+              onClick={() => setPage(Math.min(pageCount - 1, safePage + 1))}
+              disabled={safePage >= pageCount - 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium disabled:opacity-40 enabled:hover:bg-muted"
+            >
+              {t.booking.next} <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

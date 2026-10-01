@@ -10,9 +10,9 @@ const mockBookingsResult = vi.fn();
 const mockGetEntitlements = vi.fn();
 let bookingsFilterCalls: { method: string; args: unknown[] }[] = [];
 
-// Chainable stand-in for the `widget_bookings` select builder: every filter
-// method returns itself (recording its call for assertions), and awaiting it
-// resolves to whatever the current test configured via mockBookingsResult.
+// Chainable stand-in for the busy-segments select builder: every filter method
+// returns itself (recording its call for assertions), and awaiting it resolves
+// to whatever the current test configured via mockBookingsResult.
 function bookingsBuilder(): unknown {
   const builder: Record<string, unknown> = {};
   const chain =
@@ -31,7 +31,8 @@ const mockFrom = vi.fn((table: string) => {
   if (table === "widget_instances") {
     return { select: () => ({ eq: () => ({ maybeSingle: mockInstanceMaybeSingle }) }) };
   }
-  if (table === "widget_bookings") {
+  // Busy ranges are now read from widget_booking_segments (the overlap source).
+  if (table === "widget_booking_segments") {
     return bookingsBuilder();
   }
   throw new Error(`unexpected table ${table}`);
@@ -122,13 +123,13 @@ describe("GET /api/widgets/[instanceId]/availability", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns slots computed from the config and reports the resolved service/staff/timezone", async () => {
+  it("returns slots computed from the config and reports the resolved staff/timezone", async () => {
     const res = await GET(makeReq({ service_id: "svc_1", days: "3" }), params());
     const body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.timezone).toBe("UTC");
-    expect(body.service).toEqual({ id: "svc_1", name: "Haircut", duration_min: 30, staff_ids: undefined });
+    expect(body.staff).toEqual([]); // no staff configured in this fixture
     expect(Array.isArray(body.slots)).toBe(true);
   });
 
@@ -153,10 +154,9 @@ describe("GET /api/widgets/[instanceId]/availability", () => {
 
   it("scopes the existing-bookings query to the legacy (no-location) bucket by default", async () => {
     await GET(makeReq({ service_id: "svc_1" }), params());
-    // widget_bookings builder was constructed; `.is("location_id", null)` is part of
-    // the chain contract for the no-location case (asserted indirectly: no throw,
-    // and the from() call for widget_bookings happened).
-    expect(mockFrom).toHaveBeenCalledWith("widget_bookings");
+    // The busy read is scoped with `.is("location_id", null)` for the no-location
+    // case (asserted indirectly: no throw, and the segments from() call happened).
+    expect(mockFrom).toHaveBeenCalledWith("widget_booking_segments");
   });
 
   it("resolves a named location's own timezone/services/staff", async () => {

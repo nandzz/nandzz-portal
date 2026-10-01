@@ -32,12 +32,16 @@ export function LinkChip({ space, priority = false }: LinkChipProps) {
     <Link
       href={href}
       {...externalProps}
-      className="group @container block h-full w-full overflow-hidden rounded-xl border border-foreground/10 bg-card transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-violet-500/40 hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-white/10"
+      className="group @container relative block aspect-video h-full w-full overflow-hidden rounded-xl border border-foreground/10 bg-muted transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-violet-500/40 hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-white/10"
     >
-      <div className="relative aspect-video overflow-hidden bg-muted">
-        <SpacePreview space={space} priority={priority} />
-        {/* Provider logo badge (favicon), bottom-left over the preview. */}
-        <span className="absolute bottom-2 left-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-background/90 shadow-sm ring-1 ring-black/5 backdrop-blur dark:ring-white/10">
+      <SpacePreview space={space} priority={priority} />
+
+      {/* Title + host as an always-on overlay over a dark gradient (like the
+          compact SpaceCard), so they stay legible on top of any image or the
+          owner's custom profile background — never a theme-dependent footer. */}
+      <div className="absolute inset-x-0 bottom-0 flex items-end gap-2 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 pt-10 pb-2.5">
+        {/* Provider logo badge (favicon). */}
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background/90 shadow-sm ring-1 ring-black/5 backdrop-blur dark:ring-white/10">
           {faviconUrl && !iconFailed ? (
             // Plain <img>: favicons are tiny and come from an arbitrary host, so
             // next/image (domain allowlist) is overkill. onError → Globe fallback.
@@ -45,9 +49,9 @@ export function LinkChip({ space, priority = false }: LinkChipProps) {
             <img
               src={faviconUrl}
               alt=""
-              width={18}
-              height={18}
-              className="h-[18px] w-[18px] object-contain"
+              width={16}
+              height={16}
+              className="h-4 w-4 object-contain"
               loading="lazy"
               onError={() => setIconFailed(true)}
             />
@@ -55,14 +59,10 @@ export function LinkChip({ space, priority = false }: LinkChipProps) {
             <Globe className="h-4 w-4 text-muted-foreground" />
           )}
         </span>
-      </div>
-      <div className="p-3">
-        <p className="truncate text-sm font-semibold group-hover:text-violet-600 dark:group-hover:text-violet-400">
-          {space.title}
-        </p>
-        {host && (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{host}</p>
-        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">{space.title}</p>
+          {host && <p className="mt-0.5 truncate text-xs text-white/70">{host}</p>}
+        </div>
       </div>
     </Link>
   );

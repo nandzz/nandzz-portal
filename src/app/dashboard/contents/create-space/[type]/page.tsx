@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { redirect, notFound } from "next/navigation";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { BUILDER_REGISTRY, type CreatableContentTypeId } from "@/features/spaces";
+import { getFeatureFlags } from "@/lib/featureFlags";
 
 function isCreatableType(type: string): type is CreatableContentTypeId {
   return Object.prototype.hasOwnProperty.call(BUILDER_REGISTRY, type);
@@ -26,6 +27,10 @@ export default async function CreateSpaceTypePage({
   // The video builder was merged into `link`; keep old `/video` links working.
   const resolvedType = type === "video" ? "link" : type;
   if (!isCreatableType(resolvedType)) {
+    notFound();
+  }
+  // The AI builder is hidden while the AI master flag is off.
+  if (resolvedType === "ai" && !(await getFeatureFlags()).ai) {
     notFound();
   }
 

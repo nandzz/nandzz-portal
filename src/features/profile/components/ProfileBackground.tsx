@@ -11,10 +11,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EditProfileDialog } from "./EditProfileDialog";
+import { ProfileStylePicker } from "./ProfileStylePicker";
 import { uploadBackground, removeBackgroundFiles } from "../storage";
 import {
   updateBackground,
   updateBackgroundPosition,
+  updateBackgroundColor,
+  updateButtonColor,
+  updateTextColor,
+  resetProfileStyle,
 } from "../actions/update-background";
 import type { Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -30,6 +35,9 @@ function parsePosition(pos: string | null): { x: number; y: number } {
 interface ProfileBackgroundProps {
   backgroundUrl: string | null;
   backgroundPosition: string | null;
+  backgroundColor: string | null;
+  buttonColor: string | null;
+  textColor: string | null;
   isOwner: boolean;
   profileId: string;
   username: string;
@@ -40,6 +48,9 @@ interface ProfileBackgroundProps {
 export function ProfileBackground({
   backgroundUrl,
   backgroundPosition,
+  backgroundColor,
+  buttonColor,
+  textColor,
   isOwner,
   profileId,
   username,
@@ -63,6 +74,91 @@ export function ProfileBackground({
 
   const [copied, setCopied] = useState(false);
   const [editInfoOpen, setEditInfoOpen] = useState(false);
+
+  // Local style colors so swatch selection previews the page background instantly,
+  // before the server round-trip / router.refresh reads the persisted value back.
+  // (Button color lives on ProfileHeader, so it only reflects after refresh.)
+  const [localColor, setLocalColor] = useState(backgroundColor);
+  const [localButtonColor, setLocalButtonColor] = useState(buttonColor);
+  const [localTextColor, setLocalTextColor] = useState(textColor);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setLocalColor(backgroundColor); }, [backgroundColor]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setLocalButtonColor(buttonColor); }, [buttonColor]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setLocalTextColor(textColor); }, [textColor]);
+
+  // Invalidate the cached profile page then re-render with fresh server data.
+  const revalidateProfile = async () => {
+    await fetch("/api/profile/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
+    router.refresh();
+  };
+
+  const handleColorChange = async (color: string | null) => {
+    const prev = localColor;
+    setLocalColor(color); // optimistic preview
+    try {
+      const result = await updateBackgroundColor({ backgroundColor: color });
+      if (!result.ok) throw new Error(result.message || "Failed to save color");
+      await revalidateProfile();
+    } catch (err) {
+      console.error("[profile] background color save failed:", err);
+      setLocalColor(prev); // roll back on failure
+      setError(t.common.error);
+    }
+  };
+
+  const handleButtonColorChange = async (color: string | null) => {
+    const prev = localButtonColor;
+    setLocalButtonColor(color);
+    try {
+      const result = await updateButtonColor({ buttonColor: color });
+      if (!result.ok) throw new Error(result.message || "Failed to save color");
+      await revalidateProfile();
+    } catch (err) {
+      console.error("[profile] button color save failed:", err);
+      setLocalButtonColor(prev);
+      setError(t.common.error);
+    }
+  };
+
+  const handleTextColorChange = async (color: string | null) => {
+    const prev = localTextColor;
+    setLocalTextColor(color);
+    try {
+      const result = await updateTextColor({ textColor: color });
+      if (!result.ok) throw new Error(result.message || "Failed to save color");
+      await revalidateProfile();
+    } catch (err) {
+      console.error("[profile] text color save failed:", err);
+      setLocalTextColor(prev);
+      setError(t.common.error);
+    }
+  };
+
+  const handleResetStyle = async () => {
+    const prevColor = localColor;
+    const prevButton = localButtonColor;
+    const prevText = localTextColor;
+    setLocalColor(null);
+    setLocalButtonColor(null);
+    setLocalTextColor(null);
+    try {
+      const result = await resetProfileStyle();
+      if (!result.ok) throw new Error(result.message || "Failed to reset style");
+      await revalidateProfile();
+    } catch (err) {
+      console.error("[profile] style reset failed:", err);
+      setLocalColor(prevColor);
+      setLocalButtonColor(prevButton);
+      setLocalTextColor(prevText);
+      setError(t.common.error);
+    }
+  };
 
   const handleShare = async () => {
     const url = typeof window !== "undefined"
@@ -235,8 +331,12 @@ export function ProfileBackground({
 
   return (
     <>
-      {/* ── Decorative background — kept at -z-10, never interactive ── */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
+      {/* ── Decorative background — kept at -z-10, never interactive ──
+          `localColor`, when set, tints the whole page behind the content. */}
+      <div
+        className="absolute inset-0 -z-10 overflow-hidden"
+        style={{ backgroundColor: localColor ?? undefined }}
+      >
         {localUrl ? (
           <>
             <div
@@ -247,10 +347,25 @@ export function ProfileBackground({
                 backgroundPosition: savedPosStr,
               }}
             />
-            <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-background/20 via-background/50 to-background pointer-events-none" />
+            {/* Cover image fades into the page background. With a custom color we
+                fade into that color; otherwise into the theme bg. */}
+            <div
+              className={`absolute inset-x-0 top-0 h-72 pointer-events-none ${
+                localColor ? "" : "bg-gradient-to-b from-background/20 via-background/50 to-background"
+              }`}
+              style={
+                localColor
+                  ? { backgroundImage: `linear-gradient(to bottom, transparent, ${localColor})` }
+                  : undefined
+              }
+            />
           </>
         ) : (
-          <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[600px] rounded-full bg-violet-100/40 blur-3xl dark:bg-violet-950/20" />
+          // No cover image: show the default violet glow only when no custom
+          // color is set (the solid color is the backdrop otherwise).
+          !localColor && (
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[400px] w-[600px] rounded-full bg-violet-100/40 blur-3xl dark:bg-violet-950/20" />
+          )
         )}
       </div>
 
@@ -278,9 +393,12 @@ export function ProfileBackground({
         </div>
       )}
 
-      {/* ── Edit controls — always a sibling so z-index is unaffected ── */}
+      {/* ── Edit controls — always a sibling so z-index is unaffected ──
+          On mobile the logged-in profile pulls the cover up behind the sticky
+          navbar (-mt-16 on the page), so these controls must clear the h-16
+          navbar (top-20 = navbar + the usual top-4 gap); desktop has no pull-up. */}
       {isOwner && (
-        <div className={`absolute top-4 right-4 flex flex-col items-end gap-1.5 ${repositioning ? "z-30" : "z-10"}`}>
+        <div className={`absolute top-20 right-4 md:top-4 flex flex-col items-end gap-1.5 ${repositioning ? "z-30" : "z-10"}`}>
           <input
             ref={fileInputRef}
             type="file"
@@ -344,6 +462,15 @@ export function ProfileBackground({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <ProfileStylePicker
+                backgroundColor={localColor}
+                onBackgroundChange={handleColorChange}
+                buttonColor={localButtonColor}
+                onButtonChange={handleButtonColorChange}
+                textColor={localTextColor}
+                onTextChange={handleTextColorChange}
+                onReset={handleResetStyle}
+              />
               <button
                 onClick={handleShare}
                 className={`flex items-center gap-1.5 rounded-full backdrop-blur-sm border px-3 py-1.5 text-xs transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
