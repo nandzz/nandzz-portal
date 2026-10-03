@@ -151,6 +151,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value: [
+              "sandbox allow-scripts allow-forms allow-downloads allow-popups",
               "script-src * 'unsafe-inline' 'unsafe-eval'",
               "style-src * 'unsafe-inline'",
               "img-src * data: blob:",

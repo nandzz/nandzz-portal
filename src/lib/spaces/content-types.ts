@@ -171,7 +171,7 @@ export function getSectionDescription(t: Translations, id: SectionId): string {
  * match the DB backfill and `publish_space_tx` behavior, rather than
  * SpaceForm's UI-only default of "ai" for a blank new-space form.
  */
-export function legacyDetectContentType(
+function legacyDetectContentType(
   space: Pick<
     Space,
     "html_url" | "url" | "pdf_url" | "image_url" | "video_url" | "markdown_content"

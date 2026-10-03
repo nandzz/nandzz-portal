@@ -36,9 +36,6 @@ export const SECTION_LAYOUT_ICONS: Record<SectionLayout, LucideIcon> = {
   featured: LayoutDashboard,
 };
 
-/** Back-compat alias. */
-export const GALLERY_LAYOUT_ICONS = SECTION_LAYOUT_ICONS;
-
 function isSectionLayout(
   value: string | null | undefined,
   allowed: SectionLayout[],
@@ -76,9 +73,6 @@ export function getSectionLayoutLabel(t: Translations, id: SectionLayout): strin
   };
   return labels[id];
 }
-
-/** Back-compat alias. */
-export const getGalleryLayoutLabel = getSectionLayoutLabel;
 
 // ── Section ordering ─────────────────────────────────────────────────────────
 

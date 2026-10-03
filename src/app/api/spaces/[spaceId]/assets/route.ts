@@ -95,7 +95,8 @@ export async function POST(
     );
   }
 
-  const ext = file.name.split(".").pop() ?? "bin";
+  const rawExt = (file.name.split(".").pop() ?? "").toLowerCase();
+  const ext = /^[a-z0-9]{1,8}$/.test(rawExt) ? rawExt : "bin";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const path = `${prefix}/${filename}`;
 
@@ -125,7 +126,10 @@ export async function DELETE(
 
   const { searchParams } = new URL(req.url);
   const name = searchParams.get("name");
-  if (!name) return NextResponse.json({ error: "Missing name" }, { status: 400 });
+  // Plain file names only — no "/" or ".." that could escape the space folder.
+  if (!name || !/^[\w.-]+$/.test(name) || name.includes("..")) {
+    return NextResponse.json({ error: "Invalid name" }, { status: 400 });
+  }
 
   const admin = createAdminClient();
   const path = `${user.id}/${spaceId}/${name}`;

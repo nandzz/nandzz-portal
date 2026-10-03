@@ -201,7 +201,7 @@ export function withLocationScope(
 
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-function minutesOf(hhmm: string): number {
+export function minutesOf(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
@@ -339,7 +339,7 @@ export function validateCalendarConfig(config: CalendarConfig): string[] {
 
 // Weekday key for a "YYYY-MM-DD" calendar date (tz-independent — a date's
 // weekday is the same everywhere). Anchored at noon UTC to dodge DST edges.
-function weekdayOf(dateStr: string): WeekdayKey {
+export function weekdayOf(dateStr: string): WeekdayKey {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dow = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay(); // 0=Sun..6=Sat
   return WEEKDAYS[(dow + 6) % 7]; // shift so Mon=0
@@ -357,7 +357,7 @@ export function zonedWallTimeToUtc(dateStr: string, hhmm: string, timeZone: stri
   return new Date(asUtc.getTime() + offset);
 }
 
-function addDays(dateStr: string, n: number): string {
+export function addDays(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d + n, 12));
   return dt.toISOString().slice(0, 10);
@@ -426,39 +426,6 @@ export function eligibleStaffForServices(
       return ids.includes(s.id);
     })
   );
-}
-
-// Fold a set of selected services into one "combined" service the availability
-// engine can treat as a single bookable unit: durations and prices add up, and
-// the eligible-staff set is the intersection across all of them. `id`/`name`
-// carry the primary (first) service so downstream summaries stay readable.
-// Returns null when `services` is empty. When `allStaff` is provided and any
-// selected service restricts staff, `staff_ids` is set to the intersection so
-// availability only offers staff who can perform the whole booking.
-export function combineServices(
-  services: CalendarService[],
-  allStaff: StaffMember[] = []
-): CalendarService | null {
-  if (services.length === 0) return null;
-  const duration_min = services.reduce((sum, s) => sum + (s.duration_min || 0), 0);
-  const prices = services.map((s) => s.price_cents).filter((p): p is number => typeof p === "number");
-  const price_cents = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) : null;
-
-  // Only constrain staff when at least one service actually restricts; otherwise
-  // leave staff_ids undefined so "everyone is eligible" is preserved.
-  const restricts = services.some((s) => s.staff_ids && s.staff_ids.length > 0);
-  let staff_ids: string[] | undefined;
-  if (restricts && allStaff.length > 0) {
-    staff_ids = eligibleStaffForServices(allStaff, services).map((m) => m.id);
-  }
-
-  return {
-    id: services[0].id,
-    name: services.map((s) => s.name).join(" + "),
-    duration_min,
-    price_cents,
-    staff_ids,
-  };
 }
 
 // Whether a staff member is working a slot [startMin, endMin) (owner-local

@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
   const redirectUris = Array.isArray(body.redirect_uris)
     ? ((body.redirect_uris as unknown[]).filter((u) => typeof u === "string") as string[])
     : [];
-  if (redirectUris.length === 0) {
-    console.warn(`[mcp-register][${rid}] rejected: no redirect_uris`);
+  if (redirectUris.length === 0 || !redirectUris.every(isAllowedRedirectUri)) {
+    console.warn(`[mcp-register][${rid}] rejected: missing or disallowed redirect_uris`);
     return withCors(
-      NextResponse.json({ error: "invalid_redirect_uri", error_description: "At least one redirect_uri required" }, { status: 400 })
+      NextResponse.json({ error: "invalid_redirect_uri", error_description: "redirect_uris must be https (or http on localhost)" }, { status: 400 })
     );
   }
 
@@ -102,4 +102,15 @@ export async function POST(req: NextRequest) {
     `[mcp-register][${rid}] issued client_id=${safe(data.id)} grants=${safe(grantTypes.join(","))} scope="${safe(scope)}"`
   );
   return withCors(NextResponse.json(response, { status: 201 }));
+}
+
+// Only https callbacks, or plain http on loopback for local CLI clients.
+function isAllowedRedirectUri(uri: string): boolean {
+  try {
+    const u = new URL(uri);
+    if (u.protocol === "https:") return true;
+    return u.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  } catch {
+    return false;
+  }
 }

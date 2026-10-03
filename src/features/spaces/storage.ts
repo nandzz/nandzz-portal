@@ -27,7 +27,7 @@ function escapeHtml(s: string): string {
  * is served from a public bucket, so it must be HTML-escaped to prevent stored
  * XSS.
  */
-export function buildAiStubHtml(title: string): string {
+function buildAiStubHtml(title: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>

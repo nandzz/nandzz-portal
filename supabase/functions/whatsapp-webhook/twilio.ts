@@ -25,7 +25,12 @@ export async function verifyTwilioSignature(
   signatureHeader: string,
 ): Promise<boolean> {
   const expected = await computeTwilioSignature(authToken, requestUrl, params);
-  console.log("[twilio] expected sig:", expected);
-  console.log("[twilio] received sig:", signatureHeader);
-  return expected === signatureHeader;
+  return timingSafeEqual(expected, signatureHeader);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }

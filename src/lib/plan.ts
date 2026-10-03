@@ -113,13 +113,3 @@ export async function getUserEntitlements(userId: string): Promise<PlanEntitleme
   return plan.entitlements;
 }
 
-// The three active plans, ordered — used by the pricing page and plan chooser.
-export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("subscription_plans")
-    .select("*")
-    .eq("active", true)
-    .order("sort_order", { ascending: true });
-  return (data ?? []) as SubscriptionPlan[];
-}

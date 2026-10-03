@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/lib/notifications";
 import type { CommentWithLike } from "@/lib/types";
 import { postCommentSchema } from "../schemas";
@@ -73,6 +74,9 @@ export async function postComment(input: {
 
     const notified = new Set<string>([user.id]);
 
+    // Notifications target other users, so they go through the service role
+    // (the notifications table has no user-facing INSERT policy).
+    const admin = createAdminClient();
     if (parentId) {
       // Reply: notify the parent comment's author.
       const { data: parent } = await supabase
@@ -82,12 +86,12 @@ export async function postComment(input: {
         .single();
       if (parent?.user_id && !notified.has(parent.user_id)) {
         notified.add(parent.user_id);
-        await createNotification(supabase, parent.user_id, "new_reply", payload);
+        await createNotification(admin, parent.user_id, "new_reply", payload);
       }
     } else if (space?.user_id && space.user_id !== user.id) {
       // Top-level: notify the space owner.
       notified.add(space.user_id);
-      await createNotification(supabase, space.user_id, "new_comment", payload);
+      await createNotification(admin, space.user_id, "new_comment", payload);
     }
 
     const mentioned = parseMentions(content);
@@ -103,7 +107,7 @@ export async function postComment(input: {
         for (const p of profiles) {
           if (!notified.has(p.id)) {
             notified.add(p.id);
-            await createNotification(supabase, p.id, "comment_mention", payload);
+            await createNotification(admin, p.id, "comment_mention", payload);
           }
         }
       }

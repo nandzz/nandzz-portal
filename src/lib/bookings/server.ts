@@ -10,7 +10,7 @@ import type { WidgetBooking } from "@/lib/types";
 // scoped to created_by_user_id = the requesting user. Shared by the page's
 // first render and the /api/bookings load-more route so both stay in sync.
 
-export const BOOKINGS_PAGE_SIZE = 12;
+const BOOKINGS_PAGE_SIZE = 12;
 
 export type BookingFilter = "upcoming" | "past" | "cancelled";
 

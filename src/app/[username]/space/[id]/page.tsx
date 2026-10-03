@@ -27,6 +27,7 @@ import { MarkdownSpaceEditor } from "@/features/spaces";
 import { BackButton } from "@/components/ui/BackButton";
 import { ViewTracker } from "@/features/spaces";
 import { IdleChromeActivator } from "@/contexts/ChromeContext";
+import { isOwnSpaceHtmlUrl } from "@/lib/spaces/html-url";
 import { getServerTranslations } from "@/lib/i18n/server";
 
 function hasDownloadableContent(html: string): boolean {
@@ -193,9 +194,9 @@ export default async function SpaceViewPage({
   const initialHasMore = rawComments.length === PAGE_SIZE;
 
   let htmlContent: string | null = null;
-  if (space.html_url) {
+  if (isOwnSpaceHtmlUrl(space.html_url, space.user_id)) {
     try {
-      const res = await fetch(space.html_url, { cache: "no-store" });
+      const res = await fetch(space.html_url!, { cache: "no-store" });
       htmlContent = await res.text();
     } catch {
       // fall through — no content available

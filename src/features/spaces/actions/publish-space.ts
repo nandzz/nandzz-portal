@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PublishSpacePayload = {
   title: string;
@@ -39,7 +40,8 @@ export async function publishSpace(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
 
-  const { data, error } = await supabase.rpc("publish_space_tx", {
+  // publish_space_tx is service-role only; the caller is the verified session user.
+  const { data, error } = await createAdminClient().rpc("publish_space_tx", {
     p_user_id: user.id,
     p_space_payload: payload,
     p_client_request_id: clientRequestId,

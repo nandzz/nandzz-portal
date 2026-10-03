@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isOwnSpaceHtmlUrl } from "@/lib/spaces/html-url";
 
 // Injected at the top of every sandboxed page:
 //   - form nav-guard: sandboxed iframes have null origin, so form submits cause
@@ -30,7 +31,10 @@ function injectNavGuard(html: string): string {
 
 // Permissive CSP for user-authored HTML: allows any CDN scripts/styles/fonts/images
 // but blocks all outbound network calls (fetch/XHR/WebSocket) to prevent data exfiltration.
+// `sandbox` (no allow-same-origin) gives the page an opaque origin even when it's
+// opened directly, so user scripts can never read nandzz.com cookies/storage.
 const SANDBOX_CSP = [
+  "sandbox allow-scripts allow-forms allow-downloads allow-popups",
   "script-src * 'unsafe-inline' 'unsafe-eval'",
   "style-src * 'unsafe-inline'",
   "img-src * data: blob:",
@@ -56,7 +60,7 @@ export async function GET(
     .eq("id", spaceId)
     .single();
 
-  if (!space?.html_url) {
+  if (!space?.html_url || !isOwnSpaceHtmlUrl(space.html_url, space.user_id)) {
     return new NextResponse("Not found", { status: 404 });
   }
 

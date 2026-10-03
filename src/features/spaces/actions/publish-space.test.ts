@@ -29,6 +29,15 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    rpc: async (_fn: string, args: Record<string, unknown>) => {
+      rpcArgs = args;
+      return rpcResult;
+    },
+  }),
+}));
+
 import { publishSpace } from "./publish-space";
 
 const payload = { title: "New" };

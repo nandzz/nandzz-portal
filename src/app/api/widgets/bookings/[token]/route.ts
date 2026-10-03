@@ -23,7 +23,7 @@ async function loadBooking(token: string) {
   // here otherwise masquerades as a 404 "Booking not found" (the caller only
   // checks `!data`), which is what it looks like when the token is genuinely
   // missing. Log it so the real cause is visible in the server console.
-  if (error) console.error("loadBooking failed for token", token, error);
+  if (error) console.error("loadBooking failed", error);
   return { admin, data, error };
 }
 

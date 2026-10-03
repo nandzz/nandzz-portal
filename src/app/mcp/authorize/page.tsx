@@ -79,6 +79,10 @@ export default async function AuthorizePage({
   }
 
   const clientName = client.client_name || "An external app";
+  let redirectHost = sp.redirect_uri;
+  try {
+    redirectHost = new URL(sp.redirect_uri).host || sp.redirect_uri;
+  } catch {}
   const scopes = (sp.scope ?? "publish read").split(/\s+/).filter(Boolean);
 
   return (
@@ -94,6 +98,11 @@ export default async function AuthorizePage({
         <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
           <span className="font-medium text-neutral-900 dark:text-neutral-100">{clientName}</span>{" "}
           is requesting access to your account.
+        </p>
+        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+          You&apos;ll be sent back to{" "}
+          <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">{redirectHost}</span>.
+          Only continue if you trust this site.
         </p>
 
         <div className="mt-6 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-900">

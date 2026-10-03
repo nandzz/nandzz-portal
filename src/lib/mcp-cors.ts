@@ -4,7 +4,7 @@
 // so cross-origin fetches to these routes must return Access-Control-*.
 import { NextResponse } from "next/server";
 
-export const CORS_HEADERS = {
+const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, content-type",

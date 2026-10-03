@@ -18,22 +18,3 @@ export function formatBookingTime(startsAt: string, timezone: string): string {
     return new Date(startsAt).toUTCString();
   }
 }
-
-// Wrap a rendered plain-text message into a minimal HTML email. WhatsApp-style
-// *bold* is honored; newlines become <br>; bare URLs become links.
-export function simpleEmailHtml(text: string): string {
-  const escaped = escapeHtml(text);
-  const withBold = escaped.replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
-  const linked = withBold.replace(
-    /(https?:\/\/[^\s<]+)/g,
-    '<a href="$1" style="color:#059669;text-decoration:underline">$1</a>'
-  );
-  const html = linked.replace(/\n/g, "<br>");
-  return `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111;font-size:15px;line-height:1.6">${html}</div>`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!)
-  );
-}

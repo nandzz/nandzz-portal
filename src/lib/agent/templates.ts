@@ -156,8 +156,4 @@ Use: "That's not something I have information about. Feel free to reach out dire
   },
 ];
 
-export const TEMPLATE_MAP = Object.fromEntries(
-  AGENT_TEMPLATES.map((t) => [t.key, t])
-) as Record<TemplateKey, Template>;
-
 export const CORE_TEMPLATES: TemplateKey[] = ["me", "soul", "response-style"];
