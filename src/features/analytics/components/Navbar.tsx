@@ -60,7 +60,7 @@ export function Navbar() {
     <nav
       aria-hidden={isHidden || undefined}
       className={cn(
-        "sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
+        "sticky top-0 z-50 pt-[env(safe-area-inset-top)] border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
         "transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform",
         isHidden && "max-md:-translate-y-full max-md:pointer-events-none"
       )}

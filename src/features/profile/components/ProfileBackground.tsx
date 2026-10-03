@@ -331,16 +331,23 @@ export function ProfileBackground({
 
   return (
     <>
-      {/* ── Decorative background — kept at -z-10, never interactive ──
-          `localColor`, when set, tints the whole page behind the content. */}
-      <div
-        className="absolute inset-0 -z-10 overflow-hidden"
-        style={{ backgroundColor: localColor ?? undefined }}
-      >
+      {/* ── Custom page color — pinned to the viewport (not the page box), so
+          it also fills the space below the content, behind the floating CTA /
+          Safari toolbars and the status bar, with no white/dark strip. ── */}
+      {localColor && (
+        <div
+          aria-hidden
+          className="fixed inset-0 -z-20 pointer-events-none"
+          style={{ backgroundColor: localColor }}
+        />
+      )}
+
+      {/* ── Decorative background — kept at -z-10, never interactive ── */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
         {localUrl ? (
           <>
             <div
-              className="absolute inset-x-0 top-0 h-72"
+              className="absolute inset-x-0 top-0 h-[calc(18rem+env(safe-area-inset-top))]"
               style={{
                 backgroundImage: `url(${localUrl})`,
                 backgroundSize: "cover",
@@ -350,7 +357,7 @@ export function ProfileBackground({
             {/* Cover image fades into the page background. With a custom color we
                 fade into that color; otherwise into the theme bg. */}
             <div
-              className={`absolute inset-x-0 top-0 h-72 pointer-events-none ${
+              className={`absolute inset-x-0 top-0 h-[calc(18rem+env(safe-area-inset-top))] pointer-events-none ${
                 localColor ? "" : "bg-gradient-to-b from-background/20 via-background/50 to-background"
               }`}
               style={
@@ -373,7 +380,7 @@ export function ProfileBackground({
       {repositioning && localUrl && (
         <div
           ref={overlayRef}
-          className="absolute inset-x-0 top-0 h-72 z-20 cursor-grab active:cursor-grabbing select-none touch-none"
+          className="absolute inset-x-0 top-0 h-[calc(18rem+env(safe-area-inset-top))] z-20 cursor-grab active:cursor-grabbing select-none touch-none"
           style={{
             backgroundImage: `url(${localUrl})`,
             backgroundSize: "cover",
@@ -396,9 +403,10 @@ export function ProfileBackground({
       {/* ── Edit controls — always a sibling so z-index is unaffected ──
           On mobile the logged-in profile pulls the cover up behind the sticky
           navbar (-mt-16 on the page), so these controls must clear the h-16
-          navbar (top-20 = navbar + the usual top-4 gap); desktop has no pull-up. */}
+          navbar (top-20 = navbar + the usual top-4 gap, plus the status-bar inset
+          under viewport-fit=cover); desktop has no pull-up. */}
       {isOwner && (
-        <div className={`absolute top-20 right-4 md:top-4 flex flex-col items-end gap-1.5 ${repositioning ? "z-30" : "z-10"}`}>
+        <div className={`absolute top-[calc(5rem+env(safe-area-inset-top))] right-4 md:top-4 flex flex-col items-end gap-1.5 ${repositioning ? "z-30" : "z-10"}`}>
           <input
             ref={fileInputRef}
             type="file"

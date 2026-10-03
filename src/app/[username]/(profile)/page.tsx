@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
@@ -81,6 +81,27 @@ export async function generateMetadata({
       description,
       ...(profile.avatar_url && { images: [profile.avatar_url] }),
     },
+  };
+}
+
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
+const safeHex = (c: string | null | undefined) => (c && HEX_COLOR.test(c) ? c : null);
+
+// Edge-to-edge on phones (Linktree-style): `viewport-fit=cover` lets the cover
+// photo draw under the status bar / Safari toolbars instead of stopping at the
+// safe area, and the browser chrome is tinted with the profile's own color.
+// Content clears the notch via env(safe-area-inset-*) paddings.
+export async function generateViewport({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Viewport> {
+  const { username } = await params;
+  const profile = await getProfile(username);
+  const bg = safeHex(profile?.background_color);
+  return {
+    viewportFit: "cover",
+    ...(bg && { themeColor: bg }),
   };
 }
 
@@ -192,7 +213,7 @@ export default async function ProfilePage({
   // A custom background color locks the profile to a light/dark theme derived
   // from that color's brightness, so all chrome + text stay legible regardless
   // of the visitor's device theme. Computed server-side → no flash.
-  const bgColor = profile.background_color ?? null;
+  const bgColor = safeHex(profile.background_color);
   const profileTheme = bgColor ? (isColorDark(bgColor) ? "dark" : "light") : "";
 
   // Logged-in users get a sticky top Navbar here (mobile only; the Sidebar
@@ -201,10 +222,21 @@ export default async function ProfilePage({
   // translucent/blur reads at rest (iOS-style) instead of solid white. Reset at
   // md+ where there's no top bar. Logged-out visitors get no Navbar (clean
   // branded page), so no pull-up — their floating-pill clearance lives in <main>.
-  const coverUnderNav = user ? "-mt-16 pt-16 md:mt-0 md:pt-0" : "";
+  // The navbar grows by the status-bar inset (viewport-fit=cover), so the
+  // pull-up does too. Logged-out visitors have no bar: just clear the notch.
+  const coverUnderNav = user
+    ? "-mt-[calc(4rem+env(safe-area-inset-top))] pt-[calc(4rem+env(safe-area-inset-top))] md:mt-0 md:pt-0"
+    : "pt-[env(safe-area-inset-top)]";
 
   return (
     <div className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav} ${profileTheme}`}>
+      {/* Paint the document itself with the profile color so overscroll, the
+          area behind the floating CTA / Safari toolbars and any space below
+          the content never flashes the app's white (or dark-mode) body.
+          Scoped to this page: it unmounts on navigation. */}
+      {bgColor && (
+        <style>{`html,body{background-color:${bgColor}}`}</style>
+      )}
       <ProfileBackground
         backgroundUrl={profile.background_url ?? null}
         backgroundPosition={profile.background_position ?? null}

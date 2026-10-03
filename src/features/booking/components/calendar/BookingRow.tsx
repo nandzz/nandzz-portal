@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, MessageCircle, Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
+import { MessageCircle, Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
 import { whatsappLink } from "@/lib/widgets/contact";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
@@ -258,14 +258,6 @@ export function BookingRow({
             <MessageCircle className="h-4 w-4" />
           </a>
         )}
-        <a
-          href={`mailto:${b.customer_email}`}
-          className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          aria-label={t.booking.emailAria.replace("{name}", b.customer_name)}
-          title={t.booking.emailTitle}
-        >
-          <Mail className="h-4 w-4" />
-        </a>
         {canReassign && (
           <button
             onClick={() => setAssigning(true)}
