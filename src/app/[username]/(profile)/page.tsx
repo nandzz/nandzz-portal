@@ -233,9 +233,12 @@ export default async function ProfilePage({
       {/* Paint the document itself with the profile color so overscroll, the
           area behind the floating CTA / Safari toolbars and any space below
           the content never flashes the app's white (or dark-mode) body.
-          Scoped to this page: it unmounts on navigation. */}
+          Scoped to this page: it unmounts on navigation. Only `html` gets the
+          color; `body` must go transparent — once html has its own background,
+          body's stops propagating to the canvas and would paint as an opaque
+          box OVER the negative-z cover image. */}
       {bgColor && (
-        <style>{`html,body{background-color:${bgColor}}`}</style>
+        <style>{`html{background-color:${bgColor}}body{background-color:transparent}`}</style>
       )}
       <ProfileBackground
         backgroundUrl={profile.background_url ?? null}
