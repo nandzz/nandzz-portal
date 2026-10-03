@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, X, Move, Check, Share2, Pencil, Trash2, UserPen } from "lucide-react";
+import { Camera, X, Move, Check, Share2, Pencil, Trash2, UserPen, Eye, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,10 +19,12 @@ import {
   updateBackgroundColor,
   updateButtonColor,
   updateTextColor,
+  updateBookingButtonStyle,
   resetProfileStyle,
 } from "../actions/update-background";
-import type { Profile } from "@/lib/types";
+import type { BookingButtonStyle, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useChrome } from "@/contexts/ChromeContext";
 
 const MAX_BG_SIZE = 1.5 * 1024 * 1024;
 
@@ -38,6 +40,8 @@ interface ProfileBackgroundProps {
   backgroundColor: string | null;
   buttonColor: string | null;
   textColor: string | null;
+  bookingButtonStyle: BookingButtonStyle | null;
+  hasBookingWidget: boolean;
   isOwner: boolean;
   profileId: string;
   username: string;
@@ -51,6 +55,8 @@ export function ProfileBackground({
   backgroundColor,
   buttonColor,
   textColor,
+  bookingButtonStyle,
+  hasBookingWidget,
   isOwner,
   profileId,
   username,
@@ -59,6 +65,7 @@ export function ProfileBackground({
 }: ProfileBackgroundProps) {
   const { t } = useLanguage();
   const router = useRouter();
+  const { profilePreview, setProfilePreview } = useChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -81,12 +88,23 @@ export function ProfileBackground({
   const [localColor, setLocalColor] = useState(backgroundColor);
   const [localButtonColor, setLocalButtonColor] = useState(buttonColor);
   const [localTextColor, setLocalTextColor] = useState(textColor);
+  const [localBookingStyle, setLocalBookingStyle] = useState(bookingButtonStyle);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setLocalColor(backgroundColor); }, [backgroundColor]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setLocalButtonColor(buttonColor); }, [buttonColor]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setLocalTextColor(textColor); }, [textColor]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setLocalBookingStyle(bookingButtonStyle); }, [bookingButtonStyle]);
+
+  // Escape leaves preview mode.
+  useEffect(() => {
+    if (!profilePreview) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setProfilePreview(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [profilePreview, setProfilePreview]);
 
   // Invalidate the cached profile page then re-render with fresh server data.
   const revalidateProfile = async () => {
@@ -140,13 +158,29 @@ export function ProfileBackground({
     }
   };
 
+  const handleBookingStyleChange = async (style: BookingButtonStyle | null) => {
+    const prev = localBookingStyle;
+    setLocalBookingStyle(style);
+    try {
+      const result = await updateBookingButtonStyle({ style });
+      if (!result.ok) throw new Error(result.message || "Failed to save booking style");
+      await revalidateProfile();
+    } catch (err) {
+      console.error("[profile] booking button style save failed:", err);
+      setLocalBookingStyle(prev);
+      setError(t.common.error);
+    }
+  };
+
   const handleResetStyle = async () => {
     const prevColor = localColor;
     const prevButton = localButtonColor;
     const prevText = localTextColor;
+    const prevBooking = localBookingStyle;
     setLocalColor(null);
     setLocalButtonColor(null);
     setLocalTextColor(null);
+    setLocalBookingStyle(null);
     try {
       const result = await resetProfileStyle();
       if (!result.ok) throw new Error(result.message || "Failed to reset style");
@@ -156,6 +190,7 @@ export function ProfileBackground({
       setLocalColor(prevColor);
       setLocalButtonColor(prevButton);
       setLocalTextColor(prevText);
+      setLocalBookingStyle(prevBooking);
       setError(t.common.error);
     }
   };
@@ -405,7 +440,21 @@ export function ProfileBackground({
           navbar (-mt-16 on the page), so these controls must clear the h-16
           navbar (top-20 = navbar + the usual top-4 gap, plus the status-bar inset
           under viewport-fit=cover); desktop has no pull-up. */}
-      {isOwner && (
+      {/* ── Preview mode: everything owner-only is hidden; this pill is the
+          only way back. Fixed so it's reachable from anywhere on the page. ── */}
+      {isOwner && profilePreview && (
+        <div className="fixed inset-x-0 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-50 flex justify-center pointer-events-none">
+          <button
+            onClick={() => setProfilePreview(false)}
+            className="pointer-events-auto flex items-center gap-2 rounded-full bg-foreground/90 px-4 py-2.5 text-sm font-medium text-background shadow-lg backdrop-blur-md transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+          >
+            <EyeOff className="h-4 w-4" />
+            Exit preview
+          </button>
+        </div>
+      )}
+
+      {isOwner && !profilePreview && (
         <div className={`absolute top-[calc(5rem+env(safe-area-inset-top))] right-4 md:top-4 flex flex-col items-end gap-1.5 ${repositioning ? "z-30" : "z-10"}`}>
           <input
             ref={fileInputRef}
@@ -477,8 +526,26 @@ export function ProfileBackground({
                 onButtonChange={handleButtonColorChange}
                 textColor={localTextColor}
                 onTextChange={handleTextColorChange}
+                booking={
+                  hasBookingWidget
+                    ? {
+                        label: t.booking.bookWithName.replace("{name}", displayName.split(" ")[0]),
+                        style: localBookingStyle,
+                        onChange: handleBookingStyleChange,
+                      }
+                    : undefined
+                }
                 onReset={handleResetStyle}
               />
+              <button
+                onClick={() => { window.scrollTo({ top: 0 }); setProfilePreview(true); }}
+                aria-label="Preview"
+                title="Preview as a visitor"
+                className="flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/60 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-violet-500/50 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Preview</span>
+              </button>
               <button
                 onClick={handleShare}
                 className={`flex items-center gap-1.5 rounded-full backdrop-blur-sm border px-3 py-1.5 text-xs transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${

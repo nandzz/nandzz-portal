@@ -19,6 +19,9 @@ type ChromeCtx = {
   disableToggle: () => void;
   toggle: () => void;
   show: () => void;
+  /** Owner "view as visitor" on their own profile: no app chrome, no owner controls. */
+  profilePreview: boolean;
+  setProfilePreview: (on: boolean) => void;
 };
 
 const Ctx = createContext<ChromeCtx | null>(null);
@@ -34,6 +37,8 @@ export function useChrome(): ChromeCtx {
       disableToggle: noop,
       toggle: noop,
       show: noop,
+      profilePreview: false,
+      setProfilePreview: noop,
     };
   }
   return c;
@@ -42,6 +47,7 @@ export function useChrome(): ChromeCtx {
 export function ChromeProvider({ children }: { children: React.ReactNode }) {
   const [enabledCount, setEnabledCount] = useState(0);
   const [isHidden, setIsHidden] = useState(false);
+  const [profilePreview, setProfilePreview] = useState(false);
   const enabled = enabledCount > 0;
 
   const enableToggle = useCallback(() => setEnabledCount((n) => n + 1), []);
@@ -75,9 +81,17 @@ export function ChromeProvider({ children }: { children: React.ReactNode }) {
     else delete body.dataset.chromeHidden;
   }, [isHidden]);
 
+  // Body flag lets server-rendered owner-only bits hide via CSS
+  // ([data-owner-only], see globals.css) without threading state through.
+  useEffect(() => {
+    const body = document.body;
+    if (profilePreview) body.dataset.profilePreview = "true";
+    else delete body.dataset.profilePreview;
+  }, [profilePreview]);
+
   return (
     <Ctx.Provider
-      value={{ isHidden, enableToggle, disableToggle, toggle, show }}
+      value={{ isHidden, enableToggle, disableToggle, toggle, show, profilePreview, setProfilePreview }}
     >
       {children}
     </Ctx.Provider>

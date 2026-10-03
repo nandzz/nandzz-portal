@@ -7,6 +7,7 @@ import { useAuth } from "@/features/analytics/AuthContext";
 import { ConditionalFooter } from "./ConditionalFooter";
 import { isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
 import { cn } from "@/lib/utils";
+import { useChrome } from "@/contexts/ChromeContext";
 
 const COLLAPSE_STORAGE_KEY = "sidebar:collapsed";
 
@@ -18,6 +19,7 @@ export function AppChrome({ children }: AppChromeProps) {
   const pathname = usePathname();
   const { userId } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const { profilePreview, setProfilePreview } = useChrome();
 
   const onProfilePage = isProfilePage(pathname);
   // The public booking widget is a self-contained, branded page: it renders its
@@ -30,6 +32,13 @@ export function AppChrome({ children }: AppChromeProps) {
   // Post-signup onboarding (choose-a-username): the visitor is authenticated but
   // mid-setup, so no sidebar/navbar/footer/tab bar — just the centered card.
   const onBareAuthPage = isBareAuthRoute(pathname);
+  // Owner previewing their own profile as a visitor sees it: no chrome at all
+  // (not even the visitor CTA pill). Cleared whenever they leave the profile.
+  const previewing = profilePreview && onProfilePage;
+
+  useEffect(() => {
+    if (!onProfilePage) setProfilePreview(false);
+  }, [onProfilePage, setProfilePreview]);
 
   useEffect(() => {
     // Auto-collapse to the rail when landing on a profile page (full-width
@@ -62,7 +71,7 @@ export function AppChrome({ children }: AppChromeProps) {
 
   // When signed in, the sidebar is the app chrome everywhere except the
   // immersive space viewer (which keeps its own chrome-hide gesture).
-  const showSidebar = !!userId && !isImmersiveRoute(pathname) && !onBareAuthPage;
+  const showSidebar = !!userId && !isImmersiveRoute(pathname) && !onBareAuthPage && !previewing;
 
   // A logged-out visitor on someone's profile: suppress ALL Nandzz chrome (top
   // Navbar + footer) so the page reads as the owner's own branded page
@@ -80,7 +89,7 @@ export function AppChrome({ children }: AppChromeProps) {
           immersive space pages never show it — they render their own chrome —
           and neither does a logged-out visitor on a profile (clean branded
           page; the floating CTA pill is their only Nandzz affordance). */}
-      {!onWidgetPage && !onImmersivePage && !onBareAuthPage && !isVisitorProfile && (
+      {!onWidgetPage && !onImmersivePage && !onBareAuthPage && !isVisitorProfile && !previewing && (
         <div className={cn(showSidebar && "md:hidden")}>
           <Navbar />
         </div>
@@ -95,7 +104,7 @@ export function AppChrome({ children }: AppChromeProps) {
           // at md+; widget/onboarding own their viewport (none).
           isVisitorProfile
             ? "pb-24"
-            : onWidgetPage || onBareAuthPage
+            : onWidgetPage || onBareAuthPage || previewing
               ? "pb-0"
               : "pb-16 md:pb-0",
           showSidebar && (collapsed ? "md:pl-16" : "md:pl-64")
@@ -104,11 +113,11 @@ export function AppChrome({ children }: AppChromeProps) {
         {children}
       </main>
 
-      {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && <ConditionalFooter />}
+      {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && !previewing && <ConditionalFooter />}
 
       {/* Hidden for logged-out visitors on a profile page, on the widget page
           (which owns its whole viewport), and during post-signup onboarding. */}
-      {!isVisitorProfile && !onWidgetPage && !onBareAuthPage && <MobileTabBar />}
+      {!isVisitorProfile && !onWidgetPage && !onBareAuthPage && !previewing && <MobileTabBar />}
 
       {/* The lone Nandzz affordance on a clean, logged-out profile page:
           a floating "Sign in / Create your page" pill. */}

@@ -229,7 +229,7 @@ export default async function ProfilePage({
     : "pt-[env(safe-area-inset-top)]";
 
   return (
-    <div className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav} ${profileTheme}`}>
+    <div data-profile-root className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav} ${profileTheme}`}>
       {/* Paint the document itself with the profile color so overscroll, the
           area behind the floating CTA / Safari toolbars and any space below
           the content never flashes the app's white (or dark-mode) body.
@@ -246,6 +246,8 @@ export default async function ProfilePage({
         backgroundColor={bgColor}
         buttonColor={profile.button_color ?? null}
         textColor={profile.text_color ?? null}
+        bookingButtonStyle={profile.booking_button_style ?? null}
+        hasBookingWidget={widgets.some((w) => w.catalog.slug === "calendar")}
         isOwner={isOwner}
         profileId={profile.id}
         username={profile.username}

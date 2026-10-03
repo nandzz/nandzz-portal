@@ -54,6 +54,7 @@ export function SectionOwnerMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        data-owner-only
         aria-label={triggerLabel}
         title={triggerLabel}
         className="flex items-center justify-center rounded-full border border-border/60 bg-background/80 p-1.5 text-muted-foreground shadow-sm backdrop-blur-sm transition-[transform,color,border-color] duration-150 ease-out hover:border-violet-500/50 hover:text-foreground active:scale-95"

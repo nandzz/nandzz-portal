@@ -210,6 +210,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
             />
             <button
               type="button"
+              data-owner-only
               onClick={() => avatarInputRef.current?.click()}
               disabled={avatarUploading}
               aria-label="Change profile picture"

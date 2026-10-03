@@ -7,7 +7,9 @@ import {
   updateBackgroundColorSchema,
   updateButtonColorSchema,
   updateTextColorSchema,
+  updateBookingButtonStyleSchema,
 } from "../schemas";
+import type { BookingButtonStyle } from "@/lib/types";
 
 export type UpdateBackgroundResult =
   | { ok: true }
@@ -136,6 +138,28 @@ export async function updateTextColor(input: {
   return { ok: true };
 }
 
+// Sets or clears the booking CTA style (null = default soft emerald pill).
+export async function updateBookingButtonStyle(input: {
+  style: BookingButtonStyle | null;
+}): Promise<UpdateBackgroundResult> {
+  const parsed = updateBookingButtonStyleSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ booking_button_style: parsed.data.style })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "FAILED", message: error.message };
+
+  return { ok: true };
+}
+
 // Resets all profile style customizations back to the default theme in one shot.
 export async function resetProfileStyle(): Promise<UpdateBackgroundResult> {
   const supabase = await createClient();
@@ -146,7 +170,12 @@ export async function resetProfileStyle(): Promise<UpdateBackgroundResult> {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ background_color: null, button_color: null, text_color: null })
+    .update({
+      background_color: null,
+      button_color: null,
+      text_color: null,
+      booking_button_style: null,
+    })
     .eq("id", user.id);
   if (error) return { ok: false, error: "FAILED", message: error.message };
 

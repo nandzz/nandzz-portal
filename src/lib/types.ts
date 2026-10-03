@@ -19,6 +19,15 @@ export type ProfileAddress = {
   lng?: number;
 };
 
+// Owner-chosen look for the booking CTA on the public profile. Any missing
+// field falls back to the default (soft emerald pill, regular size).
+export type BookingButtonStyle = {
+  variant?: "soft" | "solid" | "outline" | "glass";
+  shape?: "pill" | "rounded" | "square";
+  size?: "md" | "lg";
+  color?: string | null;
+};
+
 // Account type: a Personal account (default) vs a Business account. Personal
 // accounts hide the Business sections (Widgets, Brand, …) and book others;
 // Business accounts reveal those sections and hide the personal Bookings view.
@@ -46,6 +55,7 @@ export type Profile = {
   background_color: string | null;
   button_color: string | null;
   text_color: string | null;
+  booking_button_style: BookingButtonStyle | null;
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;

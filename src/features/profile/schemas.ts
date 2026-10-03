@@ -72,6 +72,18 @@ export const updateTextColorSchema = z.object({
   textColor: hexColor,
 });
 
+// Booking CTA style. null clears back to the default soft emerald pill.
+export const updateBookingButtonStyleSchema = z.object({
+  style: z
+    .object({
+      variant: z.enum(["soft", "solid", "outline", "glass"]),
+      shape: z.enum(["pill", "rounded", "square"]),
+      size: z.enum(["md", "lg"]),
+      color: hexColor,
+    })
+    .nullable(),
+});
+
 export const updateBrandSchema = z.object({
   logoUrl: z.string().nullable(),
   brandColors: z.record(z.string(), z.string()),

@@ -284,3 +284,14 @@ body[data-chrome-hidden="true"] .space-viewer-topbar {
 @media (prefers-reduced-motion: reduce) {
   .chrome-immersive-space { transition: none; }
 }
+
+/* Owner "preview as visitor" (ChromeContext.profilePreview): hide every
+   owner-only control on the profile, and drop the logged-in cover pull-up
+   (there's no navbar to tuck under) back to the visitor's notch clearance. */
+body[data-profile-preview] [data-owner-only] {
+  display: none !important;
+}
+body[data-profile-preview] [data-profile-root] {
+  margin-top: 0 !important;
+  padding-top: env(safe-area-inset-top) !important;
+}
