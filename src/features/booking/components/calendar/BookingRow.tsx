@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
+import { Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { whatsappLink } from "@/lib/widgets/contact";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
@@ -255,7 +256,7 @@ export function BookingRow({
             aria-label={t.booking.whatsappAria.replace("{name}", b.customer_name)}
             title={t.booking.whatsappTitle}
           >
-            <MessageCircle className="h-4 w-4" />
+            <WhatsAppIcon className="h-4 w-4" />
           </a>
         )}
         {canReassign && (

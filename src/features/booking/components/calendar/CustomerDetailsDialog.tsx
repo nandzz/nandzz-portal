@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { Dialog } from "@/components/ui/dialog";
 import { whatsappLink } from "@/lib/widgets/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -138,7 +139,7 @@ export function CustomerDetailsDialog({ customer, onClose, instanceId, locationI
                   aria-label={t.booking.whatsappAria.replace("{name}", c.name)}
                   title={t.booking.whatsappTitle}
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <WhatsAppIcon className="h-4 w-4" />
                 </a>
               )
             }

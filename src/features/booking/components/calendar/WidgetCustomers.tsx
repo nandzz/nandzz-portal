@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, MessageCircle, Mail, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Mail, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { whatsappLink } from "@/lib/widgets/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Translations } from "@/lib/i18n/translations";
@@ -259,7 +260,7 @@ function CustomerRow({
             aria-label={t.booking.whatsappAria.replace("{name}", c.name)}
             title={t.booking.whatsappTitle}
           >
-            <MessageCircle className="h-4 w-4" />
+            <WhatsAppIcon className="h-4 w-4" />
           </a>
         )}
         {c.email && (

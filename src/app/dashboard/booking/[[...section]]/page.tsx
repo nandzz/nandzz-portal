@@ -144,6 +144,7 @@ async function CalendarWorkspaceLoader({
     fetchOverviewData(supabase, {
       instanceId,
       locationId,
+      config: normalizedConfig,
       timezone,
       currencySymbol: symbol,
       locale,

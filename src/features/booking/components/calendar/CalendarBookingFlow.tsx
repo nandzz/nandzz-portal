@@ -161,15 +161,18 @@ export function CalendarBookingFlow({
   );
   const servicesLabel = selectedServices.map((s) => s.name).join(" + ");
 
-  // Per-service specialist choice: a service offers a real choice when 2+ staff
-  // can perform it. The staff step (right after services, before day/time) is
-  // shown only when at least one selected service qualifies; services with 0 or
-  // 1 eligible staff auto-resolve silently. `staffStepUsed` drives back-nav.
-  // Cheap to recompute each render (O(staff × services)), so no memo.
-  const staffChoiceServices = selectedServices.filter(
+  // Per-service specialist step (right after services, before day/time). Shown
+  // whenever a selected service has any eligible staff: services with 2+ offer a
+  // real choice, services with exactly 1 just tell the visitor who'll do the
+  // work (pre-assigned). Services with 0 eligible are left out. `staffStepUsed`
+  // drives back-nav. Cheap to recompute each render (O(staff × services)).
+  const staffStepServices = selectedServices.filter(
+    (s) => eligibleStaffForService(staff, s).length > 0
+  );
+  const staffChoiceServices = staffStepServices.filter(
     (s) => eligibleStaffForService(staff, s).length > 1
   );
-  const staffStepUsed = staffChoiceServices.length > 0;
+  const staffStepUsed = staffStepServices.length > 0;
 
   // If a service was preselected (e.g. from the AI chat), load its slots on mount.
   useEffect(() => {
@@ -496,10 +499,15 @@ export function CalendarBookingFlow({
   async function proceedFromServices() {
     if (selectedServices.length === 0) return;
     setSlot(null);
-    setStaffByService({});
-    const needsStaff = selectedServices.some(
-      (s) => eligibleStaffForService(staff, s).length > 1
-    );
+    // Services with a single eligible specialist are pre-assigned to them.
+    const preset: Record<string, string> = {};
+    let needsStaff = false;
+    for (const s of selectedServices) {
+      const eligible = eligibleStaffForService(staff, s);
+      if (eligible.length > 0) needsStaff = true;
+      if (eligible.length === 1) preset[s.id] = eligible[0].id;
+    }
+    setStaffByService(preset);
     if (needsStaff) {
       setStep("staff");
       return;
@@ -841,13 +849,40 @@ export function CalendarBookingFlow({
       {step === "staff" && (
         <div className="space-y-4">
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold">{t.booking.chooseSpecialist}</h3>
-            <p className="text-sm text-muted-foreground">{t.booking.specialistPerServiceHint}</p>
+            <h3 className="text-sm font-semibold">
+              {staffChoiceServices.length > 0 ? t.booking.chooseSpecialist : t.booking.summarySpecialist}
+            </h3>
+            {staffChoiceServices.length > 0 && (
+              <p className="text-sm text-muted-foreground">{t.booking.specialistPerServiceHint}</p>
+            )}
           </div>
 
-          {staffChoiceServices.map((svc) => {
+          {staffStepServices.map((svc) => {
             const eligible = eligibleStaffForService(staff, svc);
             const current = staffByService[svc.id] ?? "";
+            // Single eligible specialist — no choice, just say who'll do it.
+            if (eligible.length === 1) {
+              const m = eligible[0];
+              return (
+                <div key={svc.id} className="space-y-2 rounded-xl border border-border bg-muted/20 p-3">
+                  <p className="px-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {svc.name}
+                  </p>
+                  <div className="flex items-center gap-2.5 rounded-lg border border-emerald-500 bg-emerald-50 px-3 py-2 dark:bg-emerald-950/30">
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarImage src={m.photo_url || undefined} alt={m.name} />
+                      <AvatarFallback>{m.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{m.name}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {t.booking.specialistAvailable.replace("{name}", m.name)}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={svc.id} className="space-y-2 rounded-xl border border-border bg-muted/20 p-3">
                 <p className="px-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1000,7 +1035,7 @@ export function CalendarBookingFlow({
               value={fmtDay(slot.start)}
               meta={fmtTime(slot.start)}
             />
-            {staffChoiceServices.map((svc) => {
+            {staffStepServices.map((svc) => {
               const m = chosenStaffFor(svc.id);
               return (
                 <SummaryRow

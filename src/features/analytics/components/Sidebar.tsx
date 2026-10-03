@@ -138,12 +138,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     // shown for business accounts; the first shortcut is Bookings, which opens
     // the calendar (booking) widget where received appointments are managed.
     const shortcuts: NavItem[] = [];
+    // Links straight to the workspace's Bookings tab: going via /dashboard/bookings
+    // (which server-redirects here) flashed that route's skeleton first.
     if (isBusiness) {
       shortcuts.push({
-        href: "/dashboard/bookings",
+        href: "/dashboard/booking/bookings",
         label: t.nav.bookings,
         icon: Calendar,
-        isActive: (p) => p.startsWith("/dashboard/bookings"),
+        isActive: (p) => p.startsWith("/dashboard/booking/bookings"),
       });
     }
 

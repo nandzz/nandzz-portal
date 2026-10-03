@@ -125,20 +125,30 @@ export function whatsAppVars(
   return { ...vars, manage_token: booking.manage_token };
 }
 
-// Sample values for admin test sends (no real booking involved).
-export function sampleWhatsAppVars(siteUrl: string): Record<string, string> {
-  return {
-    customer_name: "Alex Johnson",
-    customer_first_name: "Alex",
-    service: "Haircut",
-    services: "Haircut (Maria)",
-    staff: "Maria",
-    date_time: "Today at 3:00 PM",
-    business: "Nandzz Test Studio",
-    price: "€35",
-    manage_url: `${siteUrl}/booking/test`,
-    manage_token: "test",
-  };
+// Sample values for admin test sends (no real booking involved). Built through
+// the same vars builder as real reminders so `date_time` is localized
+// ("Oggi alle 15:00"); the sample start is ~3h from now, like a real reminder.
+export function sampleWhatsAppVars(siteUrl: string, locale: Locale): Record<string, string> {
+  const start = new Date(Date.now() + 3 * 3_600_000);
+  start.setUTCMinutes(0, 0, 0);
+  const vars = bookingMessageVars(
+    {
+      customerName: "Alex Johnson",
+      businessName: "Nandzz Test Studio",
+      serviceName: "Haircut",
+      staffName: "Maria",
+      services: [{ name: "Haircut", staffName: "Maria" }],
+      startsAt: start.toISOString(),
+      timezone: "Europe/Rome",
+      priceCents: 3500,
+      currencySymbol: "€",
+      manageUrl: `${siteUrl}/booking/test`,
+    },
+    locale,
+  );
+  delete vars.multi_service;
+  delete vars.single_service;
+  return { ...vars, manage_token: "test" };
 }
 
 // Send-time re-check of the reminder gates (the cron applies them in SQL).
@@ -291,12 +301,13 @@ export async function runWhatsAppDrain(
       if (kind === "test" && typeof m.message.log_id === "string") {
         const row = testRows.get(m.message.log_id);
         if (row) {
-          const locale = resolveLocale(row.locale);
+          // Render vars in the template's language (it may have fallen back to en).
+          const tpl = pickWhatsAppTemplate(templates, resolveLocale(row.locale));
           const sent = await trySend(
             twilio,
             toWhatsAppAddress(row.to_phone),
-            pickWhatsAppTemplate(templates, locale),
-            sampleWhatsAppVars(siteUrl),
+            tpl,
+            sampleWhatsAppVars(siteUrl, tpl?.locale ?? resolveLocale(row.locale)),
             m.read_ct,
           );
           outcome = sent.outcome;
@@ -315,11 +326,12 @@ export async function runWhatsAppDrain(
           if (skip) {
             result.skipped++;
           } else {
-            const locale = resolveLocale(booking.locale);
+            const tpl = pickWhatsAppTemplate(templates, resolveLocale(booking.locale));
+            const locale = tpl?.locale ?? resolveLocale(booking.locale);
             const sent = await trySend(
               twilio,
               toWhatsAppAddress(booking.customer_phone),
-              pickWhatsAppTemplate(templates, locale),
+              tpl,
               whatsAppVars(booking, inst?.owner ?? null, inst?.config ?? {}, locale, siteUrl),
               m.read_ct,
             );

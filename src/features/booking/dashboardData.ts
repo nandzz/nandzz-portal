@@ -1,11 +1,12 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { WidgetBooking } from "@/lib/types";
+import type { CalendarConfig, WidgetBooking } from "@/lib/types";
 import type { BookingRowData } from "@/features/booking/components/calendar/BookingRow";
 import type { WidgetOverviewData } from "@/features/booking/components/calendar/WidgetOverview";
 import type { WidgetCustomersData, CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";
-import { buildOverview } from "@/features/booking/calendarStats";
+import { buildOverview, type OverviewBookingRow, type OverviewSegment } from "@/features/booking/calendarStats";
+import { getLocationScope } from "@/lib/widgets/calendar";
 import type { StatsPeriod } from "@/lib/period";
 import type { TodaySnapshot, CalendarData, ListData, BookingsFilter } from "@/features/booking/dashboardTypes";
 
@@ -209,16 +210,23 @@ export async function fetchListData(
   return { bookings: rows, total };
 }
 
-// ── Overview (trend + KPIs), aggregated server-side over a bounded window ─────
+// ── Overview (trend + KPIs + capacity/forecast), aggregated server-side ──────
 // buildOverview only ever looks back `pastUnits` periods (≤6 months) plus one
 // future bucket, so a window of [-6 months, +2 months] around now is exact for
-// every period. We fetch that window (paginating past the 1000-row cap when a
-// very busy account exceeds it) and run the same pure builder the client used.
+// every period — and it also covers the capacity (next 7 days) and forecast
+// (rest of this month) horizons. We fetch that window (paginating past the
+// 1000-row cap when a very busy account exceeds it) and run the pure builder.
+// Staffed scopes additionally read the per-staff segments, but only for the
+// short live horizon those two sections need.
+const OVERVIEW_COLUMNS =
+  "id, status, starts_at, ends_at, price_cents, service_name, service_id, duration_min, staff_id, services";
+
 export async function fetchOverviewData(
   supabase: SupabaseClient,
   opts: {
     instanceId: string;
     locationId: string | null;
+    config: CalendarConfig;
     timezone: string;
     currencySymbol: string;
     locale: string;
@@ -226,31 +234,59 @@ export async function fetchOverviewData(
     shareUrl: string | null;
   }
 ): Promise<WidgetOverviewData> {
-  const { instanceId, locationId, timezone, currencySymbol, locale, period, shareUrl } = opts;
+  const { instanceId, locationId, config, timezone, currencySymbol, locale, period, shareUrl } = opts;
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 6, 1));
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 2, 1));
 
-  const cols = "status, starts_at, price_cents, service_name";
-  const rows: Pick<WidgetBooking, "status" | "starts_at" | "price_cents" | "service_name">[] = [];
-  const PAGE = 1000;
-  for (let page = 0; ; page++) {
+  const fetchBookings = async () => {
+    const rows: OverviewBookingRow[] = [];
+    const PAGE = 1000;
+    for (let page = 0; ; page++) {
+      let q = supabase
+        .from("widget_bookings")
+        .select(OVERVIEW_COLUMNS)
+        .eq("instance_id", instanceId)
+        .gte("starts_at", start.toISOString())
+        .lt("starts_at", end.toISOString())
+        .order("starts_at", { ascending: true })
+        .range(page * PAGE, page * PAGE + PAGE - 1);
+      q = scopeLocation(q, locationId);
+      const { data } = await q;
+      const batch = (data ?? []) as OverviewBookingRow[];
+      rows.push(...batch);
+      if (batch.length < PAGE) break;
+    }
+    return rows;
+  };
+
+  // Segments: confirmed, this instance + location bucket, from a day before
+  // now to a day past the later of (now + 7d, month end) — ≤ ~33 days, served
+  // by the (instance_id, starts_at) partial index. Unstaffed scopes skip it:
+  // the booking row's own span is the single resource's busy time.
+  const fetchSegments = async (): Promise<OverviewSegment[]> => {
+    if (getLocationScope(config, locationId).staff.length === 0) return [];
+    const horizon = Math.max(now.getTime() + 8 * DAY_MS, Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 2));
     let q = supabase
-      .from("widget_bookings")
-      .select(cols)
+      .from("widget_booking_segments")
+      .select("booking_id, staff_id, starts_at, ends_at")
       .eq("instance_id", instanceId)
-      .gte("starts_at", start.toISOString())
-      .lt("starts_at", end.toISOString())
-      .order("starts_at", { ascending: true })
-      .range(page * PAGE, page * PAGE + PAGE - 1);
+      .eq("status", "confirmed")
+      .gte("starts_at", new Date(now.getTime() - DAY_MS).toISOString())
+      .lt("starts_at", new Date(horizon).toISOString())
+      .limit(5000);
     q = scopeLocation(q, locationId);
     const { data } = await q;
-    const batch = (data ?? []) as typeof rows;
-    rows.push(...batch);
-    if (batch.length < PAGE) break;
-  }
+    return (data ?? []) as OverviewSegment[];
+  };
 
-  return buildOverview(rows as WidgetBooking[], timezone, currencySymbol, shareUrl, locale, period);
+  const [rows, segments] = await Promise.all([fetchBookings(), fetchSegments()]);
+  return buildOverview(rows, timezone, currencySymbol, shareUrl, locale, period, {
+    config,
+    locationId,
+    segments,
+    now,
+  });
 }
 
 // ── Customers (all-time rollup) via the SQL aggregate RPC ─────────────────────

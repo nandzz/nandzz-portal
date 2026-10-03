@@ -51,6 +51,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inst
       const data = await fetchOverviewData(supabase, {
         instanceId,
         locationId,
+        config,
         timezone,
         currencySymbol: symbol,
         locale,

@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useThemeColors } from "@/lib/charts/useThemeColors";
 import { PeriodSelector } from "@/components/ui/PeriodSelector";
 import type { StatsPeriod } from "@/lib/period";
+import { ForecastCard, OccupancyCard, REALIZED, UPCOMING } from "./OverviewInsights";
 
 export type OverviewBooking = BookingRowData;
 
@@ -29,13 +30,33 @@ export type WidgetOverviewData = {
   };
   trend: { label: string; count: number; isFuture: boolean }[];
   services: { name: string; count: number; revenueCents: number }[];
+  // Next 7 days (owner tz, today first): open capacity vs. booked time. With
+  // staff, minutes are summed across staff (staff-minutes). `fits` = how many
+  // more of the reference service fit into the actual free gaps (buffer-aware).
+  capacity: {
+    referenceService: { name: string; durationMin: number } | null; // most-booked service still offered
+    days: {
+      date: string; // "YYYY-MM-DD" in owner tz
+      label: string; // localized short weekday + day, e.g. "sab 4"
+      openMin: number;
+      bookedMin: number;
+      fits: number;
+      closed: boolean; // no opening hours / blackout
+    }[];
+  };
+  // Current calendar month (owner tz).
+  forecast: {
+    monthLabel: string; // localized, e.g. "ottobre"
+    earnedCents: number; // confirmed, already started
+    bookedCents: number; // confirmed, still ahead
+    potentialCents: number; // remaining free capacity this month × avg value per booked minute
+    avgTicketCents: number; // avg price of priced confirmed bookings in the 6-month window
+  };
   shareUrl: string | null;
 };
 
-// Two emerald shades: realized bookings vs. still-upcoming load. Same measure,
-// split by time relation — a legit 2-category encoding (legend below the chart).
-const REALIZED = "hsl(160 84% 39%)"; // emerald-600
-const UPCOMING = "hsl(152 76% 80%)"; // emerald-200
+// Two emerald shades (realized vs. still-upcoming) live in OverviewInsights so
+// the trend chart and the forecast bar share one encoding.
 
 export function WidgetOverview({
   data,
@@ -221,6 +242,12 @@ export function WidgetOverview({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Capacity + month forecast */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <OccupancyCard capacity={data.capacity} />
+        <ForecastCard forecast={data.forecast} money={money} />
       </div>
     </div>
   );

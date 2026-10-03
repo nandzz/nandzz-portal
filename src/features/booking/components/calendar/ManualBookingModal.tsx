@@ -157,7 +157,9 @@ export function ManualBookingModal({
     if (selectedServices.length === 0) return;
     setSlot(null);
     setStaffId("");
-    if (eligibleStaffForServices(staff, selectedServices).length > 1) {
+    // Any eligible staff ⇒ show the specialist step: a real choice for 2+, or a
+    // confirmation of who'll do the work when there's exactly one.
+    if (eligibleStaffForServices(staff, selectedServices).length > 0) {
       setStep("staff");
       return;
     }
@@ -252,7 +254,7 @@ export function ManualBookingModal({
   const back = () => {
     setError(null);
     if (step === "details") setStep("slot");
-    else if (step === "slot") setStep(eligibleStaff.length > 1 ? "staff" : "service");
+    else if (step === "slot") setStep(eligibleStaff.length > 0 ? "staff" : "service");
     else if (step === "staff") setStep("service");
   };
 
@@ -387,7 +389,40 @@ export function ManualBookingModal({
         )}
 
         {/* Step 2 — specialist */}
-        {step === "staff" && (
+        {step === "staff" && eligibleStaff.length === 1 && (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold">{t.booking.summarySpecialist}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t.booking.specialistForService.replace("{service}", servicesLabel)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-500/60 bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30">
+              <Avatar size="lg" className="shrink-0">
+                <AvatarImage src={eligibleStaff[0].photo_url || undefined} alt={eligibleStaff[0].name} />
+                <AvatarFallback>{eligibleStaff[0].name.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <span className="block truncate text-sm font-medium">{eligibleStaff[0].name}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  {t.booking.specialistAvailable.replace("{name}", eligibleStaff[0].name)}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => pickStaff(eligibleStaff[0].id)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            >
+              {t.booking.continue}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {step === "staff" && eligibleStaff.length > 1 && (
           <div className="space-y-2">
             <div className="space-y-1">
               <h3 className="text-sm font-semibold">{t.booking.chooseSpecialist}</h3>
