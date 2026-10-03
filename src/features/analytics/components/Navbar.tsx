@@ -58,6 +58,7 @@ export function Navbar() {
 
   return (
     <nav
+      data-app-bar
       aria-hidden={isHidden || undefined}
       className={cn(
         "sticky top-0 z-50 pt-[env(safe-area-inset-top)] border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
@@ -70,7 +71,7 @@ export function Navbar() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-0 group">
             <span className="text-xl font-bold tracking-tight">nand</span>
-            <span className="text-xl font-bold tracking-tight text-violet-600 transition-colors group-hover:text-violet-500">zz</span>
+            <span data-brand-accent className="text-xl font-bold tracking-tight text-violet-600 transition-colors group-hover:text-violet-500">zz</span>
           </Link>
 
           {/* Nav links - desktop */}

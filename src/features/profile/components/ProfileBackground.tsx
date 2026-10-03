@@ -25,6 +25,7 @@ import {
 import type { BookingButtonStyle, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
+import { isColorDark } from "@/lib/color";
 
 const MAX_BG_SIZE = 1.5 * 1024 * 1024;
 
@@ -361,11 +362,26 @@ export function ProfileBackground({
     setRepositioning(false);
   };
 
+  // Tint the app bars (top Navbar + mobile tab bar, tagged `data-app-bar`)
+  // with the profile's colors while on this page: background = profile color,
+  // icons/labels = profile text color (or a legible default for the bg). Lives
+  // here (not in the server page) so the owner's style picker previews live;
+  // the <style> unmounts on navigation, restoring the app's own chrome.
+  const chromeFg = localTextColor ?? (localColor ? (isColorDark(localColor) ? "#fafafa" : "#0a0a0a") : null);
+  const chromeCss = chromeFg
+    ? `[data-app-bar]{${localColor ? `background-color:color-mix(in srgb,${localColor} 88%,transparent)!important;` : ""}color:${chromeFg};border-color:color-mix(in srgb,${chromeFg} 12%,transparent)!important}` +
+      `[data-app-bar] :is(.text-muted-foreground,.text-foreground,.text-violet-600):not([data-brand-accent]){color:${chromeFg}!important}` +
+      `[data-app-bar] [data-tab]:not([data-active]){opacity:.55}` +
+      `[data-app-bar] .hover\\:bg-accent:hover{background-color:color-mix(in srgb,${chromeFg} 10%,transparent)!important}`
+    : null;
+
   const savedPosStr = `${savedPosition.x}% ${savedPosition.y}%`;
   const livePosStr  = `${position.x}% ${position.y}%`;
 
   return (
     <>
+      {chromeCss && <style>{chromeCss}</style>}
+
       {/* ── Custom page color — pinned to the viewport (not the page box), so
           it also fills the space below the content, behind the floating CTA /
           Safari toolbars and the status bar, with no white/dark strip. ── */}

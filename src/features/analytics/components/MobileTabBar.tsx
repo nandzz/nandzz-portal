@@ -116,6 +116,7 @@ export function MobileTabBar() {
 
   return (
     <nav
+      data-app-bar
       aria-hidden={isHidden}
       className={cn(
         "fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80",
@@ -130,7 +131,7 @@ export function MobileTabBar() {
           const label = t.mobileTab[tab.labelKey as keyof typeof t.mobileTab];
 
           return (
-            <Link key={tab.href} href={tab.href} className={cn(tabClass, "transition-transform active:scale-95")}>
+            <Link key={tab.href} href={tab.href} data-tab data-active={active || undefined} className={cn(tabClass, "transition-transform active:scale-95")}>
               {tabInner(tab.icon, label, active)}
             </Link>
           );
