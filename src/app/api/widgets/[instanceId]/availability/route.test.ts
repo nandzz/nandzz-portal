@@ -63,6 +63,7 @@ const config: CalendarConfig = {
   show_prices: true,
   collect_address: false,
   address_required: false,
+  whatsapp_reminder: true,
   locations: [],
   services: [{ id: "svc_1", name: "Haircut", duration_min: 30 }],
   availability: { mon: [["09:00", "17:00"]] },

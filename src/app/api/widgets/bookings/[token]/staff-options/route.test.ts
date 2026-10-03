@@ -46,6 +46,7 @@ const config: CalendarConfig = {
   show_prices: true,
   collect_address: false,
   address_required: false,
+  whatsapp_reminder: true,
   locations: [],
   services: [{ id: "svc_1", name: "Nails", duration_min: 30, staff_ids: ["st_a"] }],
   availability: { mon: [["09:00", "17:00"]] },

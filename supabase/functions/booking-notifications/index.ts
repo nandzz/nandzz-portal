@@ -2,8 +2,9 @@
 //
 // Called by the DB insert trigger (create), Next.js server routes (owner/customer
 // cancel + reschedule), and — in `mode: "drain"` — a `*/1` cron heartbeat that
-// drains a pgmq queue of reminder jobs (see drain.ts). WhatsApp is out of scope
-// and stays in Next.js. The single path loads everything it needs from `booking_id`
+// drains a pgmq queue of reminder jobs (see drain.ts), then the WhatsApp
+// reminder queue (see whatsapp.ts — ~4h reminders + admin test sends via Twilio).
+// The single path loads everything it needs from `booking_id`
 // with the service-role key, decides recipients from the event × actor matrix,
 // then sends localized email(s) via Amazon SES. The recipient/render logic is
 // shared with the drain path via render.ts (`buildEmailJobs`).
@@ -25,12 +26,13 @@
 // (401 on mismatch) — enforced for ALL modes. Runs with verify_jwt = false.
 //
 // Secrets: BOOKING_NOTIFY_SECRET, SES_REGION, SES_ACCESS_KEY_ID,
-//   SES_SECRET_ACCESS_KEY, SES_EMAIL_FROM, (optional) PUBLIC_SITE_URL.
+//   SES_SECRET_ACCESS_KEY, SES_EMAIL_FROM, (optional) PUBLIC_SITE_URL,
+//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM (WhatsApp drain).
 // Auto-injected: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 //
 // Contract: never throw to the caller. 401 (bad secret), 400 (missing
 // booking_id, single path), else 200. Single: { ok, sent: [...], skipped: [...] }.
-// Drain: { ok, drained, sent, skipped, archived }.
+// Drain: { ok, drained, sent, skipped, archived, whatsapp: { drained, sent, failed, skipped } }.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -38,7 +40,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { loadTemplates } from "./config.ts";
 import { readSesConfig, sendSesEmail } from "./ses.ts";
 import { buildEmailJobs, type OwnerProfile } from "./render.ts";
-import { INSTANCE_SELECT, runDrain } from "./drain.ts";
+import { BUDGET_MS, INSTANCE_SELECT, runDrain } from "./drain.ts";
+import { runWhatsAppDrain } from "./whatsapp.ts";
 import {
   reminderIsRedundant,
   type BookingRow,
@@ -91,14 +94,24 @@ serve(async (req) => {
 
   // ── Drain mode: batched pgmq queue drain (see drain.ts) ─────────────────────
   if (payload.mode === "drain") {
+    const started = Date.now();
+    let email: Awaited<ReturnType<typeof runDrain>> = { ok: true, drained: 0, sent: 0, skipped: 0, archived: 0 };
     try {
-      const result = await runDrain(admin, siteUrl());
-      return json(result);
+      email = await runDrain(admin, siteUrl());
     } catch (err) {
       // Never throw to the cron — log and 200 so the heartbeat doesn't retry-storm.
       console.error(`${LOG} drain unhandled error:`, err instanceof Error ? err.stack ?? err.message : err);
-      return json({ ok: true, drained: 0, sent: 0, skipped: 0, archived: 0 });
     }
+    // WhatsApp queue gets whatever is left of the shared budget (min 5s so a
+    // long email drain can't starve it entirely; both queues are small).
+    let whatsapp = { drained: 0, sent: 0, failed: 0, skipped: 0 };
+    try {
+      const deadline = Math.max(started + BUDGET_MS, Date.now() + 5_000);
+      whatsapp = await runWhatsAppDrain(admin, siteUrl(), deadline);
+    } catch (err) {
+      console.error(`${LOG} whatsapp drain unhandled error:`, err instanceof Error ? err.stack ?? err.message : err);
+    }
+    return json({ ...email, whatsapp });
   }
 
   // ── Single path (unchanged behaviour) ───────────────────────────────────────

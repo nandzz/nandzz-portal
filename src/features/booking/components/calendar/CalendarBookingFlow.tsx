@@ -55,6 +55,9 @@ interface Props {
   // meaningful when `collectAddress` is true.
   collectAddress?: boolean;
   addressRequired?: boolean;
+  // Show the WhatsApp-reminder consent checkbox (pre-checked). True only when the
+  // platform feature and the business's own toggle are both on.
+  offerWhatsAppReminder?: boolean;
   initialServiceId?: string;
   onBooked?: (manageUrl: string) => void;
 }
@@ -73,6 +76,7 @@ export function CalendarBookingFlow({
   currencySymbol = "$",
   collectAddress = false,
   addressRequired = false,
+  offerWhatsAppReminder = false,
   initialServiceId,
   onBooked,
 }: Props) {
@@ -143,6 +147,7 @@ export function CalendarBookingFlow({
   // so the visitor isn't scolded mid-typing.
   const [touchedEmail, setTouchedEmail] = useState(false);
   const [touchedPhone, setTouchedPhone] = useState(false);
+  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manageUrl, setManageUrl] = useState<string | null>(null);
@@ -559,6 +564,7 @@ export function CalendarBookingFlow({
           customer_phone: toE164(dialForRegion(phoneRegion), form.phone),
           customer_address: collectAddress ? form.address.trim() || undefined : undefined,
           notes: form.notes || undefined,
+          whatsapp_opt_in: offerWhatsAppReminder ? whatsappOptIn : false,
           // The language the customer actually used the widget in (picker or
           // browser-default cookie) — authoritative over Accept-Language, which
           // can be English even for a booker in a non-English locale.
@@ -1107,6 +1113,17 @@ export function CalendarBookingFlow({
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
+          {offerWhatsAppReminder && (
+            <label className="flex cursor-pointer items-start gap-2.5 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-600"
+                checked={whatsappOptIn}
+                onChange={(e) => setWhatsappOptIn(e.target.checked)}
+              />
+              <span>{t.booking.whatsappOptIn}</span>
+            </label>
+          )}
           <button
             onClick={submit}
             disabled={submitting}

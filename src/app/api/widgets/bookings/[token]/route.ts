@@ -3,8 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeCalendarConfig, resolveSegmentPlan } from "@/lib/widgets/calendar";
 import { BOOKING_ERROR_STATUS } from "@/lib/widgets/booking-errors";
-import { currencySymbol } from "@/lib/widgets/messages";
-import { dispatchBookingMessage } from "@/lib/widgets/notify";
 import { loadRescheduleContext, isLoadError } from "./_shared";
 import type { WidgetBooking } from "@/lib/types";
 
@@ -93,7 +91,6 @@ export async function DELETE(
   if (!data) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
   const booking = data as unknown as WidgetBooking;
-  const alreadyCancelled = booking.status === "cancelled";
 
   // Record who is cancelling in the same UPDATE: the DB trigger reads
   // notify_actor to decide the email recipient (owner ⇒ tell the customer;
@@ -107,35 +104,6 @@ export async function DELETE(
     .eq("manage_token", token);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // WhatsApp confirmation (email is handled by the DB trigger → edge function) —
-  // only on the first transition, so a double-cancel doesn't re-message.
-  if (!alreadyCancelled) {
-    const instance = (data as {
-      instance?: {
-        config?: unknown;
-        owner?: { display_name?: string; username?: string } | null;
-      };
-    }).instance;
-    const config = normalizeCalendarConfig(instance?.config);
-    const owner = instance?.owner ?? null;
-    const businessName = owner?.display_name || owner?.username || "your provider";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
-    await dispatchBookingMessage(config.messages.cancellation, {
-      customerName: booking.customer_name,
-      customerEmail: booking.customer_email,
-      customerPhone: booking.customer_phone,
-      businessName,
-      serviceName: booking.service_name,
-      startsAt: booking.starts_at,
-      timezone: config.timezone,
-      priceCents: booking.price_cents,
-      currencySymbol: currencySymbol(config.currency),
-      manageUrl: `${siteUrl}/booking/${token}`,
-      staffName: booking.staff_name ?? null,
-    });
-  }
 
   return NextResponse.json({ ok: true, status: "cancelled" });
 }

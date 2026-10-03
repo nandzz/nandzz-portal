@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicWidgetById } from "@/features/booking/server";
 import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
 import { currencySymbol } from "@/lib/widgets/messages";
+import { isWhatsAppReminderLive } from "@/lib/widgets/whatsapp-reminder";
 import { renderWidgetIcon, CalendarBookingFlow } from "@/features/booking";
 import { ShareMenu } from "@/features/spaces";
 import { BackButton } from "@/components/ui/BackButton";
@@ -80,9 +81,10 @@ export default async function WidgetPage({
   params: Promise<{ username: string; instanceId: string }>;
 }) {
   const { username, instanceId } = await params;
-  const [{ profile, widget }, t] = await Promise.all([
+  const [{ profile, widget }, t, whatsappLive] = await Promise.all([
     getData(username, instanceId),
     getServerTranslations(),
+    isWhatsAppReminderLive(),
   ]);
 
   // Not found unless the profile exists and the widget is live (enabled + entitled).
@@ -153,6 +155,7 @@ export default async function WidgetPage({
               currencySymbol={currencySymbol(config.currency)}
               collectAddress={config.collect_address}
               addressRequired={config.address_required}
+              offerWhatsAppReminder={whatsappLive && config.whatsapp_reminder}
             />
           ) : (
             <p className="py-12 text-center text-sm text-muted-foreground">

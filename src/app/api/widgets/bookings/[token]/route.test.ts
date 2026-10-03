@@ -8,7 +8,6 @@ const mockSegmentsResult = vi.fn(() => ({ data: [] }));
 const mockBusyResult = vi.fn(() => ({ data: [] }));
 const mockRpcSingle = vi.fn();
 const mockRpc = vi.fn(() => ({ single: mockRpcSingle }));
-const mockDispatch = vi.fn();
 const mockUpdatePatch = vi.fn();
 
 // Chainable stand-in for widget_booking_segments. The reschedule context loads
@@ -43,10 +42,6 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 
-vi.mock("@/lib/widgets/notify", () => ({
-  dispatchBookingMessage: (...args: unknown[]) => mockDispatch(...args),
-}));
-
 // resolveActor() reads the SSR session — default "no user" ⇒ actor "customer".
 const mockGetUser = vi.fn(async () => ({ data: { user: null } }));
 vi.mock("@/lib/supabase/server", () => ({
@@ -71,6 +66,7 @@ const config: CalendarConfig = {
   show_prices: true,
   collect_address: false,
   address_required: false,
+  whatsapp_reminder: true,
   locations: [],
   services: [{ id: "svc_1", name: "Haircut", duration_min: 30 }],
   availability: { mon: [["09:00", "17:00"]], tue: [["09:00", "17:00"]] },
@@ -176,7 +172,7 @@ describe("DELETE /api/widgets/bookings/[token]", () => {
     expect(res.status).toBe(404);
   });
 
-  it("cancels the booking and sends a cancellation message on first cancel", async () => {
+  it("cancels the booking and records the actor for the notify trigger", async () => {
     mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({ status: "confirmed" }) });
     mockUpdateStatusResult.mockReturnValue({ error: null });
 
@@ -185,20 +181,9 @@ describe("DELETE /api/widgets/bookings/[token]", () => {
 
     expect(res.status).toBe(200);
     expect(body).toEqual({ ok: true, status: "cancelled" });
-    expect(mockDispatch).toHaveBeenCalledTimes(1);
     expect(mockUpdatePatch).toHaveBeenCalledWith(
       expect.objectContaining({ status: "cancelled", notify_actor: "customer" })
     );
-  });
-
-  it("does not re-send the cancellation message on a double-cancel", async () => {
-    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({ status: "cancelled" }) });
-    mockUpdateStatusResult.mockReturnValue({ error: null });
-
-    const res = await DELETE(new Request("http://x") as never, params());
-
-    expect(res.status).toBe(200);
-    expect(mockDispatch).not.toHaveBeenCalled();
   });
 
   it("500s with the DB error message when the update fails", async () => {

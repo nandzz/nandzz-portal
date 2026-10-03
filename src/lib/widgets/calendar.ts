@@ -42,6 +42,7 @@ export function defaultCalendarConfig(): CalendarConfig {
     show_prices: true,
     collect_address: false,
     address_required: false,
+    whatsapp_reminder: true,
     locations: [],
     services: [],
     categories: [],
@@ -128,6 +129,7 @@ export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
     show_prices: typeof c.show_prices === "boolean" ? c.show_prices : true,
     collect_address: typeof c.collect_address === "boolean" ? c.collect_address : false,
     address_required: typeof c.address_required === "boolean" ? c.address_required : false,
+    whatsapp_reminder: typeof c.whatsapp_reminder === "boolean" ? c.whatsapp_reminder : true,
     locations: Array.isArray(c.locations)
       ? (c.locations.map(normalizeLocation).filter(Boolean) as Location[])
       : [],

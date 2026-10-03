@@ -1017,6 +1017,7 @@ export type Translations = {
     customerAddressPlaceholder: string;
     customerAddressPlaceholderOptional: string;
     notesPlaceholder: string;
+    whatsappOptIn: string;
     confirmBooking: string;
     bookedTitle: string;
     withName: string;
@@ -1233,6 +1234,8 @@ export type Translations = {
     collectAddressDesc: string;
     addressRequiredLabel: string;
     addressRequiredDesc: string;
+    whatsappReminderLabel: string;
+    whatsappReminderDesc: string;
     addServiceHint: string;
     servicePlaceholder: string;
     minSuffix: string;
@@ -2421,6 +2424,7 @@ const en: Translations = {
     customerAddressPlaceholder: "Address",
     customerAddressPlaceholderOptional: "Address (optional)",
     notesPlaceholder: "Notes (optional)",
+    whatsappOptIn: "Send me a WhatsApp reminder a few hours before my appointment",
     confirmBooking: "Confirm booking",
     bookedTitle: "You're booked!",
     withName: "with {name}",
@@ -2637,6 +2641,8 @@ const en: Translations = {
     collectAddressDesc: "Show an address field on the booking page — useful for mobile or at-home services.",
     addressRequiredLabel: "Require the address",
     addressRequiredDesc: "When on, visitors must fill in their address to book.",
+    whatsappReminderLabel: "WhatsApp reminder",
+    whatsappReminderDesc: "Offer customers a WhatsApp reminder about 4 hours before their appointment. They can opt out at booking.",
     addServiceHint: "Add at least one service so visitors can book.",
     servicePlaceholder: "Service name",
     minSuffix: "min",
@@ -3825,6 +3831,7 @@ const pt: Translations = {
     customerAddressPlaceholder: "Endereço",
     customerAddressPlaceholderOptional: "Endereço (opcional)",
     notesPlaceholder: "Observações (opcional)",
+    whatsappOptIn: "Quero receber um lembrete no WhatsApp algumas horas antes do agendamento",
     confirmBooking: "Confirmar agendamento",
     bookedTitle: "Você está agendado!",
     withName: "com {name}",
@@ -4041,6 +4048,8 @@ const pt: Translations = {
     collectAddressDesc: "Mostra um campo de endereço na página de agendamento — útil para serviços móveis ou em domicílio.",
     addressRequiredLabel: "Exigir o endereço",
     addressRequiredDesc: "Quando ativado, os visitantes precisam preencher o endereço para agendar.",
+    whatsappReminderLabel: "Lembrete no WhatsApp",
+    whatsappReminderDesc: "Oferece aos clientes um lembrete no WhatsApp cerca de 4 horas antes do agendamento. Podem recusar ao agendar.",
     addServiceHint: "Adicione pelo menos um serviço para que os visitantes possam agendar.",
     servicePlaceholder: "Nome do serviço",
     minSuffix: "min",
@@ -5229,6 +5238,7 @@ const fr: Translations = {
     customerAddressPlaceholder: "Adresse",
     customerAddressPlaceholderOptional: "Adresse (facultatif)",
     notesPlaceholder: "Notes (facultatif)",
+    whatsappOptIn: "M'envoyer un rappel WhatsApp quelques heures avant mon rendez-vous",
     confirmBooking: "Confirmer la réservation",
     bookedTitle: "C'est réservé !",
     withName: "avec {name}",
@@ -5445,6 +5455,8 @@ const fr: Translations = {
     collectAddressDesc: "Affiche un champ d'adresse sur la page de réservation — utile pour les services mobiles ou à domicile.",
     addressRequiredLabel: "Rendre l'adresse obligatoire",
     addressRequiredDesc: "Une fois activé, les visiteurs doivent saisir leur adresse pour réserver.",
+    whatsappReminderLabel: "Rappel WhatsApp",
+    whatsappReminderDesc: "Propose aux clients un rappel WhatsApp environ 4 heures avant leur rendez-vous. Ils peuvent le refuser lors de la réservation.",
     addServiceHint: "Ajoutez au moins un service pour permettre les réservations.",
     servicePlaceholder: "Nom du service",
     minSuffix: "min",
@@ -6633,6 +6645,7 @@ const es: Translations = {
     customerAddressPlaceholder: "Dirección",
     customerAddressPlaceholderOptional: "Dirección (opcional)",
     notesPlaceholder: "Notas (opcional)",
+    whatsappOptIn: "Enviarme un recordatorio por WhatsApp unas horas antes de mi cita",
     confirmBooking: "Confirmar reserva",
     bookedTitle: "¡Ya tienes tu reserva!",
     withName: "con {name}",
@@ -6849,6 +6862,8 @@ const es: Translations = {
     collectAddressDesc: "Muestra un campo de dirección en la página de reservas — útil para servicios móviles o a domicilio.",
     addressRequiredLabel: "Exigir la dirección",
     addressRequiredDesc: "Cuando está activado, los visitantes deben rellenar su dirección para reservar.",
+    whatsappReminderLabel: "Recordatorio por WhatsApp",
+    whatsappReminderDesc: "Ofrece a los clientes un recordatorio por WhatsApp unas 4 horas antes de su cita. Pueden rechazarlo al reservar.",
     addServiceHint: "Añade al menos un servicio para que los visitantes puedan reservar.",
     servicePlaceholder: "Nombre del servicio",
     minSuffix: "min",
@@ -8037,6 +8052,7 @@ const ja: Translations = {
     customerAddressPlaceholder: "住所",
     customerAddressPlaceholderOptional: "住所（任意）",
     notesPlaceholder: "メモ（任意）",
+    whatsappOptIn: "予約の数時間前にWhatsAppでリマインダーを受け取る",
     confirmBooking: "予約を確定",
     bookedTitle: "予約が完了しました！",
     withName: "{name}担当",
@@ -8253,6 +8269,8 @@ const ja: Translations = {
     collectAddressDesc: "予約ページに住所欄を表示します。出張・訪問サービスに便利です。",
     addressRequiredLabel: "住所を必須にする",
     addressRequiredDesc: "オンにすると、訪問者は予約時に住所の入力が必要になります。",
+    whatsappReminderLabel: "WhatsAppリマインダー",
+    whatsappReminderDesc: "予約の約4時間前にWhatsAppでリマインダーを送ります。お客様は予約時に受け取らないことも選べます。",
     addServiceHint: "訪問者が予約できるように、少なくとも1つのサービスを追加してください。",
     servicePlaceholder: "サービス名",
     minSuffix: "分",
@@ -9441,6 +9459,7 @@ const de: Translations = {
     customerAddressPlaceholder: "Adresse",
     customerAddressPlaceholderOptional: "Adresse (optional)",
     notesPlaceholder: "Notizen (optional)",
+    whatsappOptIn: "Schickt mir einige Stunden vor dem Termin eine Erinnerung per WhatsApp",
     confirmBooking: "Buchung bestätigen",
     bookedTitle: "Du bist gebucht!",
     withName: "mit {name}",
@@ -9657,6 +9676,8 @@ const de: Translations = {
     collectAddressDesc: "Zeigt ein Adressfeld auf der Buchungsseite — nützlich für mobile oder Vor-Ort-Dienste.",
     addressRequiredLabel: "Adresse verpflichtend machen",
     addressRequiredDesc: "Wenn aktiviert, müssen Besucher ihre Adresse angeben, um zu buchen.",
+    whatsappReminderLabel: "WhatsApp-Erinnerung",
+    whatsappReminderDesc: "Bietet Kunden etwa 4 Stunden vor dem Termin eine Erinnerung per WhatsApp an. Sie können sie bei der Buchung abwählen.",
     addServiceHint: "Füge mindestens eine Leistung hinzu, damit Besucher buchen können.",
     servicePlaceholder: "Name der Leistung",
     minSuffix: "Min.",
@@ -10845,6 +10866,7 @@ const it: Translations = {
     customerAddressPlaceholder: "Indirizzo",
     customerAddressPlaceholderOptional: "Indirizzo (facoltativo)",
     notesPlaceholder: "Note (facoltativo)",
+    whatsappOptIn: "Inviami un promemoria su WhatsApp qualche ora prima dell'appuntamento",
     confirmBooking: "Conferma prenotazione",
     bookedTitle: "Sei prenotato!",
     withName: "con {name}",
@@ -11061,6 +11083,8 @@ const it: Translations = {
     collectAddressDesc: "Mostra un campo indirizzo nella pagina di prenotazione — utile per servizi mobili o a domicilio.",
     addressRequiredLabel: "Rendi l'indirizzo obbligatorio",
     addressRequiredDesc: "Se attivo, i visitatori devono inserire il proprio indirizzo per prenotare.",
+    whatsappReminderLabel: "Promemoria WhatsApp",
+    whatsappReminderDesc: "Offre ai clienti un promemoria su WhatsApp circa 4 ore prima dell'appuntamento. Possono rifiutarlo al momento della prenotazione.",
     addServiceHint: "Aggiungi almeno un servizio per permettere le prenotazioni.",
     servicePlaceholder: "Nome del servizio",
     minSuffix: "min",

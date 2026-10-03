@@ -364,6 +364,12 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                   </div>
                 )}
               </ToggleRow>
+              <ToggleRow
+                label={t.booking.whatsappReminderLabel}
+                desc={t.booking.whatsappReminderDesc}
+                checked={config.whatsapp_reminder}
+                onCheckedChange={(v) => setConfig((c) => ({ ...c, whatsapp_reminder: v }))}
+              />
             </div>
           </section>
         </div>

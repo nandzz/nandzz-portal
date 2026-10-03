@@ -435,6 +435,7 @@ export type CalendarConfig = {
   show_prices: boolean; // whether service prices are shown on the public booking widget
   collect_address: boolean; // whether the public booking widget asks the customer for an address
   address_required: boolean; // whether that address field must be filled (only meaningful when collect_address)
+  whatsapp_reminder: boolean; // offer customers a WhatsApp reminder ~4h before the appointment (default on)
   locations: Location[]; // empty ⇒ legacy single-location mode (read the top-level fields below)
   services: CalendarService[]; // legacy top-level (used only when locations is empty)
   categories?: CalendarCategory[]; // legacy top-level service groupings (used only when locations is empty)

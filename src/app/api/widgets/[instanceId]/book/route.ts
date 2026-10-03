@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BOOKING_ERROR_STATUS, mapBookingError } from "@/lib/widgets/booking-errors";
 import { normalizeCalendarConfig, resolveSegmentPlan, type ServiceChoice } from "@/lib/widgets/calendar";
-import { currencySymbol } from "@/lib/widgets/messages";
-import { dispatchBookingMessage } from "@/lib/widgets/notify";
 import { detectLocale, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/translations";
 import type { WidgetBooking } from "@/lib/types";
 
@@ -32,6 +30,8 @@ export async function POST(
     staff_by_service?: Record<string, string>;
     location_id?: string | null;
     locale?: string;
+    // Booking-funnel consent to a WhatsApp reminder before the appointment.
+    whatsapp_opt_in?: boolean;
   };
 
   // Multi-service: prefer the explicit list, falling back to the single
@@ -171,31 +171,22 @@ export async function POST(
     return NextResponse.json({ error: mapped.code }, { status: mapped.status });
   }
 
-  // Build the manage link + send a confirmation (fire-and-forget on failure).
+  // Confirmation email goes out via the DB insert trigger → edge function.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const manageUrl = `${siteUrl}/booking/${booking.manage_token}`;
 
-  // Reuse the instance/config fetched above (it also carries the owner profile).
-  const owner = instance.owner as unknown as { display_name?: string; username?: string } | null;
-  const businessName = owner?.display_name || owner?.username || "your provider";
-
-  // Send the owner-configured confirmation. Email now goes through the DB
-  // insert trigger → booking-notifications edge function; dispatch only carries
-  // WhatsApp (its email branch was removed). Best-effort: dispatch swallows
-  // failures so the committed booking still 201s.
-  await dispatchBookingMessage(config.messages.confirmation, {
-    customerName: booking.customer_name,
-    customerEmail: booking.customer_email,
-    customerPhone: booking.customer_phone,
-    businessName,
-    serviceName: booking.service_name,
-    startsAt: booking.starts_at,
-    timezone: config.timezone,
-    priceCents: booking.price_cents,
-    currencySymbol: currencySymbol(config.currency),
-    manageUrl,
-    staffName: booking.staff_name ?? null,
-  });
+  // Persist the customer's WhatsApp-reminder consent (the ~4h reminder is sent
+  // by the booking-notifications edge function). A separate update rather than
+  // another create_booking_tx param: the reminder only fires hours later, so it
+  // needn't be atomic with the insert. Only an explicit `true` opts in — owner
+  // manual and AI bookings never message without consent.
+  if (body.whatsapp_opt_in === true && booking.customer_phone) {
+    const { error: optInError } = await admin
+      .from("widget_bookings")
+      .update({ whatsapp_opt_in: true })
+      .eq("id", booking.id);
+    if (optInError) console.error("[widgets/book] whatsapp_opt_in update failed:", optInError);
+  }
 
   return NextResponse.json(
     {

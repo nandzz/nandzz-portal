@@ -17,11 +17,13 @@ function segmentsBuilder(): unknown {
   return builder;
 }
 
+const mockOptInEq = vi.fn(async () => ({ error: null }));
+const mockOptInUpdate = vi.fn(() => ({ eq: mockOptInEq }));
 const mockFrom = vi.fn((table: string) => {
   if (table === "widget_booking_segments") return segmentsBuilder();
+  if (table === "widget_bookings") return { update: mockOptInUpdate };
   return { select: () => ({ eq: () => ({ maybeSingle: mockInstanceMaybeSingle }) }) };
 });
-const mockDispatch = vi.fn();
 
 // Minimal calendar config: a single unstaffed service open Mondays, plus a
 // location carrying the same service (for the location-scoped assertion).
@@ -32,6 +34,7 @@ const bookConfig: CalendarConfig = {
   show_prices: true,
   collect_address: false,
   address_required: false,
+  whatsapp_reminder: true,
   services: [{ id: "svc_1", name: "Haircut", duration_min: 30 }],
   availability: { mon: [["09:00", "17:00"]] },
   blackout_dates: [],
@@ -60,10 +63,6 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ rpc: mockRpc, from: mockFrom }),
-}));
-
-vi.mock("@/lib/widgets/notify", () => ({
-  dispatchBookingMessage: (...args: unknown[]) => mockDispatch(...args),
 }));
 
 function makeReq(body: unknown) {
@@ -227,23 +226,21 @@ describe("POST /api/widgets/[instanceId]/book", () => {
     );
   });
 
-  it("dispatches the owner's confirmation message on success", async () => {
-    mockRpcSingle.mockResolvedValue({ data: bookingRow({ staff_name: "Alex" }), error: null });
+  it("saves the WhatsApp reminder opt-in when the customer consents", async () => {
+    mockRpcSingle.mockResolvedValue({ data: bookingRow(), error: null });
 
-    await POST(makeReq(validBody), params());
+    const res = await POST(makeReq({ ...validBody, whatsapp_opt_in: true }), params());
 
-    expect(mockDispatch).toHaveBeenCalledTimes(1);
-    const [, ctx] = mockDispatch.mock.calls[0];
-    expect(ctx.customerEmail).toBe("jamie@example.com");
-    expect(ctx.staffName).toBe("Alex");
-    expect(ctx.manageUrl).toBe("http://localhost:3000/booking/tok_abc");
+    expect(res.status).toBe(201);
+    expect(mockOptInUpdate).toHaveBeenCalledWith({ whatsapp_opt_in: true });
+    expect(mockOptInEq).toHaveBeenCalledWith("id", "bkg_1");
   });
 
-  it("does not dispatch a confirmation when the RPC fails", async () => {
-    mockRpcSingle.mockResolvedValue({ data: null, error: { message: "SLOT_TAKEN" } });
+  it("does not opt in without explicit consent", async () => {
+    mockRpcSingle.mockResolvedValue({ data: bookingRow(), error: null });
 
-    await POST(makeReq(validBody), params());
+    await POST(makeReq({ ...validBody, whatsapp_opt_in: false }), params());
 
-    expect(mockDispatch).not.toHaveBeenCalled();
+    expect(mockOptInUpdate).not.toHaveBeenCalled();
   });
 });
