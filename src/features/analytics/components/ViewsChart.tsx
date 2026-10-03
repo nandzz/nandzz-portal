@@ -7,9 +7,12 @@ import { useThemeColors } from "@/lib/charts/useThemeColors";
 
 interface ViewsChartProps {
   data: ViewsSeriesPoint[];
+  // Tooltip unit after the number (defaults to "Views").
+  unitLabel?: string;
+  color?: string;
 }
 
-export function ViewsChart({ data }: ViewsChartProps) {
+export function ViewsChart({ data, unitLabel = "Views", color = "hsl(263 70% 60%)" }: ViewsChartProps) {
   const colors = useThemeColors({
     grid: "--border",
     axis: "--muted-foreground",
@@ -22,7 +25,7 @@ export function ViewsChart({ data }: ViewsChartProps) {
     datasets: [
       {
         data: data.map((d) => d.views),
-        backgroundColor: "hsl(263 70% 60%)",
+        backgroundColor: color,
         borderRadius: 3,
         maxBarThickness: 24,
       },
@@ -55,7 +58,7 @@ export function ViewsChart({ data }: ViewsChartProps) {
         titleFont: { size: 12 },
         bodyFont: { size: 12 },
         callbacks: {
-          label: (ctx) => `${ctx.parsed.y} Views`,
+          label: (ctx) => `${ctx.parsed.y} ${unitLabel}`,
         },
       },
     },

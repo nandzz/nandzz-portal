@@ -4,6 +4,8 @@
 export {
   getSpaceAnalytics,
   getDashboardAnalytics,
+  getProfileVisitorAnalytics,
+  type ProfileVisitorAnalytics,
   type SpaceSummary,
   type DashboardAnalytics,
 } from "./data/analytics";

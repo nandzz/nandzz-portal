@@ -47,7 +47,7 @@ export default async function SpaceAnalyticsPage({
 
   const period = parseStatsPeriod((await searchParams).period);
   const locale = await getCurrentLocale();
-  const analytics = await getSpaceAnalytics(spaceId, locale, period);
+  const analytics = await getSpaceAnalytics(userId, spaceId, locale, period);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-8">

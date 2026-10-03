@@ -11,6 +11,11 @@ export const recordViewSchema = z.object({
 
 export type RecordViewInput = z.infer<typeof recordViewSchema>;
 
+// A visit to a public profile page (any visitor, incl. anonymous).
+export const recordProfileViewSchema = z.object({
+  profileId: z.uuid(),
+});
+
 // Mark a batch of the signed-in user's notifications as read.
 export const markNotificationsReadSchema = z.object({
   ids: z.array(z.uuid()).min(1),

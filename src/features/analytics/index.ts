@@ -20,10 +20,13 @@ export { AiJobsIndicator } from "./components/AiJobsIndicator";
 // ── Analytics surfaces ───────────────────────────────────────────────────────
 export { ViewsChart } from "./components/ViewsChart";
 export { AnalyticsPeriodControl } from "./components/AnalyticsPeriodControl";
+export { ProfileViewTracker } from "./components/ProfileViewTracker";
 
 // ── Actions (view tracking + chrome mutations) ───────────────────────────────
 export { recordSpaceView } from "./actions/record-view";
 export type { RecordViewResult } from "./actions/record-view";
+export { recordProfileView } from "./actions/record-profile-view";
+export type { RecordProfileViewResult } from "./actions/record-profile-view";
 export { markNotificationsRead } from "./actions/mark-notifications-read";
 export type { MarkNotificationsReadResult } from "./actions/mark-notifications-read";
 export { deleteAiJob } from "./actions/delete-ai-job";

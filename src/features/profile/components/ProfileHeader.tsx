@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Mail, Globe, MapPin } from "lucide-react";
+import { Camera, Mail, Globe } from "lucide-react";
 import {
   InstagramIcon,
   LinkedinIcon,
@@ -14,6 +14,7 @@ import {
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { FollowButton } from "@/features/social";
 import { FollowersDialog } from "./FollowersDialog";
+import { AddressMenu } from "./AddressMenu";
 import { WidgetStrip } from "@/features/booking";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { uploadAvatar } from "../storage";
@@ -51,15 +52,6 @@ function buildUrl(key: string, value: string): string {
   if (v.startsWith("http")) return v;
   // Otherwise prepend the base URL to the handle
   return `${baseUrls[key]}${v.replace(/^@/, "")}`;
-}
-
-// Universal Google Maps deep-link — opens the Maps app on mobile, the web map
-// on desktop. `query_place_id` (when we captured one via Places Autocomplete)
-// pins the exact place instead of doing a fuzzy text search.
-function buildMapsUrl(formatted: string, placeId?: string): string {
-  const params = new URLSearchParams({ api: "1", query: formatted });
-  if (placeId) params.set("query_place_id", placeId);
-  return `https://www.google.com/maps/search/?${params.toString()}`;
 }
 
 export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor = null, textColor = null }: ProfileHeaderProps) {
@@ -258,16 +250,11 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       )}
 
       {profile.address?.formatted && (
-        <a
-          href={buildMapsUrl(profile.address.formatted, profile.address.place_id)}
-          target="_blank"
-          rel="noopener noreferrer"
+        <AddressMenu
+          address={profile.address}
+          shareTitle={profile.display_name || profile.username}
           style={buttonStyle}
-          className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/50 bg-background px-3 py-1.5 text-sm text-muted-foreground transition-[color,box-shadow,transform] duration-200 hover:text-violet-600 hover:shadow-sm motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:hover:text-violet-400"
-        >
-          <MapPin className="h-4 w-4 shrink-0" />
-          <span className="truncate">{profile.address.formatted}</span>
-        </a>
+        />
       )}
 
       <div className="mt-4 flex items-center gap-5">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Clock, Tag, CircleAlert, ChevronDown, ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -312,15 +312,15 @@ export function WidgetWorkspace({
     <>
       <Tabs value={tab} onValueChange={handleTabChange} className="gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Horizontally scrollable on narrow screens so the tabs never overflow
-              or force the row to wrap mid-list. */}
-          <div className="min-w-0 max-w-full overflow-x-auto">
-            <TabsList variant="line" className="h-9 w-max">
+          {/* On narrow screens inactive tabs collapse to icon-only (the active tab
+              keeps its label) so the row fits without scrolling horizontally. */}
+          <div className="w-full min-w-0 sm:w-auto">
+            <TabsList variant="line" className="h-9 w-full sm:w-max">
               <TabsTrigger value="overview">
-                <LayoutDashboard className="h-4 w-4" /> {t.booking.tabDashboard}
+                <LayoutDashboard className="h-4 w-4" /> <TabLabel>{t.booking.tabDashboard}</TabLabel>
               </TabsTrigger>
               <TabsTrigger value="bookings">
-                <CalendarDays className="h-4 w-4" /> {t.booking.tabBookings}
+                <CalendarDays className="h-4 w-4" /> <TabLabel>{t.booking.tabBookings}</TabLabel>
                 {newToday > 0 && (
                   <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                     {newToday}
@@ -328,16 +328,16 @@ export function WidgetWorkspace({
                 )}
               </TabsTrigger>
               <TabsTrigger value="customers">
-                <Users className="h-4 w-4" /> {t.booking.tabCustomers}
+                <Users className="h-4 w-4" /> <TabLabel>{t.booking.tabCustomers}</TabLabel>
               </TabsTrigger>
               <TabsTrigger value="staff">
-                <UserCog className="h-4 w-4" /> {t.booking.staffSectionTitle}
+                <UserCog className="h-4 w-4" /> <TabLabel>{t.booking.staffSectionTitle}</TabLabel>
               </TabsTrigger>
               <TabsTrigger value="availability">
-                <Clock className="h-4 w-4" /> {t.booking.tabAvailability}
+                <Clock className="h-4 w-4" /> <TabLabel>{t.booking.tabAvailability}</TabLabel>
               </TabsTrigger>
               <TabsTrigger value="services">
-                <Tag className="h-4 w-4" /> {t.booking.tabServices}
+                <Tag className="h-4 w-4" /> <TabLabel>{t.booking.tabServices}</TabLabel>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -415,4 +415,9 @@ export function WidgetWorkspace({
       {bookingBanner}
     </>
   );
+}
+
+/** Tab label visually hidden on mobile (still read by screen readers) unless its trigger is active. */
+function TabLabel({ children }: { children: ReactNode }) {
+  return <span className="sr-only sm:not-sr-only in-data-active:not-sr-only">{children}</span>;
 }

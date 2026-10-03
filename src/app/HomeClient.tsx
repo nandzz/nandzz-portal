@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, FileText, Layers, Sparkles } from "lucide-react";
+import { ArrowRight, Calendar, Check, FileText, Layers, Sparkles, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function HomeClient() {
@@ -16,6 +16,7 @@ export function HomeClient() {
   ];
 
   const audienceExamples = t.home.audienceExamples.split(",").map((s) => s.trim());
+  const notYetExamples = t.home.audienceNotYetExamples.split(",").map((s) => s.trim());
 
   const steps = [
     { title: t.home.step1Title, desc: t.home.step1Desc },
@@ -165,15 +166,47 @@ export function HomeClient() {
           <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
             {t.home.audienceDesc}
           </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+          <p className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {t.home.audienceFitLabel}
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
             {audienceExamples.map((label) => (
               <span
                 key={label}
-                className="rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-muted-foreground"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-muted-foreground"
               >
+                <Check className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
                 {label}
               </span>
             ))}
+          </div>
+
+          {/* Not a fit yet — set expectations before signup */}
+          <div className="mt-12 rounded-2xl border border-dashed border-border/70 bg-background/40 px-5 py-6">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              {t.home.audienceNotYetLabel}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {notYetExamples.map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border/60 px-3.5 py-1.5 text-sm text-muted-foreground/80"
+                >
+                  <X className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  {label}
+                </span>
+              ))}
+            </div>
+            <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground leading-relaxed">
+              {t.home.audienceNotYetNote}
+            </p>
+            <Link
+              href="/contact"
+              className="mt-3 inline-flex items-center text-sm font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+            >
+              {t.home.audienceNotYetCta}
+              <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Link>
           </div>
         </div>
       </section>

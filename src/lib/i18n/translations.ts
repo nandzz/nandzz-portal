@@ -54,7 +54,6 @@ export type Translations = {
     analytics: string;
     groupAccount: string;
     groupBusiness: string;
-    groupShortcuts: string;
     groupSettings: string;
     switchToBusiness: string;
     switchToBusinessTitle: string;
@@ -84,6 +83,11 @@ export type Translations = {
     audienceTitle: string;
     audienceDesc: string;
     audienceExamples: string;
+    audienceFitLabel: string;
+    audienceNotYetLabel: string;
+    audienceNotYetExamples: string;
+    audienceNotYetNote: string;
+    audienceNotYetCta: string;
     stepsTitle: string;
     step1Title: string;
     step1Desc: string;
@@ -366,6 +370,11 @@ export type Translations = {
     totalLikes: string;
     chartViews: string;
     spacesTable: string;
+    profileSection: string;
+    profileSectionHint: string;
+    uniqueVisitors: string;
+    profileVisits: string;
+    contentSection: string;
   };
   billing: {
     title: string;
@@ -570,6 +579,10 @@ export type Translations = {
     allSpaces: string;
   };
   profile: {
+    addressOpenMaps: string;
+    addressCopy: string;
+    addressCopied: string;
+    addressShare: string;
     followers: string;
     following: string;
     followersTitle: string;
@@ -1464,7 +1477,6 @@ const en: Translations = {
     analytics: "Analytics",
     groupAccount: "Account",
     groupBusiness: "Business",
-    groupShortcuts: "Shortcuts",
     groupSettings: "Settings",
     switchToBusiness: "Switch to Business Account",
     switchToBusinessTitle: "Switch to a Business Account?",
@@ -1494,6 +1506,11 @@ const en: Translations = {
     audienceTitle: "One page. Any business.",
     audienceDesc: "Whatever you do, Nandzz gives you a branded page to show your work and let clients book you — no website needed.",
     audienceExamples: "Salons, Barbers, Cleaners, Studios, Clinics, Freelancers",
+    audienceFitLabel: "Built for appointments",
+    audienceNotYetLabel: "Not built for yet",
+    audienceNotYetExamples: "Restaurants, Hotels & rentals, Group classes & events, Equipment hire",
+    audienceNotYetNote: "Booking is one client, one pro, one time slot. Table reservations, multi-night stays and group tickets aren't supported yet.",
+    audienceNotYetCta: "Need one of these? Tell us",
     stepsTitle: "Live in minutes.",
     step1Title: "Claim your page",
     step1Desc: "Grab nandzz.com/yourbrand and make it yours.",
@@ -1521,6 +1538,10 @@ const en: Translations = {
       {
         q: "Is Nandzz free?",
         a: "Yes, you can start free with a branded page and content sections. The paid plan adds widgets like booking, analytics and MCP access.",
+      },
+      {
+        q: "Can I use Nandzz for restaurant reservations?",
+        a: "Not yet. Nandzz booking is built for appointments — one client with one pro for a set length of time, like salons, clinics or coaches. Restaurant table reservations (party size, covers), multi-night stays, and group classes or events aren't supported yet. You can still use a Nandzz page to show your menu, content and links.",
       },
     ],
   },
@@ -1791,6 +1812,11 @@ const en: Translations = {
     totalLikes: "Total likes",
     chartViews: "Views",
     spacesTable: "Content",
+    profileSection: "Profile",
+    profileSectionHint: "Unique people who opened your profile page",
+    uniqueVisitors: "Unique visitors",
+    profileVisits: "Visits",
+    contentSection: "Content",
   },
   billing: {
     title: "Billing & Plans",
@@ -1995,6 +2021,10 @@ const en: Translations = {
     allSpaces: "← All content",
   },
   profile: {
+    addressOpenMaps: "Open in Google Maps",
+    addressCopy: "Copy address",
+    addressCopied: "Address copied",
+    addressShare: "Share address",
     followers: "followers",
     following: "following",
     followersTitle: "Followers",
@@ -2183,7 +2213,7 @@ const en: Translations = {
   },
   contentSections: {
     informativeLabel: "Publication",
-    informativeDescription: "Documents, notes, and AI-generated pages",
+    informativeDescription: "AI-generated pages, PDFs, and notes",
     galleryLabel: "Gallery",
     galleryDescription: "Your images",
     linksLabel: "Links",
@@ -2889,7 +2919,6 @@ const pt: Translations = {
     analytics: "Análises",
     groupAccount: "Conta",
     groupBusiness: "Negócio",
-    groupShortcuts: "Atalhos",
     groupSettings: "Configurações",
     switchToBusiness: "Mudar para Conta Empresarial",
     switchToBusinessTitle: "Mudar para uma Conta Empresarial?",
@@ -2919,6 +2948,11 @@ const pt: Translations = {
     audienceTitle: "Uma página. Qualquer negócio.",
     audienceDesc: "Seja o que for que você faz, a Nandzz te dá uma página com a sua marca para mostrar seu trabalho e deixar clientes te agendarem — sem precisar de site.",
     audienceExamples: "Salões, Barbearias, Diaristas, Estúdios, Clínicas, Autônomos",
+    audienceFitLabel: "Feito para agendamentos",
+    audienceNotYetLabel: "Ainda não atendemos",
+    audienceNotYetExamples: "Restaurantes, Hotéis e aluguéis, Aulas em grupo e eventos, Aluguel de equipamentos",
+    audienceNotYetNote: "O agendamento é um cliente, um profissional, um horário. Reservas de mesa, estadias de várias noites e ingressos em grupo ainda não são suportados.",
+    audienceNotYetCta: "Precisa de algum desses? Fale com a gente",
     stepsTitle: "No ar em minutos.",
     step1Title: "Reserve sua página",
     step1Desc: "Pegue nandzz.com/suamarca e deixe do seu jeito.",
@@ -2946,6 +2980,10 @@ const pt: Translations = {
       {
         q: "A Nandzz é gratuita?",
         a: "Sim, você pode começar de graça com uma página de marca e seções de conteúdo. Os planos pagos adicionam widgets como agendamento e o agente de IA, análises e créditos de IA mensais.",
+      },
+      {
+        q: "Posso usar a Nandzz para reservas de restaurante?",
+        a: "Ainda não. O agendamento da Nandzz foi feito para atendimentos — um cliente com um profissional por um tempo definido, como salões, clínicas ou coaches. Reservas de mesa em restaurantes (número de pessoas), estadias de várias noites e aulas em grupo ou eventos ainda não são suportados. Você ainda pode usar uma página Nandzz para mostrar seu cardápio, conteúdos e links.",
       },
     ],
   },
@@ -3216,6 +3254,11 @@ const pt: Translations = {
     totalLikes: "Total de curtidas",
     chartViews: "Visualizações",
     spacesTable: "Conteúdos",
+    profileSection: "Perfil",
+    profileSectionHint: "Pessoas únicas que abriram a sua página de perfil",
+    uniqueVisitors: "Visitantes únicos",
+    profileVisits: "Visitas",
+    contentSection: "Conteúdo",
   },
   billing: {
     title: "Planos e Faturamento",
@@ -3420,6 +3463,10 @@ const pt: Translations = {
     allSpaces: "← Todos os conteúdos",
   },
   profile: {
+    addressOpenMaps: "Abrir no Google Maps",
+    addressCopy: "Copiar endereço",
+    addressCopied: "Endereço copiado",
+    addressShare: "Compartilhar endereço",
     followers: "seguidores",
     following: "seguindo",
     followersTitle: "Seguidores",
@@ -3608,7 +3655,7 @@ const pt: Translations = {
   },
   contentSections: {
     informativeLabel: "Conteúdo",
-    informativeDescription: "Documentos, notas e páginas geradas por IA",
+    informativeDescription: "Páginas geradas por IA, PDFs e notas",
     galleryLabel: "Galeria",
     galleryDescription: "Suas imagens",
     linksLabel: "Links",
@@ -4314,7 +4361,6 @@ const fr: Translations = {
     analytics: "Statistiques",
     groupAccount: "Compte",
     groupBusiness: "Entreprise",
-    groupShortcuts: "Raccourcis",
     groupSettings: "Paramètres",
     switchToBusiness: "Passer en compte professionnel",
     switchToBusinessTitle: "Passer en compte professionnel ?",
@@ -4344,6 +4390,11 @@ const fr: Translations = {
     audienceTitle: "Une page. Toute activité.",
     audienceDesc: "Quoi que vous fassiez, Nandzz vous offre une page à votre marque pour présenter votre travail et laisser vos clients réserver — sans site web.",
     audienceExamples: "Salons, Barbiers, Ménage, Studios, Cliniques, Indépendants",
+    audienceFitLabel: "Conçu pour les rendez-vous",
+    audienceNotYetLabel: "Pas encore adapté à",
+    audienceNotYetExamples: "Restaurants, Hôtels et locations, Cours collectifs et événements, Location de matériel",
+    audienceNotYetNote: "La réservation, c'est un client, un pro, un créneau. Les réservations de table, les séjours de plusieurs nuits et la billetterie de groupe ne sont pas encore pris en charge.",
+    audienceNotYetCta: "Besoin de l'un d'eux ? Dites-le-nous",
     stepsTitle: "En ligne en quelques minutes.",
     step1Title: "Réservez votre page",
     step1Desc: "Prenez nandzz.com/votremarque et personnalisez-la.",
@@ -4371,6 +4422,10 @@ const fr: Translations = {
       {
         q: "Nandzz est-il gratuit ?",
         a: "Oui, vous pouvez commencer gratuitement avec une page à votre image et des sections de contenu. Les offres payantes ajoutent des widgets comme la réservation et l'agent IA, les statistiques et des crédits IA mensuels.",
+      },
+      {
+        q: "Puis-je utiliser Nandzz pour les réservations de restaurant ?",
+        a: "Pas encore. La réservation Nandzz est conçue pour les rendez-vous — un client avec un pro pour une durée définie, comme les salons, cliniques ou coachs. Les réservations de table (nombre de couverts), les séjours de plusieurs nuits et les cours collectifs ou événements ne sont pas encore pris en charge. Vous pouvez tout de même utiliser une page Nandzz pour présenter votre carte, vos contenus et vos liens.",
       },
     ],
   },
@@ -4641,6 +4696,11 @@ const fr: Translations = {
     totalLikes: "Total des likes",
     chartViews: "Vues",
     spacesTable: "Contenus",
+    profileSection: "Profil",
+    profileSectionHint: "Personnes uniques ayant ouvert votre page de profil",
+    uniqueVisitors: "Visiteurs uniques",
+    profileVisits: "Visites",
+    contentSection: "Contenu",
   },
   billing: {
     title: "Facturation & Plans",
@@ -4845,6 +4905,10 @@ const fr: Translations = {
     allSpaces: "← Tous les contenus",
   },
   profile: {
+    addressOpenMaps: "Ouvrir dans Google Maps",
+    addressCopy: "Copier l'adresse",
+    addressCopied: "Adresse copiée",
+    addressShare: "Partager l'adresse",
     followers: "abonnés",
     following: "abonnements",
     followersTitle: "Abonnés",
@@ -5033,7 +5097,7 @@ const fr: Translations = {
   },
   contentSections: {
     informativeLabel: "Contenu",
-    informativeDescription: "Documents, notes et pages générées par IA",
+    informativeDescription: "Pages générées par IA, PDF et notes",
     galleryLabel: "Galerie",
     galleryDescription: "Vos images",
     linksLabel: "Liens",
@@ -5739,7 +5803,6 @@ const es: Translations = {
     analytics: "Analítica",
     groupAccount: "Cuenta",
     groupBusiness: "Negocio",
-    groupShortcuts: "Accesos directos",
     groupSettings: "Configuración",
     switchToBusiness: "Cambiar a Cuenta de Empresa",
     switchToBusinessTitle: "¿Cambiar a una Cuenta de Empresa?",
@@ -5769,6 +5832,11 @@ const es: Translations = {
     audienceTitle: "Una página. Cualquier negocio.",
     audienceDesc: "Hagas lo que hagas, Nandzz te da una página con tu marca para mostrar tu trabajo y que tus clientes te reserven — sin necesidad de web.",
     audienceExamples: "Peluquerías, Barberías, Limpieza, Estudios, Clínicas, Autónomos",
+    audienceFitLabel: "Hecho para citas",
+    audienceNotYetLabel: "Aún no disponible para",
+    audienceNotYetExamples: "Restaurantes, Hoteles y alquileres, Clases grupales y eventos, Alquiler de equipos",
+    audienceNotYetNote: "La reserva es un cliente, un profesional, un horario. Las reservas de mesa, las estancias de varias noches y las entradas para grupos aún no están disponibles.",
+    audienceNotYetCta: "¿Necesitas alguno? Cuéntanos",
     stepsTitle: "En línea en minutos.",
     step1Title: "Reserva tu página",
     step1Desc: "Consigue nandzz.com/tumarca y hazla tuya.",
@@ -5796,6 +5864,10 @@ const es: Translations = {
       {
         q: "¿Nandzz es gratis?",
         a: "Sí, puedes empezar gratis con una página de marca y secciones de contenido. Los planes de pago añaden widgets como reservas y el agente de IA, analíticas y créditos de IA mensuales.",
+      },
+      {
+        q: "¿Puedo usar Nandzz para reservas de restaurante?",
+        a: "Todavía no. Las reservas de Nandzz están pensadas para citas: un cliente con un profesional durante un tiempo definido, como peluquerías, clínicas o coaches. Las reservas de mesa (número de comensales), las estancias de varias noches y las clases grupales o eventos aún no están disponibles. Aun así, puedes usar una página de Nandzz para mostrar tu carta, tu contenido y tus enlaces.",
       },
     ],
   },
@@ -6066,6 +6138,11 @@ const es: Translations = {
     totalLikes: "Total de likes",
     chartViews: "Vistas",
     spacesTable: "Contenidos",
+    profileSection: "Perfil",
+    profileSectionHint: "Personas únicas que abrieron tu página de perfil",
+    uniqueVisitors: "Visitantes únicos",
+    profileVisits: "Visitas",
+    contentSection: "Contenido",
   },
   billing: {
     title: "Facturación & Planes",
@@ -6270,6 +6347,10 @@ const es: Translations = {
     allSpaces: "← Todos los contenidos",
   },
   profile: {
+    addressOpenMaps: "Abrir en Google Maps",
+    addressCopy: "Copiar dirección",
+    addressCopied: "Dirección copiada",
+    addressShare: "Compartir dirección",
     followers: "seguidores",
     following: "siguiendo",
     followersTitle: "Seguidores",
@@ -6458,7 +6539,7 @@ const es: Translations = {
   },
   contentSections: {
     informativeLabel: "Contenido",
-    informativeDescription: "Documentos, notas y páginas generadas por IA",
+    informativeDescription: "Páginas generadas con IA, PDF y notas",
     galleryLabel: "Galería",
     galleryDescription: "Tus imágenes",
     linksLabel: "Enlaces",
@@ -7164,7 +7245,6 @@ const ja: Translations = {
     analytics: "アナリティクス",
     groupAccount: "アカウント",
     groupBusiness: "ビジネス",
-    groupShortcuts: "ショートカット",
     groupSettings: "設定",
     switchToBusiness: "ビジネスアカウントに切り替える",
     switchToBusinessTitle: "ビジネスアカウントに切り替えますか？",
@@ -7194,6 +7274,11 @@ const ja: Translations = {
     audienceTitle: "1つのページを、どんなビジネスにも。",
     audienceDesc: "何をしていても、Nandzzはあなたのブランドのページを提供します。作品を見せて、お客様に予約してもらえます — ウェブサイトは不要。",
     audienceExamples: "ヘアサロン, 理容, ハウスクリーニング, スタジオ, クリニック, フリーランス",
+    audienceFitLabel: "予約制サービス向け",
+    audienceNotYetLabel: "現在未対応",
+    audienceNotYetExamples: "飲食店, ホテル・民泊, グループレッスン・イベント, 機材レンタル",
+    audienceNotYetNote: "予約は「お客様1人・担当者1人・1つの時間枠」が基本です。テーブル予約、複数泊の宿泊、グループチケットには現在対応していません。",
+    audienceNotYetCta: "これらが必要ですか？ご要望をお聞かせください",
     stepsTitle: "数分で公開。",
     step1Title: "ページを取得",
     step1Desc: "nandzz.com/yourbrand を取得して、自分仕様に。",
@@ -7221,6 +7306,10 @@ const ja: Translations = {
       {
         q: "Nandzzは無料ですか？",
         a: "はい。ブランドページとコンテンツセクションを無料で始められます。有料プランでは、予約やAIエージェントなどのウィジェット、分析機能、毎月のAIクレジットが追加されます。",
+      },
+      {
+        q: "Nandzzはレストランの予約に使えますか？",
+        a: "現在は未対応です。Nandzzの予約機能は、サロン・クリニック・コーチングのように、お客様1人と担当者1人が決まった時間で行う予約向けに作られています。レストランのテーブル予約（人数・席数）、複数泊の宿泊、グループレッスンやイベントには現在対応していません。メニューやコンテンツ、リンクを紹介するページとしては引き続きご利用いただけます。",
       },
     ],
   },
@@ -7491,6 +7580,11 @@ const ja: Translations = {
     totalLikes: "総いいね数",
     chartViews: "閲覧数",
     spacesTable: "コンテンツ",
+    profileSection: "プロフィール",
+    profileSectionHint: "プロフィールページを開いたユニークユーザー数",
+    uniqueVisitors: "ユニーク訪問者",
+    profileVisits: "訪問数",
+    contentSection: "コンテンツ",
   },
   billing: {
     title: "請求・プラン",
@@ -7695,6 +7789,10 @@ const ja: Translations = {
     allSpaces: "← すべてのコンテンツ",
   },
   profile: {
+    addressOpenMaps: "Google マップで開く",
+    addressCopy: "住所をコピー",
+    addressCopied: "住所をコピーしました",
+    addressShare: "住所を共有",
     followers: "フォロワー",
     following: "フォロー中",
     followersTitle: "フォロワー",
@@ -7883,7 +7981,7 @@ const ja: Translations = {
   },
   contentSections: {
     informativeLabel: "コンテンツ",
-    informativeDescription: "ドキュメント、ノート、AI生成ページ",
+    informativeDescription: "AI生成ページ、PDF、ノート",
     galleryLabel: "ギャラリー",
     galleryDescription: "あなたの画像",
     linksLabel: "リンク",
@@ -8589,7 +8687,6 @@ const de: Translations = {
     analytics: "Statistiken",
     groupAccount: "Konto",
     groupBusiness: "Business",
-    groupShortcuts: "Verknüpfungen",
     groupSettings: "Einstellungen",
     switchToBusiness: "Zu Geschäftskonto wechseln",
     switchToBusinessTitle: "Zu einem Geschäftskonto wechseln?",
@@ -8619,6 +8716,11 @@ const de: Translations = {
     audienceTitle: "Eine Seite. Jedes Business.",
     audienceDesc: "Was du auch tust — Nandzz gibt dir eine Seite mit deiner Marke, um deine Arbeit zu zeigen und dich buchen zu lassen. Ganz ohne Website.",
     audienceExamples: "Salons, Barbershops, Reinigung, Studios, Praxen, Freelancer",
+    audienceFitLabel: "Gemacht für Termine",
+    audienceNotYetLabel: "Noch nicht geeignet für",
+    audienceNotYetExamples: "Restaurants, Hotels & Ferienwohnungen, Gruppenkurse & Events, Geräteverleih",
+    audienceNotYetNote: "Buchung heißt: ein Kunde, ein Profi, ein Zeitfenster. Tischreservierungen, Aufenthalte über mehrere Nächte und Gruppentickets werden noch nicht unterstützt.",
+    audienceNotYetCta: "Brauchst du eines davon? Sag es uns",
     stepsTitle: "In Minuten online.",
     step1Title: "Sichere deine Seite",
     step1Desc: "Schnapp dir nandzz.com/deinemarke und mach sie zu deiner.",
@@ -8646,6 +8748,10 @@ const de: Translations = {
       {
         q: "Ist Nandzz kostenlos?",
         a: "Ja, du kannst kostenlos mit einer gebrandeten Seite und Inhaltsbereichen starten. Bezahlte Tarife ergänzen Widgets wie Buchung und den KI-Agenten, Analysen und monatliche KI-Credits.",
+      },
+      {
+        q: "Kann ich Nandzz für Restaurantreservierungen nutzen?",
+        a: "Noch nicht. Die Buchung bei Nandzz ist für Termine gemacht — ein Kunde mit einem Profi für eine feste Dauer, etwa in Salons, Praxen oder beim Coaching. Tischreservierungen (Personenzahl), Aufenthalte über mehrere Nächte sowie Gruppenkurse oder Events werden noch nicht unterstützt. Du kannst eine Nandzz-Seite aber trotzdem nutzen, um deine Speisekarte, Inhalte und Links zu zeigen.",
       },
     ],
   },
@@ -8916,6 +9022,11 @@ const de: Translations = {
     totalLikes: "Likes gesamt",
     chartViews: "Aufrufe",
     spacesTable: "Inhalte",
+    profileSection: "Profil",
+    profileSectionHint: "Eindeutige Personen, die deine Profilseite geöffnet haben",
+    uniqueVisitors: "Eindeutige Besucher",
+    profileVisits: "Besuche",
+    contentSection: "Inhalte",
   },
   billing: {
     title: "Abrechnung & Pläne",
@@ -9120,6 +9231,10 @@ const de: Translations = {
     allSpaces: "← Alle Inhalte",
   },
   profile: {
+    addressOpenMaps: "In Google Maps öffnen",
+    addressCopy: "Adresse kopieren",
+    addressCopied: "Adresse kopiert",
+    addressShare: "Adresse teilen",
     followers: "Follower",
     following: "Folge ich",
     followersTitle: "Follower",
@@ -9308,7 +9423,7 @@ const de: Translations = {
   },
   contentSections: {
     informativeLabel: "Inhalt",
-    informativeDescription: "Dokumente, Notizen und KI-generierte Seiten",
+    informativeDescription: "KI-generierte Seiten, PDFs und Notizen",
     galleryLabel: "Galerie",
     galleryDescription: "Deine Bilder",
     linksLabel: "Links",
@@ -10014,7 +10129,6 @@ const it: Translations = {
     analytics: "Statistiche",
     groupAccount: "Account",
     groupBusiness: "Business",
-    groupShortcuts: "Scorciatoie",
     groupSettings: "Impostazioni",
     switchToBusiness: "Passa a un account Business",
     switchToBusinessTitle: "Passare a un account Business?",
@@ -10044,6 +10158,11 @@ const it: Translations = {
     audienceTitle: "Una pagina. Qualsiasi attività.",
     audienceDesc: "Qualunque cosa fai, Nandzz ti dà una pagina con il tuo brand per mostrare il tuo lavoro e farti prenotare — senza sito web.",
     audienceExamples: "Parrucchieri, Barbieri, Pulizie, Studi, Cliniche, Freelance",
+    audienceFitLabel: "Pensato per gli appuntamenti",
+    audienceNotYetLabel: "Non ancora adatto a",
+    audienceNotYetExamples: "Ristoranti, Hotel e affitti, Corsi di gruppo ed eventi, Noleggio attrezzature",
+    audienceNotYetNote: "La prenotazione è un cliente, un professionista, un orario. Prenotazioni di tavoli, soggiorni di più notti e biglietti di gruppo non sono ancora supportati.",
+    audienceNotYetCta: "Ti serve uno di questi? Faccelo sapere",
     stepsTitle: "Online in pochi minuti.",
     step1Title: "Prenota la tua pagina",
     step1Desc: "Prendi nandzz.com/iltuobrand e rendila tua.",
@@ -10071,6 +10190,10 @@ const it: Translations = {
       {
         q: "Nandzz è gratis?",
         a: "Sì, puoi iniziare gratis con una pagina brandizzata e sezioni di contenuti. I piani a pagamento aggiungono widget come prenotazioni e l'agente IA, analisi e crediti IA mensili.",
+      },
+      {
+        q: "Posso usare Nandzz per le prenotazioni del ristorante?",
+        a: "Non ancora. Le prenotazioni di Nandzz sono pensate per gli appuntamenti: un cliente con un professionista per un tempo definito, come saloni, cliniche o coach. Prenotazioni di tavoli (numero di coperti), soggiorni di più notti e corsi di gruppo o eventi non sono ancora supportati. Puoi comunque usare una pagina Nandzz per mostrare menu, contenuti e link.",
       },
     ],
   },
@@ -10341,6 +10464,11 @@ const it: Translations = {
     totalLikes: "Like totali",
     chartViews: "Visualizzazioni",
     spacesTable: "Contenuti",
+    profileSection: "Profilo",
+    profileSectionHint: "Persone uniche che hanno aperto la tua pagina profilo",
+    uniqueVisitors: "Visitatori unici",
+    profileVisits: "Visite",
+    contentSection: "Contenuti",
   },
   billing: {
     title: "Fatturazione & Piani",
@@ -10545,6 +10673,10 @@ const it: Translations = {
     allSpaces: "← Tutti gli contenuti",
   },
   profile: {
+    addressOpenMaps: "Apri in Google Maps",
+    addressCopy: "Copia indirizzo",
+    addressCopied: "Indirizzo copiato",
+    addressShare: "Condividi indirizzo",
     followers: "follower",
     following: "seguiti",
     followersTitle: "Follower",
@@ -10733,7 +10865,7 @@ const it: Translations = {
   },
   contentSections: {
     informativeLabel: "Publication",
-    informativeDescription: "Documenti, note e pagine generate con IA",
+    informativeDescription: "Pagine generate con IA, PDF e note",
     galleryLabel: "Galleria",
     galleryDescription: "Le tue immagini",
     linksLabel: "Link",

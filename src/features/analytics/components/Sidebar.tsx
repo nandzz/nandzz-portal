@@ -134,21 +134,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       },
     ];
 
-    // Shortcuts — quick links to the tools a business runs day to day. Only
-    // shown for business accounts; the first shortcut is Bookings, which opens
-    // the calendar (booking) widget where received appointments are managed.
-    const shortcuts: NavItem[] = [];
-    // Links straight to the workspace's Bookings tab: going via /dashboard/bookings
-    // (which server-redirects here) flashed that route's skeleton first.
-    if (isBusiness) {
-      shortcuts.push({
-        href: "/dashboard/booking/bookings",
-        label: t.nav.bookings,
-        icon: Calendar,
-        isActive: (p) => p.startsWith("/dashboard/booking/bookings"),
-      });
-    }
-
     // Business — only for business accounts. Personal accounts see the
     // "Switch to Business Account" CTA instead (rendered below the group).
     const business: NavItem[] = [];
@@ -212,10 +197,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const groups: NavGroup[] = [
       { id: "account", label: t.nav.groupAccount, items: account },
     ];
-    // Skip the Shortcuts header entirely for personal accounts (empty group).
-    if (shortcuts.length > 0) {
-      groups.push({ id: "shortcuts", label: t.nav.groupShortcuts, items: shortcuts });
-    }
     groups.push({ id: "business", label: t.nav.groupBusiness, items: business });
     groups.push({ id: "settings", label: t.nav.groupSettings, items: settings });
     return groups;

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ProfileHeader, ProfileBackground } from "@/features/profile";
+import { ProfileViewTracker } from "@/features/analytics";
 import { ProfileContent } from "@/components/profile/ProfileContent";
 import { ProfileLinks } from "@/components/profile/ProfileLinks";
 import { ProfileGallery } from "@/components/profile/ProfileGallery";
@@ -240,6 +241,7 @@ export default async function ProfilePage({
       {bgColor && (
         <style>{`html{background-color:${bgColor}}body{background-color:transparent}`}</style>
       )}
+      {!isOwner && <ProfileViewTracker profileId={profile.id} />}
       <ProfileBackground
         backgroundUrl={profile.background_url ?? null}
         backgroundPosition={profile.background_position ?? null}

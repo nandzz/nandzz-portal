@@ -1,109 +1,92 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Fixtures the mocked admin client resolves against, keyed by the shape each
-// query terminates on (see the thenable builder below).
-let spaceRow: Record<string, unknown> | null; // getSpaceAnalytics: spaces.single()
-let spacesRows: Record<string, unknown>[] | null; // getDashboardAnalytics: spaces
-let viewRows: { space_id?: string; viewed_at: string }[]; // space_views (gte)
-let totalCount: number | null; // space_views count(head)
-
-function nowISO(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() - offsetDays);
-  return d.toISOString();
-}
-
-function builder(table: string) {
-  const state = { table, hasCount: false, gte: false };
-  const b: Record<string, unknown> = {};
-  b.select = (_cols?: unknown, opts?: { count?: string }) => {
-    if (opts?.count) state.hasCount = true;
-    return b;
-  };
-  b.eq = () => b;
-  b.in = () => b;
-  b.gte = () => {
-    state.gte = true;
-    return b;
-  };
-  const resolve = () => {
-    if (table === "space_views") {
-      if (state.hasCount) return { count: totalCount };
-      return { data: viewRows };
-    }
-    // spaces, awaited directly (dashboard)
-    return { data: spacesRows };
-  };
-  // single() is only used by getSpaceAnalytics' spaces lookup.
-  b.single = async () => ({ data: spaceRow });
-  b.then = (onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) =>
-    Promise.resolve(resolve()).then(onF, onR);
-  return b;
-}
+// Fixtures the mocked admin client's rpc() resolves against, keyed by function.
+let rpcResults: Record<string, { data: unknown; error: { message: string } | null }>;
+let rpcCalls: { fn: string; args: Record<string, unknown> }[];
 
 vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ from: (t: string) => builder(t) }),
+  createAdminClient: () => ({
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      rpcCalls.push({ fn, args });
+      return rpcResults[fn] ?? { data: null, error: null };
+    },
+  }),
 }));
 
-import { getSpaceAnalytics, getDashboardAnalytics } from "./analytics";
+import {
+  getSpaceAnalytics,
+  getDashboardAnalytics,
+  getProfileVisitorAnalytics,
+  CONTENT_ANALYTICS_PAGE_SIZE,
+} from "./analytics";
+
+const stats = { total_views: 15, total_likes: 5, views7d: 2, views30d: 3, series: [0, 1, 0, 0, 2] };
 
 beforeEach(() => {
-  spaceRow = { likes_count: 7, views_count: 100 };
-  spacesRows = [
-    { id: "s1", title: "One", views_count: 10, likes_count: 2 },
-    { id: "s2", title: "Two", views_count: 5, likes_count: 3 },
-  ];
-  viewRows = [
-    { space_id: "s1", viewed_at: nowISO(1) },
-    { space_id: "s1", viewed_at: nowISO(3) },
-    { space_id: "s2", viewed_at: nowISO(10) },
-  ];
-  totalCount = 42;
+  rpcCalls = [];
+  rpcResults = {
+    space_view_stats: { data: stats, error: null },
+    space_analytics_page: {
+      data: [
+        { id: "s1", title: "One", views_count: 10, likes_count: 2, views7d: 2, views30d: 2, total_count: 45 },
+        { id: "s2", title: "Two", views_count: 5, likes_count: 3, views7d: 0, views30d: 1, total_count: 45 },
+      ],
+      error: null,
+    },
+    profile_visitor_stats: {
+      data: [
+        { bucket: 0, visitors: 7, visits: 9 },
+        { bucket: 2, visitors: 4, visits: 5 },
+      ],
+      error: null,
+    },
+  };
 });
 
 describe("getSpaceAnalytics", () => {
-  it("prefers the exact count for totalViews and derives window stats", async () => {
-    const res = await getSpaceAnalytics("s1", "en", "month");
-    expect(res.spaceId).toBe("s1");
-    expect(res.totalViews).toBe(42); // exact count wins over views_count
-    expect(res.likesCount).toBe(7);
-    // 3 view rows: two within 7d, all three within 30d.
-    expect(res.views7d).toBe(2);
-    expect(res.views30d).toBe(3);
-    expect(res.viewsSeries.length).toBeGreaterThan(0);
+  it("maps the SQL stats for one space, scoped to the owner", async () => {
+    const res = await getSpaceAnalytics("u1", "s1", "en", "month");
+    expect(rpcCalls[0]).toMatchObject({ fn: "space_view_stats", args: { p_user_id: "u1", p_space_id: "s1" } });
+    expect(res).toMatchObject({ spaceId: "s1", totalViews: 15, likesCount: 5, views7d: 2, views30d: 3 });
+    expect(res.viewsSeries.map((p) => p.views)).toEqual([0, 1, 0, 0, 2]);
   });
 
-  it("falls back to views_count when the exact count is null", async () => {
-    totalCount = null;
-    spaceRow = { likes_count: 0, views_count: 100 };
-    viewRows = [];
-    const res = await getSpaceAnalytics("s1", "en", "month");
-    // null count (nullish) → falls back to space.views_count
-    expect(res.totalViews).toBe(100);
-    expect(res.views7d).toBe(0);
+  it("returns zeros when the RPC fails", async () => {
+    rpcResults.space_view_stats = { data: null, error: { message: "boom" } };
+    const res = await getSpaceAnalytics("u1", "s1", "en", "week");
+    expect(res.totalViews).toBe(0);
+    expect(res.viewsSeries).toHaveLength(7);
+    expect(res.viewsSeries.every((p) => p.views === 0)).toBe(true);
   });
 });
 
 describe("getDashboardAnalytics", () => {
-  it("aggregates totals and per-space window counts", async () => {
-    const res = await getDashboardAnalytics("u1", "en", "month");
-    expect(res.totalViews).toBe(15); // 10 + 5
-    expect(res.totalLikes).toBe(5); // 2 + 3
-    expect(res.views7d).toBe(2); // s1's two recent views
-    expect(res.views30d).toBe(3);
-    expect(res.spaces).toHaveLength(2);
-    const s1 = res.spaces.find((s) => s.id === "s1")!;
-    expect(s1.views7d).toBe(2);
-    expect(s1.views30d).toBe(2);
-    const s2 = res.spaces.find((s) => s.id === "s2")!;
-    expect(s2.views30d).toBe(1);
+  it("combines totals with one page of spaces", async () => {
+    const res = await getDashboardAnalytics("u1", "en", "month", 2);
+    expect(res).toMatchObject({ totalViews: 15, totalLikes: 5, views7d: 2, views30d: 3, page: 2, totalPages: 3 });
+    expect(res.spaces.map((s) => s.id)).toEqual(["s1", "s2"]);
+    const pageCall = rpcCalls.find((c) => c.fn === "space_analytics_page")!;
+    expect(pageCall.args).toEqual({
+      p_user_id: "u1",
+      p_limit: CONTENT_ANALYTICS_PAGE_SIZE,
+      p_offset: CONTENT_ANALYTICS_PAGE_SIZE,
+    });
   });
 
-  it("returns a zeroed shape when the user has no spaces", async () => {
-    spacesRows = [];
-    const res = await getDashboardAnalytics("u1", "en", "month");
-    expect(res.totalViews).toBe(0);
+  it("returns an empty single page when the user has no spaces", async () => {
+    rpcResults.space_analytics_page = { data: [], error: null };
+    const res = await getDashboardAnalytics("u1", "en", "month", 0);
     expect(res.spaces).toEqual([]);
-    expect(res.viewsSeries.length).toBeGreaterThan(0);
+    expect(res.page).toBe(1);
+    expect(res.totalPages).toBe(1);
+  });
+});
+
+describe("getProfileVisitorAnalytics", () => {
+  it("uses bucket 0 as the period total and fills missing buckets with 0", async () => {
+    const res = await getProfileVisitorAnalytics("u1", "en", "month");
+    expect(res.uniqueVisitors).toBe(7);
+    expect(res.visits).toBe(9);
+    expect(res.visitorsSeries.map((p) => p.views)).toEqual([0, 4, 0, 0, 0]);
   });
 });

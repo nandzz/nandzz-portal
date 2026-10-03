@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Home, LayoutGrid, LogIn, Rss, Calendar, CalendarDays, User } from "lucide-react";
+import { BarChart3, Home, LayoutGrid, LogIn, Rss, Calendar, CalendarDays, User } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
@@ -46,29 +46,29 @@ const bookingsTab: TabDef = {
 };
 
 // Persona-tuned bottom bar — a few frequent destinations only. Followers/Following
-// live on the profile (tappable counts), so they're not tabs; Analytics/Brand live
-// in the account menu. A business runs the operation; a client consumes and manages
-// their own page.
+// live on the profile (tappable counts), so they're not tabs; Brand lives in the
+// account menu. A business runs the operation; a client consumes and manages their
+// own page.
 function getAuthTabDefs(isBusiness: boolean, profileHref: string): TabDef[] {
+  const profileTab: TabDef = { href: profileHref, labelKey: "profile", icon: User, isActive: (p) => p === profileHref };
+
   if (isBusiness) {
+    // No Home tab: "/" just redirects a signed-in user to their profile, which
+    // already has its own tab. No Bookings tab either: a business's received
+    // appointments live inside the Booking feature (/dashboard/bookings
+    // redirects there), so the Booking tab covers them.
     const tabs: TabDef[] = [
-      { href: "/", labelKey: "home", icon: Home, isActive: (p) => p === "/" },
+      { href: "/dashboard/analytics", labelKey: "analytics", icon: BarChart3, isActive: (p) => p.startsWith("/dashboard/analytics") },
     ];
     if (FEATURES.widgets) {
-      // The booking/calendar feature lives at /dashboard/booking. The
-      // received-appointments route (/dashboard/booking/bookings) belongs to the
-      // Bookings tab, so it's excluded here via WIDGET_BOOKINGS. The isActive
-      // check anchors on the exact path or a trailing slash so the personal
-      // bookings list (/dashboard/bookings) never matches this tab.
       tabs.push({
         href: "/dashboard/booking",
         labelKey: "booking",
         icon: CalendarDays,
-        isActive: (p) =>
-          (p === "/dashboard/booking" || p.startsWith("/dashboard/booking/")) && !WIDGET_BOOKINGS.test(p),
+        isActive: (p) => p === "/dashboard/booking" || p.startsWith("/dashboard/booking/") || p.startsWith("/dashboard/bookings"),
       });
     }
-    tabs.push(spacesTab, bookingsTab);
+    tabs.push(spacesTab, profileTab);
     return tabs;
   }
 
@@ -76,7 +76,7 @@ function getAuthTabDefs(isBusiness: boolean, profileHref: string): TabDef[] {
     { href: "/dashboard/feed", labelKey: "feed", icon: Rss, isActive: (p) => p.startsWith("/dashboard/feed") },
     spacesTab,
     bookingsTab,
-    { href: profileHref, labelKey: "profile", icon: User, isActive: (p) => p === profileHref },
+    profileTab,
   ];
 }
 
