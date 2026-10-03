@@ -100,6 +100,10 @@ interface Props {
   currencySymbol: string;
   shareUrl: string | null;
   initialTab: string;
+  // Dashboard base path this workspace is mounted at (e.g. "/dashboard/booking").
+  // Tab segments hang off it (`${basePath}/{segment}`); no instance id in the URL
+  // since booking is a single per-owner feature surface.
+  basePath: string;
 }
 
 export function WidgetWorkspace({
@@ -111,24 +115,25 @@ export function WidgetWorkspace({
   currencySymbol,
   shareUrl,
   initialTab,
+  basePath,
 }: Props) {
   const { t } = useLanguage();
   const pathname = usePathname();
-  // The active tab lives in the URL path (`/dashboard/widgets/{id}/{segment}`),
-  // resolved server-side into `initialTab` for the first render / deep links.
-  // We keep it in local state (so switching is instant and never remounts the
-  // workspace, preserving unsaved config edits + the realtime subscription) and
-  // sync it back from the path when the owner uses the browser back/forward
-  // buttons.
+  // The active tab lives in the URL path (`${basePath}/{segment}`), resolved
+  // server-side into `initialTab` for the first render / deep links. We keep it
+  // in local state (so switching is instant and never remounts the workspace,
+  // preserving unsaved config edits + the realtime subscription) and sync it
+  // back from the path when the owner uses the browser back/forward buttons.
   const [tab, setTab] = useState(initialTab);
 
   useEffect(() => {
-    // Path shape: /dashboard/widgets/{id}/{segment} — index 4 is the segment,
-    // absent on the base (overview) path.
-    const next = tabFromSegment(pathname.split("/")[4]) ?? "overview";
+    // The tab is the first segment after basePath (absent on the base/overview
+    // path).
+    const rel = pathname.startsWith(basePath) ? pathname.slice(basePath.length).replace(/^\//, "") : "";
+    const next = tabFromSegment(rel.split("/")[0] || undefined) ?? "overview";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab to the URL on back/forward (external-state sync, not derived render state)
     setTab((prev) => (prev === next ? prev : next));
-  }, [pathname]);
+  }, [pathname, basePath]);
   // Single shared config controller — instantiated ONCE here so the Settings
   // studio (services + per-service staff_ids) and the Staff tab (config.staff)
   // edit and PATCH the same object instead of two divergent snapshots.
@@ -254,9 +259,9 @@ export function WidgetWorkspace({
       // leaving this component mounted, so switching tabs never drops unsaved
       // config edits or resubscribes realtime. pushState (not replaceState) so
       // the browser back button steps through visited tabs.
-      window.history.pushState(null, "", `/dashboard/widgets/${instanceId}/${segmentFromTab(next)}`);
+      window.history.pushState(null, "", `${basePath}/${segmentFromTab(next)}`);
     },
-    [resetNewToday, instanceId]
+    [resetNewToday, basePath]
   );
 
   // Clicking the banner jumps straight to the Bookings tab and clears the
@@ -392,7 +397,7 @@ export function WidgetWorkspace({
         </TabsContent>
 
         <TabsContent value="customers">
-          <WidgetCustomers data={dash.customers} />
+          <WidgetCustomers data={dash.customers} instanceId={instanceId} locationId={currentLocationId} />
         </TabsContent>
 
         <TabsContent value="staff">

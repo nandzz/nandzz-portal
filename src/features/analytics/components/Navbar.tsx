@@ -107,7 +107,7 @@ export function Navbar() {
             <div className="hidden md:flex items-center gap-3">
               {isBusiness && FEATURES.widgets && entitlements.hasWidgets && (
                 <Link
-                  href="/dashboard/widgets"
+                  href="/dashboard/booking"
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <CalendarDays className="h-3.5 w-3.5" />
@@ -308,7 +308,7 @@ export function Navbar() {
                             {t.nav.groupBusiness}
                           </DropdownMenuLabel>
                           {FEATURES.widgets && entitlements.hasWidgets && (
-                            <DropdownMenuItem render={<Link href="/dashboard/widgets" />} className="gap-2">
+                            <DropdownMenuItem render={<Link href="/dashboard/booking" />} className="gap-2">
                               <CalendarDays aria-hidden className="h-4 w-4 text-muted-foreground" />
                               Booking
                             </DropdownMenuItem>

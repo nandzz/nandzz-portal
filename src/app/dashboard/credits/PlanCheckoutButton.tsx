@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Starts Stripe Checkout (mode: subscription) for a site-wide plan.
@@ -10,10 +11,14 @@ export function PlanCheckoutButton({
   planSlug,
   label,
   variant = "default",
+  interval = "month",
+  className,
 }: {
   planSlug: string;
   label: string;
   variant?: "default" | "outline";
+  interval?: "month" | "year";
+  className?: string;
 }) {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
@@ -26,7 +31,7 @@ export function PlanCheckoutButton({
       const res = await fetch("/api/stripe/plan-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_slug: planSlug }),
+        body: JSON.stringify({ plan_slug: planSlug, interval }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
@@ -46,7 +51,7 @@ export function PlanCheckoutButton({
 
   return (
     <>
-      <Button type="button" className="w-full" variant={variant} onClick={checkout} disabled={loading}>
+      <Button type="button" className={cn("w-full", className)} variant={variant} onClick={checkout} disabled={loading}>
         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         {label}
       </Button>

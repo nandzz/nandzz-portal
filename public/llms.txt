@@ -1,28 +1,28 @@
 # Nandzz
 
 > Nandzz gives businesses, solo pros, and institutions a branded one-page site plus
-> composable widgets — booking, content, and pools — so they can be found on social
+> built-in features — booking, content, and pools — so they can be found on social
 > and booked in a tap. No website needed: claim a handle (nandzz.com/yourbrand), add
-> the widgets you need, and share the link.
+> the features you need, and share the link.
 
 ## What Nandzz is
 
 - A branded public page at `nandzz.com/[handle]` that works as a link-in-bio destination and a lightweight business site.
-- A suite of widgets you add to that page: a **Booking** widget (24/7 appointments with staff and availability), a **Content** widget (publish pages, PDFs, and interactive tools), and **Pools** (bundle links, offers, and resources into one shared collection). More widgets are planned.
-- An optional **AI agent** widget visitors can chat with, and **MCP access** so tools like Claude can connect to a page.
+- A suite of features you add to that page: **Booking** (24/7 appointments with staff and availability), **Content** (publish pages, PDFs, and interactive tools), and **Pools** (bundle links, offers, and resources into one shared collection). More features are planned.
+- An optional **AI Agent** visitors can chat with, and **MCP access** so tools like Claude can connect to a page.
 - Aimed at salons, barbers, cleaners, studios, clinics, coaches, freelancers, and small institutions.
 
 ## How it compares
 
 - Versus link-in-bio tools (Linktree, Beacons): Nandzz adds real booking and content, not just a list of links.
 - Versus scheduling tools (Calendly, Acuity): Nandzz is a branded page, not a bare calendar link.
-- Versus vertical booking suites (Fresha, Booksy): Nandzz is not locked to one industry; you compose only the widgets you need.
+- Versus vertical booking suites (Fresha, Booksy): Nandzz is not locked to one industry; you turn on only the features you need.
 - Versus website builders (Squarespace, Wix): Nandzz is the fast presence-plus-action layer, not a heavy DIY site.
 
 ## Pricing
 
 - Free: a branded page with content, gallery, and links sections (up to 25 spaces).
-- Paid plans (Starter, Pro): unlock widgets (booking + AI agent), MCP access, monthly AI credits, and — on the top plan — analytics and unlimited spaces.
+- One paid plan — €27/month or €270/year (2 months free): unlocks Booking, the AI Agent, MCP access, analytics, and unlimited spaces.
 - Machine-readable pricing: https://nandzz.com/pricing.md
 - Human pricing page: https://nandzz.com/pricing
 

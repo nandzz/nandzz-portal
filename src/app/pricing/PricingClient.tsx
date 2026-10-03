@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Check, Minus, HelpCircle, ArrowRight, Sparkles, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,17 @@ function formatPrice(cents: number, currency: string): string {
   }).format(cents / 100);
 }
 
+// Always render with 2 decimals — used for the "effective €/mo billed annually"
+// subline where the amount is rarely a round number.
+function formatPriceDecimals(cents: number, currency: string): string {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: (currency || "eur").toUpperCase(),
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
 export function PricingClient({
   plans,
   packs,
@@ -25,6 +37,12 @@ export function PricingClient({
   faqs: PricingFaq[];
   aiEnabled: boolean;
 }) {
+  // Billing cadence toggle — only meaningful when at least one paid plan has an
+  // annual price configured (populated by the admin "Sync to Stripe").
+  const annualAvailable = plans.some((p) => p.price_cents > 0 && (p.annual_price_cents ?? 0) > 0);
+  const [billing, setBilling] = useState<"month" | "year">("month");
+  const annual = billing === "year";
+
   // Only badge a "most popular" plan when there's an actual choice between paid
   // tiers — with a single paid plan the badge is noise.
   const paidPlanCount = plans.filter((p) => p.price_cents > 0).length;
@@ -58,17 +76,60 @@ export function PricingClient({
         </h1>
         <p className="mt-5 text-lg text-muted-foreground max-w-md mx-auto">
           {aiEnabled
-            ? "Start free. Upgrade when you want widgets, AI and analytics on your branded page."
-            : "Start free. Upgrade when you want widgets and analytics on your branded page."}
+            ? "Start free. Upgrade for Booking, AI Agent and analytics on your branded page."
+            : "Start free. Upgrade for Booking and analytics on your branded page."}
         </p>
       </section>
+
+      {/* Billing cadence toggle */}
+      {annualAvailable && (
+        <div className="mx-auto mb-8 flex w-fit items-center gap-1 rounded-full border border-border/60 bg-card p-1">
+          <button
+            type="button"
+            onClick={() => setBilling("month")}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              !annual ? "bg-violet-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBilling("year")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              annual ? "bg-violet-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Annual
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                annual ? "bg-white/20 text-white" : "bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300"
+              }`}
+            >
+              2 months free
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Plan cards */}
       <section className="mx-auto max-w-5xl px-4 pb-12">
         {plans.length > 0 ? (
           <div className={gridClass}>
             {plans.map((plan) => {
-              const isPopular = paidPlanCount > 1 && plan.slug === "starter";
+              const isPopular = paidPlanCount > 1 && plan.slug === "pro";
+              // Show annual pricing only when the plan actually carries an annual
+              // price; otherwise fall back to the monthly amount.
+              const showAnnual = annual && plan.price_cents > 0 && (plan.annual_price_cents ?? 0) > 0;
+              const annualCents = plan.annual_price_cents ?? 0;
+              const perMonthCents = showAnnual ? Math.round(annualCents / 12) : 0;
+              const saveCents = showAnnual ? plan.price_cents * 12 - annualCents : 0;
+              const checkoutHref =
+                plan.price_cents === 0
+                  ? "/login?tab=signup"
+                  : showAnnual
+                    ? "/dashboard/credits?interval=year"
+                    : "/dashboard/credits";
               return (
                 <div
                   key={plan.id}
@@ -89,12 +150,30 @@ export function PricingClient({
                   <p className="text-lg font-semibold">{plan.name}</p>
                   <div className="mt-2 flex items-baseline gap-1.5">
                     <span className="text-4xl font-bold tracking-tight">
-                      {plan.price_cents === 0 ? "Free" : formatPrice(plan.price_cents, plan.currency)}
+                      {plan.price_cents === 0
+                        ? "Free"
+                        : showAnnual
+                          ? formatPrice(annualCents, plan.currency)
+                          : formatPrice(plan.price_cents, plan.currency)}
                     </span>
                     {plan.price_cents > 0 && (
-                      <span className="text-sm font-medium text-muted-foreground">/{plan.billing_interval}</span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        /{showAnnual ? "year" : "month"}
+                      </span>
                     )}
                   </div>
+                  {showAnnual && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {formatPriceDecimals(perMonthCents, plan.currency)}/mo billed annually
+                      </span>
+                      {saveCents > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          Save {formatPrice(saveCents, plan.currency)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {plan.price_cents > 0 && plan.trial_days > 0 && (
                     <p className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
                       <Sparkles className="h-3 w-3" />
@@ -111,7 +190,7 @@ export function PricingClient({
                     </Feature>
                     <Feature ok>Content, gallery &amp; links sections</Feature>
                     <Feature ok={plan.has_widgets}>
-                      {aiEnabled ? "Widgets (booking + AI agent)" : "Widgets (booking)"}
+                      {aiEnabled ? "Booking & AI Agent" : "Booking"}
                     </Feature>
                     {aiEnabled && (
                       <Feature ok={plan.monthly_credits > 0}>
@@ -124,7 +203,7 @@ export function PricingClient({
                     <Feature ok={plan.has_analytics}>Analytics</Feature>
                   </ul>
 
-                  <Link href={plan.price_cents === 0 ? "/login?tab=signup" : "/dashboard/credits"}>
+                  <Link href={checkoutHref}>
                     <Button variant={isPopular ? "default" : "outline"} className="w-full">
                       {plan.price_cents === 0
                         ? "Get started"

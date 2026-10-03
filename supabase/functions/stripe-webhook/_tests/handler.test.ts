@@ -56,6 +56,10 @@ function makeAdmin(opts: FakeAdminOptions = {}): {
           filters.push([col, val]);
           return chain;
         },
+        or: (filter: string) => {
+          filters.push(["or", filter]);
+          return chain;
+        },
         maybeSingle: () => {
           lookupCalls.push({ table, filters: [...filters] });
           return Promise.resolve(
@@ -246,6 +250,8 @@ function subscriptionEvent(overrides: {
   priceId?: string | null;
   subId?: string;
   currentPeriodEnd?: number | null;
+  cancelAtPeriodEnd?: boolean;
+  cancelAt?: number | null;
   eventId?: string;
 }): Stripe.Event {
   return {
@@ -259,11 +265,13 @@ function subscriptionEvent(overrides: {
         status: overrides.status ?? "active",
         current_period_end:
           "currentPeriodEnd" in overrides ? overrides.currentPeriodEnd : 1_700_100_000,
+        cancel_at_period_end: overrides.cancelAtPeriodEnd ?? false,
+        cancel_at: "cancelAt" in overrides ? overrides.cancelAt : null,
         items: {
           data: [
             {
               price: {
-                id: "priceId" in overrides ? overrides.priceId : "price_starter",
+                id: "priceId" in overrides ? overrides.priceId : "price_pro",
               },
             },
           ],
@@ -279,23 +287,23 @@ function subscriptionEvent(overrides: {
 
 Deno.test("subscription.created: maps price→plan and calls set_user_plan", async () => {
   const { admin, rpcCalls, lookupCalls } = makeAdmin({
-    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
   });
   const result = await handleStripeEvent(subscriptionEvent({}), admin);
 
   assertEquals(result.status, 200);
-  assertEquals(result.body.plan_slug, "starter");
+  assertEquals(result.body.plan_slug, "pro");
   assertEquals(result.body.plan_status, "active");
 
   // price → plan lookup
   assertEquals(lookupCalls[0].table, "subscription_plans");
-  assertEquals(lookupCalls[0].filters, [["stripe_price_id", "price_starter"]]);
+  assertEquals(lookupCalls[0].filters, [["or", "stripe_price_id.eq.price_pro,stripe_annual_price_id.eq.price_pro"]]);
 
   assertEquals(rpcCalls.length, 1);
   assertEquals(rpcCalls[0].name, "set_user_plan");
   assertObjectMatch(rpcCalls[0].args, {
     p_user_id: "user-1",
-    p_plan_slug: "starter",
+    p_plan_slug: "pro",
     p_status: "active",
     p_sub_id: "sub_test_123",
   });
@@ -303,11 +311,47 @@ Deno.test("subscription.created: maps price→plan and calls set_user_plan", asy
     rpcCalls[0].args.p_period_end,
     new Date(1_700_100_000 * 1000).toISOString(),
   );
+  // A normal renewing sub is not marked as canceling.
+  assertEquals(rpcCalls[0].args.p_cancel_at_period_end, false);
+});
+
+Deno.test("subscription.updated with cancel_at_period_end: stores the canceling flag", async () => {
+  const { admin, rpcCalls } = makeAdmin({
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
+  });
+  const result = await handleStripeEvent(
+    subscriptionEvent({ type: "customer.subscription.updated", cancelAtPeriodEnd: true }),
+    admin,
+  );
+
+  assertEquals(result.status, 200);
+  // Stripe keeps status "active" — only the flag signals the wind-down.
+  assertEquals(result.body.plan_status, "active");
+  assertEquals(rpcCalls[0].name, "set_user_plan");
+  assertEquals(rpcCalls[0].args.p_cancel_at_period_end, true);
+});
+
+Deno.test("subscription.updated with a future cancel_at (modern Stripe portal): marks canceling + uses cancel_at as the end date", async () => {
+  const { admin, rpcCalls } = makeAdmin({
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
+  });
+  const cancelAt = 1_791_582_700;
+  const result = await handleStripeEvent(
+    // The portal now leaves cancel_at_period_end=false and sets cancel_at instead.
+    subscriptionEvent({ type: "customer.subscription.updated", cancelAt }),
+    admin,
+  );
+
+  assertEquals(result.status, 200);
+  assertEquals(result.body.plan_status, "active");
+  assertEquals(rpcCalls[0].args.p_cancel_at_period_end, true);
+  // The displayed "active until" date comes from cancel_at, not current_period_end.
+  assertEquals(rpcCalls[0].args.p_period_end, new Date(cancelAt * 1000).toISOString());
 });
 
 Deno.test("subscription trialing: burns the one-time trial (has_used_trial=true)", async () => {
   const { admin, rpcCalls, updateCalls } = makeAdmin({
-    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
   });
   const result = await handleStripeEvent(
     subscriptionEvent({ status: "trialing" }),
@@ -326,7 +370,7 @@ Deno.test("subscription trialing: burns the one-time trial (has_used_trial=true)
 
 Deno.test("subscription active: does NOT touch has_used_trial", async () => {
   const { admin, updateCalls } = makeAdmin({
-    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
   });
   const result = await handleStripeEvent(subscriptionEvent({ status: "active" }), admin);
 
@@ -387,7 +431,7 @@ Deno.test("subscription: resolves user via lookup when metadata has no user_id",
 Deno.test("subscription: skips when no user can be resolved", async () => {
   const { admin, rpcCalls } = makeAdmin({
     lookups: {
-      subscription_plans: { data: { slug: "starter" }, error: null },
+      subscription_plans: { data: { slug: "pro" }, error: null },
       profiles: { data: null, error: null },
     },
   });
@@ -399,7 +443,7 @@ Deno.test("subscription: skips when no user can be resolved", async () => {
 
 Deno.test("subscription: returns 500 when set_user_plan errors so Stripe retries", async () => {
   const { admin } = makeAdmin({
-    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
     rpcError: { message: "db_down" },
   });
   const result = await handleStripeEvent(subscriptionEvent({}), admin);
@@ -503,7 +547,7 @@ Deno.test("invoice.paid: skips when subscription/price is missing", async () => 
 
 Deno.test("invoice.paid: resolves user_id from invoice.parent.subscription_details (current Stripe API)", async () => {
   const { admin, rpcCalls, lookupCalls } = makeAdmin({
-    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
   });
   // Current Stripe API version: no top-level subscription/price, metadata under parent.
   const event = {
@@ -518,13 +562,13 @@ Deno.test("invoice.paid: resolves user_id from invoice.parent.subscription_detai
           type: "subscription_details",
           subscription_details: {
             subscription: "sub_parent_1",
-            metadata: { user_id: "user-7", plan_slug: "starter" },
+            metadata: { user_id: "user-7", plan_slug: "pro" },
           },
         },
         lines: {
           data: [
             {
-              pricing: { price_details: { price: "price_starter" } },
+              pricing: { price_details: { price: "price_pro" } },
               period: { end: 1_702_700_000 },
             },
           ],
@@ -535,8 +579,8 @@ Deno.test("invoice.paid: resolves user_id from invoice.parent.subscription_detai
 
   const result = await handleStripeEvent(event, admin);
   assertEquals(result.status, 200);
-  assertEquals(result.body.refilled, "starter");
-  assertEquals(lookupCalls[0].filters, [["stripe_price_id", "price_starter"]]);
+  assertEquals(result.body.refilled, "pro");
+  assertEquals(lookupCalls[0].filters, [["or", "stripe_price_id.eq.price_pro,stripe_annual_price_id.eq.price_pro"]]);
   assertEquals(rpcCalls[0].name, "set_user_plan");
   assertEquals(rpcCalls[0].args.p_user_id, "user-7");
   assertEquals(rpcCalls[0].args.p_sub_id, "sub_parent_1");
@@ -544,7 +588,7 @@ Deno.test("invoice.paid: resolves user_id from invoice.parent.subscription_detai
 
 Deno.test("invoice.paid: legacy per-instance widget invoice (instance_id) is ignored", async () => {
   const { admin, rpcCalls } = makeAdmin({
-    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
   });
   const event = {
     id: "evt_test_widget_invoice",

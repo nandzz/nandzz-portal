@@ -38,6 +38,8 @@ type ProfilePlanRow = {
   plan_credits: number | null;
   paid_credits: number | null;
   plan_current_period_end: string | null;
+  plan_cancel_at_period_end: boolean | null;
+  comp_expires_at: string | null;
 };
 
 function resolve(
@@ -54,6 +56,8 @@ function resolve(
     planCredits: profile?.plan_credits ?? 0,
     paidCredits: profile?.paid_credits ?? 0,
     periodEnd: profile?.plan_current_period_end ?? null,
+    cancelAtPeriodEnd: profile?.plan_cancel_at_period_end ?? false,
+    compExpiresAt: profile?.comp_expires_at ?? null,
     entitlements,
   };
 }
@@ -91,7 +95,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   const [{ data: profile }, plansBySlug] = await Promise.all([
     admin
       .from("profiles")
-      .select("plan_slug, plan_status, plan_credits, paid_credits, plan_current_period_end")
+      .select("plan_slug, plan_status, plan_credits, paid_credits, plan_current_period_end, plan_cancel_at_period_end, comp_expires_at")
       .eq("id", userId)
       .maybeSingle(),
     loadPlansBySlug(admin),

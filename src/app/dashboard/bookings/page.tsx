@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { CalendarCheck } from "lucide-react";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/account/server";
-import { getOwnerWidgets, ownerHasWidgetAccess } from "@/features/booking/server";
+import { ownerHasWidgetAccess } from "@/features/booking/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { PageShell } from "@/components/layout/PageShell";
@@ -18,18 +18,12 @@ export default async function MyBookingsPage() {
 
   // A business gets booked rather than books others, so this personal booker
   // list isn't for them. Their "Bookings" shortcut lands here too, but resolves
-  // to the calendar (booking) widget where the appointments they receive are
-  // managed. Without an active widget subscription the workspace is locked, so
-  // send them to the subscription page first; otherwise open the calendar
-  // widget — or the catalog to add one if they haven't created it yet.
+  // to the Booking feature where the appointments they receive are managed.
+  // Without plan-level widget access the workspace is locked, so send them to the
+  // subscription page first; otherwise open the received-bookings tab.
   if ((await getAccountType(supabase, userId)) === "business") {
-    const [hasWidgets, widgets] = await Promise.all([
-      ownerHasWidgetAccess(userId),
-      getOwnerWidgets(userId),
-    ]);
-    if (!hasWidgets) redirect("/dashboard/credits");
-    const calendar = widgets.find((w) => w.catalog.slug === "calendar");
-    redirect(calendar ? `/dashboard/widgets/${calendar.id}/bookings` : "/dashboard/widgets");
+    if (!(await ownerHasWidgetAccess(userId))) redirect("/dashboard/credits");
+    redirect("/dashboard/booking/bookings");
   }
 
   const [t, locale] = await Promise.all([getServerTranslations(), getCurrentLocale()]);

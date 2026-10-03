@@ -145,11 +145,16 @@ export function renderTemplate(template: string, vars: Record<string, string>): 
   );
 }
 
+// One booked service and who performs it (null staff ⇒ unstaffed / unknown).
+export type BookingServiceLine = { name: string; staffName: string | null };
+
 export type BookingMessageContext = {
   customerName: string;
   businessName: string;
   serviceName: string;
   staffName: string | null;
+  // Every booked service in order (always >= 1; a single-service booking is one line).
+  services: BookingServiceLine[];
   startsAt: string;
   timezone: string;
   priceCents: number | null;
@@ -157,7 +162,24 @@ export type BookingMessageContext = {
   manageUrl: string;
 };
 
+// "Haircut (Ana), Colour (Bea)" — plain-text services list for subjects/text.
+export function servicesText(services: BookingServiceLine[]): string {
+  return services
+    .map((s) => (s.staffName ? `${s.name} (${s.staffName})` : s.name))
+    .join(", ");
+}
+
+// Distinct staff names across the services, in order of first appearance.
+function distinctStaff(ctx: BookingMessageContext): string[] {
+  const names = ctx.services.map((s) => s.staffName).filter((n): n is string => !!n);
+  if (names.length === 0 && ctx.staffName) names.push(ctx.staffName);
+  return [...new Set(names)];
+}
+
 // Build the {{variable}} map for a template render, localizing the date string.
+// {{services}} here is the plain-text list; the HTML render overrides it with
+// markup rows (see render.ts). {{multi_service}}/{{single_service}} are section
+// flags ("1" or "") so templates can pick a singular/plural label.
 export function bookingMessageVars(
   ctx: BookingMessageContext,
   locale: Locale,
@@ -174,7 +196,10 @@ export function bookingMessageVars(
     customer_name: ctx.customerName,
     customer_first_name: firstName,
     service: ctx.serviceName,
-    staff: ctx.staffName ?? "",
+    staff: distinctStaff(ctx).join(", "),
+    services: servicesText(ctx.services),
+    multi_service: ctx.services.length > 1 ? "1" : "",
+    single_service: ctx.services.length > 1 ? "" : "1",
     date_time: formatBookingTimeRelative(ctx.startsAt, ctx.timezone, locale),
     business: ctx.businessName,
     price,

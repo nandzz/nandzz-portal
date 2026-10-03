@@ -17,7 +17,9 @@
 // or a lettered circle when none), {{business_image_url}}, {{brand_primary}},
 // {{brand_accent}}, {{brand_background}} (the business's own brand colours),
 // {{customer_name}}, {{customer_first_name}}, {{service}}, {{staff}}, {{date_time}},
-// {{price}}, {{manage_url}}.
+// {{price}}, {{manage_url}}, {{services}} (HTML rows: each booked service + its
+// staff member), {{multi_service}}/{{single_service}} (section flags for a
+// singular/plural label). {{staff}} is the distinct staff names, comma-joined.
 //
 // Auth: shared-secret header `x-booking-notify-secret` vs env BOOKING_NOTIFY_SECRET
 // (401 on mismatch) — enforced for ALL modes. Runs with verify_jwt = false.

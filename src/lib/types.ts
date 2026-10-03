@@ -112,7 +112,9 @@ export type CreditPack = {
 
 // ── Subscription plans ───────────────────────────────────────────────────────
 
-export type PlanSlug = "free" | "starter" | "pro";
+// The catalog has exactly two slugs: `free` and the single paid plan `pro`.
+// (The legacy `starter` slug was renamed to `pro` in 20261002130000.)
+export type PlanSlug = "free" | "pro";
 
 // A row from `subscription_plans` — the catalog of the three site-wide plans.
 export type SubscriptionPlan = {
@@ -121,6 +123,9 @@ export type SubscriptionPlan = {
   name: string;
   description: string | null;
   price_cents: number;
+  // Annual billing option. null ⇒ no annual plan configured. When set, annual
+  // checkout uses stripe_annual_price_id (populated by the admin "Sync to Stripe").
+  annual_price_cents: number | null;
   currency: string;
   billing_interval: "month" | "year";
   monthly_credits: number;
@@ -133,6 +138,7 @@ export type SubscriptionPlan = {
   sort_order: number;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
+  stripe_annual_price_id: string | null;
   updated_at: string;
 };
 
@@ -153,6 +159,12 @@ export type UserPlan = {
   planCredits: number; // monthly allowance balance
   paidCredits: number; // purchased, never-expiring balance
   periodEnd: string | null;
+  // Stripe subscription is set to cancel at periodEnd (cancel_at_period_end).
+  // status stays "active" until then, so this is what distinguishes a winding-
+  // down plan from a renewing one.
+  cancelAtPeriodEnd: boolean;
+  // When status === "comp": the admin-granted complimentary period's end date.
+  compExpiresAt: string | null;
   entitlements: PlanEntitlements;
 };
 

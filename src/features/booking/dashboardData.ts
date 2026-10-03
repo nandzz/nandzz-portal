@@ -289,3 +289,25 @@ export async function fetchCustomersData(
   }));
   return { timezone, currencySymbol, customers };
 }
+
+// ── One customer's booking history (the Customers-tab detail modal) ──────────
+// `customerId` is the rollup key from widget_customers_summary: the lowercased
+// email, or `phone:<phone>` for an email-less customer. Matching mirrors that
+// key so the history lines up with the row's counts. Capped — a single customer
+// never comes close, and the modal only needs recent history.
+export async function fetchCustomerBookings(
+  supabase: SupabaseClient,
+  opts: { instanceId: string; locationId: string | null; customerId: string }
+): Promise<BookingRowData[]> {
+  const { instanceId, locationId, customerId } = opts;
+  let q = supabase.from("widget_bookings").select(ROW_COLUMNS).eq("instance_id", instanceId);
+  q = scopeLocation(q, locationId);
+  if (customerId.startsWith("phone:")) {
+    q = q.eq("customer_phone", customerId.slice("phone:".length)).or("customer_email.is.null,customer_email.eq.");
+  } else {
+    // ilike for case-insensitivity; escape its wildcards so the email matches literally.
+    q = q.ilike("customer_email", customerId.replace(/[\\%_]/g, (c) => `\\${c}`));
+  }
+  const { data } = await q.order("starts_at", { ascending: false }).limit(200);
+  return ((data ?? []) as RowRecord[]).map(toRow);
+}

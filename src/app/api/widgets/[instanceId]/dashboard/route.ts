@@ -10,6 +10,7 @@ import {
   fetchCalendarData,
   fetchListData,
   fetchCustomersData,
+  fetchCustomerBookings,
   type BookingsFilter,
 } from "@/features/booking/dashboardData";
 
@@ -78,6 +79,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inst
     case "customers": {
       const data = await fetchCustomersData(supabase, { instanceId, locationId, timezone, currencySymbol: symbol });
       return NextResponse.json(data);
+    }
+    case "customer": {
+      const customerId = (url.searchParams.get("id") ?? "").trim();
+      if (!customerId) return NextResponse.json({ error: "id required" }, { status: 400 });
+      const bookings = await fetchCustomerBookings(supabase, { instanceId, locationId, customerId });
+      return NextResponse.json({ bookings });
     }
     default:
       return NextResponse.json({ error: "unknown view" }, { status: 400 });

@@ -1,8 +1,8 @@
-// Canonical mapping between a calendar-widget studio URL segment and the
-// internal Tabs value. The overview tab lives at the widget's base path
-// (`/dashboard/widgets/{id}`) but is also reachable at
-// `/dashboard/widgets/{id}/dashboard`, so its URL segment is "dashboard"
-// while its Tabs value stays "overview". Every other tab maps 1:1.
+// Canonical mapping between a booking workspace URL segment and the internal
+// Tabs value. The overview tab lives at the feature's base path
+// (`/dashboard/booking`) but is also reachable at `/dashboard/booking/dashboard`,
+// so its URL segment is "dashboard" while its Tabs value stays "overview". Every
+// other tab maps 1:1.
 //
 // Shared by the server page (validating the URL segment) and WidgetWorkspace
 // (pushing the path as the owner switches tabs) so the two never drift.

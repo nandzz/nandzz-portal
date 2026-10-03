@@ -13,6 +13,7 @@ import {
   currencySymbol,
   renderTemplate,
   type BookingMessageContext,
+  type BookingServiceLine,
 } from "./messages.ts";
 import { escapeHtml } from "./emails.ts";
 import { pickTemplate, type EmailContent, type EmailTemplates } from "./config.ts";
@@ -80,6 +81,37 @@ function businessAvatarHtml(imageUrl: string, businessName: string, accent: stri
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr><td align="center" valign="middle" style="width:48px;height:48px;background:${accent};border-radius:24px;color:#ffffff;font:600 20px -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">${initial}</td></tr></table>`;
 }
 
+// The booked services as email-safe table rows (dropped into the template's
+// details table via {{services}}): each service name, with its staff member as a
+// muted line underneath when one is assigned. Handles 1..n services, each with a
+// different (or no) staff member.
+const ROW_FONT = "-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+export function servicesHtml(services: BookingServiceLine[]): string {
+  return services
+    .map((s, i) => {
+      const top = i === 0 ? 0 : 8;
+      const name = `<tr><td style="padding:${top}px 0 2px;font:600 15px/1.45 ${ROW_FONT};color:#111827">${escapeHtml(s.name)}</td></tr>`;
+      const staff = s.staffName
+        ? `<tr><td style="padding:0 0 2px;font:400 13px/1.45 ${ROW_FONT};color:#6b7280">${escapeHtml(s.staffName)}</td></tr>`
+        : "";
+      return name + staff;
+    })
+    .join("");
+}
+
+// The booking's services in order, each with its staff. Multi-service bookings
+// carry a `services` snapshot (per-service staff on segmented bookings; legacy
+// rows share the parent's single staff). Single-service bookings have no
+// snapshot, so the parent row is the one line.
+export function bookingServiceLines(booking: BookingRow): BookingServiceLine[] {
+  const fallbackStaff = booking.staff_name ?? null;
+  const snap = Array.isArray(booking.services) ? booking.services : [];
+  const lines = snap
+    .filter((s) => s && typeof s.name === "string" && s.name.trim() !== "")
+    .map((s) => ({ name: s.name as string, staffName: s.staff_name || fallbackStaff }));
+  return lines.length > 0 ? lines : [{ name: booking.service_name, staffName: fallbackStaff }];
+}
+
 // Bare emergency HTML used only if the DB template row is missing.
 function fallbackHtml(htmlVars: Record<string, string>): EmailContent {
   return {
@@ -117,6 +149,7 @@ function renderEmail(
   htmlVars.brand_background = brand.background;
   htmlVars.business_image_url = escapeHtml(businessImageUrl);
   htmlVars.business_avatar = businessAvatarHtml(businessImageUrl, ctx.businessName, brand.primary);
+  htmlVars.services = servicesHtml(ctx.services);
 
   const tpl: EmailContent =
     (templates && pickTemplate(templates, audience, kind, locale)) || fallbackHtml(htmlVars);
@@ -200,6 +233,7 @@ export function buildEmailJobs(
     businessName,
     serviceName: booking.service_name,
     staffName: booking.staff_name ?? null,
+    services: bookingServiceLines(booking),
     startsAt: booking.starts_at,
     timezone,
     priceCents: booking.price_cents,

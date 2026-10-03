@@ -33,7 +33,7 @@ const spacesTab: TabDef = {
 // A business's bookings live inside the calendar widget, so /dashboard/bookings
 // server-redirects them to this sub-route. The tab bar must still read that as
 // "Bookings" (not "Widgets"), hence the shared matcher below.
-const WIDGET_BOOKINGS = /^\/dashboard\/widgets\/[^/]+\/bookings/;
+const WIDGET_BOOKINGS = /^\/dashboard\/booking\/bookings/;
 
 // Bookings is a first-class destination for both personas — the whole product is
 // "get found & booked", so appointments belong in the thumb zone, not nested in a
@@ -55,11 +55,18 @@ function getAuthTabDefs(isBusiness: boolean, profileHref: string): TabDef[] {
       { href: "/", labelKey: "home", icon: Home, isActive: (p) => p === "/" },
     ];
     if (FEATURES.widgets) {
-      // The booking/calendar setup lives under /dashboard/widgets; surfaced as
-      // its own feature "Booking" (not "Widgets"). The received-appointments
-      // route (/dashboard/widgets/<id>/bookings) belongs to the Bookings tab, so
-      // it's excluded here via WIDGET_BOOKINGS.
-      tabs.push({ href: "/dashboard/widgets", labelKey: "booking", icon: CalendarDays, isActive: (p) => p.startsWith("/dashboard/widgets") && !WIDGET_BOOKINGS.test(p) });
+      // The booking/calendar feature lives at /dashboard/booking. The
+      // received-appointments route (/dashboard/booking/bookings) belongs to the
+      // Bookings tab, so it's excluded here via WIDGET_BOOKINGS. The isActive
+      // check anchors on the exact path or a trailing slash so the personal
+      // bookings list (/dashboard/bookings) never matches this tab.
+      tabs.push({
+        href: "/dashboard/booking",
+        labelKey: "booking",
+        icon: CalendarDays,
+        isActive: (p) =>
+          (p === "/dashboard/booking" || p.startsWith("/dashboard/booking/")) && !WIDGET_BOOKINGS.test(p),
+      });
     }
     tabs.push(spacesTab, bookingsTab);
     return tabs;

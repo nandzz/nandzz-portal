@@ -54,7 +54,7 @@ export function BuyCreditsButton({
         onClick={handleClick}
         disabled={loading}
       >
-        {loading ? "Opening checkout…" : `Get ${credits.toLocaleString()} credits`}
+        {loading ? t.subscription.openingCheckout : t.subscription.getCredits.replace("{count}", credits.toLocaleString())}
         {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
       </Button>
       {error && (

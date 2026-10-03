@@ -50,7 +50,7 @@ export function ManageBillingButton({
           disabled={loading}
           className="underline underline-offset-2 hover:text-foreground disabled:opacity-60"
         >
-          {loading ? "Opening…" : children}
+          {loading ? t.subscription.opening : children}
         </button>
         {error && <span className="ml-2 text-destructive">{error}</span>}
       </>
@@ -60,7 +60,7 @@ export function ManageBillingButton({
   return (
     <div>
       <Button type="button" variant="outline" size="sm" onClick={open} disabled={loading}>
-        {loading ? "Opening…" : children}
+        {loading ? t.subscription.opening : children}
       </Button>
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>

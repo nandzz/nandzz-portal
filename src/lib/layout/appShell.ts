@@ -7,10 +7,14 @@
 // gets no sidebar. Matches "/<username>/space/<id>" and "/space/<id>".
 const IMMERSIVE_ROUTE_RE = /^\/(?:[^/]+\/)?space\/[^/]+/;
 
-// Public booking widget viewer — a fully branded, chromeless page: it renders
-// its own hero (business avatar + name) and needs no app Navbar, Sidebar,
-// footer, or mobile tab bar. Matches "/<username>/widget/<instanceId>".
-const WIDGET_ROUTE_RE = /^\/[^/]+\/widget\/[^/]+/;
+// Public booking viewer — a fully branded, chromeless page: it renders its own
+// hero (business avatar + name) and needs no app Navbar, Sidebar, footer, or
+// mobile tab bar. Matches "/<username>/booking/<instanceId>" (three segments).
+// The leading negative lookahead keeps the owner dashboard workspace
+// ("/dashboard/booking/<tab>") out — that page keeps full app chrome. The
+// public manage-booking page "/booking/<token>" is a different, two-segment
+// route and is also not matched.
+const WIDGET_ROUTE_RE = /^\/(?!dashboard(?:\/|$))[^/]+\/booking\/[^/]+/;
 
 export function isImmersiveRoute(pathname: string): boolean {
   return IMMERSIVE_ROUTE_RE.test(pathname) || WIDGET_ROUTE_RE.test(pathname);

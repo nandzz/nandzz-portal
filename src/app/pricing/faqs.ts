@@ -7,17 +7,17 @@ export type PricingFaq = { q: string; a: string; ai?: boolean };
 
 export const pricingFaqs: PricingFaq[] = [
   {
-    q: "What do the plans include?",
-    a: "The Free plan lets you build a branded page with up to 25 spaces and content sections. The paid plan unlocks the booking widget, analytics, MCP access and unlimited spaces.",
+    q: "What's included?",
+    a: "The Free plan lets you build a branded page with up to 25 spaces and content sections. The paid plan — €27/month or €270/year (2 months free) — unlocks Booking and the AI Agent, analytics, MCP access and unlimited spaces.",
   },
   {
     q: "How do AI credits work?",
     ai: true,
-    a: "Paid plans include a monthly AI credit allowance that resets each billing period. Credits are spent on AI features — chatting with your agent and editing pages with AI. Need more? Buy top-up packs that never expire; they're only used after your monthly allowance runs out.",
+    a: "The paid plan includes a monthly AI credit allowance that resets each billing period. Credits are spent on AI features — chatting with your agent and editing pages with AI. Need more? Buy top-up packs that never expire; they're only used after your monthly allowance runs out.",
   },
   {
     q: "Can I change or cancel my plan?",
-    a: "Yes — upgrade, downgrade or cancel anytime from your subscription page. Cancelling drops you back to the Free plan at the end of the billing period.",
+    a: "Yes — switch between monthly and annual billing or cancel anytime from your subscription page. Cancelling drops you back to the Free plan at the end of the billing period.",
   },
   {
     q: "Do purchased credits expire?",

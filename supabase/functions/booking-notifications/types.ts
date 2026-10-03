@@ -40,6 +40,13 @@ export type NotifyRequest = {
   actor?: NotifyActor;
 };
 
+export type BookingServiceSnapshot = {
+  service_id?: string;
+  name?: string | null;
+  duration_min?: number | null;
+  staff_name?: string | null;
+};
+
 // The fields we read off a widget_bookings row (superset — extra columns ignored).
 export type BookingRow = {
   id: string;
@@ -48,6 +55,9 @@ export type BookingRow = {
   service_name: string;
   price_cents: number | null;
   staff_name: string | null;
+  // Per-service snapshot — set only for multi-service bookings (null otherwise).
+  // staff_name is present on per-service-staff bookings; legacy rows omit it.
+  services: BookingServiceSnapshot[] | null;
   starts_at: string;
   customer_name: string;
   customer_email: string | null;

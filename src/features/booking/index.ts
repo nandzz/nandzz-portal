@@ -7,7 +7,6 @@
 // public HTTP routes depend on them too.
 
 // ── Dashboard surfaces ──────────────────────────────────────────────────────
-export { AddWidgetButton } from "./components/AddWidgetButton";
 export { WidgetStrip } from "./components/WidgetStrip";
 export { WidgetWorkspace } from "./components/calendar/WidgetWorkspace";
 export { WidgetInstanceSettings } from "./components/calendar/WidgetInstanceSettings";

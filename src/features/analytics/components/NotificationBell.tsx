@@ -132,8 +132,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                 type="button"
                 onClick={() => {
                   if (n.type === "new_booking") {
-                    const { instance_id } = n.payload as { instance_id: string };
-                    router.push(`/dashboard/widgets/${instance_id}/bookings`);
+                    // Booking is a single per-owner feature now, so the received
+                    // appointments live at a fixed path (no instance id).
+                    router.push("/dashboard/booking/bookings");
                     setOpen(false);
                     return;
                   }

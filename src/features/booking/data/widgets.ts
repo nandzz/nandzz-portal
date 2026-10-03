@@ -2,6 +2,9 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
 import { getFeatureFlags } from "@/lib/featureFlags";
+import { defaultCalendarConfig } from "@/lib/widgets/calendar";
+import { suggestedCurrencyForLocale } from "@/lib/widgets/messages";
+import { getCurrentLocale } from "@/lib/i18n/server";
 import type {
   WidgetCatalogEntry,
   WidgetInstance,
@@ -101,6 +104,73 @@ export async function getOwnerWidgetById(
   if (!data) return null;
   const instance = data as WidgetInstance & { catalog: WidgetCatalogEntry };
   return { ...instance, has_access: entitlements.hasWidgets };
+}
+
+// Booking is now a first-class feature surface, not an add-on picked from a
+// catalog: every business has exactly one calendar instance. Fetch the owner's
+// calendar, provisioning it on first visit (hidden until they enable it) so the
+// `/dashboard/booking` page always has an instance to render. Access is gated
+// separately via `has_access` = the owner's plan's hasWidgets, so this
+// provisions for every business account regardless of plan — a non-paying
+// account simply sees the workspace in its locked/inactive state.
+export async function getOrCreateOwnerCalendar(
+  ownerId: string
+): Promise<WidgetInstanceWithCatalog | null> {
+  const admin = createAdminClient();
+
+  const { data: catalogRow } = await admin
+    .from("widget_catalog")
+    .select("*")
+    .eq("slug", "calendar")
+    .eq("active", true)
+    .maybeSingle();
+  if (!catalogRow) return null;
+  const catalog = catalogRow as WidgetCatalogEntry;
+
+  const [{ data: existing }, entitlements] = await Promise.all([
+    admin
+      .from("widget_instances")
+      .select("*, catalog:widget_catalog(*)")
+      .eq("user_id", ownerId)
+      .eq("catalog_id", catalog.id)
+      .maybeSingle(),
+    getUserEntitlements(ownerId),
+  ]);
+
+  if (existing) {
+    const instance = existing as WidgetInstance & { catalog: WidgetCatalogEntry };
+    return { ...instance, has_access: entitlements.hasWidgets };
+  }
+
+  // Seed a fresh calendar with the owner's locale-appropriate currency (they can
+  // change it in the services editor). Hidden until the owner flips it on from
+  // booking settings.
+  const seedConfig = {
+    ...defaultCalendarConfig(),
+    currency: suggestedCurrencyForLocale(await getCurrentLocale()),
+  };
+  const { data: created, error } = await admin
+    .from("widget_instances")
+    .insert({ user_id: ownerId, catalog_id: catalog.id, config: seedConfig, enabled: false })
+    .select("*")
+    .single();
+
+  // Lost an insert race (one instance per owner+type): re-fetch the row the
+  // other request created rather than surfacing a duplicate-key error.
+  if (error || !created) {
+    const { data: raced } = await admin
+      .from("widget_instances")
+      .select("*, catalog:widget_catalog(*)")
+      .eq("user_id", ownerId)
+      .eq("catalog_id", catalog.id)
+      .maybeSingle();
+    if (!raced) return null;
+    const instance = raced as WidgetInstance & { catalog: WidgetCatalogEntry };
+    return { ...instance, has_access: entitlements.hasWidgets };
+  }
+
+  const instance = created as WidgetInstance;
+  return { ...instance, catalog, has_access: entitlements.hasWidgets };
 }
 
 // Owner's plan-level widget access, for surfaces that don't need instances.

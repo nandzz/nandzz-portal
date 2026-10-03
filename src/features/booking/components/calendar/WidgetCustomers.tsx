@@ -5,6 +5,7 @@ import { Search, MessageCircle, Mail, Users, ChevronLeft, ChevronRight } from "l
 import { whatsappLink } from "@/lib/widgets/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Translations } from "@/lib/i18n/translations";
+import { CustomerDetailsDialog } from "@/features/booking/components/calendar/CustomerDetailsDialog";
 
 const PAGE_SIZE = 12;
 
@@ -29,10 +30,19 @@ export type WidgetCustomersData = {
   customers: CustomerSummary[];
 };
 
-export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
+export function WidgetCustomers({
+  data,
+  instanceId,
+  locationId,
+}: {
+  data: WidgetCustomersData;
+  instanceId: string;
+  locationId: string | null;
+}) {
   const { t, locale } = useLanguage();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<CustomerSummary | null>(null);
 
   const money = (cents: number) =>
     `${data.currencySymbol}${(cents / 100).toLocaleString(undefined, {
@@ -110,6 +120,7 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
               money={money}
               fmtDay={(iso) => fmtDay.format(new Date(iso))}
               t={t}
+              onOpen={() => setSelected(c)}
             />
           ))}
           {filtered.length === 0 && (
@@ -149,6 +160,15 @@ export function WidgetCustomers({ data }: { data: WidgetCustomersData }) {
           </div>
         </div>
       )}
+
+      <CustomerDetailsDialog
+        customer={selected}
+        onClose={() => setSelected(null)}
+        instanceId={instanceId}
+        locationId={locationId}
+        timezone={data.timezone}
+        money={money}
+      />
     </div>
   );
 }
@@ -158,11 +178,13 @@ function CustomerRow({
   money,
   fmtDay,
   t,
+  onOpen,
 }: {
   c: CustomerSummary;
   money: (cents: number) => string;
   fmtDay: (iso: string) => string;
   t: Translations;
+  onOpen: () => void;
 }) {
   const initials = c.name
     .split(" ")
@@ -176,7 +198,20 @@ function CustomerRow({
   const wa = c.phone ? whatsappLink(c.phone, t.booking.whatsappSimpleGreeting.replace("{name}", firstName)) : null;
 
   return (
-    <div className="flex items-center gap-4 px-5 py-4">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      aria-label={t.booking.openCustomerAria.replace("{name}", c.name)}
+      className="flex cursor-pointer items-center gap-4 px-5 py-4 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50"
+    >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
         {initials || "?"}
       </div>
@@ -217,6 +252,7 @@ function CustomerRow({
         {wa && (
           <a
             href={wa}
+            onClick={(e) => e.stopPropagation()}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30"
@@ -229,6 +265,7 @@ function CustomerRow({
         {c.email && (
           <a
             href={`mailto:${c.email}`}
+            onClick={(e) => e.stopPropagation()}
             className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
             aria-label={t.booking.emailAria.replace("{name}", c.name)}
             title={t.booking.emailTitle}

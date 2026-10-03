@@ -23,7 +23,7 @@ export type CreateWidgetInstanceResult =
     };
 
 // Adds a widget instance to the owner's profile. Widgets are unlocked by the
-// plan (Starter/Pro) — no per-widget checkout. Created hidden (enabled: false);
+// the single paid plan (Pro) — no per-widget checkout. Created hidden (enabled: false);
 // the owner flips it on from the widget's settings. One instance per
 // (owner, widget type): an existing one is returned instead of a duplicate.
 // Folded in from the old `POST /api/widgets/instances` route. The admin client

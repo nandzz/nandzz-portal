@@ -4,21 +4,20 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
-import { getOwnerWidgetById } from "@/features/booking/server";
+import { getAccountType } from "@/lib/account/server";
+import { getOrCreateOwnerCalendar } from "@/features/booking/server";
 import { renderWidgetIcon, WidgetInstanceSettings } from "@/features/booking";
 import { getServerTranslations } from "@/lib/i18n/server";
 
-export default async function WidgetInstanceSettingsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default async function BookingSettingsPage() {
   const supabase = await createClient();
   const userId = await getUserIdFromClaims(supabase);
   if (!userId) redirect("/login");
 
-  const widget = await getOwnerWidgetById(userId, id);
+  // Business-only feature: personal accounts can't reach it by direct URL.
+  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
+
+  const widget = await getOrCreateOwnerCalendar(userId);
   if (!widget) notFound();
 
   const t = await getServerTranslations();
@@ -26,7 +25,7 @@ export default async function WidgetInstanceSettingsPage({
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <Link
-        href={`/dashboard/widgets/${id}`}
+        href="/dashboard/booking"
         className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" /> {t.booking.backToWidgetLink}

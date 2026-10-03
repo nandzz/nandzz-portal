@@ -150,16 +150,18 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     // Business — only for business accounts. Personal accounts see the
     // "Switch to Business Account" CTA instead (rendered below the group).
     const business: NavItem[] = [];
-    // Booking (the calendar/booking setup, served from /dashboard/widgets) is
-    // shown to every business account regardless of plan. Accounts without the
-    // entitlement still see the entry; the page itself renders the catalog in a
-    // locked state and opens the subscription modal on tap.
+    // Booking (the calendar/booking feature at /dashboard/booking) is shown to
+    // every business account regardless of plan. Accounts without the
+    // entitlement still see the entry; the page itself renders the workspace in a
+    // locked state. The isActive check anchors on the exact path or a trailing
+    // slash so the personal bookings list ("/dashboard/bookings") never lights
+    // this item up.
     if (isBusiness && FEATURES.widgets) {
       business.push({
-        href: "/dashboard/widgets",
+        href: "/dashboard/booking",
         label: "Booking",
         icon: CalendarDays,
-        isActive: (p) => p.startsWith("/dashboard/widgets"),
+        isActive: (p) => p === "/dashboard/booking" || p.startsWith("/dashboard/booking/"),
       });
     }
     if (isBusiness && FEATURES.brand) {

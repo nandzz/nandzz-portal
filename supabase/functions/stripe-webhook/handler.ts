@@ -24,6 +24,7 @@ import type Stripe from "https://esm.sh/stripe@17?target=denonext";
 export interface QueryBuilder {
   select(cols: string): QueryBuilder;
   eq(col: string, val: unknown): QueryBuilder;
+  or(filter: string): QueryBuilder;
   update(values: Record<string, unknown>): UpdateBuilder;
   // deno-lint-ignore no-explicit-any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,8 +119,10 @@ function invoiceSubscriptionMetadata(inv: any): Record<string, string> {
 
 // ── Plan lookups ─────────────────────────────────────────────────────────────
 
-// Map a Stripe recurring price id → our plan slug. Returns null when the price
-// isn't one of our known plans (e.g. a stale price, or a credit-pack price).
+// Map a Stripe recurring price id → our plan slug. A plan can have two Prices —
+// monthly (stripe_price_id) and annual (stripe_annual_price_id) — so we match
+// either. Returns null when the price isn't one of our known plans (e.g. a stale
+// price, or a credit-pack price).
 async function lookupPlanSlugByPrice(
   admin: AdminClientLike,
   priceId: string,
@@ -128,7 +131,7 @@ async function lookupPlanSlugByPrice(
   const { data, error } = await admin
     .from("subscription_plans")
     .select("slug")
-    .eq("stripe_price_id", priceId)
+    .or(`stripe_price_id.eq.${priceId},stripe_annual_price_id.eq.${priceId}`)
     .maybeSingle();
   if (error) {
     logger.error(`subscription_plans lookup failed for price=${priceId}`, error);
@@ -166,7 +169,18 @@ async function handlePlanSubscription(
   const meta: Record<string, string> = sub.metadata ?? {};
   const periodEndUnix: number | null =
     sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? null;
-  const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null;
+  // Stripe keeps status "active" when a user cancels in the portal; the signal
+  // that the plan is winding down is EITHER the legacy `cancel_at_period_end`
+  // boolean OR (on current API versions, which is what the portal now emits) a
+  // future `cancel_at` timestamp. Treat either as "canceling" so the UI can say
+  // "active until <date>" + offer reactivation instead of "renews".
+  const cancelAtUnix: number | null =
+    typeof sub.cancel_at === "number" ? sub.cancel_at : null;
+  const cancelAtPeriodEnd: boolean = sub.cancel_at_period_end === true || cancelAtUnix !== null;
+  // The moment paid access actually ends: the scheduled cancel time when
+  // canceling (it may differ from the billing period end), else the renewal.
+  const accessEndUnix = cancelAtPeriodEnd ? (cancelAtUnix ?? periodEndUnix) : periodEndUnix;
+  const periodEnd = accessEndUnix ? new Date(accessEndUnix * 1000).toISOString() : null;
 
   // Deletion always means "back to Free", regardless of the price we can read.
   if (event.type === "customer.subscription.deleted") {
@@ -181,6 +195,7 @@ async function handlePlanSubscription(
       p_status: "canceled",
       p_sub_id: subId,
       p_period_end: null,
+      p_cancel_at_period_end: false,
     });
     if (error) {
       logger.error(`set_user_plan (downgrade) failed`, error);
@@ -215,6 +230,7 @@ async function handlePlanSubscription(
     p_status: status,
     p_sub_id: subId,
     p_period_end: periodEnd,
+    p_cancel_at_period_end: cancelAtPeriodEnd,
   });
   if (error) {
     logger.error(`set_user_plan failed`, error);

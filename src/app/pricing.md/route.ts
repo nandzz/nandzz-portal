@@ -31,6 +31,11 @@ export async function GET() {
           ? "€0 / month (free)"
           : `${formatPrice(plan.price_cents, plan.currency)} / ${plan.billing_interval}`;
       lines.push(`- Price: ${price}`);
+      if (plan.price_cents > 0 && plan.annual_price_cents) {
+        lines.push(
+          `- Annual price: ${formatPrice(plan.annual_price_cents, plan.currency)} / year (2 months free)`
+        );
+      }
       if (plan.price_cents > 0 && plan.trial_days > 0) {
         lines.push(`- Free trial: ${plan.trial_days} days`);
       }
@@ -40,7 +45,7 @@ export async function GET() {
       );
       lines.push(`- Content, gallery & links sections: Yes`);
       lines.push(
-        `- Widgets (${aiEnabled ? "booking + AI agent" : "booking"}): ${plan.has_widgets ? "Yes" : "No"}`
+        `- Booking${aiEnabled ? " & AI Agent" : ""}: ${plan.has_widgets ? "Yes" : "No"}`
       );
       if (aiEnabled) {
         lines.push(
@@ -59,7 +64,7 @@ export async function GET() {
     if (aiEnabled && packs.length > 0) {
       lines.push("## Top-up AI credit packs");
       lines.push(
-        "Available on paid plans. Purchased credits never expire and are used only after the monthly plan allowance runs out."
+        "Available on the paid plan. Purchased credits never expire and are used only after the monthly plan allowance runs out."
       );
       lines.push("");
       for (const pack of packs) {

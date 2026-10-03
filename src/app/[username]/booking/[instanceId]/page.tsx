@@ -51,7 +51,7 @@ export async function generateMetadata({
   const description =
     widget.catalog.description ||
     t.booking.widgetDescriptionFallback.replace("{heading}", heading).replace("{name}", displayName);
-  const url = `https://nandzz.com/${username}/widget/${instanceId}`;
+  const url = `https://nandzz.com/${username}/booking/${instanceId}`;
 
   return {
     title: heading,
@@ -106,7 +106,7 @@ export default async function WidgetPage({
       <div className="mx-auto flex max-w-lg items-center justify-between px-4 pt-5">
         <BackButton />
         {/* Share (link + QR) is public — any visitor can pass the widget along. */}
-        <ShareMenu url={`/${username}/widget/${instanceId}`} title={heading} size="md" />
+        <ShareMenu url={`/${username}/booking/${instanceId}`} title={heading} size="md" />
       </div>
 
       {/* Branded hero — business avatar + name lead; the widget it hosts follows
