@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Clock, Tag, CircleAlert, ChevronDown, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Clock, Tag, ChevronDown, ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import Link from "next/link";
 import { subscribeToWidgetBookings } from "@/features/booking/realtime";
 import { AvailabilityManager } from "@/features/booking/components/calendar/AvailabilityManager";
 import { ServicesManager } from "@/features/booking/components/calendar/ServicesManager";
@@ -93,7 +92,6 @@ function useNewBookingsToday(
 
 interface Props {
   instanceId: string;
-  hasAccess: boolean;
   enabled: boolean;
   config: CalendarConfig;
   initial: InitialDashboard;
@@ -108,7 +106,6 @@ interface Props {
 
 export function WidgetWorkspace({
   instanceId,
-  hasAccess,
   enabled,
   config,
   initial,
@@ -358,19 +355,6 @@ export function WidgetWorkspace({
         </div>
 
         <TabsContent value="overview">
-          {!hasAccess && (
-            <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/50 dark:bg-orange-950/20 sm:flex-row sm:items-center sm:justify-between">
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 dark:text-orange-300">
-                <CircleAlert className="h-4 w-4" /> {t.booking.widgetHiddenNotice}
-              </span>
-              <Link
-                href="/dashboard/credits"
-                className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-              >
-                {t.plan.upgradeToStarter}
-              </Link>
-            </div>
-          )}
           <WidgetOverview data={dash.overview} period={dash.period} onPeriodChange={dash.setPeriod} />
         </TabsContent>
 

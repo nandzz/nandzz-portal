@@ -9,7 +9,7 @@ import { getAccountType } from "@/lib/account/server";
 import { getOrCreateOwnerCalendar } from "@/features/booking/server";
 import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
 import { currencySymbol } from "@/lib/widgets/messages";
-import { renderWidgetIcon, WidgetWorkspace } from "@/features/booking";
+import { renderWidgetIcon, WidgetWorkspace, BookingActivationBanner } from "@/features/booking";
 import {
   fetchOverviewData,
   fetchCalendarData,
@@ -87,6 +87,13 @@ export default async function BookingDashboardPage({
         </div>
       </div>
 
+      <BookingActivationBanner
+        instanceId={widget.id}
+        hasAccess={widget.has_access}
+        enabled={widget.enabled}
+        username={profile?.username ?? undefined}
+      />
+
       <CalendarWorkspaceLoader
         instanceId={widget.id}
         hasAccess={widget.has_access}
@@ -160,7 +167,6 @@ async function CalendarWorkspaceLoader({
     <Suspense>
       <WidgetWorkspace
         instanceId={instanceId}
-        hasAccess={hasAccess}
         enabled={enabled}
         config={normalizedConfig}
         initial={{ locationId, overview, calendar, list, customers }}

@@ -10,6 +10,7 @@
 export { WidgetStrip } from "./components/WidgetStrip";
 export { WidgetWorkspace } from "./components/calendar/WidgetWorkspace";
 export { WidgetInstanceSettings } from "./components/calendar/WidgetInstanceSettings";
+export { BookingActivationBanner } from "./components/calendar/BookingActivationBanner";
 export { AgentWidgetWorkspace } from "./components/agent/AgentWidgetWorkspace";
 
 // ── Public booking surfaces ─────────────────────────────────────────────────
