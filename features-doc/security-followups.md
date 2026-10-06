@@ -26,7 +26,7 @@ call sites:
 - `src/app/[username]/agent/page.tsx`, `agent/preview/page.tsx`
 - `src/app/dashboard/agent/page.tsx`
 - `src/features/profile/data/profiles.ts`
-- `src/features/analytics/AuthContext.tsx`, `auth.ts`, `data/profiles.ts`.
+- `src/features/auth/AuthContext.tsx`, `auth.ts`, `data/profiles.ts`.
   These need the user's **own** private fields: credits and plan.
 
 **Plan:**

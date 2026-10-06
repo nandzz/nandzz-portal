@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fetchBookerBookings, normalizeFilter } from "@/lib/bookings/server";
+import { fetchBookerBookings, normalizeFilter } from "@/features/booking/data/booker-bookings";
 
 // Load-more for the booker's own bookings. RLS on widget_bookings is owner-only,
 // so we authenticate the user with the SSR client and read their rows through

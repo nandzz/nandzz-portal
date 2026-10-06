@@ -62,6 +62,7 @@ export function ChromeProvider({ children }: { children: React.ReactNode }) {
   // When the gesture is disabled (e.g. leaving the space page), make sure chrome
   // is visible again so it never gets stuck hidden on another screen.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset when the gesture is disabled (external lifecycle sync)
     if (!enabled) setIsHidden(false);
   }, [enabled]);
 

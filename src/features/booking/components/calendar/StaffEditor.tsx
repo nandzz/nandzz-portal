@@ -4,7 +4,7 @@ import { ArrowLeft, Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { StaffMember, WeekdayKey } from "@/lib/types";
-import { WEEKDAYS } from "@/lib/widgets/calendar";
+import { WEEKDAYS } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const inputCls = "rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-emerald-400";

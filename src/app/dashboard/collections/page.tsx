@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FolderOpen, Layers } from "lucide-react";
 import { NewCollectionForm } from "@/features/collections";

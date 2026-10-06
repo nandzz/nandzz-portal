@@ -4,7 +4,7 @@ import { Trash2, CalendarOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { StaffMember, WeekdayKey } from "@/lib/types";
-import { WEEKDAYS } from "@/lib/widgets/calendar";
+import { WEEKDAYS } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // One-letter weekday initials (M T W T F S S) for the at-a-glance schedule strip.

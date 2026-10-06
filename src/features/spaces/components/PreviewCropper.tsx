@@ -235,6 +235,7 @@ export function PreviewCropper({ imageSrc, onConfirm, onCancel }: PreviewCropper
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMoveLocal}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element -- local blob/data URL in a crop canvas; next/image cannot optimize it */}
         <img
           ref={imgRef}
           src={imageSrc}

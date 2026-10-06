@@ -4,12 +4,12 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import { whatsappLink } from "@/lib/widgets/contact";
+import { whatsappLink } from "@/features/booking/domain/contact";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { ReschedulePicker } from "./ReschedulePicker";
 import { AssignStaffDialog } from "./AssignStaffDialog";
-import type { Slot } from "@/lib/widgets/calendar";
+import type { Slot } from "@/features/booking/domain/calendar";
 import type { BookingServiceSnapshot } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 

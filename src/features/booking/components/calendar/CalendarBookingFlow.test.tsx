@@ -22,6 +22,8 @@ function jsonResponse(body: unknown, ok = true) {
 
 function setupFetch(opts: { slots?: unknown[]; bookOk?: boolean; bookBody?: unknown } = {}) {
   const { slots = [slotNoStaff], bookOk = true, bookBody } = opts;
+  // `_init` types the mock's call tuple so tests can read the request body.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchMock = vi.fn((input: RequestInfo | URL, _init?: RequestInit) => {
     const url = String(input);
     if (url.includes("/availability")) {

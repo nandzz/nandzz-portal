@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { computeSegmentedSlots, todayInZone } from "@/lib/widgets/calendar";
+import { computeSegmentedSlots, todayInZone } from "@/features/booking/domain/calendar";
 import { loadRescheduleContext, isLoadError, parseServicesParam, parseStaffParam } from "../_shared";
 
 // Open start times a booking can be RESCHEDULED to — the whole booking (its

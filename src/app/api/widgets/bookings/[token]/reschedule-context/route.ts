@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { eligibleStaffForService, normalizeCalendarConfig } from "@/lib/widgets/calendar";
+import { eligibleStaffForService, normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import type { CalendarCategory, CalendarService, StaffMember, WidgetBooking } from "@/lib/types";
 
 // Public (token-scoped): what the reschedule picker needs to offer a per-service

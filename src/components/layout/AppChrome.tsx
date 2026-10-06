@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Navbar, Sidebar, MobileTabBar, ProfileVisitorCta } from "@/features/analytics";
-import { useAuth } from "@/features/analytics/AuthContext";
+import { useAuth } from "@/features/auth/AuthContext";
 import { ConditionalFooter } from "./ConditionalFooter";
 import { isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,6 @@ export function AppChrome({ children }: AppChromeProps) {
       setCollapsed(true);
     } else {
       const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCollapsed(stored === "true");
     }
   }, [onProfilePage]);

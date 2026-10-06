@@ -2,7 +2,7 @@
 
 import type { WidgetInstanceWithCatalog } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeCalendarConfig, validateCalendarConfig } from "@/lib/widgets/calendar";
+import { normalizeCalendarConfig, validateCalendarConfig } from "@/features/booking/domain/calendar";
 import { updateWidgetInstanceSchema } from "../schemas";
 
 export type UpdateWidgetInstanceResult =

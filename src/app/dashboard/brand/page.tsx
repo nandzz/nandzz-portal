@@ -37,6 +37,11 @@ const DEFAULT_COLORS: Record<ColorKey, string> = {
   background: "#ffffff",
 };
 
+// Busts the CDN/browser cache after a logo overwrite at the same storage path.
+function withCacheBust(url: string) {
+  return `${url}?t=${Date.now()}`;
+}
+
 function isValidHex(value: string) {
   return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value);
 }
@@ -127,7 +132,7 @@ export default function BrandPage() {
         // Logo upload stays client-side (see features/profile/storage).
         try {
           const publicUrl = await uploadBrandLogo(profile.id, logoFile);
-          logo_url = `${publicUrl}?t=${Date.now()}`;
+          logo_url = withCacheBust(publicUrl);
         } catch (uploadErr) {
           console.error("[brand] logo upload failed:", uploadErr);
           setError(t.common.error);

@@ -25,6 +25,7 @@ export function useThemeColors<T extends Record<string, string>>(vars: T): T {
   const [colors, setColors] = useState<T>(() => resolveColors(vars));
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- CSS vars are only readable from the DOM after the theme class changes
     setColors(resolveColors(vars));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedTheme]);

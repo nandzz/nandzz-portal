@@ -6,7 +6,7 @@ import { Pencil, X, Save, Loader2, Sparkles, Check, AlertCircle, ArrowRight } fr
 import { sandboxHtml } from "@/lib/sandbox-html";
 import { AiAssistantPanel } from "./AiAssistantPanel";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useFeatureFlags } from "@/features/analytics/AuthContext";
+import { useFeatureFlags } from "@/features/auth/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   fetchPendingAiEditJob,

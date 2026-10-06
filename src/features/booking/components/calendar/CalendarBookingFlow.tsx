@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { CalendarDays, Clock, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles, Tag, MapPin } from "lucide-react";
 import type { CalendarCategory, CalendarService, Location, StaffMember } from "@/lib/types";
-import { eligibleStaffForService, todayInZone, type Slot } from "@/lib/widgets/calendar";
+import { eligibleStaffForService, todayInZone, type Slot } from "@/features/booking/domain/calendar";
 import { AUTH_RETURN_TO_KEY } from "@/lib/layout/appShell";
-import { BOOKING_ERROR_KEYS } from "@/lib/widgets/booking-errors";
+import { BOOKING_ERROR_KEYS } from "@/features/booking/domain/booking-errors";
 import {
   PHONE_COUNTRIES,
   dialForRegion,
@@ -17,7 +17,7 @@ import {
   regionToFlag,
   splitE164,
   toE164,
-} from "@/lib/widgets/phone";
+} from "@/features/booking/domain/phone";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
 import { AuthModal, type AuthResult } from "@/features/auth";

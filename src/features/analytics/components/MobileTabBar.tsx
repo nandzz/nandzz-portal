@@ -7,7 +7,7 @@ import { BarChart3, Home, LayoutGrid, LogIn, Rss, Calendar, CalendarDays, User }
 import { FEATURES } from "@/lib/flags";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@/features/auth/AuthContext";
 
 type TabDef = {
   href: string;

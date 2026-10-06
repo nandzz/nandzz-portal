@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, ChevronRight, Clock, Pencil, Sparkles } from "lucide-react";
-import { todayInZone, type Slot } from "@/lib/widgets/calendar";
-import { currencySymbol } from "@/lib/widgets/messages";
+import { todayInZone, type Slot } from "@/features/booking/domain/calendar";
+import { currencySymbol } from "@/features/booking/domain/messages";
 import type { CalendarCategory } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";

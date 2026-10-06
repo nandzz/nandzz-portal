@@ -1,6 +1,6 @@
 // Booking message helpers: time formatting + wrapping owner-authored plain-text
 // templates into a simple, email-client-safe HTML body. The actual copy now
-// comes from owner-customizable templates (see lib/widgets/messages.ts).
+// comes from owner-customizable templates (see features/booking/domain/messages.ts).
 
 export function formatBookingTime(startsAt: string, timezone: string): string {
   try {

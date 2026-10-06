@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeCalendarConfig, type ServiceChoice } from "@/lib/widgets/calendar";
+import { normalizeCalendarConfig, type ServiceChoice } from "@/features/booking/domain/calendar";
 import type { CalendarConfig, Location, WidgetBooking } from "@/lib/types";
 
 // Shared reschedule/reassign context for the token-scoped booking routes. A

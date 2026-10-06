@@ -5,9 +5,9 @@ import Link from "next/link";
 import { CalendarDays, Clock, MapPin, ExternalLink, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { BookerBooking, BookingFilter } from "@/lib/bookings/server";
+import type { BookerBooking, BookingFilter } from "@/features/booking/data/booker-bookings";
 
-export type { BookerBooking } from "@/lib/bookings/server";
+export type { BookerBooking } from "@/features/booking/data/booker-bookings";
 
 type Filter = BookingFilter;
 

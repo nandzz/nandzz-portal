@@ -2,12 +2,12 @@
 //
 // Anything that transitively pulls `import "server-only"` (the `data/` read
 // layer) lives in `server.ts`, not here, so this barrel stays importable from
-// Client Components. Shared, I/O-free calendar/domain helpers deliberately stay
-// in `@/lib/widgets/*` (like `@/lib/types` / `@/lib/utils`) since the kept
-// public HTTP routes depend on them too.
+// Client Components. Shared, I/O-free calendar/domain helpers live in
+// `@/features/booking/domain/*` (imported by path, not via this barrel) since
+// the public HTTP routes depend on them too.
 
-// ── Dashboard surfaces ──────────────────────────────────────────────────────
-export { WidgetStrip } from "./components/WidgetStrip";
+// ── Profile embed + dashboard surfaces ──────────────────────────────────────────────────────
+export { CalendarWidgetEmbed } from "./components/calendar/CalendarWidgetEmbed";
 export { WidgetWorkspace } from "./components/calendar/WidgetWorkspace";
 export { WidgetInstanceSettings } from "./components/calendar/WidgetInstanceSettings";
 export { BookingActivationBanner } from "./components/calendar/BookingActivationBanner";

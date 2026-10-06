@@ -1,8 +1,8 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import { currencySymbol } from "@/lib/widgets/messages";
+import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
+import { currencySymbol } from "@/features/booking/domain/messages";
 import type { WidgetBooking } from "@/lib/types";
 
 // Booker-side bookings are read through the service-role client (RLS on

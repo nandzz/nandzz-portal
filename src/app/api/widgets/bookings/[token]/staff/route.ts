@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { mapBookingError } from "@/lib/widgets/booking-errors";
+import { mapBookingError } from "@/features/booking/domain/booking-errors";
 import type { WidgetBooking } from "@/lib/types";
 
 // Owner-only: reassign the staff member responsible for ONE service on a

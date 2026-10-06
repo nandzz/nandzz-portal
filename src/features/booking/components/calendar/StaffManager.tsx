@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import type { StaffMember, WeekdayKey } from "@/lib/types";
 import { getCurrentUserId, uploadStaffPhoto } from "@/features/booking/storage";
-import { getLocationScope, withLocationScope } from "@/lib/widgets/calendar";
+import { getLocationScope, withLocationScope } from "@/features/booking/domain/calendar";
 import type { CalendarConfigController } from "@/features/booking/components/calendar/useCalendarConfig";
 import { StaffCard } from "@/features/booking/components/calendar/StaffCard";
 import { StaffEditor } from "@/features/booking/components/calendar/StaffEditor";

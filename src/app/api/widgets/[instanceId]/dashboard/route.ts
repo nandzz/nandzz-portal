@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { getOwnerWidgetById } from "@/features/booking/server";
-import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import { currencySymbol } from "@/lib/widgets/messages";
+import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
+import { currencySymbol } from "@/features/booking/domain/messages";
 import { getCurrentLocale } from "@/lib/i18n/server";
 import { parseStatsPeriod } from "@/lib/period";
 import {

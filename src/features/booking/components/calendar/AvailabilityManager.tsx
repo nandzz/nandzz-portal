@@ -3,7 +3,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { SaveBar } from "@/features/booking/components/calendar/SaveBar";
 import type { CalendarConfig, WeekdayKey } from "@/lib/types";
-import { WEEKDAYS, getLocationScope, withLocationScope } from "@/lib/widgets/calendar";
+import { WEEKDAYS, getLocationScope, withLocationScope } from "@/features/booking/domain/calendar";
 import type { CalendarConfigController } from "@/features/booking/components/calendar/useCalendarConfig";
 import { useLanguage } from "@/contexts/LanguageContext";
 

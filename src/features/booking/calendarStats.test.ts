@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarConfig, CalendarService } from "@/lib/types";
-import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
+import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import {
   buildCapacity,
   buildForecast,

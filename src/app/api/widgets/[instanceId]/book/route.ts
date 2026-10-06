@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { BOOKING_ERROR_STATUS, mapBookingError } from "@/lib/widgets/booking-errors";
-import { normalizeCalendarConfig, resolveSegmentPlan, type ServiceChoice } from "@/lib/widgets/calendar";
+import { BOOKING_ERROR_STATUS, mapBookingError } from "@/features/booking/domain/booking-errors";
+import { normalizeCalendarConfig, resolveSegmentPlan, type ServiceChoice } from "@/features/booking/domain/calendar";
 import { detectLocale, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/translations";
 import type { WidgetBooking } from "@/lib/types";
 

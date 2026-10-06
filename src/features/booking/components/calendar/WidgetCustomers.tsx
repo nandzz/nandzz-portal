@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search, Mail, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import { whatsappLink } from "@/lib/widgets/contact";
+import { whatsappLink } from "@/features/booking/domain/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Translations } from "@/lib/i18n/translations";
 import { CustomerDetailsDialog } from "@/features/booking/components/calendar/CustomerDetailsDialog";

@@ -23,7 +23,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { cn } from "@/lib/utils";
 import { setAccountType } from "../auth";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@/features/auth/AuthContext";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();

@@ -2,7 +2,7 @@
 
 import { CalendarDays, X } from "lucide-react";
 import type { WidgetBooking } from "@/lib/types";
-import { formatBookingTime } from "@/lib/widgets/emails";
+import { formatBookingTime } from "@/features/booking/domain/emails";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface NewBookingBannerProps {

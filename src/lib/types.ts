@@ -404,7 +404,7 @@ export type StaffMember = {
 export type MessageChannel = "off" | "whatsapp" | "email" | "both";
 
 // An owner-customizable message template. Body/subject may contain {{variables}}
-// (see MESSAGE_VARIABLES in lib/widgets/messages.ts).
+// (see MESSAGE_VARIABLES in features/booking/domain/messages.ts).
 // `i18n` holds optional per-locale overrides; for a given locale, a present
 // subject/body wins over the top-level (English/fallback) subject/body.
 export type MessageTemplate = {

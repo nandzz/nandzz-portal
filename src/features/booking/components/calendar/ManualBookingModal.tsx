@@ -16,8 +16,8 @@ import {
   X,
 } from "lucide-react";
 import type { CalendarCategory, CalendarService, StaffMember } from "@/lib/types";
-import { eligibleStaffForServices, todayInZone, type Slot } from "@/lib/widgets/calendar";
-import { BOOKING_ERROR_KEYS } from "@/lib/widgets/booking-errors";
+import { eligibleStaffForServices, todayInZone, type Slot } from "@/features/booking/domain/calendar";
+import { BOOKING_ERROR_KEYS } from "@/features/booking/domain/booking-errors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";

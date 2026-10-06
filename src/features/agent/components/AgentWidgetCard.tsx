@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
-import { renderWidgetIcon } from "../widgetIcon";
-import { AgentChatOverlay } from "@/features/agent";
+import { renderWidgetIcon } from "@/features/booking";
+import { AgentChatOverlay } from "./AgentChatOverlay";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {

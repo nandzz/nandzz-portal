@@ -7,8 +7,8 @@ import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAccountType } from "@/lib/account/server";
 import { getOrCreateOwnerCalendar } from "@/features/booking/server";
-import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import { currencySymbol } from "@/lib/widgets/messages";
+import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
+import { currencySymbol } from "@/features/booking/domain/messages";
 import { renderWidgetIcon, WidgetWorkspace, BookingActivationBanner } from "@/features/booking";
 import {
   fetchOverviewData,

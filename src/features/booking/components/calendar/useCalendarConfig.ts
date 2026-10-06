@@ -2,7 +2,7 @@
 
 import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
 import type { CalendarConfig } from "@/lib/types";
-import { normalizeCalendarConfig, validateCalendarConfig } from "@/lib/widgets/calendar";
+import { normalizeCalendarConfig, validateCalendarConfig } from "@/features/booking/domain/calendar";
 import { updateWidgetInstance } from "@/features/booking/actions/update-widget-instance";
 import { useLanguage } from "@/contexts/LanguageContext";
 

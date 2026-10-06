@@ -9,6 +9,7 @@
 // ── Components ───────────────────────────────────────────────────────────────
 export { AgentChat } from "./components/AgentChat";
 export { AgentChatOverlay } from "./components/AgentChatOverlay";
+export { AgentWidgetCard } from "./components/AgentWidgetCard";
 export { AgentPublic } from "./components/AgentPublic";
 export { AgentStudio } from "./components/AgentStudio";
 export { AgentSettings } from "./components/AgentSettings";

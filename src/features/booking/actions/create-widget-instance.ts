@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
 import { getFeatureFlags } from "@/lib/featureFlags";
-import { defaultCalendarConfig } from "@/lib/widgets/calendar";
-import { suggestedCurrencyForLocale } from "@/lib/widgets/messages";
+import { defaultCalendarConfig } from "@/features/booking/domain/calendar";
+import { suggestedCurrencyForLocale } from "@/features/booking/domain/messages";
 import { getCurrentLocale } from "@/lib/i18n/server";
 import { createWidgetInstanceSchema } from "../schemas";
 

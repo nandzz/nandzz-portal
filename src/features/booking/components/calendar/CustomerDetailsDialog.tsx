@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { Dialog } from "@/components/ui/dialog";
-import { whatsappLink } from "@/lib/widgets/contact";
+import { whatsappLink } from "@/features/booking/domain/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { BookingRowData } from "@/features/booking/components/calendar/BookingRow";
 import type { CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";

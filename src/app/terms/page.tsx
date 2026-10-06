@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getServerTranslations } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,9 +29,9 @@ export default function TermsPage() {
             By accessing or using the nandzz platform (&quot;Platform&quot;),
             you agree to be bound by these Terms &amp; Conditions
             (&quot;Terms&quot;) and our{" "}
-            <a href="/privacy" className="text-violet-600 hover:underline">
+            <Link href="/privacy" className="text-violet-600 hover:underline">
               Privacy Policy
-            </a>
+            </Link>
             . If you do not agree, do not use the Platform. These Terms
             constitute a legally binding agreement between you and nandzz.
           </p>
@@ -366,9 +367,9 @@ export default function TermsPage() {
             You may delete your account at any time through your account
             settings. Upon deletion, your personal data will be removed in
             accordance with our{" "}
-            <a href="/privacy" className="text-violet-600 hover:underline">
+            <Link href="/privacy" className="text-violet-600 hover:underline">
               Privacy Policy
-            </a>
+            </Link>
             . Public Content associated with your account may be removed or
             rendered inaccessible upon account deletion.
           </p>

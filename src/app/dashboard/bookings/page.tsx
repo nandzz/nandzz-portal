@@ -8,8 +8,8 @@ import { ownerHasWidgetAccess } from "@/features/booking/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { PageShell } from "@/components/layout/PageShell";
-import { BookingsList } from "@/components/bookings/BookingsList";
-import { fetchBookerBookings, hasAnyBookerBookings } from "@/lib/bookings/server";
+import { BookingsList } from "@/features/booking/components/BookingsList";
+import { fetchBookerBookings, hasAnyBookerBookings } from "@/features/booking/data/booker-bookings";
 
 export default async function MyBookingsPage() {
   const supabase = await createClient();

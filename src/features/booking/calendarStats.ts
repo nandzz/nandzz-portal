@@ -9,7 +9,7 @@ import {
   weekdayOf,
   zonedWallTimeToUtc,
   type LocationScope,
-} from "@/lib/widgets/calendar";
+} from "@/features/booking/domain/calendar";
 
 // Overview aggregation for the widget dashboard. A pure function over a bounded
 // window of bookings so it can run server-side (the /dashboard route + loader,

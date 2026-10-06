@@ -32,7 +32,7 @@ import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { setAccountType } from "../auth";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@/features/auth/AuthContext";
 
 type NavItem = {
   href: string;

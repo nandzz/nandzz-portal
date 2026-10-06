@@ -5,7 +5,7 @@ import { ThemeColorSync } from "@/components/theme-color-sync";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ChromeProvider } from "@/contexts/ChromeContext";
 import { AppChrome } from "@/components/layout/AppChrome";
-import { AuthProvider } from "@/features/analytics/AuthContext";
+import { AuthProvider } from "@/features/auth/AuthContext";
 import { type Locale } from "@/lib/i18n/translations";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";

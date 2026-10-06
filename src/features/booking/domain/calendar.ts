@@ -19,7 +19,7 @@ import {
   defaultCalendarMessages,
   normalizeCalendarMessages,
   validateMessageTemplate,
-} from "@/lib/widgets/messages";
+} from "@/features/booking/domain/messages";
 
 export const WEEKDAYS: WeekdayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 

@@ -1,9 +1,9 @@
 "use client";
 
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
-import { useFeatureFlags } from "@/features/analytics/AuthContext";
-import { CalendarWidgetEmbed } from "./calendar/CalendarWidgetEmbed";
-import { AgentWidgetCard } from "./agent/AgentWidgetCard";
+import { useFeatureFlags } from "@/features/auth/AuthContext";
+import { CalendarWidgetEmbed } from "@/features/booking";
+import { AgentWidgetCard } from "@/features/agent";
 
 interface WidgetStripProps {
   widgets: WidgetInstanceWithCatalog[];

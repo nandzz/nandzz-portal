@@ -29,7 +29,7 @@ import {
   regionToFlag,
   splitE164,
   toE164,
-} from "@/lib/widgets/phone";
+} from "@/features/booking/domain/phone";
 
 const LIMITS = {
   displayName: 50,

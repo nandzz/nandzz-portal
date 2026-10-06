@@ -6,7 +6,7 @@ import type { BookingRowData } from "@/features/booking/components/calendar/Book
 import type { WidgetOverviewData } from "@/features/booking/components/calendar/WidgetOverview";
 import type { WidgetCustomersData, CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";
 import { buildOverview, type OverviewBookingRow, type OverviewSegment } from "@/features/booking/calendarStats";
-import { getLocationScope } from "@/lib/widgets/calendar";
+import { getLocationScope } from "@/features/booking/domain/calendar";
 import type { StatsPeriod } from "@/lib/period";
 import type { TodaySnapshot, CalendarData, ListData, BookingsFilter } from "@/features/booking/dashboardTypes";
 

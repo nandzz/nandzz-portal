@@ -16,7 +16,7 @@ import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { FollowButton } from "@/features/social";
 import { FollowersDialog } from "./FollowersDialog";
 import { AddressMenu } from "./AddressMenu";
-import { WidgetStrip } from "@/features/booking";
+import { WidgetStrip } from "./WidgetStrip";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { uploadAvatar } from "../storage";
 import { updateAvatar } from "../actions/update-avatar";

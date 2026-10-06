@@ -6,7 +6,7 @@ import {
   normalizeCalendarConfig,
   todayInZone,
   type ServiceChoice,
-} from "@/lib/widgets/calendar";
+} from "@/features/booking/domain/calendar";
 
 // Public: open whole-booking slots for a per-service-staffed selection over a
 // date window. No auth — visitors (and the AI chat) need to see availability.

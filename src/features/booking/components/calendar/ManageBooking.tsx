@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CalendarDays, Clock, User, X } from "lucide-react";
-import type { Slot } from "@/lib/widgets/calendar";
+import type { Slot } from "@/features/booking/domain/calendar";
 import { ReschedulePicker } from "./ReschedulePicker";
 import { useLanguage } from "@/contexts/LanguageContext";
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTranslations } from "@/lib/i18n/translations";
-import { normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import { whatsappLink } from "@/lib/widgets/contact";
+import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
+import { whatsappLink } from "@/features/booking/domain/contact";
 
 export const dynamic = "force-dynamic";
 

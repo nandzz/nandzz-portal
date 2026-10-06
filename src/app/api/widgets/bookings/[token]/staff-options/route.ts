@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeCalendarConfig, staffAvailabilityForWindow } from "@/lib/widgets/calendar";
+import { normalizeCalendarConfig, staffAvailabilityForWindow } from "@/features/booking/domain/calendar";
 import type { CalendarService, StaffMember, WidgetBooking } from "@/lib/types";
 
 // Owner-only: for a booking, list — PER booked service — EVERY in-scope staff

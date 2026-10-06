@@ -55,6 +55,7 @@ export function LanguageProvider({
   useEffect(() => {
     const cookieLang = readLangCookie();
     if (cookieLang && cookieLang !== locale) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cookie is only readable client-side; adopt it after hydration
       setLocaleState(cookieLang);
       return;
     }

@@ -317,7 +317,6 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
           onSubmit={handleSubmit}
           onDiscard={() => { dispatch({ type: "DISCARD" }); }}
           onRetry={() => { dispatch({ type: "RETRY" }); handleSubmit(); }}
-          onClose={onClose}
           attachments={attachments}
           fileTooLargeError={fileTooLargeError}
           onFileChange={handleFileChange}
@@ -358,7 +357,6 @@ export function AiAssistantPanel({ spaceId, htmlUrl, isOpen, onClose }: AiAssist
           onSubmit={handleSubmit}
           onDiscard={() => { dispatch({ type: "DISCARD" }); }}
           onRetry={() => { dispatch({ type: "RETRY" }); handleSubmit(); }}
-          onClose={onClose}
           attachments={attachments}
           fileTooLargeError={fileTooLargeError}
           onFileChange={handleFileChange}
@@ -381,14 +379,13 @@ interface PanelBodyProps {
   onSubmit: () => void;
   onDiscard: () => void;
   onRetry: () => void;
-  onClose: () => void;
   attachments: FileAttachment[];
   fileTooLargeError: boolean;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAttachment: (id: string) => void;
 }
 
-function PanelBody({ state, ai, instruction, onInstructionChange, onSubmit, onRetry, onClose, attachments, fileTooLargeError, onFileChange, onRemoveAttachment }: PanelBodyProps) {
+function PanelBody({ state, ai, instruction, onInstructionChange, onSubmit, onRetry, attachments, fileTooLargeError, onFileChange, onRemoveAttachment }: PanelBodyProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isLoading = state.status === "loading";
   const canAttach = attachments.length < MAX_ATTACHMENTS && !isLoading;
