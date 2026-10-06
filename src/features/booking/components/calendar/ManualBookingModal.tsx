@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -9,8 +9,11 @@ import {
   Clock,
   Loader2,
   Pencil,
+  Search,
   Sparkles,
   Tag,
+  UserRound,
+  X,
 } from "lucide-react";
 import type { CalendarCategory, CalendarService, StaffMember } from "@/lib/types";
 import { eligibleStaffForServices, todayInZone, type Slot } from "@/lib/widgets/calendar";
@@ -18,6 +21,7 @@ import { BOOKING_ERROR_KEYS } from "@/lib/widgets/booking-errors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
+import type { CustomerSummary } from "./WidgetCustomers";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Owner-side "book on behalf of a client" flow, rendered in a modal from the
@@ -26,6 +30,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 // location/address steps, and — because a phone-in client may have no email —
 // requires only a name + phone. It hits the same public availability + /book
 // endpoints; the owner is recorded as `created_by` (the route reads the session).
+//
+// Owner-only: the details step can prefill from an existing client. The list
+// comes from the owner-scoped dashboard endpoint (ownership enforced there and
+// in widget_customers_summary), so it is never reachable from the public funnel.
+
+const CLIENT_MATCH_LIMIT = 5;
 
 const BOOKING_WINDOW_DAYS = 60;
 
@@ -75,6 +85,10 @@ export function ManualBookingModal({
   const [calendarOpen, setCalendarOpen] = useState(true);
   const [slot, setSlot] = useState<Slot | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", notes: "" });
+  // Existing-client picker (details step). `null` ⇒ not loaded yet.
+  const [customers, setCustomers] = useState<CustomerSummary[] | null>(null);
+  const [clientQuery, setClientQuery] = useState("");
+  const [pickedClient, setPickedClient] = useState<CustomerSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -214,6 +228,50 @@ export function ManualBookingModal({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Lazily load this location's clients the first time the details step opens.
+  // A failure just hides the picker — the owner can still type a new client.
+  useEffect(() => {
+    if (step !== "details" || customers !== null) return;
+    let cancelled = false;
+    const qs = new URLSearchParams({ view: "customers", loc: locationId ?? "" });
+    fetch(`/api/widgets/${instanceId}/dashboard?${qs.toString()}`)
+      .then((res) => (res.ok ? res.json() : { customers: [] }))
+      .then((data: { customers?: CustomerSummary[] }) => {
+        if (!cancelled) setCustomers(data.customers ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setCustomers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [step, customers, instanceId, locationId]);
+
+  const clientMatches = useMemo(() => {
+    const q = clientQuery.trim().toLowerCase();
+    if (!q || !customers) return [];
+    const digits = q.replace(/\D/g, "");
+    return customers
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.email.toLowerCase().includes(q) ||
+          (digits.length >= 3 && (c.phone ?? "").replace(/\D/g, "").includes(digits))
+      )
+      .slice(0, CLIENT_MATCH_LIMIT);
+  }, [customers, clientQuery]);
+
+  function pickClient(c: CustomerSummary) {
+    setPickedClient(c);
+    setClientQuery("");
+    setForm((f) => ({ ...f, name: c.name, email: c.email, phone: c.phone ?? "" }));
+  }
+
+  function clearClient() {
+    setPickedClient(null);
+    setForm((f) => ({ ...f, name: "", email: "", phone: "" }));
   }
 
   // Group slots by civil date (widget tz) for the calendar + time picker.
@@ -576,6 +634,76 @@ export function ManualBookingModal({
             </div>
 
             <h3 className="pt-1 text-sm font-semibold">{t.booking.manualCustomerHeading}</h3>
+
+            {pickedClient ? (
+              <div className="flex items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50/60 px-3.5 py-2.5 dark:border-emerald-800 dark:bg-emerald-950/30">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400">
+                  <UserRound className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{pickedClient.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {[pickedClient.phone, pickedClient.email].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearClient}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  {t.booking.manualExistingClientChange}
+                </button>
+              </div>
+            ) : (
+              customers &&
+              customers.length > 0 && (
+                <div className="space-y-1.5">
+                  <label htmlFor="manual-client-search" className="text-xs font-medium text-muted-foreground">
+                    {t.booking.manualExistingClientLabel}
+                  </label>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      id="manual-client-search"
+                      className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm"
+                      placeholder={t.booking.manualExistingClientSearch}
+                      autoComplete="off"
+                      value={clientQuery}
+                      onChange={(e) => setClientQuery(e.target.value)}
+                    />
+                  </div>
+                  {clientQuery.trim() !== "" && (
+                    <div className="overflow-hidden rounded-lg border border-border divide-y divide-border/70">
+                      {clientMatches.length === 0 ? (
+                        <p className="px-3 py-2 text-xs text-muted-foreground">
+                          {t.booking.manualExistingClientNoMatch}
+                        </p>
+                      ) : (
+                        clientMatches.map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => pickClient(c)}
+                            className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-muted"
+                          >
+                            <UserRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-medium">{c.name}</span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {[c.phone, c.email].filter(Boolean).join(" · ")}
+                              </span>
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  <p className="pt-1 text-xs font-medium text-muted-foreground">{t.booking.manualNewClient}</p>
+                </div>
+              )
+            )}
+
             <input
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               placeholder={t.booking.fullNamePlaceholder}

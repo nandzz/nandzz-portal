@@ -7,6 +7,7 @@ export type SocialLinks = {
   github?: string;
   email?: string;
   youtube?: string;
+  whatsapp?: string;
 };
 
 // Business address shown on the public profile. `formatted` is the display +

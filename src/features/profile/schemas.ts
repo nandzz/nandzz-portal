@@ -13,6 +13,8 @@ const socialLinks = z
     github: z.string(),
     email: z.string(),
     youtube: z.string(),
+    // E.164 ("+<dial><digits>") or "" to clear; ProfileHeader links it via wa.me.
+    whatsapp: z.string().max(20),
   })
   .partial();
 

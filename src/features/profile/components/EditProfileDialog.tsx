@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
-import { X, Mail, Globe } from "lucide-react";
+import { X, Mail, Globe, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,17 @@ import {
   GithubIcon,
   YoutubeIcon,
 } from "./BrandIcons";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import {
+  PHONE_COUNTRIES,
+  dialForRegion,
+  inferPhoneRegion,
+  isPossiblePhoneNumber,
+  regionName,
+  regionToFlag,
+  splitE164,
+  toE164,
+} from "@/lib/widgets/phone";
 
 const LIMITS = {
   displayName: 50,
@@ -28,6 +39,7 @@ const LIMITS = {
   websiteUrl: 300,
   socialUsername: 50,
   socialEmail: 254,
+  socialPhone: 20,
 };
 
 interface EditProfileDialogProps {
@@ -39,7 +51,7 @@ interface EditProfileDialogProps {
 // the form fresh from `profile` each time it opens — no re-seed effect needed.
 export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const [displayName, setDisplayName] = useState(profile.display_name || "");
   const [tagline, setTagline] = useState(profile.tagline || "");
@@ -47,6 +59,23 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || "");
   const [address, setAddress] = useState<ProfileAddress | null>(profile.address ?? null);
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(profile.social_links || {});
+  // WhatsApp is stored as E.164 in social_links.whatsapp but edited as country
+  // selector + national number — same phone data/helpers as the booking widget.
+  const [whatsappRegion, setWhatsappRegion] = useState(() =>
+    profile.social_links?.whatsapp
+      ? splitE164(profile.social_links.whatsapp).region
+      : inferPhoneRegion(typeof navigator !== "undefined" ? navigator.language : null, locale)
+  );
+  const [whatsappNational, setWhatsappNational] = useState(() =>
+    profile.social_links?.whatsapp ? splitE164(profile.social_links.whatsapp).national : ""
+  );
+  const phoneCountryOptions = useMemo(
+    () =>
+      [...PHONE_COUNTRIES].sort((a, b) =>
+        regionName(a.region, locale).localeCompare(regionName(b.region, locale), locale)
+      ),
+    [locale]
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -84,13 +113,22 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
         setError("Website URL must start with http:// or https://");
         return;
       }
+      if (whatsappNational.trim() && !isPossiblePhoneNumber(whatsappNational)) {
+        setError(t.booking.invalidPhone);
+        return;
+      }
 
       const result = await updateProfileInfo({
         displayName: displayName || null,
         tagline: tagline || null,
         bio: bio || null,
         websiteUrl: websiteUrl || null,
-        socialLinks,
+        socialLinks: {
+          ...socialLinks,
+          whatsapp: whatsappNational.trim()
+            ? toE164(dialForRegion(whatsappRegion), whatsappNational)
+            : "",
+        },
         address,
       });
 
@@ -243,6 +281,40 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                       </div>
                     </div>
                   ))}
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background border border-border/50 text-muted-foreground">
+                      <WhatsAppIcon className="h-4 w-4" />
+                    </div>
+                    <div className="flex items-center gap-0 flex-1 rounded-md border border-border/60 bg-background overflow-hidden focus-within:border-violet-500/50 transition-colors">
+                      {/* Country dial-code selector in place of the static prefix. */}
+                      <div className="relative shrink-0 h-9 border-r border-border/60 bg-muted/50">
+                        <select
+                          aria-label={t.booking.phoneCountryAria}
+                          value={whatsappRegion}
+                          onChange={(e) => setWhatsappRegion(e.target.value)}
+                          className="h-full appearance-none bg-transparent pl-3 pr-7 text-xs text-muted-foreground focus:outline-none cursor-pointer"
+                        >
+                          {phoneCountryOptions.map((c) => (
+                            <option key={c.region} value={c.region}>
+                              {regionToFlag(c.region)} +{c.dial}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                      </div>
+                      <Input
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel-national"
+                        placeholder="WhatsApp"
+                        value={whatsappNational}
+                        onChange={(e) => setWhatsappNational(e.target.value.slice(0, LIMITS.socialPhone))}
+                        maxLength={LIMITS.socialPhone}
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                    </div>
+                  </div>
 
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background border border-border/50 text-muted-foreground">

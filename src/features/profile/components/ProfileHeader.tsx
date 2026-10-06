@@ -11,6 +11,7 @@ import {
   GithubIcon,
   YoutubeIcon,
 } from "./BrandIcons";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { FollowButton } from "@/features/social";
 import { FollowersDialog } from "./FollowersDialog";
@@ -40,6 +41,7 @@ interface ProfileHeaderProps {
 function buildUrl(key: string, value: string): string {
   const v = value.trim();
   if (key === "email") return `mailto:${v}`;
+  if (key === "whatsapp") return `https://wa.me/${v.replace(/\D/g, "")}`;
   if (key === "website") return v.startsWith("http") ? v : `https://${v}`;
   const baseUrls: Record<string, string> = {
     instagram: "https://instagram.com/",
@@ -177,6 +179,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       icon: YoutubeIcon,
       label: "YouTube",
       hoverClass: "hover:text-red-600",
+    },
+    {
+      key: "whatsapp",
+      value: socialLinks.whatsapp,
+      icon: WhatsAppIcon,
+      label: "WhatsApp",
+      hoverClass: "hover:text-green-600",
     },
   ].filter((link) => link.value && link.value.trim() !== "");
 

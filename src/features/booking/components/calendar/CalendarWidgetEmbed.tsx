@@ -17,8 +17,6 @@ interface Props {
 // The icon is driven by the catalog entry so any widget type reuses this pill.
 export function CalendarWidgetEmbed({ instance, profile }: Props) {
   const { t } = useLanguage();
-  const displayName = profile.display_name || profile.username;
-  const firstName = displayName.split(" ")[0];
 
   // Owner-chosen look (Style picker → Booking); null keeps the default pill.
   const { className, style, iconClass } = bookingButtonPresentation(profile.booking_button_style);
@@ -30,7 +28,7 @@ export function CalendarWidgetEmbed({ instance, profile }: Props) {
       style={style}
     >
       {renderWidgetIcon(instance.catalog.icon, iconClass)}
-      {t.booking.bookWithName.replace("{name}", firstName)}
+      {t.booking.bookNow}
     </Link>
   );
 }

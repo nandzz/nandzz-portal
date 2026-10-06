@@ -536,11 +536,13 @@ export function CalendarBookingFlow({
 
   async function submit() {
     if (selectedServices.length === 0 || !slot) return;
-    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
+    // Email is optional: without one the customer just gets no confirmation /
+    // reminder emails and keeps the manage link shown on the done step.
+    if (!form.name.trim() || !form.phone.trim()) {
       setError(t.booking.errorRequiredFields);
       return;
     }
-    if (!isValidEmail(form.email)) {
+    if (form.email.trim() && !isValidEmail(form.email)) {
       setTouchedEmail(true);
       setError(t.booking.invalidEmail);
       return;
@@ -568,7 +570,7 @@ export function CalendarBookingFlow({
           staff_by_service: staffByService,
           location_id: location ? location.id : undefined,
           customer_name: form.name,
-          customer_email: form.email,
+          customer_email: form.email.trim() || undefined,
           customer_phone: toE164(dialForRegion(phoneRegion), form.phone),
           customer_address: collectAddress ? form.address.trim() || undefined : undefined,
           notes: form.notes || undefined,
@@ -1079,7 +1081,7 @@ export function CalendarBookingFlow({
               className={`w-full rounded-lg border bg-background px-3 py-2 text-sm ${
                 touchedEmail && emailFormatBad ? "border-red-400 dark:border-red-500" : "border-border"
               }`}
-              placeholder={t.booking.emailPlaceholder}
+              placeholder={t.booking.manualEmailOptionalPlaceholder}
               type="email"
               autoComplete="email"
               aria-invalid={touchedEmail && emailFormatBad}
@@ -1183,7 +1185,9 @@ export function CalendarBookingFlow({
             </p>
           )}
           <p className="text-sm text-muted-foreground">
-            {t.booking.confirmationSent.replace("{email}", form.email)}
+            {form.email.trim()
+              ? t.booking.confirmationSent.replace("{email}", form.email.trim())
+              : t.booking.bookedNoEmail}
           </p>
           {/* Signed-in bookers get a direct route into their bookings section;
               guests keep just the manage link (their booking lives at the token

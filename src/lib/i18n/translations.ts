@@ -976,6 +976,7 @@ export type Translations = {
 
   booking: {
     bookWithName: string;
+    bookNow: string;
     widgetNotFound: string;
     widgetDescriptionFallback: string;
     widgetUnavailable: string;
@@ -1037,6 +1038,7 @@ export type Translations = {
     bookedTitle: string;
     withName: string;
     confirmationSent: string;
+    bookedNoEmail: string;
     manageBookingLink: string;
     poweredBy: string;
     errorLoadAvailability: string;
@@ -1332,6 +1334,11 @@ export type Translations = {
     newBookingHint: string;
     manualCustomerHeading: string;
     manualEmailOptionalPlaceholder: string;
+    manualExistingClientLabel: string;
+    manualExistingClientSearch: string;
+    manualExistingClientNoMatch: string;
+    manualExistingClientChange: string;
+    manualNewClient: string;
     manualCreateBooking: string;
     manualBookingCreatedTitle: string;
     manualBookingCreatedDesc: string;
@@ -2438,6 +2445,7 @@ const en: Translations = {
 
   booking: {
     bookWithName: "Book with {name}",
+    bookNow: "Book now",
     widgetNotFound: "Widget Not Found | Nandzz",
     widgetDescriptionFallback: "{heading} directly from {name}'s profile on nandzz.",
     widgetUnavailable: "This widget can't be displayed yet.",
@@ -2499,10 +2507,11 @@ const en: Translations = {
     bookedTitle: "You're booked!",
     withName: "with {name}",
     confirmationSent: "A confirmation was sent to {email}. You can reschedule or cancel anytime.",
+    bookedNoEmail: "Save the link below to reschedule or cancel anytime.",
     manageBookingLink: "Manage your booking",
     poweredBy: "Powered by {business}'s calendar · times in {tz}",
     errorLoadAvailability: "Could not load availability.",
-    errorRequiredFields: "Name, email and phone are required.",
+    errorRequiredFields: "Name and phone are required.",
     errorBookingFailed: "Could not complete the booking.",
     errorWidgetUnavailable: "This booking widget isn't available.",
     errorNoAccess: "This booking widget isn't active right now.",
@@ -2794,6 +2803,11 @@ const en: Translations = {
     newBookingHint: "Add an appointment for a client — e.g. someone who booked over the phone.",
     manualCustomerHeading: "Customer details",
     manualEmailOptionalPlaceholder: "Email (optional)",
+    manualExistingClientLabel: "Existing client",
+    manualExistingClientSearch: "Search by name, phone or email",
+    manualExistingClientNoMatch: "No matching clients",
+    manualExistingClientChange: "Change",
+    manualNewClient: "New client",
     manualCreateBooking: "Create booking",
     manualBookingCreatedTitle: "Booking created",
     manualBookingCreatedDesc: "The appointment has been added to your calendar.",
@@ -3900,6 +3914,7 @@ const pt: Translations = {
 
   booking: {
     bookWithName: "Marcar com {name}",
+    bookNow: "Agendar agora",
     widgetNotFound: "Widget Não Encontrado | Nandzz",
     widgetDescriptionFallback: "{heading} diretamente do perfil de {name} no nandzz.",
     widgetUnavailable: "Este widget ainda não pode ser exibido.",
@@ -3961,10 +3976,11 @@ const pt: Translations = {
     bookedTitle: "Você está agendado!",
     withName: "com {name}",
     confirmationSent: "Uma confirmação foi enviada para {email}. Você pode remarcar ou cancelar a qualquer momento.",
+    bookedNoEmail: "Guarde o link abaixo para remarcar ou cancelar a qualquer momento.",
     manageBookingLink: "Gerenciar seu agendamento",
     poweredBy: "Agenda de {business} · horários em {tz}",
     errorLoadAvailability: "Não foi possível carregar a disponibilidade.",
-    errorRequiredFields: "Nome, e-mail e telefone são obrigatórios.",
+    errorRequiredFields: "Nome e telefone são obrigatórios.",
     errorBookingFailed: "Não foi possível concluir o agendamento.",
     errorWidgetUnavailable: "Este widget de agendamento não está disponível.",
     errorNoAccess: "Este widget de agendamento não está ativo no momento.",
@@ -4256,6 +4272,11 @@ const pt: Translations = {
     newBookingHint: "Adicione um agendamento para um cliente — por exemplo, alguém que ligou.",
     manualCustomerHeading: "Dados do cliente",
     manualEmailOptionalPlaceholder: "E-mail (opcional)",
+    manualExistingClientLabel: "Cliente existente",
+    manualExistingClientSearch: "Buscar por nome, telefone ou e-mail",
+    manualExistingClientNoMatch: "Nenhum cliente encontrado",
+    manualExistingClientChange: "Alterar",
+    manualNewClient: "Novo cliente",
     manualCreateBooking: "Criar agendamento",
     manualBookingCreatedTitle: "Agendamento criado",
     manualBookingCreatedDesc: "O agendamento foi adicionado à sua agenda.",
@@ -5362,6 +5383,7 @@ const fr: Translations = {
 
   booking: {
     bookWithName: "Réserver avec {name}",
+    bookNow: "Réserver",
     widgetNotFound: "Widget introuvable | Nandzz",
     widgetDescriptionFallback: "{heading} directement depuis le profil de {name} sur nandzz.",
     widgetUnavailable: "Ce widget ne peut pas encore être affiché.",
@@ -5423,10 +5445,11 @@ const fr: Translations = {
     bookedTitle: "C'est réservé !",
     withName: "avec {name}",
     confirmationSent: "Une confirmation a été envoyée à {email}. Vous pouvez reporter ou annuler à tout moment.",
+    bookedNoEmail: "Conservez le lien ci-dessous pour reporter ou annuler à tout moment.",
     manageBookingLink: "Gérer votre réservation",
     poweredBy: "Agenda de {business} · horaires en {tz}",
     errorLoadAvailability: "Impossible de charger les disponibilités.",
-    errorRequiredFields: "Le nom, l'e-mail et le téléphone sont requis.",
+    errorRequiredFields: "Le nom et le téléphone sont requis.",
     errorBookingFailed: "Impossible de finaliser la réservation.",
     errorWidgetUnavailable: "Ce widget de réservation n'est pas disponible.",
     errorNoAccess: "Ce widget de réservation n'est pas actif en ce moment.",
@@ -5718,6 +5741,11 @@ const fr: Translations = {
     newBookingHint: "Ajoutez un rendez-vous pour un client — par exemple, quelqu'un qui a appelé.",
     manualCustomerHeading: "Coordonnées du client",
     manualEmailOptionalPlaceholder: "E-mail (facultatif)",
+    manualExistingClientLabel: "Client existant",
+    manualExistingClientSearch: "Rechercher par nom, téléphone ou e-mail",
+    manualExistingClientNoMatch: "Aucun client correspondant",
+    manualExistingClientChange: "Modifier",
+    manualNewClient: "Nouveau client",
     manualCreateBooking: "Créer la réservation",
     manualBookingCreatedTitle: "Réservation créée",
     manualBookingCreatedDesc: "Le rendez-vous a été ajouté à votre calendrier.",
@@ -6824,6 +6852,7 @@ const es: Translations = {
 
   booking: {
     bookWithName: "Reservar con {name}",
+    bookNow: "Reservar ahora",
     widgetNotFound: "Widget no encontrado | Nandzz",
     widgetDescriptionFallback: "{heading} directamente desde el perfil de {name} en nandzz.",
     widgetUnavailable: "Este widget aún no se puede mostrar.",
@@ -6885,10 +6914,11 @@ const es: Translations = {
     bookedTitle: "¡Ya tienes tu reserva!",
     withName: "con {name}",
     confirmationSent: "Se envió una confirmación a {email}. Puedes reprogramar o cancelar cuando quieras.",
+    bookedNoEmail: "Guarda el enlace de abajo para reprogramar o cancelar cuando quieras.",
     manageBookingLink: "Gestionar tu reserva",
     poweredBy: "Agenda de {business} · horarios en {tz}",
     errorLoadAvailability: "No se pudo cargar la disponibilidad.",
-    errorRequiredFields: "El nombre, el correo y el teléfono son obligatorios.",
+    errorRequiredFields: "El nombre y el teléfono son obligatorios.",
     errorBookingFailed: "No se pudo completar la reserva.",
     errorWidgetUnavailable: "Este widget de reservas no está disponible.",
     errorNoAccess: "Este widget de reservas no está activo en este momento.",
@@ -7180,6 +7210,11 @@ const es: Translations = {
     newBookingHint: "Añade una cita para un cliente — por ejemplo, alguien que llamó por teléfono.",
     manualCustomerHeading: "Datos del cliente",
     manualEmailOptionalPlaceholder: "Correo electrónico (opcional)",
+    manualExistingClientLabel: "Cliente existente",
+    manualExistingClientSearch: "Buscar por nombre, teléfono o correo",
+    manualExistingClientNoMatch: "No hay clientes que coincidan",
+    manualExistingClientChange: "Cambiar",
+    manualNewClient: "Nuevo cliente",
     manualCreateBooking: "Crear reserva",
     manualBookingCreatedTitle: "Reserva creada",
     manualBookingCreatedDesc: "La cita se ha añadido a tu calendario.",
@@ -8286,6 +8321,7 @@ const ja: Translations = {
 
   booking: {
     bookWithName: "{name}さんに予約する",
+    bookNow: "今すぐ予約",
     widgetNotFound: "ウィジェットが見つかりません | Nandzz",
     widgetDescriptionFallback: "nandzz上の{name}のプロフィールから直接{heading}",
     widgetUnavailable: "このウィジェットはまだ表示できません。",
@@ -8347,10 +8383,11 @@ const ja: Translations = {
     bookedTitle: "予約が完了しました！",
     withName: "{name}担当",
     confirmationSent: "確認メールを{email}に送信しました。いつでも変更・キャンセルできます。",
+    bookedNoEmail: "下のリンクを保存すると、いつでも変更・キャンセルできます。",
     manageBookingLink: "予約を管理",
     poweredBy: "{business}のカレンダー · タイムゾーン：{tz}",
     errorLoadAvailability: "空き状況を読み込めませんでした。",
-    errorRequiredFields: "氏名、メールアドレス、電話番号は必須です。",
+    errorRequiredFields: "氏名と電話番号は必須です。",
     errorBookingFailed: "予約を完了できませんでした。",
     errorWidgetUnavailable: "この予約ウィジェットは利用できません。",
     errorNoAccess: "この予約ウィジェットは現在有効ではありません。",
@@ -8642,6 +8679,11 @@ const ja: Translations = {
     newBookingHint: "お客様の予約を追加します（電話で予約された方など）。",
     manualCustomerHeading: "お客様情報",
     manualEmailOptionalPlaceholder: "メールアドレス（任意）",
+    manualExistingClientLabel: "既存のお客様",
+    manualExistingClientSearch: "名前・電話番号・メールで検索",
+    manualExistingClientNoMatch: "該当するお客様がいません",
+    manualExistingClientChange: "変更",
+    manualNewClient: "新規のお客様",
     manualCreateBooking: "予約を作成",
     manualBookingCreatedTitle: "予約を作成しました",
     manualBookingCreatedDesc: "予約がカレンダーに追加されました。",
@@ -9748,6 +9790,7 @@ const de: Translations = {
 
   booking: {
     bookWithName: "Termin bei {name} buchen",
+    bookNow: "Jetzt buchen",
     widgetNotFound: "Widget nicht gefunden | Nandzz",
     widgetDescriptionFallback: "{heading} direkt vom Profil von {name} auf nandzz.",
     widgetUnavailable: "Dieses Widget kann noch nicht angezeigt werden.",
@@ -9809,10 +9852,11 @@ const de: Translations = {
     bookedTitle: "Du bist gebucht!",
     withName: "mit {name}",
     confirmationSent: "Eine Bestätigung wurde an {email} gesendet. Du kannst jederzeit umbuchen oder stornieren.",
+    bookedNoEmail: "Speichere den Link unten, um jederzeit umzubuchen oder zu stornieren.",
     manageBookingLink: "Buchung verwalten",
     poweredBy: "Kalender von {business} · Zeiten in {tz}",
     errorLoadAvailability: "Verfügbarkeit konnte nicht geladen werden.",
-    errorRequiredFields: "Name, E-Mail und Telefon sind erforderlich.",
+    errorRequiredFields: "Name und Telefon sind erforderlich.",
     errorBookingFailed: "Buchung konnte nicht abgeschlossen werden.",
     errorWidgetUnavailable: "Dieses Buchungs-Widget ist nicht verfügbar.",
     errorNoAccess: "Dieses Buchungs-Widget ist derzeit nicht aktiv.",
@@ -10104,6 +10148,11 @@ const de: Translations = {
     newBookingHint: "Fügen Sie einen Termin für einen Kunden hinzu — z. B. für jemanden, der telefonisch gebucht hat.",
     manualCustomerHeading: "Kundendaten",
     manualEmailOptionalPlaceholder: "E-Mail (optional)",
+    manualExistingClientLabel: "Bestehender Kunde",
+    manualExistingClientSearch: "Nach Name, Telefon oder E-Mail suchen",
+    manualExistingClientNoMatch: "Keine passenden Kunden",
+    manualExistingClientChange: "Ändern",
+    manualNewClient: "Neuer Kunde",
     manualCreateBooking: "Buchung erstellen",
     manualBookingCreatedTitle: "Buchung erstellt",
     manualBookingCreatedDesc: "Der Termin wurde zu Ihrem Kalender hinzugefügt.",
@@ -11210,6 +11259,7 @@ const it: Translations = {
 
   booking: {
     bookWithName: "Prenota con {name}",
+    bookNow: "Prenota ora",
     widgetNotFound: "Widget non trovato | Nandzz",
     widgetDescriptionFallback: "{heading} direttamente dal profilo di {name} su nandzz.",
     widgetUnavailable: "Questo widget non può ancora essere visualizzato.",
@@ -11271,10 +11321,11 @@ const it: Translations = {
     bookedTitle: "Sei prenotato!",
     withName: "con {name}",
     confirmationSent: "Una conferma è stata inviata a {email}. Puoi riprogrammare o annullare in qualsiasi momento.",
+    bookedNoEmail: "Salva il link qui sotto per riprogrammare o annullare in qualsiasi momento.",
     manageBookingLink: "Gestisci la tua prenotazione",
     poweredBy: "Calendario di {business} · orari in {tz}",
     errorLoadAvailability: "Impossibile caricare la disponibilità.",
-    errorRequiredFields: "Nome, e-mail e telefono sono obbligatori.",
+    errorRequiredFields: "Nome e telefono sono obbligatori.",
     errorBookingFailed: "Impossibile completare la prenotazione.",
     errorWidgetUnavailable: "Questo widget di prenotazione non è disponibile.",
     errorNoAccess: "Questo widget di prenotazione non è attivo al momento.",
@@ -11566,6 +11617,11 @@ const it: Translations = {
     newBookingHint: "Aggiungi un appuntamento per un cliente — ad esempio chi ha prenotato al telefono.",
     manualCustomerHeading: "Dati del cliente",
     manualEmailOptionalPlaceholder: "Email (facoltativa)",
+    manualExistingClientLabel: "Cliente esistente",
+    manualExistingClientSearch: "Cerca per nome, telefono o email",
+    manualExistingClientNoMatch: "Nessun cliente corrispondente",
+    manualExistingClientChange: "Cambia",
+    manualNewClient: "Nuovo cliente",
     manualCreateBooking: "Crea prenotazione",
     manualBookingCreatedTitle: "Prenotazione creata",
     manualBookingCreatedDesc: "L'appuntamento è stato aggiunto al tuo calendario.",

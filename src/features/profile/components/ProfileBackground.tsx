@@ -545,7 +545,7 @@ export function ProfileBackground({
                 booking={
                   hasBookingWidget
                     ? {
-                        label: t.booking.bookWithName.replace("{name}", displayName.split(" ")[0]),
+                        label: t.booking.bookNow,
                         style: localBookingStyle,
                         onChange: handleBookingStyleChange,
                       }

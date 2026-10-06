@@ -38,7 +38,7 @@ function setupFetch(opts: { slots?: unknown[]; bookOk?: boolean; bookBody?: unkn
 
 async function fillDetailsAndSubmit(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByPlaceholderText("Full name"), "Jamie Rivera");
-  await user.type(screen.getByPlaceholderText("Email"), "jamie@example.com");
+  await user.type(screen.getByPlaceholderText("Email (optional)"), "jamie@example.com");
   await user.type(screen.getByPlaceholderText("Phone"), "+15551234567");
   await user.click(screen.getByRole("button", { name: "Confirm booking" }));
 }
@@ -224,7 +224,7 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     await user.click(slotButton);
     await user.click(screen.getByRole("button", { name: "Confirm booking" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Name, email and phone are required.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Name and phone are required.");
   });
 
   it("submits the booking and shows the confirmation step, firing onBooked", async () => {
