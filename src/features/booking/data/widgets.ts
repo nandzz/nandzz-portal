@@ -43,20 +43,21 @@ export async function getProfileWidgets(
   return join(instances, true);
 }
 
-// A single enabled instance for a profile, used by the public, shareable
-// per-widget page. Returns null unless it's live (owner-enabled AND the owner's
-// plan includes widgets) — the same gate as getProfileWidgets, for one id.
-export async function getPublicWidgetById(
-  ownerId: string,
-  instanceId: string
+// The profile's calendar instance, used by the public, shareable booking page
+// (`/[username]/booking`). Each owner has at most one calendar (unique
+// user_id+catalog_id), so the username alone identifies it. Returns null unless
+// it's live (owner-enabled AND the owner's plan includes widgets) — the same
+// gate as getProfileWidgets.
+export async function getPublicCalendar(
+  ownerId: string
 ): Promise<WidgetInstanceWithCatalog | null> {
   const admin = createAdminClient();
   const [{ data }, entitlements] = await Promise.all([
     admin
       .from("widget_instances")
-      .select("*, catalog:widget_catalog(*)")
+      .select("*, catalog:widget_catalog!inner(*)")
       .eq("user_id", ownerId)
-      .eq("id", instanceId)
+      .eq("catalog.slug", "calendar")
       .eq("enabled", true)
       .maybeSingle(),
     getUserEntitlements(ownerId),

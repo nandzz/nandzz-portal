@@ -128,7 +128,7 @@ async function CalendarWorkspaceLoader({
   const symbol = currencySymbol(normalizedConfig.currency);
 
   const canShare = hasAccess && enabled && !!username;
-  const shareUrl = canShare ? `/${username}/booking/${instanceId}` : null;
+  const shareUrl = canShare ? `/${username}/booking` : null;
 
   // Default the first-paint scope to the first location — this matches the
   // client's first render (before localStorage restores a prior pick), so the

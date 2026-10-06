@@ -29,7 +29,7 @@ vi.mock("@/lib/plan", () => ({
 
 import {
   getProfileWidgets,
-  getPublicWidgetById,
+  getPublicCalendar,
   getOwnerWidgets,
   getWidgetCatalog,
 } from "./widgets";
@@ -56,15 +56,15 @@ describe("getProfileWidgets", () => {
   });
 });
 
-describe("getPublicWidgetById", () => {
+describe("getPublicCalendar", () => {
   it("returns null when the plan lacks widgets", async () => {
     entitlements = { hasWidgets: false };
-    const res = await getPublicWidgetById("u1", "i1");
+    const res = await getPublicCalendar("u1");
     expect(res).toBeNull();
   });
 
   it("returns the instance with has_access:true when entitled", async () => {
-    const res = await getPublicWidgetById("u1", "i1");
+    const res = await getPublicCalendar("u1");
     expect(res?.has_access).toBe(true);
   });
 });

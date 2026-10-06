@@ -3,7 +3,7 @@
 // the client-safe barrel importable from Client Components.
 export {
   getProfileWidgets,
-  getPublicWidgetById,
+  getPublicCalendar,
   getOwnerWidgets,
   getOwnerWidgetById,
   getOrCreateOwnerCalendar,
