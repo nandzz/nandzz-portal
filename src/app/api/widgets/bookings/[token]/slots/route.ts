@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeSegmentedSlots, todayInZone } from "@/lib/widgets/calendar";
-import { loadRescheduleContext, isLoadError, parseStaffParam } from "../_shared";
+import { loadRescheduleContext, isLoadError, parseServicesParam, parseStaffParam } from "../_shared";
 
 // Open start times a booking can be RESCHEDULED to — the whole booking (its
 // existing per-service staff + durations) shifted to a new start. Powers the
@@ -16,8 +16,10 @@ export async function GET(
   // staff when absent), so the reschedule picker can show times for a changed
   // specialist just like the booking flow.
   const staffOverride = parseStaffParam(url.searchParams.get("staff"));
+  // Optional new service selection (reschedule may also change the services).
+  const serviceIds = parseServicesParam(url.searchParams.get("services"));
 
-  const ctx = await loadRescheduleContext(token, staffOverride);
+  const ctx = await loadRescheduleContext(token, staffOverride, serviceIds);
   if (isLoadError(ctx)) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
   const { admin, booking, config, location, choices } = ctx;
 

@@ -994,6 +994,7 @@ export type Translations = {
     chooseSpecialist: string;
     specialistForService: string;
     specialistPerServiceHint: string;
+    changeServices: string;
     assignStaff: string;
     errorAssignStaff: string;
     parallelLabel: string;
@@ -1267,10 +1268,10 @@ export type Translations = {
     addressRequiredDesc: string;
     whatsappReminderLabel: string;
     whatsappReminderDesc: string;
-    addServiceHint: string;
     whatsappReminderTimingLabel: string;
     whatsappReminderTimingDesc: string;
     whatsappReminderHoursOption: string;
+    addServiceHint: string;
     servicePlaceholder: string;
     minSuffix: string;
     removeServiceAria: string;
@@ -2452,6 +2453,7 @@ const en: Translations = {
     chooseSpecialist: "Choose your specialist",
     specialistForService: "For {service}",
     specialistPerServiceHint: "Pick who handles each service, or leave it to us.",
+    changeServices: "Change services",
     assignStaff: "Assign staff",
     errorAssignStaff: "Couldn't reassign staff — they may be busy at that time.",
     parallelLabel: "Runs in parallel",
@@ -3917,6 +3919,7 @@ const pt: Translations = {
     anyAvailableDesc: "Sem preferência — vamos atribuir um especialista livre",
     specialistAvailable: "{name} está disponível para este serviço",
     specialistPerServiceHint: "Escolha quem faz cada serviço, ou deixe conosco.",
+    changeServices: "Alterar serviços",
     assignStaff: "Atribuir profissional",
     errorAssignStaff: "Não foi possível reatribuir — o profissional pode estar ocupado nesse horário.",
     parallelLabel: "Executa em paralelo",
@@ -5375,6 +5378,7 @@ const fr: Translations = {
     anyAvailableDesc: "Aucune préférence — nous attribuerons un spécialiste disponible",
     specialistAvailable: "{name} est disponible pour ce service",
     specialistPerServiceHint: "Choisissez qui réalise chaque service, ou laissez-nous faire.",
+    changeServices: "Modifier les services",
     assignStaff: "Attribuer un membre",
     errorAssignStaff: "Réattribution impossible — la personne est peut-être occupée à ce moment.",
     parallelLabel: "S'exécute en parallèle",
@@ -6833,6 +6837,7 @@ const es: Translations = {
     anyAvailableDesc: "Sin preferencia — asignaremos un especialista libre",
     specialistAvailable: "{name} está disponible para este servicio",
     specialistPerServiceHint: "Elige quién realiza cada servicio, o déjalo en nuestras manos.",
+    changeServices: "Cambiar servicios",
     assignStaff: "Asignar personal",
     errorAssignStaff: "No se pudo reasignar — puede estar ocupado a esa hora.",
     parallelLabel: "Se realiza en paralelo",
@@ -8291,6 +8296,7 @@ const ja: Translations = {
     anyAvailableDesc: "希望なし — 空いている担当者を自動で割り当てます",
     specialistAvailable: "{name}がこのサービスを担当します",
     specialistPerServiceHint: "各サービスの担当者を選ぶか、お任せください。",
+    changeServices: "サービスを変更",
     assignStaff: "担当者を割り当て",
     errorAssignStaff: "担当者を変更できませんでした。その時間は予約が入っている可能性があります。",
     parallelLabel: "並行して実施",
@@ -9749,6 +9755,7 @@ const de: Translations = {
     anyAvailableDesc: "Keine Präferenz — wir weisen eine freie Fachkraft zu",
     specialistAvailable: "{name} ist für diese Leistung verfügbar",
     specialistPerServiceHint: "Wählen Sie, wer welche Leistung übernimmt – oder überlassen Sie es uns.",
+    changeServices: "Leistungen ändern",
     assignStaff: "Mitarbeiter zuweisen",
     errorAssignStaff: "Zuweisung nicht möglich – die Person ist zu dieser Zeit möglicherweise belegt.",
     parallelLabel: "Läuft parallel",
@@ -11207,6 +11214,7 @@ const it: Translations = {
     anyAvailableDesc: "Nessuna preferenza — assegneremo uno specialista libero",
     specialistAvailable: "{name} è disponibile per questo servizio",
     specialistPerServiceHint: "Scegli chi esegue ogni servizio, o lascia fare a noi.",
+    changeServices: "Cambia servizi",
     assignStaff: "Assegna staff",
     errorAssignStaff: "Riassegnazione non riuscita — potrebbe essere occupato in quell'orario.",
     parallelLabel: "Si svolge in parallelo",

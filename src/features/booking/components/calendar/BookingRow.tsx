@@ -145,14 +145,18 @@ export function BookingRow({
       )
     : null;
 
-  async function reschedule(slot: Slot, staffByService: Record<string, string>) {
+  async function reschedule(slot: Slot, staffByService: Record<string, string>, serviceIds?: string[]) {
     setBusy(true);
     setRescheduleError(null);
     try {
       const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starts_at: slot.start, staff_by_service: staffByService }),
+        body: JSON.stringify({
+          starts_at: slot.start,
+          staff_by_service: staffByService,
+          service_ids: serviceIds,
+        }),
       });
       if (!res.ok) {
         setRescheduleError(t.booking.errorRescheduleThis);

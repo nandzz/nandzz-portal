@@ -46,14 +46,28 @@ export function parseStaffParam(raw: string | null): Record<string, string> {
   return map;
 }
 
+// Parse the `services` query param (comma-joined service ids) — the reschedule's
+// new service selection. Empty ⇒ undefined (keep the booking's services).
+export function parseServicesParam(raw: string | null): string[] | undefined {
+  const ids = (raw ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return ids.length > 0 ? ids : undefined;
+}
+
 // `staffOverride` (per-service `{ serviceId: staffId | "" }`) lets a reschedule
 // ALSO re-choose who handles a service: an entry replaces that segment's pinned
 // staff with the caller's choice ("" ⇒ any eligible, auto-assigned). A service
 // with no entry keeps its current staff (the default — reschedule preserves
 // assignments). Absent/empty override ⇒ every service keeps its current staff.
+//
+// `serviceIds` (optional) lets the reschedule ALSO change WHICH services are
+// booked. When given, choices are rebuilt from the CURRENT config services (their
+// live duration/price/eligible staff), in the given order; a service that was
+// already on the booking keeps its current staff unless overridden. Unknown ids
+// ⇒ 400 INVALID_SERVICE. Absent/empty ⇒ the booking's existing segments are used.
 export async function loadRescheduleContext(
   token: string,
-  staffOverride?: Record<string, string>
+  staffOverride?: Record<string, string>,
+  serviceIds?: string[]
 ): Promise<RescheduleContext | LoadError> {
   const admin = createAdminClient();
   const { data } = await admin
@@ -98,6 +112,25 @@ export async function loadRescheduleContext(
         ];
 
   const configServices = location ? location.services : config.services;
+
+  const ids = (serviceIds ?? []).filter((id) => typeof id === "string" && id.trim());
+  if (ids.length > 0) {
+    if (new Set(ids).size !== ids.length) return { error: "INVALID_SERVICE", status: 400 };
+    const choices: ServiceChoice[] = [];
+    for (const id of ids) {
+      const cfgSvc = configServices.find((s) => s.id === id);
+      if (!cfgSvc) return { error: "INVALID_SERVICE", status: 400 };
+      const override = staffOverride?.[id];
+      const keep = source.find((seg) => seg.service_id === id)?.staff_id ?? undefined;
+      choices.push({
+        service: cfgSvc,
+        // "" ⇒ any available; no entry ⇒ keep the current staff for a service
+        // already on the booking (validated against the live eligible set).
+        staffId: override !== undefined ? override || undefined : keep,
+      });
+    }
+    return { admin, booking, config, location, choices };
+  }
 
   const choices: ServiceChoice[] = source.map((seg) => {
     const override = staffOverride?.[seg.service_id];

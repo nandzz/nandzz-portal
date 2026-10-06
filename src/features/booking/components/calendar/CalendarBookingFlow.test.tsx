@@ -155,11 +155,12 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     expect(String(availCall[0])).toContain("staff=svc_1%3Ast_a");
   });
 
-  it("skips the specialist step when only one staff is eligible for the service", async () => {
+  it("shows the sole eligible specialist pre-assigned (no choice) when only one staff qualifies", async () => {
     // svc_a is restricted to staffA, so with two staff only one is eligible ⇒
-    // no real choice ⇒ straight to day/time, exactly like a single resource.
+    // the specialist step just tells the visitor who'll do it (no "Any" / no
+    // alternatives), and availability is pinned to that specialist.
     const svcRestricted: CalendarService = { id: "svc_a", name: "Shave", duration_min: 20, staff_ids: ["st_a"] };
-    setupFetch({ slots: [slotNoStaff] });
+    const fetchMock = setupFetch({ slots: [slotNoStaff] });
     const user = userEvent.setup();
     render(
       <CalendarBookingFlow
@@ -174,8 +175,14 @@ describe("CalendarBookingFlow — legacy single-location mode", () => {
     await user.click(screen.getByText("Shave"));
     await user.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(screen.queryByText("Choose your specialist")).not.toBeInTheDocument();
+    expect(await screen.findByText("Alex")).toBeInTheDocument();
+    expect(screen.queryByText("Bella")).not.toBeInTheDocument();
+    expect(screen.queryByText("Any available")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Continue" }));
     await screen.findByRole("button", { name: /9:00/ });
+    const availCall = fetchMock.mock.calls.find(([url]) => String(url).includes("/availability"))!;
+    expect(String(availCall[0])).toContain("staff=svc_a%3Ast_a");
   });
 
   it("submits 'any available' (empty per-service choice) when that option is chosen", async () => {

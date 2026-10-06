@@ -53,7 +53,7 @@ describe("ReschedulePicker", () => {
     render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={onPick} />);
     const slotButton = await screen.findByRole("button", { name: /9:00/ });
     await user.click(slotButton);
-    expect(onPick).toHaveBeenCalledWith(slot, {});
+    expect(onPick).toHaveBeenCalledWith(slot, {}, undefined);
   });
 
   it("shows the per-service staff step first when a service has 2+ eligible staff", async () => {
@@ -95,7 +95,40 @@ describe("ReschedulePicker", () => {
       ).toBe(true)
     );
     await user.click(slotButton);
-    expect(onPick).toHaveBeenCalledWith(slot, { svc_1: "st_b" });
+    expect(onPick).toHaveBeenCalledWith(slot, { svc_1: "st_b" }, undefined);
+  });
+
+  it("lets the user change the services and commits the new service ids", async () => {
+    const fetchMock = setupFetch({
+      context: {
+        services: [{ service_id: "svc_1", name: "Haircut", current_staff_id: null, eligible_staff: [] }],
+        needs_staff_step: false,
+        catalog: [
+          { id: "svc_1", name: "Haircut", duration_min: 30, price_cents: null, category_id: null, eligible_staff: [] },
+          { id: "svc_2", name: "Beard trim", duration_min: 15, price_cents: null, category_id: null, eligible_staff: [] },
+        ],
+        categories: [],
+        show_prices: false,
+        currency: "eur",
+      },
+    });
+    const onPick = vi.fn();
+    const user = userEvent.setup();
+    render(<ReschedulePicker token="tok_1" timezone="UTC" onPick={onPick} />);
+
+    await screen.findByRole("button", { name: /9:00/ });
+    await user.click(screen.getByRole("button", { name: /Change services/ }));
+    await user.click(screen.getByRole("checkbox", { name: /Beard trim/ }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    const slotButton = await screen.findByRole("button", { name: /9:00/ });
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) => String(url).includes("services=svc_1%2Csvc_2"))
+      ).toBe(true)
+    );
+    await user.click(slotButton);
+    expect(onPick).toHaveBeenCalledWith(slot, { svc_1: "", svc_2: "" }, ["svc_1", "svc_2"]);
   });
 
   it("shows the load error when /slots fails", async () => {

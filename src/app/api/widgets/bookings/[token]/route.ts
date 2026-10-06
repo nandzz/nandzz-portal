@@ -116,13 +116,18 @@ export async function PATCH(
   // `staff_by_service` (optional) lets the reschedule ALSO change who handles a
   // service — mirroring the booking flow — while defaulting to the current staff
   // for any service left out. Absent ⇒ pure time move, staff preserved.
-  const { starts_at, staff_by_service } = (await req.json()) as {
+  // `service_ids` (optional) changes WHICH services are booked; absent ⇒ keep them.
+  const { starts_at, staff_by_service, service_ids } = (await req.json()) as {
     starts_at?: string;
     staff_by_service?: Record<string, string>;
+    service_ids?: string[];
   };
   if (!starts_at) return NextResponse.json({ error: "starts_at is required" }, { status: 400 });
+  if (service_ids !== undefined && !Array.isArray(service_ids)) {
+    return NextResponse.json({ error: "service_ids must be an array" }, { status: 400 });
+  }
 
-  const ctx = await loadRescheduleContext(token, staff_by_service);
+  const ctx = await loadRescheduleContext(token, staff_by_service, service_ids);
   if (isLoadError(ctx)) return NextResponse.json({ error: ctx.error }, { status: ctx.status });
   const { admin, booking, config, location, choices } = ctx;
 
@@ -182,6 +187,8 @@ export async function PATCH(
 
   return NextResponse.json({
     ok: true,
+    service_id: row.service_id,
+    service_name: row.service_name,
     starts_at: row.starts_at,
     ends_at: row.ends_at,
     staff_id: row.staff_id,

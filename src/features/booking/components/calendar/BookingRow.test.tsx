@@ -59,10 +59,9 @@ beforeEach(() => {
 
 describe("BookingRow", () => {
   describe("contact links", () => {
-    it("always shows the mailto link", () => {
+    it("does not show a mailto link (removed from the row)", () => {
       renderRow();
-      const link = screen.getByRole("link", { name: "Email Jane Doe" });
-      expect(link).toHaveAttribute("href", "mailto:jane@example.com");
+      expect(screen.queryByRole("link", { name: "Email Jane Doe" })).not.toBeInTheDocument();
     });
 
     it("shows a WhatsApp link when customer_phone is present and dialable", () => {

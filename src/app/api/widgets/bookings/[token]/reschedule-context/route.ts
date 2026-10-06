@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { eligibleStaffForService, normalizeCalendarConfig } from "@/lib/widgets/calendar";
-import type { CalendarService, StaffMember, WidgetBooking } from "@/lib/types";
+import type { CalendarCategory, CalendarService, StaffMember, WidgetBooking } from "@/lib/types";
 
 // Public (token-scoped): what the reschedule picker needs to offer a per-service
 // staff choice — each booked service with its currently-assigned staff and the
 // specialists eligible for it. `needs_staff_step` is true when at least one
 // service has a real choice (2+ eligible), so the picker knows whether to show
-// the staff step at all (mirrors the booking flow's gating).
+// the staff step at all (mirrors the booking flow's gating). `catalog` is the
+// full bookable service list (same scope as the booking flow) so the picker can
+// also let the customer/owner CHANGE the services while rescheduling.
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -50,22 +52,38 @@ export async function GET(
       ? segs
       : [{ service_id: booking.service_id, service_name: booking.service_name, staff_id: booking.staff_id }];
 
-  const servicesOut = source.map((seg) => {
-    const svc = services.find((s) => s.id === seg.service_id);
-    const eligible = svc ? eligibleStaffForService(staffSource, svc) : [];
-    return {
-      service_id: seg.service_id,
-      name: seg.service_name,
-      current_staff_id: seg.staff_id,
-      eligible_staff: eligible.map((m) => ({
-        id: m.id,
-        name: m.name,
-        photo_url: m.photo_url ?? null,
-        info: m.info ?? null,
-      })),
-    };
-  });
+  const eligibleFor = (svc: CalendarService | undefined) =>
+    (svc ? eligibleStaffForService(staffSource, svc) : []).map((m) => ({
+      id: m.id,
+      name: m.name,
+      photo_url: m.photo_url ?? null,
+      info: m.info ?? null,
+    }));
+
+  const servicesOut = source.map((seg) => ({
+    service_id: seg.service_id,
+    name: seg.service_name,
+    current_staff_id: seg.staff_id,
+    eligible_staff: eligibleFor(services.find((s) => s.id === seg.service_id)),
+  }));
+
+  const catalog = services.map((s) => ({
+    id: s.id,
+    name: s.name,
+    duration_min: s.duration_min,
+    price_cents: s.price_cents ?? null,
+    category_id: s.category_id ?? null,
+    eligible_staff: eligibleFor(s),
+  }));
+  const categories: CalendarCategory[] = (location ? location.categories : config.categories) ?? [];
 
   const needs_staff_step = servicesOut.some((s) => s.eligible_staff.length > 1);
-  return NextResponse.json({ services: servicesOut, needs_staff_step });
+  return NextResponse.json({
+    services: servicesOut,
+    needs_staff_step,
+    catalog,
+    categories,
+    show_prices: config.show_prices,
+    currency: config.currency,
+  });
 }
