@@ -397,6 +397,23 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                     </OptionSelect>
                   </div>
                 )}
+                {/* Number behind the reminder's "Message us" button. */}
+                {config.whatsapp_reminder && (
+                  <div className="mt-3 border-l-2 border-border pl-4">
+                    <p className="text-sm font-medium">{t.booking.whatsappContactLabel}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{t.booking.whatsappContactDesc}</p>
+                    <Input
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="+39 333 123 4567"
+                      aria-label={t.booking.whatsappContactLabel}
+                      className="mt-2 max-w-xs"
+                      value={config.whatsapp_contact_phone}
+                      onChange={(e) => setConfig((c) => ({ ...c, whatsapp_contact_phone: e.target.value }))}
+                    />
+                  </div>
+                )}
               </ToggleRow>
             </div>
           </section>

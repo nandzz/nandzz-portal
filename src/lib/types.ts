@@ -452,6 +452,7 @@ export type CalendarConfig = {
   address_required: boolean; // whether that address field must be filled (only meaningful when collect_address)
   whatsapp_reminder: boolean; // offer customers a WhatsApp reminder before the appointment (default on)
   whatsapp_reminder_hours: WhatsAppReminderHours; // how long before the appointment that reminder goes out (default 4)
+  whatsapp_contact_phone: string; // business WhatsApp number behind the reminder's "Message us" button ("" ⇒ button opens the manage page)
   locations: Location[]; // empty ⇒ legacy single-location mode (read the top-level fields below)
   services: CalendarService[]; // legacy top-level (used only when locations is empty)
   categories?: CalendarCategory[]; // legacy top-level service groupings (used only when locations is empty)

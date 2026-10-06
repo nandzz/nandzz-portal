@@ -102,8 +102,10 @@ export function contentVariables(
 }
 
 // The variable map a WhatsApp template can reference. Same keys as the email
-// templates (text forms), plus `manage_token` for URL-button suffixes
-// (`https://nandzz.com/booking/{{n}}`).
+// templates (text forms), plus URL-button suffixes: `manage_token`
+// (`https://nandzz.com/booking/{{n}}`) and `business_whatsapp`
+// (`https://nandzz.com/booking/whatsapp/{{n}}` — the Portal resolves the
+// business's WhatsApp number at click time and redirects to a wa.me chat).
 export function whatsAppVars(
   booking: BookingRow,
   owner: OwnerProfile | null,
@@ -127,7 +129,7 @@ export function whatsAppVars(
   const vars = bookingMessageVars(ctx, locale);
   delete vars.multi_service;
   delete vars.single_service;
-  return { ...vars, manage_token: booking.manage_token };
+  return { ...vars, manage_token: booking.manage_token, business_whatsapp: booking.manage_token };
 }
 
 // Sample values for admin test sends (no real booking involved). Built through
@@ -153,7 +155,7 @@ export function sampleWhatsAppVars(siteUrl: string, locale: Locale): Record<stri
   );
   delete vars.multi_service;
   delete vars.single_service;
-  return { ...vars, manage_token: "test" };
+  return { ...vars, manage_token: "test", business_whatsapp: "test" };
 }
 
 // Send-time re-check of the reminder gates (the cron applies them in SQL).

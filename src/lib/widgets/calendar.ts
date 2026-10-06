@@ -46,6 +46,7 @@ export function defaultCalendarConfig(): CalendarConfig {
     address_required: false,
     whatsapp_reminder: true,
     whatsapp_reminder_hours: 4,
+    whatsapp_contact_phone: "",
     locations: [],
     services: [],
     categories: [],
@@ -138,6 +139,7 @@ export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
     )
       ? (Number(c.whatsapp_reminder_hours) as WhatsAppReminderHours)
       : 4,
+    whatsapp_contact_phone: typeof c.whatsapp_contact_phone === "string" ? c.whatsapp_contact_phone.trim() : "",
     locations: Array.isArray(c.locations)
       ? (c.locations.map(normalizeLocation).filter(Boolean) as Location[])
       : [],

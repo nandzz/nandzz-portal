@@ -1271,6 +1271,9 @@ export type Translations = {
     whatsappReminderTimingLabel: string;
     whatsappReminderTimingDesc: string;
     whatsappReminderHoursOption: string;
+    whatsappContactLabel: string;
+    whatsappContactDesc: string;
+    whatsappCustomerGreeting: string;
     addServiceHint: string;
     servicePlaceholder: string;
     minSuffix: string;
@@ -2730,6 +2733,9 @@ const en: Translations = {
     whatsappReminderTimingLabel: "Send it",
     whatsappReminderTimingDesc: "How long before the appointment the reminder goes out.",
     whatsappReminderHoursOption: "{hours} hours before",
+    whatsappContactLabel: "Business WhatsApp number",
+    whatsappContactDesc: "Shown as a “Message us” button in the reminder so customers can chat with you. Include the country code.",
+    whatsappCustomerGreeting: "Hi {business}, about my {service} booking on {when}:",
     addServiceHint: "Add at least one service so visitors can book.",
     servicePlaceholder: "Service name",
     minSuffix: "min",
@@ -4189,6 +4195,9 @@ const pt: Translations = {
     whatsappReminderTimingLabel: "Enviar",
     whatsappReminderTimingDesc: "Com quanta antecedência o lembrete é enviado.",
     whatsappReminderHoursOption: "{hours} horas antes",
+    whatsappContactLabel: "WhatsApp do negócio",
+    whatsappContactDesc: "Aparece como botão “Fale conosco” no lembrete para que os clientes conversem com você. Inclua o código do país.",
+    whatsappCustomerGreeting: "Olá {business}, sobre meu agendamento de {service} em {when}:",
     addServiceHint: "Adicione pelo menos um serviço para que os visitantes possam agendar.",
     servicePlaceholder: "Nome do serviço",
     minSuffix: "min",
@@ -5648,6 +5657,9 @@ const fr: Translations = {
     whatsappReminderTimingLabel: "Envoi",
     whatsappReminderTimingDesc: "Combien de temps avant le rendez-vous le rappel est envoyé.",
     whatsappReminderHoursOption: "{hours} heures avant",
+    whatsappContactLabel: "Numéro WhatsApp de l'entreprise",
+    whatsappContactDesc: "Affiché comme bouton « Nous écrire » dans le rappel pour que les clients puissent discuter avec vous. Indiquez l'indicatif du pays.",
+    whatsappCustomerGreeting: "Bonjour {business}, à propos de ma réservation {service} le {when} :",
     addServiceHint: "Ajoutez au moins un service pour permettre les réservations.",
     servicePlaceholder: "Nom du service",
     minSuffix: "min",
@@ -7107,6 +7119,9 @@ const es: Translations = {
     whatsappReminderTimingLabel: "Envío",
     whatsappReminderTimingDesc: "Con cuánta antelación se envía el recordatorio.",
     whatsappReminderHoursOption: "{hours} horas antes",
+    whatsappContactLabel: "Número de WhatsApp del negocio",
+    whatsappContactDesc: "Aparece como botón “Escríbenos” en el recordatorio para que los clientes chateen contigo. Incluye el código de país.",
+    whatsappCustomerGreeting: "Hola {business}, sobre mi reserva de {service} el {when}:",
     addServiceHint: "Añade al menos un servicio para que los visitantes puedan reservar.",
     servicePlaceholder: "Nombre del servicio",
     minSuffix: "min",
@@ -8566,6 +8581,9 @@ const ja: Translations = {
     whatsappReminderTimingLabel: "送信タイミング",
     whatsappReminderTimingDesc: "予約の何時間前にリマインダーを送るか。",
     whatsappReminderHoursOption: "{hours}時間前",
+    whatsappContactLabel: "ビジネスのWhatsApp番号",
+    whatsappContactDesc: "リマインダーに「メッセージを送る」ボタンとして表示され、お客様があなたとチャットできます。国番号を含めてください。",
+    whatsappCustomerGreeting: "{business}様、{when}の{service}の予約についてです：",
     addServiceHint: "訪問者が予約できるように、少なくとも1つのサービスを追加してください。",
     servicePlaceholder: "サービス名",
     minSuffix: "分",
@@ -10025,6 +10043,9 @@ const de: Translations = {
     whatsappReminderTimingLabel: "Versand",
     whatsappReminderTimingDesc: "Wie lange vor dem Termin die Erinnerung verschickt wird.",
     whatsappReminderHoursOption: "{hours} Stunden vorher",
+    whatsappContactLabel: "WhatsApp-Nummer des Unternehmens",
+    whatsappContactDesc: "Erscheint in der Erinnerung als „Schreib uns“-Schaltfläche, damit Kunden dir schreiben können. Mit Ländervorwahl angeben.",
+    whatsappCustomerGreeting: "Hallo {business}, es geht um meine Buchung {service} am {when}:",
     addServiceHint: "Füge mindestens eine Leistung hinzu, damit Besucher buchen können.",
     servicePlaceholder: "Name der Leistung",
     minSuffix: "Min.",
@@ -11484,6 +11505,9 @@ const it: Translations = {
     whatsappReminderTimingLabel: "Invio",
     whatsappReminderTimingDesc: "Quanto tempo prima dell'appuntamento viene inviato il promemoria.",
     whatsappReminderHoursOption: "{hours} ore prima",
+    whatsappContactLabel: "Numero WhatsApp dell'attività",
+    whatsappContactDesc: "Appare come pulsante “Scrivici” nel promemoria, così i clienti possono chattare con te. Includi il prefisso internazionale.",
+    whatsappCustomerGreeting: "Ciao {business}, riguardo alla mia prenotazione {service} del {when}:",
     addServiceHint: "Aggiungi almeno un servizio per permettere le prenotazioni.",
     servicePlaceholder: "Nome del servizio",
     minSuffix: "min",
