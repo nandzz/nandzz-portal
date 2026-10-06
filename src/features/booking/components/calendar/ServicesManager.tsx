@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import type { CalendarCategory, CalendarService } from "@/lib/types";
+import type { CalendarCategory, CalendarService, WhatsAppReminderHours } from "@/lib/types";
+import { WHATSAPP_REMINDER_HOURS } from "@/lib/types";
 import { getLocationScope, withLocationScope } from "@/lib/widgets/calendar";
 import { WIDGET_CURRENCIES, currencySymbol } from "@/lib/widgets/messages";
 import type { CalendarConfigController } from "@/features/booking/components/calendar/useCalendarConfig";
@@ -369,7 +370,36 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                 desc={t.booking.whatsappReminderDesc}
                 checked={config.whatsapp_reminder}
                 onCheckedChange={(v) => setConfig((c) => ({ ...c, whatsapp_reminder: v }))}
-              />
+              >
+                {/* Lead time — only meaningful while the reminder is on. */}
+                {config.whatsapp_reminder && (
+                  <div className="mt-3 flex items-start justify-between gap-4 border-l-2 border-border pl-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{t.booking.whatsappReminderTimingLabel}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {t.booking.whatsappReminderTimingDesc}
+                      </p>
+                    </div>
+                    <select
+                      aria-label={t.booking.whatsappReminderTimingLabel}
+                      className="mt-0.5 h-9 shrink-0 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50 dark:bg-input/30"
+                      value={config.whatsapp_reminder_hours}
+                      onChange={(e) =>
+                        setConfig((c) => ({
+                          ...c,
+                          whatsapp_reminder_hours: Number(e.target.value) as WhatsAppReminderHours,
+                        }))
+                      }
+                    >
+                      {WHATSAPP_REMINDER_HOURS.map((h) => (
+                        <option key={h} value={h}>
+                          {t.booking.whatsappReminderHoursOption.replace("{hours}", String(h))}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </ToggleRow>
             </div>
           </section>
         </div>

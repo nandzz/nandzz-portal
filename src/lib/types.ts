@@ -438,6 +438,11 @@ export type Location = {
   blackout_dates?: string[]; // "YYYY-MM-DD"
 };
 
+// Lead times a business can pick for the WhatsApp reminder (mirrored in SQL +
+// the booking-notifications edge fn).
+export const WHATSAPP_REMINDER_HOURS = [24, 12, 6, 4] as const;
+export type WhatsAppReminderHours = (typeof WHATSAPP_REMINDER_HOURS)[number];
+
 export type CalendarConfig = {
   timezone: string;
   currency: string; // ISO 4217 code (lowercase) the owner prices this widget in
@@ -445,7 +450,8 @@ export type CalendarConfig = {
   show_prices: boolean; // whether service prices are shown on the public booking widget
   collect_address: boolean; // whether the public booking widget asks the customer for an address
   address_required: boolean; // whether that address field must be filled (only meaningful when collect_address)
-  whatsapp_reminder: boolean; // offer customers a WhatsApp reminder ~4h before the appointment (default on)
+  whatsapp_reminder: boolean; // offer customers a WhatsApp reminder before the appointment (default on)
+  whatsapp_reminder_hours: WhatsAppReminderHours; // how long before the appointment that reminder goes out (default 4)
   locations: Location[]; // empty ⇒ legacy single-location mode (read the top-level fields below)
   services: CalendarService[]; // legacy top-level (used only when locations is empty)
   categories?: CalendarCategory[]; // legacy top-level service groupings (used only when locations is empty)

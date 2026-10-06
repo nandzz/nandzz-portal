@@ -5,6 +5,7 @@ import {
   contentVariables,
   pickWhatsAppTemplate,
   reminderSkipReason,
+  whatsAppReminderHours,
   type WhatsAppTemplates,
 } from "../whatsapp.ts";
 import type { BookingRow } from "../types.ts";
@@ -67,4 +68,20 @@ Deno.test("reminderSkipReason — gates", () => {
     reminderSkipReason(booking({ starts_at: "2026-10-03T09:00:00Z" }), {}, now),
     "already_started",
   );
+  // Booked 2 days ahead: early enough even for a 24h reminder.
+  assertEquals(reminderSkipReason(booking(), { whatsapp_reminder_hours: 24 }, now), null);
+  // Booked ~10h ahead: OK for 4h/6h, too late for a 12h reminder.
+  const tenAhead = booking({ created_at: "2026-10-03T03:30:00Z" });
+  assertEquals(reminderSkipReason(tenAhead, { whatsapp_reminder_hours: 6 }, now), null);
+  assertEquals(
+    reminderSkipReason(tenAhead, { whatsapp_reminder_hours: 12 }, now),
+    "booked_too_late",
+  );
+});
+
+Deno.test("whatsAppReminderHours — allowed values, else 4", () => {
+  assertEquals(whatsAppReminderHours({}), 4);
+  assertEquals(whatsAppReminderHours({ whatsapp_reminder_hours: 24 }), 24);
+  assertEquals(whatsAppReminderHours({ whatsapp_reminder_hours: "12" }), 12);
+  assertEquals(whatsAppReminderHours({ whatsapp_reminder_hours: 7 }), 4);
 });

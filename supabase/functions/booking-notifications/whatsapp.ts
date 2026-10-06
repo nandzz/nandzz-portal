@@ -37,8 +37,13 @@ export const WHATSAPP_SETTING_KEY = "booking_whatsapp_template";
 const READ_QTY = 50;
 const VT = 60;
 const MAX_READS = 5;
-// Bookings booked closer than this to their start skip the reminder (mirrors SQL).
-export const WHATSAPP_REMINDER_LEAD_HOURS = 5;
+// How long before the appointment the reminder goes out — per business, widget
+// config `whatsapp_reminder_hours` (mirrors SQL; anything else ⇒ 4).
+export const WHATSAPP_REMINDER_HOURS = [24, 12, 6, 4] as const;
+export function whatsAppReminderHours(config: Record<string, unknown>): number {
+  const h = Number(config.whatsapp_reminder_hours);
+  return (WHATSAPP_REMINDER_HOURS as readonly number[]).includes(h) ? h : 4;
+}
 
 const LOG = "[booking-notifications:whatsapp]";
 
@@ -163,7 +168,9 @@ export function reminderSkipReason(
   const starts = new Date(booking.starts_at).getTime();
   const created = new Date(booking.created_at).getTime();
   if (starts <= now.getTime()) return "already_started";
-  if (starts - created < WHATSAPP_REMINDER_LEAD_HOURS * 3_600_000) return "booked_too_late";
+  // Booked inside the reminder window (+1h slack) ⇒ the confirmation suffices.
+  const leadHours = whatsAppReminderHours(config) + 1;
+  if (starts - created < leadHours * 3_600_000) return "booked_too_late";
   return null;
 }
 

@@ -11,7 +11,9 @@ import type {
   Location,
   StaffMember,
   WeekdayKey,
+  WhatsAppReminderHours,
 } from "@/lib/types";
+import { WHATSAPP_REMINDER_HOURS } from "@/lib/types";
 import {
   DEFAULT_WIDGET_CURRENCY,
   defaultCalendarMessages,
@@ -43,6 +45,7 @@ export function defaultCalendarConfig(): CalendarConfig {
     collect_address: false,
     address_required: false,
     whatsapp_reminder: true,
+    whatsapp_reminder_hours: 4,
     locations: [],
     services: [],
     categories: [],
@@ -130,6 +133,11 @@ export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
     collect_address: typeof c.collect_address === "boolean" ? c.collect_address : false,
     address_required: typeof c.address_required === "boolean" ? c.address_required : false,
     whatsapp_reminder: typeof c.whatsapp_reminder === "boolean" ? c.whatsapp_reminder : true,
+    whatsapp_reminder_hours: (WHATSAPP_REMINDER_HOURS as readonly number[]).includes(
+      Number(c.whatsapp_reminder_hours),
+    )
+      ? (Number(c.whatsapp_reminder_hours) as WhatsAppReminderHours)
+      : 4,
     locations: Array.isArray(c.locations)
       ? (c.locations.map(normalizeLocation).filter(Boolean) as Location[])
       : [],
