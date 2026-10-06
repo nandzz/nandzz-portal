@@ -14,7 +14,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:functions": "cd supabase/functions && deno test -A"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

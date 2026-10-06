@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, SlidersHorizontal, Tag, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
+import { ChevronDown, Plus, SlidersHorizontal, Tag, Trash2 } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -318,9 +318,8 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                   <p className="text-sm font-medium">{t.booking.currencyLabel}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{t.booking.currencyDesc}</p>
                 </div>
-                <select
+                <OptionSelect
                   aria-label={t.booking.currencyLabel}
-                  className="mt-0.5 h-9 shrink-0 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50 dark:bg-input/30"
                   value={config.currency}
                   onChange={(e) => setConfig((c) => ({ ...c, currency: e.target.value }))}
                 >
@@ -329,7 +328,7 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                       {cur.symbol} · {cur.label} ({cur.code.toUpperCase()})
                     </option>
                   ))}
-                </select>
+                </OptionSelect>
               </div>
               <ToggleRow
                 label={t.booking.showPricesLabel}
@@ -380,9 +379,8 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                         {t.booking.whatsappReminderTimingDesc}
                       </p>
                     </div>
-                    <select
+                    <OptionSelect
                       aria-label={t.booking.whatsappReminderTimingLabel}
-                      className="mt-0.5 h-9 shrink-0 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50 dark:bg-input/30"
                       value={config.whatsapp_reminder_hours}
                       onChange={(e) =>
                         setConfig((c) => ({
@@ -396,7 +394,7 @@ export function ServicesManager({ controller, currentLocationId = null }: Props)
                           {t.booking.whatsappReminderHoursOption.replace("{hours}", String(h))}
                         </option>
                       ))}
-                    </select>
+                    </OptionSelect>
                   </div>
                 )}
               </ToggleRow>
@@ -488,6 +486,23 @@ function FilterPill({
 // A settings row: label + description on the left, a Switch on the right.
 // `flush` drops the vertical padding for nested use inside another box.
 // `children` renders below the row (e.g. a dependent sub-toggle).
+// Native select with its own chevron: the browser's default arrow sits flush
+// against the border and is barely visible on the dark theme.
+function OptionSelect({ className, ...props }: ComponentProps<"select">) {
+  return (
+    <div className="relative mt-0.5 shrink-0">
+      <select
+        {...props}
+        className={`h-9 cursor-pointer appearance-none rounded-lg border border-input bg-transparent pl-3 pr-9 text-sm outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/50 dark:bg-input/30 ${className ?? ""}`}
+      />
+      <ChevronDown
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+    </div>
+  );
+}
+
 function ToggleRow({
   label,
   desc,

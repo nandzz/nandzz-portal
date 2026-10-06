@@ -82,7 +82,7 @@ describe("AuthForm", () => {
     it("shows email and password fields", () => {
       render(<AuthForm />);
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     });
   });
 
@@ -263,7 +263,7 @@ describe("AuthForm", () => {
       render(<AuthForm />);
 
       await user.type(screen.getByLabelText(/email/i), "user@example.com");
-      await user.type(screen.getByLabelText(/password/i), "mypassword");
+      await user.type(screen.getByLabelText(/^password$/i), "mypassword");
       await user.click(screen.getByRole("button", { name: "Log in" }));
 
       await waitFor(() =>
@@ -276,7 +276,7 @@ describe("AuthForm", () => {
       render(<AuthForm />);
 
       await user.type(screen.getByLabelText(/email/i), "user@example.com");
-      await user.type(screen.getByLabelText(/password/i), "mypassword");
+      await user.type(screen.getByLabelText(/^password$/i), "mypassword");
       await user.click(screen.getByRole("button", { name: "Log in" }));
 
       await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/dashboard/contents"));
@@ -288,7 +288,7 @@ describe("AuthForm", () => {
       render(<AuthForm />);
 
       await user.type(screen.getByLabelText(/email/i), "user@example.com");
-      await user.type(screen.getByLabelText(/password/i), "wrongpassword");
+      await user.type(screen.getByLabelText(/^password$/i), "wrongpassword");
       await user.click(screen.getByRole("button", { name: "Log in" }));
 
       expect(
@@ -305,7 +305,7 @@ describe("AuthForm", () => {
       render(<AuthForm />);
 
       await user.type(screen.getByLabelText(/email/i), "user@example.com");
-      await user.type(screen.getByLabelText(/password/i), "password");
+      await user.type(screen.getByLabelText(/^password$/i), "password");
       await user.click(screen.getByRole("button", { name: "Log in" }));
 
       expect(await screen.findByText("Loading...")).toBeInTheDocument();
