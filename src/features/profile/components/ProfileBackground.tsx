@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ShareMenu } from "@/features/spaces/components/ShareMenu";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { ProfileStylePicker } from "./ProfileStylePicker";
 import { uploadBackground, removeBackgroundFiles } from "../storage";
@@ -81,7 +82,6 @@ export function ProfileBackground({
   const [position, setPosition] = useState(initPos);       // live drag state
   const [savedPosition, setSavedPosition] = useState(initPos); // last saved state
 
-  const [copied, setCopied] = useState(false);
   const [editInfoOpen, setEditInfoOpen] = useState(false);
 
   // Local style colors so swatch selection previews the page background instantly,
@@ -195,21 +195,6 @@ export function ProfileBackground({
       setLocalBookingStyle(prevBooking);
       setError(t.common.error);
     }
-  };
-
-  const handleShare = async () => {
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}/${username}`
-      : `/${username}`;
-    if (navigator.share) {
-      try { await navigator.share({ url, title: `${displayName} on Nandzz` }); return; }
-      catch { /* user cancelled — fall through */ }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch { /* clipboard unavailable */ }
   };
 
   const isDragging = useRef(false);
@@ -573,17 +558,12 @@ export function ProfileBackground({
                 <Eye className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Preview</span>
               </button>
-              <button
-                onClick={handleShare}
-                className={`flex items-center gap-1.5 rounded-full backdrop-blur-sm border px-3 py-1.5 text-xs transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
-                  copied
-                    ? "bg-green-500/15 border-green-500/40 text-green-600 dark:text-green-400"
-                    : "bg-background/80 border-border/60 text-muted-foreground hover:text-foreground hover:border-violet-500/50"
-                }`}
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
-                {copied ? "Copied!" : "Share"}
-              </button>
+              <ShareMenu
+                url={`/${username}`}
+                title={`${displayName} on Nandzz`}
+                triggerClassName="flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-sm border border-border/60 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:border-violet-500/50 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+                triggerContent={<><Share2 className="h-3.5 w-3.5" />{t.share.share}</>}
+              />
             </div>
           )}
 

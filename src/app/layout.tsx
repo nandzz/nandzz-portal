@@ -73,7 +73,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "online booking page",
       "book appointments online",
       "link in bio with booking",
-      "get found and booked",
+      "content, links and bookings on one page",
       "small business scheduling",
       "social platform for businesses",
     ],

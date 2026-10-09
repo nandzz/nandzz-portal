@@ -184,8 +184,6 @@ export default async function ProfilePage({
       : Promise.resolve([] as WidgetInstanceWithCatalog[]),
   ]);
 
-  const t = await getServerTranslations();
-
   let likedSpaceIds: string[] = [];
   let savedSpaceIds: string[] = [];
   let isFollowing = false;
@@ -308,11 +306,6 @@ export default async function ProfilePage({
             ) : null,
           }}
         />
-        {!hasGallery && !hasContents && !hasLinks && (
-          <p className="mt-12 py-12 text-center text-muted-foreground">
-            {t.profile.noPublicSpaces}
-          </p>
-        )}
         {!isOwner && (
           <div className="mt-16 flex justify-center">
             <ReportLink path={`/${profile.username}`} />

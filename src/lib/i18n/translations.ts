@@ -303,6 +303,8 @@ export type Translations = {
     copyLink: string;
     qrCode: string;
     downloadSvg: string;
+    downloadPng: string;
+    shareVia: string;
     qrTitle: string;
   };
   mobileTab: {
@@ -592,7 +594,6 @@ export type Translations = {
     noFollowers: string;
     noFollowing: string;
     loadMore: string;
-    noPublicSpaces: string;
     seeMore: string;
     contentsTitle: string;
     linksTitle: string;
@@ -1755,6 +1756,8 @@ const en: Translations = {
     copyLink: "Copy Link",
     qrCode: "QR Code",
     downloadSvg: "Download SVG",
+    downloadPng: "Download PNG",
+    shareVia: "Share via…",
     qrTitle: "QR Code",
   },
   mobileTab: {
@@ -2044,7 +2047,6 @@ const en: Translations = {
     noFollowers: "No followers yet.",
     noFollowing: "Not following anyone yet.",
     loadMore: "Load more",
-    noPublicSpaces: "No public content yet.",
     seeMore: "See more",
     contentsTitle: "Publications",
     linksTitle: "Links",
@@ -2867,7 +2869,7 @@ const en: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Get found. Get booked.",
+    rootTitle: "Nandzz | Content, links & bookings on one page",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "Nandzz is the social platform that connects businesses and clients. One page for your bookings, content and links — get found on social and booked in a tap.",
     rootOgDescription: "Your business, on one page. Bookings, content and links in one place clients can follow — get found on social and booked in a tap.",
@@ -3207,6 +3209,8 @@ const pt: Translations = {
     copyLink: "Copiar Link",
     qrCode: "Código QR",
     downloadSvg: "Baixar SVG",
+    downloadPng: "Baixar PNG",
+    shareVia: "Compartilhar via…",
     qrTitle: "Código QR",
   },
   mobileTab: {
@@ -3496,7 +3500,6 @@ const pt: Translations = {
     noFollowers: "Nenhum seguidor ainda.",
     noFollowing: "Não segue ninguém ainda.",
     loadMore: "Carregar mais",
-    noPublicSpaces: "Nenhum conteúdo público ainda.",
     seeMore: "Ver mais",
     contentsTitle: "Publicações",
     linksTitle: "Links",
@@ -4319,7 +4322,7 @@ const pt: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Seja encontrado. Seja agendado.",
+    rootTitle: "Nandzz | Conteúdo, links e agendamentos numa só página",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "A Nandzz é a plataforma social que conecta empresas e clientes. Uma página para seus agendamentos, conteúdos e links — seja encontrado nas redes e agendado num toque.",
     rootOgDescription: "Seu negócio, numa só página. Agendamentos, conteúdos e links num lugar que os clientes podem seguir — seja encontrado nas redes e agendado num toque.",
@@ -4659,6 +4662,8 @@ const fr: Translations = {
     copyLink: "Copier le lien",
     qrCode: "Code QR",
     downloadSvg: "Télécharger SVG",
+    downloadPng: "Télécharger PNG",
+    shareVia: "Partager via…",
     qrTitle: "Code QR",
   },
   mobileTab: {
@@ -4948,7 +4953,6 @@ const fr: Translations = {
     noFollowers: "Pas encore d'abonnés.",
     noFollowing: "Pas encore d'abonnements.",
     loadMore: "Charger plus",
-    noPublicSpaces: "Pas encore de Contenus publics.",
     seeMore: "Voir plus",
     contentsTitle: "Publications",
     linksTitle: "Liens",
@@ -5771,7 +5775,7 @@ const fr: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Trouvé. Réservé.",
+    rootTitle: "Nandzz | Contenus, liens et réservations sur une seule page",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "Nandzz est la plateforme sociale qui relie les entreprises et leurs clients. Une page pour vos réservations, contenus et liens — soyez trouvé sur les réseaux et réservé en un clic.",
     rootOgDescription: "Votre entreprise, sur une seule page. Réservations, contenus et liens dans un espace que vos clients peuvent suivre — soyez trouvé sur les réseaux et réservé en un clic.",
@@ -6111,6 +6115,8 @@ const es: Translations = {
     copyLink: "Copiar enlace",
     qrCode: "Código QR",
     downloadSvg: "Descargar SVG",
+    downloadPng: "Descargar PNG",
+    shareVia: "Compartir vía…",
     qrTitle: "Código QR",
   },
   mobileTab: {
@@ -6400,7 +6406,6 @@ const es: Translations = {
     noFollowers: "Todavía no hay seguidores.",
     noFollowing: "Todavía no sigue a nadie.",
     loadMore: "Cargar más",
-    noPublicSpaces: "Todavía no hay Contenidos públicos.",
     seeMore: "Ver más",
     contentsTitle: "Publicaciones",
     linksTitle: "Enlaces",
@@ -7223,7 +7228,7 @@ const es: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Que te encuentren. Que te reserven.",
+    rootTitle: "Nandzz | Contenido, enlaces y reservas en una sola página",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "Nandzz es la plataforma social que conecta negocios y clientes. Una página para tus reservas, contenidos y enlaces — que te encuentren en redes y te reserven en un toque.",
     rootOgDescription: "Tu negocio, en una sola página. Reservas, contenidos y enlaces en un lugar que tus clientes pueden seguir — que te encuentren en redes y te reserven en un toque.",
@@ -7563,6 +7568,8 @@ const ja: Translations = {
     copyLink: "リンクをコピー",
     qrCode: "QRコード",
     downloadSvg: "SVGをダウンロード",
+    downloadPng: "PNGをダウンロード",
+    shareVia: "他のアプリで共有…",
     qrTitle: "QRコード",
   },
   mobileTab: {
@@ -7852,7 +7859,6 @@ const ja: Translations = {
     noFollowers: "まだフォロワーはいません。",
     noFollowing: "まだ誰もフォローしていません。",
     loadMore: "もっと見る",
-    noPublicSpaces: "まだ公開コンテンツはありません。",
     seeMore: "もっと見る",
     contentsTitle: "投稿",
     linksTitle: "リンク",
@@ -8675,7 +8681,7 @@ const ja: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | 見つけられて、予約される。",
+    rootTitle: "Nandzz | コンテンツ・リンク・予約をひとつのページに",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "Nandzzは、ビジネスとお客様をつなぐソーシャルプラットフォームです。予約、コンテンツ、リンクを1つのページに — SNSで見つけられ、ワンタップで予約。",
     rootOgDescription: "あなたのビジネスを1つのページに。予約、コンテンツ、リンクをお客様がフォローできる1か所に — SNSで見つけられ、ワンタップで予約。",
@@ -9015,6 +9021,8 @@ const de: Translations = {
     copyLink: "Link kopieren",
     qrCode: "QR-Code",
     downloadSvg: "SVG herunterladen",
+    downloadPng: "PNG herunterladen",
+    shareVia: "Teilen über…",
     qrTitle: "QR-Code",
   },
   mobileTab: {
@@ -9304,7 +9312,6 @@ const de: Translations = {
     noFollowers: "Noch keine Follower.",
     noFollowing: "Folgt noch niemandem.",
     loadMore: "Mehr laden",
-    noPublicSpaces: "Noch keine öffentlichen Inhalte.",
     seeMore: "Mehr anzeigen",
     contentsTitle: "Veröffentlichungen",
     linksTitle: "Links",
@@ -10127,7 +10134,7 @@ const de: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Gefunden. Gebucht.",
+    rootTitle: "Nandzz | Inhalte, Links & Buchungen auf einer Seite",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "Nandzz ist die soziale Plattform, die Unternehmen und Kunden verbindet. Eine Seite für deine Buchungen, Inhalte und Links — in Social gefunden, mit einem Tipp gebucht.",
     rootOgDescription: "Dein Unternehmen auf einer Seite. Buchungen, Inhalte und Links an einem Ort, dem Kunden folgen können — in Social gefunden, mit einem Tipp gebucht.",
@@ -10467,6 +10474,8 @@ const it: Translations = {
     copyLink: "Copia link",
     qrCode: "Codice QR",
     downloadSvg: "Scarica SVG",
+    downloadPng: "Scarica PNG",
+    shareVia: "Condividi tramite…",
     qrTitle: "Codice QR",
   },
   mobileTab: {
@@ -10756,7 +10765,6 @@ const it: Translations = {
     noFollowers: "Ancora nessun follower.",
     noFollowing: "Non segue ancora nessuno.",
     loadMore: "Carica altri",
-    noPublicSpaces: "Nessun Contenuto pubblico ancora.",
     seeMore: "Vedi altro",
     contentsTitle: "Pubblicazioni",
     linksTitle: "Link",
@@ -11579,7 +11587,7 @@ const it: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Trovato. Prenotato.",
+    rootTitle: "Nandzz | Contenuti, link e prenotazioni in un'unica pagina",
     rootTitleTemplate: "%s | Nandzz",
     rootDescription: "Nandzz è la piattaforma social che mette in contatto attività e clienti. Una pagina per prenotazioni, contenuti e link — fatti trovare sui social e prenotare in un tocco.",
     rootOgDescription: "La tua attività, in una sola pagina. Prenotazioni, contenuti e link in un posto che i clienti possono seguire — fatti trovare sui social e prenotare in un tocco.",
