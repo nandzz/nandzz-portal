@@ -39,16 +39,12 @@ export function SpaceOwnerMenu({ spaceId, editHref, redirectTo }: SpaceOwnerMenu
   const handleDelete = async () => {
     const result = await deleteSpace({ id: spaceId });
     if (!result.ok) return;
-    // Go back to wherever the user came from (the content list, a collection,
-    // the profile…) instead of a fixed page. The action already revalidated the
-    // caches, so that previous page renders fresh with the deleted item gone.
-    // Fall back to `redirectTo` when there's no in-app history (e.g. the space
-    // was opened directly from a shared link).
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push(redirectTo);
-    }
+    // Always navigate to `redirectTo`. Don't use router.back(): the space renders
+    // inside an iframe whose navigations share the joint session history, so
+    // "back" can just step the iframe and leave the user stranded on the
+    // deleted page. `replace` keeps the dead URL out of the history stack; the
+    // action already revalidated caches, so the target renders fresh.
+    router.replace(redirectTo);
   };
 
   return (
