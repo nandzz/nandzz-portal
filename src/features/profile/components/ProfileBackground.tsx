@@ -21,9 +21,11 @@ import {
   updateButtonColor,
   updateTextColor,
   updateBookingButtonStyle,
+  updateSocialLinksStyle,
   resetProfileStyle,
 } from "../actions/update-background";
-import type { BookingButtonStyle, Profile } from "@/lib/types";
+import type { BookingButtonStyle, Profile, SocialLinksStyle } from "@/lib/types";
+import { buildSocialLinks } from "./SocialLinkButtons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { isColorDark } from "@/lib/color";
@@ -44,6 +46,7 @@ interface ProfileBackgroundProps {
   buttonColor: string | null;
   textColor: string | null;
   bookingButtonStyle: BookingButtonStyle | null;
+  socialLinksStyle: SocialLinksStyle | null;
   hasBookingWidget: boolean;
   isOwner: boolean;
   profileId: string;
@@ -59,6 +62,7 @@ export function ProfileBackground({
   buttonColor,
   textColor,
   bookingButtonStyle,
+  socialLinksStyle,
   hasBookingWidget,
   isOwner,
   profileId,
@@ -91,6 +95,7 @@ export function ProfileBackground({
   const [localButtonColor, setLocalButtonColor] = useState(buttonColor);
   const [localTextColor, setLocalTextColor] = useState(textColor);
   const [localBookingStyle, setLocalBookingStyle] = useState(bookingButtonStyle);
+  const [localSocialStyle, setLocalSocialStyle] = useState(socialLinksStyle);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setLocalColor(backgroundColor); }, [backgroundColor]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -99,6 +104,8 @@ export function ProfileBackground({
   useEffect(() => { setLocalTextColor(textColor); }, [textColor]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setLocalBookingStyle(bookingButtonStyle); }, [bookingButtonStyle]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setLocalSocialStyle(socialLinksStyle); }, [socialLinksStyle]);
 
   // Escape leaves preview mode.
   useEffect(() => {
@@ -174,15 +181,31 @@ export function ProfileBackground({
     }
   };
 
+  const handleSocialStyleChange = async (style: SocialLinksStyle | null) => {
+    const prev = localSocialStyle;
+    setLocalSocialStyle(style);
+    try {
+      const result = await updateSocialLinksStyle({ style });
+      if (!result.ok) throw new Error(result.message || "Failed to save social links style");
+      await revalidateProfile();
+    } catch (err) {
+      console.error("[profile] social links style save failed:", err);
+      setLocalSocialStyle(prev);
+      setError(t.common.error);
+    }
+  };
+
   const handleResetStyle = async () => {
     const prevColor = localColor;
     const prevButton = localButtonColor;
     const prevText = localTextColor;
     const prevBooking = localBookingStyle;
+    const prevSocial = localSocialStyle;
     setLocalColor(null);
     setLocalButtonColor(null);
     setLocalTextColor(null);
     setLocalBookingStyle(null);
+    setLocalSocialStyle(null);
     try {
       const result = await resetProfileStyle();
       if (!result.ok) throw new Error(result.message || "Failed to reset style");
@@ -193,6 +216,7 @@ export function ProfileBackground({
       setLocalButtonColor(prevButton);
       setLocalTextColor(prevText);
       setLocalBookingStyle(prevBooking);
+      setLocalSocialStyle(prevSocial);
       setError(t.common.error);
     }
   };
@@ -538,6 +562,11 @@ export function ProfileBackground({
                 onButtonChange={handleButtonColorChange}
                 textColor={localTextColor}
                 onTextChange={handleTextColorChange}
+                social={{
+                  links: buildSocialLinks(profile),
+                  style: localSocialStyle,
+                  onChange: handleSocialStyleChange,
+                }}
                 booking={
                   hasBookingWidget
                     ? {

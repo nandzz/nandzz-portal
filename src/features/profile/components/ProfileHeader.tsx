@@ -3,16 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Mail, Globe } from "lucide-react";
-import {
-  InstagramIcon,
-  LinkedinIcon,
-  XIcon,
-  GithubIcon,
-  YoutubeIcon,
-} from "./BrandIcons";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
+import { Camera } from "lucide-react";
+import type { Profile, SocialLinksStyle, WidgetInstanceWithCatalog } from "@/lib/types";
+import { SocialLinkButtons, buildSocialLinks, resolveSocialLinksStyle } from "./SocialLinkButtons";
 import { FollowButton } from "@/features/social";
 import { FollowersDialog } from "./FollowersDialog";
 import { AddressMenu } from "./AddressMenu";
@@ -36,30 +29,13 @@ interface ProfileHeaderProps {
   buttonColor?: string | null;
   /** Owner-chosen color for the header texts. null = theme. */
   textColor?: string | null;
+  /** Owner-chosen layout for the social link buttons. null = icon tiles. */
+  socialLinksStyle?: SocialLinksStyle | null;
 }
 
-function buildUrl(key: string, value: string): string {
-  const v = value.trim();
-  if (key === "email") return `mailto:${v}`;
-  if (key === "whatsapp") return `https://wa.me/${v.replace(/\D/g, "")}`;
-  if (key === "website") return v.startsWith("http") ? v : `https://${v}`;
-  const baseUrls: Record<string, string> = {
-    instagram: "https://instagram.com/",
-    linkedin: "https://linkedin.com/in/",
-    twitter: "https://x.com/",
-    github: "https://github.com/",
-    youtube: "https://youtube.com/@",
-  };
-  // If user pasted a full URL, use it as-is
-  if (v.startsWith("http")) return v;
-  // Otherwise prepend the base URL to the handle
-  return `${baseUrls[key]}${v.replace(/^@/, "")}`;
-}
-
-export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor = null, textColor = null }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor = null, textColor = null, socialLinksStyle = null }: ProfileHeaderProps) {
   const { t } = useLanguage();
   const router = useRouter();
-  const socialLinks = profile.social_links || {};
 
   // When the owner tints the buttons, override the surface + a readable text
   // color inline (inline wins over the theme `bg-background` / hover classes).
@@ -130,64 +106,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     }
   };
 
-  const links = [
-    {
-      key: "website",
-      value: profile.website_url,
-      icon: Globe,
-      label: "Website",
-      hoverClass: "hover:text-violet-600 dark:hover:text-violet-400",
-    },
-    {
-      key: "instagram",
-      value: socialLinks.instagram,
-      icon: InstagramIcon,
-      label: "Instagram",
-      hoverClass: "hover:text-pink-500",
-    },
-    {
-      key: "linkedin",
-      value: socialLinks.linkedin,
-      icon: LinkedinIcon,
-      label: "LinkedIn",
-      hoverClass: "hover:text-blue-600",
-    },
-    {
-      key: "twitter",
-      value: socialLinks.twitter,
-      icon: XIcon,
-      label: "X (Twitter)",
-      hoverClass: "hover:text-foreground",
-    },
-    {
-      key: "github",
-      value: socialLinks.github,
-      icon: GithubIcon,
-      label: "GitHub",
-      hoverClass: "hover:text-foreground",
-    },
-    {
-      key: "email",
-      value: socialLinks.email,
-      icon: Mail,
-      label: "Email",
-      hoverClass: "hover:text-foreground",
-    },
-    {
-      key: "youtube",
-      value: socialLinks.youtube,
-      icon: YoutubeIcon,
-      label: "YouTube",
-      hoverClass: "hover:text-red-600",
-    },
-    {
-      key: "whatsapp",
-      value: socialLinks.whatsapp,
-      icon: WhatsAppIcon,
-      label: "WhatsApp",
-      hoverClass: "hover:text-green-600",
-    },
-  ].filter((link) => link.value && link.value.trim() !== "");
+  const links = buildSocialLinks(profile);
 
   return (
     <div className="flex flex-col items-center text-center">
@@ -285,27 +204,12 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       </div>
 
       {links.length > 0 && (
-        <div className="mt-5 flex items-center gap-2">
-          {links.map((link) => {
-            const Icon = link.icon;
-            const href = buildUrl(link.key, link.value!);
-            return (
-              <a
-                key={link.key}
-                href={href}
-                aria-label={link.label}
-                target={link.key === "email" ? undefined : "_blank"}
-                rel={
-                  link.key === "email" ? undefined : "noopener noreferrer"
-                }
-                style={buttonStyle}
-                className={`flex h-9 w-9 items-center justify-center rounded-lg border border-border/50 bg-background text-muted-foreground transition-[color,box-shadow,transform] duration-200 hover:shadow-sm motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${link.hoverClass}`}
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            );
-          })}
-        </div>
+        <SocialLinkButtons
+          links={links}
+          style={socialLinksStyle}
+          buttonColor={buttonColor}
+          className={resolveSocialLinksStyle(socialLinksStyle).layout === "stack" ? "mt-6" : "mt-5"}
+        />
       )}
 
       {FEATURES.widgets && widgets.length > 0 && (

@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Palette, Check, Ban, RotateCcw, CalendarDays, X } from "lucide-react";
-import type { BookingButtonStyle } from "@/lib/types";
+import { Palette, Check, Ban, RotateCcw, CalendarDays, X, Mail } from "lucide-react";
+import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
 import {
   bookingButtonPresentation,
   resolveBookingButtonStyle,
   type ResolvedBookingButtonStyle,
 } from "@/lib/bookingButtonStyle";
+import { InstagramIcon, LinkedinIcon } from "./BrandIcons";
+import {
+  INSTAGRAM_FILL,
+  SocialLinkButtons,
+  resolveSocialLinksStyle,
+  type ResolvedSocialLinksStyle,
+  type SocialLink,
+} from "./SocialLinkButtons";
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -241,6 +249,83 @@ const SHAPE_VISUAL: Record<ResolvedBookingButtonStyle["shape"], React.ReactNode>
   square: <span className="h-3 w-8 rounded-[1px] bg-foreground/30" />,
 };
 
+// Mini mock-ups of each social links layout. Neutral bars so they read on
+// either theme; the active card picks up the violet accent.
+const BAR = "bg-current opacity-35";
+const LAYOUT_OPTIONS: {
+  value: ResolvedSocialLinksStyle["layout"];
+  label: string;
+  hint: string;
+  visual: React.ReactNode;
+}[] = [
+  {
+    value: "icons",
+    label: "Icons",
+    hint: "Compact tiles",
+    visual: (
+      <span className="flex gap-1">
+        {[0, 1, 2].map((i) => <span key={i} className={`h-3.5 w-3.5 rounded-[4px] ${BAR}`} />)}
+      </span>
+    ),
+  },
+  {
+    value: "chips",
+    label: "Labeled",
+    hint: "Icon + name",
+    visual: (
+      <span className="flex flex-wrap justify-center gap-1">
+        {[0, 1].map((i) => (
+          <span key={i} className="flex h-3.5 items-center gap-0.5 rounded-full border border-current/30 px-1">
+            <span className={`h-1.5 w-1.5 rounded-full ${BAR}`} />
+            <span className={`h-1 w-3 rounded-full ${BAR}`} />
+          </span>
+        ))}
+      </span>
+    ),
+  },
+  {
+    value: "stack",
+    label: "Stacked",
+    hint: "Full-width buttons",
+    visual: (
+      <span className="flex w-14 flex-col gap-0.5">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="flex h-2.5 items-center justify-center rounded-[3px] border border-current/30">
+            <span className={`h-0.5 w-5 rounded-full ${BAR}`} />
+          </span>
+        ))}
+      </span>
+    ),
+  },
+  {
+    value: "minimal",
+    label: "Minimal",
+    hint: "Just the glyphs",
+    visual: (
+      <span className="flex gap-2">
+        {[0, 1, 2].map((i) => <span key={i} className={`h-2.5 w-2.5 rounded-full ${BAR}`} />)}
+      </span>
+    ),
+  },
+];
+
+const TONE_VISUAL: Record<ResolvedSocialLinksStyle["tone"], React.ReactNode> = {
+  default: <span className="h-3.5 w-3.5 rounded-[4px] border border-current/30 bg-foreground/10" />,
+  brand: (
+    <span className="flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-current/30">
+      <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-pink-500 to-blue-500" />
+    </span>
+  ),
+  filled: <span className="h-3.5 w-3.5 rounded-[4px] bg-gradient-to-br from-amber-400 via-pink-500 to-blue-600" />,
+};
+
+// Shown in the preview when the owner hasn't added any links yet.
+const SAMPLE_LINKS: SocialLink[] = [
+  { key: "instagram", href: "#", label: "Instagram", icon: InstagramIcon, hoverClass: "", brandColor: "#e4405f", brandFill: INSTAGRAM_FILL },
+  { key: "linkedin", href: "#", label: "LinkedIn", icon: LinkedinIcon, hoverClass: "", brandColor: "#0a66c2", brandFill: "#0a66c2" },
+  { key: "email", href: "#", label: "Email", icon: Mail, hoverClass: "", brandColor: null, brandFill: "#475569" },
+];
+
 type Tab = "page" | "buttons" | "booking";
 
 interface ProfileStylePickerProps {
@@ -250,6 +335,11 @@ interface ProfileStylePickerProps {
   onButtonChange: (color: string | null) => void;
   textColor: string | null;
   onTextChange: (color: string | null) => void;
+  social: {
+    links: SocialLink[];
+    style: SocialLinksStyle | null;
+    onChange: (style: SocialLinksStyle | null) => void;
+  };
   /** Only shown when the profile has a booking widget. */
   booking?: {
     label: string;
@@ -266,6 +356,7 @@ export function ProfileStylePicker({
   onButtonChange,
   textColor,
   onTextChange,
+  social,
   booking,
   onReset,
 }: ProfileStylePickerProps) {
@@ -292,6 +383,7 @@ export function ProfileStylePicker({
     backgroundColor !== null ||
     buttonColor !== null ||
     textColor !== null ||
+    social.style !== null ||
     (booking?.style ?? null) !== null;
 
   const tabs: { id: Tab; label: string }[] = [
@@ -305,6 +397,12 @@ export function ProfileStylePicker({
   const patchBooking = (patch: Partial<ResolvedBookingButtonStyle>) =>
     booking?.onChange({ ...bookingStyle, ...patch });
   const bookingPreview = bookingButtonPresentation(booking?.style);
+
+  const socialStyle = resolveSocialLinksStyle(social.style);
+  const patchSocial = (patch: Partial<ResolvedSocialLinksStyle>) =>
+    social.onChange({ ...socialStyle, ...patch });
+  const hasLinks = social.links.length > 0;
+  const previewLinks = hasLinks ? social.links : SAMPLE_LINKS;
 
   return (
     // Not `relative`: the panel anchors to the owner-controls column (the
@@ -391,15 +489,107 @@ export function ProfileStylePicker({
 
             {activeTab === "buttons" && (
               <>
-                <p className="-mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                  Social links and address pill.
-                </p>
-                <ColorGroup
-                  label="Button color"
-                  value={buttonColor}
-                  presets={BTN_PRESETS}
-                  onChange={onButtonChange}
+                {/* Live preview on the page's own background */}
+                <div
+                  className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-4"
+                  style={backgroundColor ? { backgroundColor } : undefined}
+                >
+                  <SocialLinkButtons
+                    preview
+                    links={previewLinks}
+                    style={socialStyle}
+                    buttonColor={buttonColor}
+                  />
+                  {!hasLinks && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Sample links — add yours in Edit.
+                    </p>
+                  )}
+                </div>
+
+                <section>
+                  <p className="mb-2 text-xs font-medium text-foreground">Layout</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {LAYOUT_OPTIONS.map((o) => {
+                      const active = socialStyle.layout === o.value;
+                      return (
+                        <button
+                          type="button"
+                          key={o.value}
+                          onClick={() =>
+                            patchSocial(
+                              // Filled tiles need a surface; minimal falls back to brand glyphs.
+                              o.value === "minimal" && socialStyle.tone === "filled"
+                                ? { layout: o.value, tone: "brand" }
+                                : { layout: o.value },
+                            )
+                          }
+                          aria-pressed={active}
+                          className={`flex flex-col items-center gap-2 rounded-xl border px-2 pt-3 pb-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                            active
+                              ? "border-violet-500 bg-violet-500/10 text-foreground"
+                              : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                          }`}
+                        >
+                          <span className="flex h-8 items-center justify-center">{o.visual}</span>
+                          <span className="text-center leading-tight">
+                            <span className="block text-[11px] font-medium">{o.label}</span>
+                            <span className="block text-[10px] opacity-70">{o.hint}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {socialStyle.layout !== "minimal" && (
+                  <OptionRow
+                    label="Shape"
+                    value={socialStyle.shape}
+                    onChange={(shape) => patchSocial({ shape })}
+                    options={[
+                      { value: "pill", label: "Round", visual: SHAPE_VISUAL.pill },
+                      { value: "rounded", label: "Soft", visual: SHAPE_VISUAL.rounded },
+                      { value: "square", label: "Square", visual: SHAPE_VISUAL.square },
+                    ]}
+                  />
+                )}
+                <OptionRow
+                  label="Size"
+                  value={socialStyle.size}
+                  onChange={(size) => patchSocial({ size })}
+                  options={[
+                    { value: "md", label: "Regular" },
+                    { value: "lg", label: "Large" },
+                  ]}
                 />
+                <OptionRow
+                  label="Colors"
+                  value={socialStyle.tone}
+                  onChange={(tone) => patchSocial({ tone })}
+                  options={[
+                    { value: "default" as const, label: "Neutral", visual: TONE_VISUAL.default },
+                    { value: "brand" as const, label: "Brand", visual: TONE_VISUAL.brand },
+                    ...(socialStyle.layout !== "minimal"
+                      ? [{ value: "filled" as const, label: "Filled", visual: TONE_VISUAL.filled }]
+                      : []),
+                  ]}
+                />
+                <div className="space-y-1.5">
+                  <ColorGroup
+                    label="Button color"
+                    value={buttonColor}
+                    presets={BTN_PRESETS}
+                    onChange={onButtonChange}
+                  />
+                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                    {socialStyle.tone === "filled"
+                      ? "Filled links use brand colors — this tints the address pill."
+                      : socialStyle.layout === "minimal"
+                        ? "Tints the icons and the address pill."
+                        : "Tints the link buttons and the address pill."}
+                  </p>
+                </div>
               </>
             )}
 

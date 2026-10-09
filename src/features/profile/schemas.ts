@@ -86,6 +86,18 @@ export const updateBookingButtonStyleSchema = z.object({
     .nullable(),
 });
 
+// Social link buttons style. null clears back to the default icon tiles.
+export const updateSocialLinksStyleSchema = z.object({
+  style: z
+    .object({
+      layout: z.enum(["icons", "chips", "stack", "minimal"]),
+      shape: z.enum(["pill", "rounded", "square"]),
+      size: z.enum(["md", "lg"]),
+      tone: z.enum(["default", "brand", "filled"]),
+    })
+    .nullable(),
+});
+
 export const updateBrandSchema = z.object({
   logoUrl: z.string().nullable(),
   brandColors: z.record(z.string(), z.string()),

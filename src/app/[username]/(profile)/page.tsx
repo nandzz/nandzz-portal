@@ -249,6 +249,7 @@ export default async function ProfilePage({
         buttonColor={profile.button_color ?? null}
         textColor={profile.text_color ?? null}
         bookingButtonStyle={profile.booking_button_style ?? null}
+        socialLinksStyle={profile.social_links_style ?? null}
         hasBookingWidget={widgets.some((w) => w.catalog.slug === "calendar")}
         isOwner={isOwner}
         profileId={profile.id}
@@ -266,6 +267,7 @@ export default async function ProfilePage({
           widgets={widgets}
           buttonColor={profile.button_color ?? null}
           textColor={profile.text_color ?? null}
+          socialLinksStyle={profile.social_links_style ?? null}
         />
         <ProfileSections
           order={resolveSectionOrder(profile)}

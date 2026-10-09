@@ -29,6 +29,16 @@ export type BookingButtonStyle = {
   color?: string | null;
 };
 
+// Owner-chosen look for the social link buttons on the public profile. Any
+// missing field falls back to the default (small rounded icon tiles, neutral).
+export type SocialLinksStyle = {
+  layout?: "icons" | "chips" | "stack" | "minimal";
+  shape?: "pill" | "rounded" | "square";
+  size?: "md" | "lg";
+  /** default = neutral surface, brand = brand-colored icons, filled = brand-colored tiles. */
+  tone?: "default" | "brand" | "filled";
+};
+
 // Account type: a Personal account (default) vs a Business account. Personal
 // accounts hide the Business sections (Widgets, Brand, …) and book others;
 // Business accounts reveal those sections and hide the personal Bookings view.
@@ -57,6 +67,7 @@ export type Profile = {
   button_color: string | null;
   text_color: string | null;
   booking_button_style: BookingButtonStyle | null;
+  social_links_style: SocialLinksStyle | null;
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;

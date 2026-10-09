@@ -8,8 +8,9 @@ import {
   updateButtonColorSchema,
   updateTextColorSchema,
   updateBookingButtonStyleSchema,
+  updateSocialLinksStyleSchema,
 } from "../schemas";
-import type { BookingButtonStyle } from "@/lib/types";
+import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
 
 export type UpdateBackgroundResult =
   | { ok: true }
@@ -160,6 +161,28 @@ export async function updateBookingButtonStyle(input: {
   return { ok: true };
 }
 
+// Sets or clears the social link buttons style (null = default icon tiles).
+export async function updateSocialLinksStyle(input: {
+  style: SocialLinksStyle | null;
+}): Promise<UpdateBackgroundResult> {
+  const parsed = updateSocialLinksStyleSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ social_links_style: parsed.data.style })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "FAILED", message: error.message };
+
+  return { ok: true };
+}
+
 // Resets all profile style customizations back to the default theme in one shot.
 export async function resetProfileStyle(): Promise<UpdateBackgroundResult> {
   const supabase = await createClient();
@@ -175,6 +198,7 @@ export async function resetProfileStyle(): Promise<UpdateBackgroundResult> {
       button_color: null,
       text_color: null,
       booking_button_style: null,
+      social_links_style: null,
     })
     .eq("id", user.id);
   if (error) return { ok: false, error: "FAILED", message: error.message };
