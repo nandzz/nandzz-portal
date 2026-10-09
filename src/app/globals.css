@@ -266,7 +266,7 @@ html::-webkit-scrollbar-thumb:hover {
   transition: top 300ms ease-out, bottom 300ms ease-out;
 }
 body[data-chrome-hidden="true"] .chrome-immersive-space {
-  top: 0 !important;
+  top: env(safe-area-inset-top, 0px) !important;
   bottom: env(safe-area-inset-bottom, 0px) !important;
 }
 .space-viewer-topbar {

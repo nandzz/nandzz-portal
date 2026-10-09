@@ -207,7 +207,7 @@ export default async function SpaceViewPage({
   return (
     <div
       className="chrome-immersive-space fixed left-0 right-0 flex flex-col overflow-hidden md:static md:h-[calc(100dvh-4rem)]"
-      style={{ top: 0, bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+      style={{ top: 'env(safe-area-inset-top, 0px)', bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <IdleChromeActivator />
       <ViewTracker spaceId={space.id} ownerId={space.user_id} />

@@ -121,6 +121,10 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
             : onWidgetPage || onBareAuthPage || previewing
               ? "pb-0"
               : "pb-16 md:pb-0",
+          // No Navbar to absorb the status-bar inset (viewport-fit=cover):
+          // keep chromeless pages' content out of the notch. Profiles and the
+          // immersive viewer handle their own top inset.
+          (onWidgetPage || onBareAuthPage) && "pt-[env(safe-area-inset-top)]",
           showSidebar && (collapsed ? "md:pl-16" : "md:pl-64")
         )}
       >

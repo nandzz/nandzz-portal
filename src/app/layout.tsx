@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeColorSync } from "@/components/theme-color-sync";
@@ -37,6 +37,15 @@ const OG_LOCALES: Record<Locale, string> = {
   ja: "ja_JP",
   de: "de_DE",
   it: "it_IT",
+};
+
+// Edge-to-edge on every route, not just profiles. With `viewport-fit=cover`
+// the page itself paints behind the status bar / Safari toolbars (the Navbar and
+// MobileTabBar pad by the safe-area insets). Without it, iOS Safari fills those
+// strips with a color it sampled earlier and doesn't refresh on client
+// navigation — so a profile's custom color stuck to every other page.
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
