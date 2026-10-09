@@ -30,6 +30,11 @@ export function isBareAuthRoute(pathname: string): boolean {
   return BARE_AUTH_ROUTE_RE.test(pathname);
 }
 
+// Sidebar collapse preference. A cookie (not localStorage) so the root layout
+// renders the saved state on first paint — reading it after mount made the
+// sidebar open then snap shut on every hard load.
+export const SIDEBAR_COLLAPSED_COOKIE = "sidebar_collapsed";
+
 // sessionStorage key holding the path to return to after an OAuth round trip.
 // Set by a flow (e.g. the booking widget) right before the Google redirect, and
 // read by the destination so the visitor lands back where they started even if
@@ -52,16 +57,26 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "cookies",
   "privacy",
   "terms",
+  "dpa",
+  "acceptable-use",
+  "report",
+  "legal",
+  "setup-username",
   "mcp",
   "go",
   "booking",
   "hashtag",
-  "setup-username",
   "auth",
   "sandbox",
   "space",
   "api",
 ]);
+
+// A username equal to a top-level route would be shadowed by that route, so
+// these can never be claimed.
+export function isReservedUsername(username: string): boolean {
+  return RESERVED_TOP_SEGMENTS.has(username.toLowerCase());
+}
 
 // Profile sub-sections that live in the same "(profile)" route group as the
 // bare profile page and share its chromeless, full-width treatment.

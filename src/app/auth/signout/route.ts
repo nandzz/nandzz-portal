@@ -9,9 +9,13 @@ import { NextResponse, type NextRequest } from "next/server";
 // page fully signed out. Doing this client-side left stale cookies behind, so
 // the app kept rendering as if still authenticated.
 async function signOutAndRedirect(request: NextRequest) {
-  const redirectUrl = new URL("/", request.url);
+  // Relative Location: the browser resolves it against the current domain.
+  // (request.url is the internal host behind Amplify's proxy, e.g. localhost.)
   // 303 forces the follow-up request to be a GET regardless of how we arrived.
-  const response = NextResponse.redirect(redirectUrl, { status: 303 });
+  const response = new NextResponse(null, {
+    status: 303,
+    headers: { Location: "/" },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

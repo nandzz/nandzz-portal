@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { claimSignupProfile, mapAuthError } from "@/features/auth";
+import { SignupLegalNotice } from "@/features/legal/components/SignupLegalNotice";
 import { safeNextPath } from "@/lib/utils";
 import { AUTH_RETURN_TO_KEY } from "@/lib/layout/appShell";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,7 @@ function SetupUsernameForm() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t.setup.settingUp : t.setup.getStarted}
             </Button>
+            <SignupLegalNotice />
           </form>
         </CardContent>
       </Card>

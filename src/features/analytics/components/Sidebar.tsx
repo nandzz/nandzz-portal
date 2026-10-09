@@ -54,7 +54,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const { t } = useLanguage();
   const { userId, profile, entitlements, flags } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -354,16 +354,24 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="border-t border-sidebar-border p-2 flex flex-col gap-0.5">
         <button
           type="button"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          title={mounted && theme === "dark" ? t.nav.switchLight : t.nav.switchDark}
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          title={mounted && resolvedTheme === "dark" ? t.nav.switchLight : t.nav.switchDark}
           className={cn(
             "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             collapsed && "justify-center"
           )}
         >
-          {mounted && theme === "dark" ? <Sun aria-hidden className="h-4 w-4 shrink-0" /> : <Moon aria-hidden className="h-4 w-4 shrink-0" />}
-          {!collapsed && <span className="truncate">{mounted && theme === "dark" ? t.nav.switchLight : t.nav.switchDark}</span>}
+          {/* Icon + label follow the `.dark` class via CSS, so the right one
+              paints on first frame (no Moon→Sun flip after hydration). */}
+          <Sun aria-hidden className="hidden h-4 w-4 shrink-0 dark:block" />
+          <Moon aria-hidden className="h-4 w-4 shrink-0 dark:hidden" />
+          {!collapsed && (
+            <>
+              <span className="hidden truncate dark:inline">{t.nav.switchLight}</span>
+              <span className="truncate dark:hidden">{t.nav.switchDark}</span>
+            </>
+          )}
         </button>
 
         <button

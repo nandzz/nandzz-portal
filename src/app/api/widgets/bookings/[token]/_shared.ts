@@ -79,7 +79,7 @@ export async function loadRescheduleContext(
 
   const booking = data as unknown as WidgetBooking;
   const instance = (data as { instance?: { config?: unknown; enabled?: boolean } }).instance;
-  if (!instance?.enabled) return { error: "Booking widget unavailable.", status: 409 };
+  if (!instance?.enabled) return { error: "Booking unavailable.", status: 409 };
 
   const config = normalizeCalendarConfig(instance.config);
   const location = booking.location_id

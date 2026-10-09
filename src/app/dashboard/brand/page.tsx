@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loadMyProfile, updateBrand } from "@/features/profile";
+import { useAuth } from "@/features/auth/AuthContext";
 import { uploadBrandLogo } from "@/features/profile/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,11 +57,18 @@ export default function BrandPage() {
     background: t.brand.colorBackground,
   };
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [brandDescription, setBrandDescription] = useState("");
-  const [brandValues, setBrandValues] = useState<string[]>([]);
+  // Seeded from the SSR'd chrome profile so the form paints immediately
+  // instead of behind a spinner; the fetch below only refreshes it.
+  const { profile: chromeProfile } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(chromeProfile);
+  const [brandDescription, setBrandDescription] = useState(chromeProfile?.brand_description || "");
+  const [brandValues, setBrandValues] = useState<string[]>(chromeProfile?.brand_values || []);
   const [valueInput, setValueInput] = useState("");
-  const [brandColors, setBrandColors] = useState<Record<ColorKey, string>>(DEFAULT_COLORS);
+  const [brandColors, setBrandColors] = useState<Record<ColorKey, string>>({
+    ...DEFAULT_COLORS,
+    ...(chromeProfile?.brand_colors || {}),
+  });
+  const seededFromChrome = useRef(!!chromeProfile);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,6 +87,8 @@ export default function BrandPage() {
       const data = result.profile;
       if (data) {
         setProfile(data);
+        // Form already seeded — don't overwrite anything typed meanwhile.
+        if (seededFromChrome.current) return;
         setBrandDescription(data.brand_description || "");
         setBrandValues(data.brand_values || []);
         setBrandColors({ ...DEFAULT_COLORS, ...(data.brand_colors || {}) });

@@ -1,27 +1,37 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Navbar, Sidebar, MobileTabBar, ProfileVisitorCta } from "@/features/analytics";
 import { useAuth } from "@/features/auth/AuthContext";
 import { ConditionalFooter } from "./ConditionalFooter";
-import { isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
+import { SIDEBAR_COLLAPSED_COOKIE, isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
 import { cn } from "@/lib/utils";
 import { useChrome } from "@/contexts/ChromeContext";
 
-const COLLAPSE_STORAGE_KEY = "sidebar:collapsed";
+// Pre-cookie home of the collapse preference (see SIDEBAR_COLLAPSED_COOKIE).
+const LEGACY_STORAGE_KEY = "sidebar:collapsed";
+
+function persistCollapsed(value: boolean) {
+  document.cookie = `${SIDEBAR_COLLAPSED_COOKIE}=${value ? "1" : "0"}; path=/; max-age=31536000; samesite=lax`;
+}
 
 interface AppChromeProps {
+  /** Saved preference, read server-side from the cookie. */
+  initialCollapsed: boolean;
   children: React.ReactNode;
 }
 
-export function AppChrome({ children }: AppChromeProps) {
+export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
   const pathname = usePathname();
   const { userId } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
+  const onProfilePage = isProfilePage(pathname);
+  // Profile pages start on the rail (full-width profile); everywhere else
+  // starts on the saved preference — both known at render, so no flip.
+  const preference = useRef(initialCollapsed);
+  const [collapsed, setCollapsed] = useState(onProfilePage || initialCollapsed);
   const { profilePreview, setProfilePreview } = useChrome();
 
-  const onProfilePage = isProfilePage(pathname);
   // The public booking widget is a self-contained, branded page: it renders its
   // own hero and controls, so every piece of app chrome is suppressed.
   const onWidgetPage = isWidgetRoute(pathname);
@@ -40,19 +50,23 @@ export function AppChrome({ children }: AppChromeProps) {
     if (!onProfilePage) setProfilePreview(false);
   }, [onProfilePage, setProfilePreview]);
 
+  // One-time migration of the old localStorage preference to the cookie.
   useEffect(() => {
-    // Auto-collapse to the rail when landing on a profile page (full-width
-    // profile); restore the saved preference on any other page. Reads happen
-    // after mount — localStorage isn't available during SSR, so server and
-    // client both start "expanded", trading a one-frame flip for zero
-    // hydration mismatch. The toggle can still override for the current visit.
-    if (onProfilePage) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCollapsed(true);
-    } else {
-      const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
-      setCollapsed(stored === "true");
-    }
+    const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy === null) return;
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    preference.current = legacy === "true";
+    persistCollapsed(preference.current);
+    if (!isProfilePage(window.location.pathname)) setCollapsed(preference.current);
+  }, []);
+
+  // Navigating onto a profile collapses to the rail; leaving restores the saved
+  // preference. The toggle can still override for the current visit.
+  const wasProfile = useRef(onProfilePage);
+  useEffect(() => {
+    if (wasProfile.current === onProfilePage) return;
+    wasProfile.current = onProfilePage;
+    setCollapsed(onProfilePage || preference.current);
   }, [onProfilePage]);
 
   const handleToggleCollapsed = useCallback(() => {
@@ -62,7 +76,8 @@ export function AppChrome({ children }: AppChromeProps) {
       // collapse is an ephemeral default, so toggling it back open doesn't
       // change the saved preference used elsewhere.
       if (!isProfilePage(pathname)) {
-        window.localStorage.setItem(COLLAPSE_STORAGE_KEY, String(next));
+        preference.current = next;
+        persistCollapsed(next);
       }
       return next;
     });

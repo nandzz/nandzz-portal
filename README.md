@@ -2,23 +2,24 @@
 
 **Your business, on one page. Get found — and get booked.**
 
-nandzz gives businesses, solo pros, and institutions a branded page (`nandzz.com/yourbrand`) plus the widgets to run it — take bookings, publish content, and build pools. Whether you run a hair salon, clean homes, coach clients, or manage an institution, you get found on social and booked in a tap. Booking is just one widget in a growing library.
+nandzz is a social platform that connects businesses and their clients. Every business gets a branded page (`nandzz.com/yourbrand`) that works like a link-in-bio — take bookings, publish content, show a gallery, and share links — and clients follow, save, and book in a tap. Whether you run a hair salon, clean homes, or coach clients, you get found on social and booked in a tap.
 
 ---
 
 ## Core concepts
 
 - **Branded page** — a public profile at `nandzz.com/yourbrand` that acts as your home on the web.
-- **Widgets** — building blocks you drop into your page. Live today: **Booking** (24/7 scheduling with staff & availability), **Content** (Spaces), and **Pools** (collections).
+- **Features** — what you add to your page. Live today: **Booking** (24/7 scheduling with staff & availability), **Content** (Spaces), **Gallery**, and **Links**.
 - **Space** — a piece of content: an HTML page, PDF, tool, or AI creation, with a title, description, preview image, and its own public page.
 
 ---
 
 ## Features
 
-- **Booking widget** — clients book you 24/7; staff, providers, and availability built in, with per-instance Stripe subscriptions.
+- **Booking** — clients book you 24/7; staff, providers, and availability built in. Built for appointments (not restaurant table reservations).
 - **Content (Spaces)** — upload HTML or link a URL; publish pages, PDFs, tools, and AI creations.
-- **Pools** — bundle links, offers, and resources into a shared collection.
+- **Gallery & Links** — an image gallery and a link list on your profile.
+- **Social** — follow pages, a feed, likes, comments, and private collections to save content.
 - **User profiles** — public branded pages gathering everything for a given account.
 - **Dark mode** — full light/dark theme support.
 - **Auth** — email/password and Google sign-in via Supabase.
@@ -114,7 +115,7 @@ This loads `.env.production.local` (real Supabase URL, real service-role key, re
 ```
 src/
   app/                  # Next.js App Router pages
-    dashboard/          # Authenticated user area (create/edit content, widgets)
+    dashboard/          # Authenticated user area (create/edit content, booking)
     [username]/         # Public branded profile pages
     space/[id]/         # Individual space (content) viewer
     login/              # Auth page

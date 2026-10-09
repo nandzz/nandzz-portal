@@ -9,6 +9,7 @@ import {
   signInWithGoogle,
 } from "../auth";
 import { claimSignupProfile } from "../actions/claim-signup-profile";
+import { SignupLegalNotice } from "@/features/legal/components/SignupLegalNotice";
 import { mapAuthError } from "../error-messages";
 import { safeNextPath } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -318,6 +319,7 @@ export function AuthForm({
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? t.setup.settingUp : ctaLabel ?? t.setup.getStarted}
       </Button>
+      <SignupLegalNotice />
     </form>
   );
 
@@ -433,6 +435,12 @@ export function AuthForm({
         <GoogleIcon />
         <span className="ml-2">{t.auth.continueGoogle}</span>
       </Button>
+
+      {mode === "signup" && (
+        <div className="mt-4">
+          <SignupLegalNotice />
+        </div>
+      )}
 
       <div className="mt-6 text-center text-sm text-muted-foreground">
         {mode === "login" ? (

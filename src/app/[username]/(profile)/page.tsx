@@ -23,6 +23,7 @@ import { getServerTranslations } from "@/lib/i18n/server";
 import { getIsFollowing, getLikedSpaceIds } from "@/features/social/server";
 import { getSavedSpaceIds } from "@/features/collections/server";
 import { PageShell } from "@/components/layout/PageShell";
+import { ReportLink } from "@/features/legal/components/ReportLink";
 import { isColorDark } from "@/lib/color";
 
 const fetchProfileByUsername = async (username: string) => {
@@ -237,9 +238,10 @@ export default async function ProfilePage({
           Scoped to this page: it unmounts on navigation. Only `html` gets the
           color; `body` must go transparent — once html has its own background,
           body's stops propagating to the canvas and would paint as an opaque
-          box OVER the negative-z cover image. */}
+          box OVER the negative-z cover image. Dropped the moment a link away
+          is tapped (see ThemeColorSync) so the status bar reverts instantly. */}
       {bgColor && (
-        <style>{`html{background-color:${bgColor}}body{background-color:transparent}`}</style>
+        <style>{`html:not([data-nav-leaving]){background-color:${bgColor}}html:not([data-nav-leaving]) body{background-color:transparent}`}</style>
       )}
       {!isOwner && <ProfileViewTracker profileId={profile.id} />}
       <ProfileBackground
@@ -310,6 +312,11 @@ export default async function ProfilePage({
           <p className="mt-12 py-12 text-center text-muted-foreground">
             {t.profile.noPublicSpaces}
           </p>
+        )}
+        {!isOwner && (
+          <div className="mt-16 flex justify-center">
+            <ReportLink path={`/${profile.username}`} />
+          </div>
         )}
       </PageShell>
     </div>

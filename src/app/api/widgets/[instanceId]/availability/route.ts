@@ -62,7 +62,7 @@ export async function GET(
     .maybeSingle();
 
   if (!instance || !instance.enabled) {
-    return NextResponse.json({ error: "Widget unavailable" }, { status: 404 });
+    return NextResponse.json({ error: "Booking unavailable" }, { status: 404 });
   }
 
   // Entitlement gate — the owner's plan must include widgets, else nothing bookable.

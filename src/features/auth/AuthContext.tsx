@@ -38,6 +38,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 interface AuthProviderProps {
   initialUserId: string | null;
   initialProfile: Profile | null;
+  /** Plan gating resolved server-side for `initialProfile`, so plan-gated nav
+      (Analytics, MCP, widgets) renders on first paint instead of popping in. */
+  initialEntitlements?: PlanEntitlements;
   /** Resolved server-side from `app_settings` and seeded so the chrome renders
       the right surfaces on first paint (no flash, no client round-trip). */
   initialFlags?: FeatureFlags;
@@ -55,11 +58,11 @@ interface AuthProviderProps {
 // Lives OUTSIDE `components/` (like `auth.ts` / `realtime.ts`) so it can touch
 // `@/lib/supabase/*` directly without tripping the `no-restricted-imports`
 // guardrail that applies to `src/features/*/components/**`.
-export function AuthProvider({ initialUserId, initialProfile, initialFlags, children }: AuthProviderProps) {
+export function AuthProvider({ initialUserId, initialProfile, initialEntitlements, initialFlags, children }: AuthProviderProps) {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(initialUserId);
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
-  const [entitlements, setEntitlements] = useState<PlanEntitlements>(FREE_ENTITLEMENTS);
+  const [entitlements, setEntitlements] = useState<PlanEntitlements>(initialEntitlements ?? FREE_ENTITLEMENTS);
   // Flags are server-resolved and stable for the page's lifetime, so they're
   // held as-is (no refetch); default OFF until the server seeds them.
   const flags = initialFlags ?? DEFAULT_FLAGS;
@@ -119,11 +122,10 @@ export function AuthProvider({ initialUserId, initialProfile, initialFlags, chil
     await loadForUser(userId);
   }, [userId, loadForUser]);
 
-  // Seed entitlements once on mount for the SSR-seeded user. The profile
-  // itself is already current (it came from the server); only the plan
-  // entitlements — never sent by the server — need a client-side fetch.
+  // Seed entitlements once on mount for the SSR-seeded user when the server
+  // didn't send them (the profile itself is already current).
   useEffect(() => {
-    if (initialUserId && initialProfile) {
+    if (initialUserId && initialProfile && !initialEntitlements) {
       fetchEntitlementsForSlug(initialProfile.plan_slug).then(setEntitlements);
     }
     // Runs once for the SSR-seeded initial values only.

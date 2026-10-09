@@ -28,7 +28,7 @@ export async function GET(
     "id" | "location_id" | "service_id" | "service_name" | "staff_id" | "status"
   >;
   const instance = (data as { instance?: { config?: unknown; enabled?: boolean } }).instance;
-  if (!instance?.enabled) return NextResponse.json({ error: "Booking widget unavailable." }, { status: 409 });
+  if (!instance?.enabled) return NextResponse.json({ error: "Booking unavailable." }, { status: 409 });
   if (booking.status === "cancelled") {
     return NextResponse.json({ error: "This booking was cancelled." }, { status: 409 });
   }

@@ -1,16 +1,18 @@
 # Nandzz
 
-> Nandzz gives businesses, solo pros, and institutions a branded one-page site plus
-> built-in features — booking, content, and pools — so they can be found on social
-> and booked in a tap. No website needed: claim a handle (nandzz.com/yourbrand), add
-> the features you need, and share the link.
+> Nandzz is a social platform that connects businesses and their clients. Each business
+> gets a branded page (nandzz.com/yourbrand) that works like a link-in-bio — bookings,
+> content, and links in one place — and clients can follow it, discover its work, and
+> book in a tap. No website needed: claim a handle, add what you offer, and share the link.
 
 ## What Nandzz is
 
+- A social platform: businesses publish a branded page, and clients follow pages, save content to collections, and book appointments.
 - A branded public page at `nandzz.com/[handle]` that works as a link-in-bio destination and a lightweight business site.
-- A suite of features you add to that page: **Booking** (24/7 appointments with staff and availability), **Content** (publish pages, PDFs, and interactive tools), and **Pools** (bundle links, offers, and resources into one shared collection). More features are planned.
-- An optional **AI Agent** visitors can chat with, and **MCP access** so tools like Claude can connect to a page.
-- Aimed at salons, barbers, cleaners, studios, clinics, coaches, freelancers, and small institutions.
+- Features you add to that page: **Booking** (24/7 appointments with staff and availability), **Content** (publish pages, PDFs, and interactive tools), **Gallery** (images), and **Links** (all your links in one place).
+- **MCP access** so tools like Claude can connect to a page.
+- Aimed at appointment-based businesses: salons, barbers, cleaners, studios, clinics, coaches, and freelancers.
+- Not for restaurants: Nandzz does not offer table reservations. Multi-night stays and group classes or events are not supported either.
 
 ## How it compares
 
@@ -22,7 +24,7 @@
 ## Pricing
 
 - Free: a branded page with content, gallery, and links sections (up to 25 spaces).
-- One paid plan — €27/month or €270/year (2 months free): unlocks Booking, the AI Agent, MCP access, analytics, and unlimited spaces.
+- One paid plan — €27/month or €270/year (2 months free): unlocks Booking, MCP access, analytics, and unlimited spaces.
 - Machine-readable pricing: https://nandzz.com/pricing.md
 - Human pricing page: https://nandzz.com/pricing
 

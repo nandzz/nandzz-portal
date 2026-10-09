@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isReservedUsername } from "@/lib/layout/appShell";
 
 // Input schema for the setup-username profile claim Server Action. Runs at the
 // POST-reachable action boundary, so it validates untrusted client input before
@@ -8,7 +9,8 @@ import { z } from "zod";
 export const claimSignupProfileSchema = z.object({
   username: z
     .string()
-    .regex(/^[a-z0-9_-]{3,30}$/),
+    .regex(/^[a-z0-9_-]{3,30}$/)
+    .refine((u) => !isReservedUsername(u)),
   displayName: z.string().max(50).nullable(),
 });
 

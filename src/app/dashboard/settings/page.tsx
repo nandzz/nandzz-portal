@@ -29,15 +29,20 @@ import {
   DeleteAccount,
 } from "@/features/auth";
 import { setAccountType } from "@/features/analytics/auth";
+import { DataExport } from "@/features/legal/components/DataExport";
 import type { AccountType, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/features/auth/AuthContext";
 import { SUPPORTED_LOCALES, LOCALE_LABELS } from "@/lib/i18n/translations";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { t, locale, setLocale } = useLanguage();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
+  // Seeded from the SSR'd chrome profile so the page paints immediately; the
+  // fetch below only refreshes it.
+  const { profile: chromeProfile } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(chromeProfile);
   const [switchOpen, setSwitchOpen] = useState(false);
 
   const accountType: AccountType = profile?.account_type ?? "personal";
@@ -230,6 +235,7 @@ export default function SettingsPage() {
             </TabsContent>
           </Tabs>
 
+          <DataExport />
           <DeleteAccount username={profile.username} />
         </div>
       </div>

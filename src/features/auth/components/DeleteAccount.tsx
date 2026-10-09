@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { signOutUser } from "../auth";
+import { getLegalUi } from "@/features/legal/i18n";
 
 // Danger-zone account deletion, extracted from the settings page. The actual
 // deletion stays a real HTTP endpoint (`DELETE /api/account/delete`) because it
@@ -16,7 +17,7 @@ import { signOutUser } from "../auth";
 // the feature guardrail).
 export function DeleteAccount({ username }: { username: string }) {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -80,6 +81,7 @@ export function DeleteAccount({ username }: { username: string }) {
               return <>{before}<span className="font-mono font-semibold text-foreground">{username}</span>{after}</>;
             })()}
           </p>
+          <p className="text-sm text-muted-foreground">{getLegalUi(locale).deleteConsequences}</p>
           <input
             type="text"
             value={deleteConfirm}

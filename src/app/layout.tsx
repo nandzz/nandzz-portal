@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeColorSync } from "@/components/theme-color-sync";
@@ -11,7 +11,12 @@ import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { getChromeProfile } from "@/features/analytics/server";
 import { getFeatureFlags } from "@/lib/featureFlags";
-import type { Profile } from "@/lib/types";
+import { getEntitlementsForSlug } from "@/lib/plan";
+import { SIDEBAR_COLLAPSED_COOKIE } from "@/lib/layout/appShell";
+import { cookies } from "next/headers";
+import { TermsUpdateBanner } from "@/features/legal";
+import { getTermsAcceptanceStatus } from "@/features/legal/server";
+import type { PlanEntitlements, Profile } from "@/lib/types";
 import "./globals.css";
 
 const inter = Inter({
@@ -61,7 +66,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "link in bio with booking",
       "get found and booked",
       "small business scheduling",
-      "booking widget",
+      "social platform for businesses",
     ],
     authors: [{ name: "nandzz" }],
     creator: "nandzz",
@@ -95,10 +100,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = {
-  themeColor: "#ffffff",
-};
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -111,11 +112,22 @@ export default async function RootLayout({
   const initialUserId = claimsData?.claims?.sub ?? null;
 
   let initialProfile: Profile | null = null;
+  let initialEntitlements: PlanEntitlements | undefined;
+  let needsTermsAcceptance = false;
   if (initialUserId) {
-    initialProfile = await getChromeProfile(supabase, initialUserId);
+    const [profile, terms] = await Promise.all([
+      getChromeProfile(supabase, initialUserId),
+      getTermsAcceptanceStatus(supabase, initialUserId),
+    ]);
+    initialProfile = profile;
+    initialEntitlements = await getEntitlementsForSlug(profile?.plan_slug);
+    // Only users who finished signup (have a profile) are asked to re-accept;
+    // mid-signup users accept when they claim their username.
+    needsTermsAcceptance = !!profile && terms.needsAcceptance;
   }
 
   const initialFlags = await getFeatureFlags();
+  const initialSidebarCollapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE)?.value === "1";
 
   return (
     <html
@@ -133,8 +145,14 @@ export default async function RootLayout({
           <ThemeColorSync />
           <LanguageProvider initialLocale={initialLocale}>
             <ChromeProvider>
-              <AuthProvider initialUserId={initialUserId} initialProfile={initialProfile} initialFlags={initialFlags}>
-                <AppChrome>{children}</AppChrome>
+              <AuthProvider
+                initialUserId={initialUserId}
+                initialProfile={initialProfile}
+                initialEntitlements={initialEntitlements}
+                initialFlags={initialFlags}
+              >
+                <AppChrome initialCollapsed={initialSidebarCollapsed}>{children}</AppChrome>
+                {needsTermsAcceptance && <TermsUpdateBanner />}
               </AuthProvider>
             </ChromeProvider>
           </LanguageProvider>

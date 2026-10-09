@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { claimSignupProfileSchema } from "../schemas";
+import { acceptCurrentTerms } from "@/features/legal/actions/accept-terms";
 
 export type ClaimSignupProfileResult =
   | { ok: true }
@@ -49,6 +50,11 @@ export async function claimSignupProfile(input: {
     }
     return { ok: false, error: "FAILED", message: error.message };
   }
+
+  // The signup step shows the click-wrap Terms/Privacy notice next to its
+  // button, so completing it records acceptance of the current version. A
+  // failure here never blocks signup — the re-acceptance banner catches it.
+  await acceptCurrentTerms().catch(() => undefined);
 
   return { ok: true };
 }

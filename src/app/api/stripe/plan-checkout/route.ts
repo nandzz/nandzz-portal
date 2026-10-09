@@ -7,6 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
+import { checkoutLegalParams } from "@/lib/stripe/legal";
 
 export async function POST(request: Request) {
   if (!isStripeConfigured()) {
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
     success_url: `${siteUrl}/dashboard/credits?subscribed=1`,
     cancel_url: `${siteUrl}/dashboard/credits?canceled=1`,
     allow_promotion_codes: true,
+    ...(await checkoutLegalParams("subscription", siteUrl)),
     metadata,
     subscription_data: subscriptionData,
   });

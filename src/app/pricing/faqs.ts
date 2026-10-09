@@ -8,7 +8,7 @@ export type PricingFaq = { q: string; a: string; ai?: boolean };
 export const pricingFaqs: PricingFaq[] = [
   {
     q: "What's included?",
-    a: "The Free plan lets you build a branded page with up to 25 spaces and content sections. The paid plan — €27/month or €270/year (2 months free) — unlocks Booking and the AI Agent, analytics, MCP access and unlimited spaces.",
+    a: "The Free plan lets you build a branded page with up to 25 spaces and content sections. The paid plan — €27/month or €270/year (2 months free) — unlocks Booking, analytics, MCP access and unlimited spaces.",
   },
   {
     q: "How do AI credits work?",

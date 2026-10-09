@@ -26,7 +26,7 @@ import { setAccountType } from "../auth";
 import { useAuth } from "@/features/auth/AuthContext";
 
 export function Navbar() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme: theme, setTheme } = useTheme();
   const { t } = useLanguage();
   const { isHidden } = useChrome();
   const { userId, profile, entitlements, flags } = useAuth();

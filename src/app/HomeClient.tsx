@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, Check, FileText, Layers, Sparkles, X } from "lucide-react";
+import { ArrowRight, Calendar, Check, FileText, Link2, Sparkles, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function HomeClient() {
   const { t } = useLanguage();
 
-  const widgets = [
-    { icon: Calendar, title: t.home.widgetBookingTitle, desc: t.home.widgetBookingDesc, live: true },
-    { icon: FileText, title: t.home.widgetContentTitle, desc: t.home.widgetContentDesc, live: true },
-    { icon: Layers, title: t.home.widgetPoolsTitle, desc: t.home.widgetPoolsDesc, live: true },
-    { icon: Sparkles, title: t.home.widgetsMore, desc: "", live: false },
+  const features = [
+    { icon: Calendar, title: t.home.featureBookingTitle, desc: t.home.featureBookingDesc, live: true },
+    { icon: FileText, title: t.home.featureContentTitle, desc: t.home.featureContentDesc, live: true },
+    { icon: Link2, title: t.home.featureLinksTitle, desc: t.home.featureLinksDesc, live: true },
+    { icon: Sparkles, title: t.home.featuresMore, desc: "", live: false },
   ];
 
   const audienceExamples = t.home.audienceExamples.split(",").map((s) => s.trim());
@@ -99,12 +99,12 @@ export function HomeClient() {
                     </div>
                   </div>
 
-                  {/* Booking widget block */}
+                  {/* Booking block */}
                   <div className="rounded-lg border border-violet-200 dark:border-violet-800/60 bg-violet-50/60 dark:bg-violet-900/20 p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-violet-500" />
                       <span className="text-[11px] font-medium text-violet-700 dark:text-violet-300">
-                        {t.home.widgetBookingTitle}
+                        {t.home.featureBookingTitle}
                       </span>
                     </div>
                     <span className="rounded-md bg-violet-600 px-2.5 py-1 text-[10px] font-semibold text-white">
@@ -125,14 +125,14 @@ export function HomeClient() {
         </div>
       </section>
 
-      {/* Widget suite */}
+      {/* Feature suite */}
       <section className="mx-auto max-w-7xl px-4 pb-20">
         <div className="mb-10 max-w-2xl">
-          <h2 className="text-3xl font-bold tracking-tight">{t.home.widgetsTitle}</h2>
-          <p className="mt-3 text-muted-foreground text-lg">{t.home.widgetsDesc}</p>
+          <h2 className="text-3xl font-bold tracking-tight">{t.home.featuresTitle}</h2>
+          <p className="mt-3 text-muted-foreground text-lg">{t.home.featuresDesc}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {widgets.map(({ icon: Icon, title, desc, live }) => (
+          {features.map(({ icon: Icon, title, desc, live }) => (
             <div
               key={title}
               className={`rounded-2xl border p-5 transition-colors ${
@@ -181,7 +181,7 @@ export function HomeClient() {
             ))}
           </div>
 
-          {/* Not a fit yet — set expectations before signup */}
+          {/* Not a fit — set expectations before signup */}
           <div className="mt-12 rounded-2xl border border-dashed border-border/70 bg-background/40 px-5 py-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
               {t.home.audienceNotYetLabel}
@@ -200,13 +200,6 @@ export function HomeClient() {
             <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground leading-relaxed">
               {t.home.audienceNotYetNote}
             </p>
-            <Link
-              href="/contact"
-              className="mt-3 inline-flex items-center text-sm font-medium text-violet-600 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-            >
-              {t.home.audienceNotYetCta}
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
           </div>
         </div>
       </section>

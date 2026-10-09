@@ -113,3 +113,11 @@ export async function getUserEntitlements(userId: string): Promise<PlanEntitleme
   return plan.entitlements;
 }
 
+
+// Entitlements for a known plan slug, from the cached catalog. Lets the root
+// layout seed the chrome's gating on first paint (no client round-trip, no
+// nav items popping in after load).
+export async function getEntitlementsForSlug(slug: string | null | undefined): Promise<PlanEntitlements> {
+  const plan = (await loadPlansBySlug(createAdminClient())).get(slug ?? "free");
+  return plan ? entitlementsFromPlan(plan) : FREE_FALLBACK.entitlements;
+}

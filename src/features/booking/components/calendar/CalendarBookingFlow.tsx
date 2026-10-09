@@ -23,6 +23,7 @@ import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
 import { AuthModal, type AuthResult } from "@/features/auth";
 import { getBookingViewer, getBookingSession, type BookingViewer } from "../../viewer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { BookingPrivacyNotice } from "@/features/legal/components/BookingPrivacyNotice";
 
 // How far out the calendar lets visitors book. Wider than the old flat list so
 // the month grid feels real; the availability API caps `days` at 60.
@@ -147,7 +148,9 @@ export function CalendarBookingFlow({
   // so the visitor isn't scolded mid-typing.
   const [touchedEmail, setTouchedEmail] = useState(false);
   const [touchedPhone, setTouchedPhone] = useState(false);
-  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
+  // GDPR: consent must be an affirmative act, so the reminder opt-in starts
+  // unticked.
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manageUrl, setManageUrl] = useState<string | null>(null);
@@ -1169,6 +1172,7 @@ export function CalendarBookingFlow({
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {t.booking.confirmBooking}
           </button>
+          <BookingPrivacyNotice businessName={businessName} />
         </div>
       )}
 

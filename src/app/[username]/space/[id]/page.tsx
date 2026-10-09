@@ -29,6 +29,7 @@ import { ViewTracker } from "@/features/spaces";
 import { IdleChromeActivator } from "@/contexts/ChromeContext";
 import { isOwnSpaceHtmlUrl } from "@/lib/spaces/html-url";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { ReportLink } from "@/features/legal/components/ReportLink";
 
 function hasDownloadableContent(html: string): boolean {
   return (
@@ -297,6 +298,9 @@ export default async function SpaceViewPage({
                 <span className="hidden sm:inline">Download PDF</span>
               </Button>
             </a>
+          )}
+          {!isOwner && (
+            <ReportLink path={`/${username}/space/${space.id}`} className="px-2" />
           )}
           {isOwner && (
             <SpaceOwnerMenu
