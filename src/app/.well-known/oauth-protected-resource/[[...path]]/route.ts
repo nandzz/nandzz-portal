@@ -11,18 +11,15 @@ export async function OPTIONS() {
 // `/.well-known/oauth-protected-resource` between origin and resource path,
 // so both `/.well-known/oauth-protected-resource` and
 // `/.well-known/oauth-protected-resource/api/mcp` must return the same doc.
+// (The admin connector lives on the admin site, not here.)
 export async function GET(req: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || new URL(req.url).origin;
-  // The admin MCP (/api/mcp-admin) is a separate resource with its own scope.
-  const subpath = new URL(req.url).pathname.replace(/^\/\.well-known\/oauth-protected-resource/, "").replace(/\/$/, "");
-  const isAdmin = subpath === "/api/mcp-admin";
-  const resource = isAdmin ? `${origin}/api/mcp-admin` : `${origin}/api/mcp`;
 
   return withCors(NextResponse.json({
-    resource,
+    resource: `${origin}/api/mcp`,
     authorization_servers: [origin],
     bearer_methods_supported: ["header"],
     resource_documentation: `${origin}/mcp`,
-    scopes_supported: isAdmin ? ["admin"] : ["publish", "read"],
+    scopes_supported: ["publish", "read"],
   }));
 }

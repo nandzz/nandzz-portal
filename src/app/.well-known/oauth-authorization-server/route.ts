@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     grant_types_supported: ["authorization_code"],
     code_challenge_methods_supported: ["S256"],
     token_endpoint_auth_methods_supported: ["none"],
-    scopes_supported: ["publish", "read", "admin"],
+    scopes_supported: ["publish", "read"],
     // RFC 9207: signals to clients that authorization responses include `iss`.
     // Strict OAuth 2.1 clients (Anthropic's) require this or they silently
     // discard the callback.

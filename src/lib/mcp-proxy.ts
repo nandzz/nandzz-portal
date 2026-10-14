@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Proxies Portal MCP routes (/api/mcp, /api/mcp-admin) to their Supabase Edge
+// Proxies the Portal MCP route (/api/mcp) to its Supabase Edge
 // function. See src/app/api/mcp/route.ts for why the proxy exists.
 
 const CORS = {

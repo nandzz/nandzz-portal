@@ -5,8 +5,9 @@ import { toolDefinitions, toolHandlers } from "./registry.ts";
 import type { Ctx, ToolResult } from "../mcp/tools/types.ts";
 
 // Admin-only MCP server (Nandzz demo accounts). Same JSON-RPC shell as the
-// public `mcp` function, but a separate endpoint (nandzz.com/api/mcp-admin)
-// and token audience: only tokens minted with the `admin` scope by a Nandzz
+// public `mcp` function, but a separate endpoint hosted by the ADMIN site
+// (admin.nandzz.com/api/mcp — it also serves the OAuth discovery, consent and
+// token routes) and a separate token audience: only tokens minted with the `admin` scope by a Nandzz
 // admin are accepted (mcp_verify_admin_token), and the public endpoint
 // rejects those tokens. Every request — initialize included — is authed.
 
@@ -20,8 +21,8 @@ const CORS = {
 const PROTOCOL_VERSION = "2025-06-18";
 const SERVER_INFO = { name: "nandzz-admin-mcp", version: "0.1.0" };
 
-const PORTAL_ORIGIN = Deno.env.get("PORTAL_ORIGIN") ?? "https://nandzz.com";
-const RESOURCE_METADATA_URL = `${PORTAL_ORIGIN}/.well-known/oauth-protected-resource/api/mcp-admin`;
+const ADMIN_ORIGIN = (Deno.env.get("ADMIN_ORIGIN") ?? "https://admin.nandzz.com").replace(/\/$/, "");
+const RESOURCE_METADATA_URL = `${ADMIN_ORIGIN}/.well-known/oauth-protected-resource/api/mcp`;
 const WWW_AUTHENTICATE = `Bearer resource_metadata="${RESOURCE_METADATA_URL}", scope="admin"`;
 
 const INSTRUCTIONS =

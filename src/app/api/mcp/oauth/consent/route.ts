@@ -71,24 +71,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
 
-  // The `admin` scope (admin MCP connector) is only grantable by Nandzz admins
-  // and is never mixed with user scopes — admin tokens are a separate audience.
-  let grantedScopes = scopes.filter((s) => s !== "admin");
-  if (scopes.includes("admin")) {
-    const { data: me } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
-    if (!me?.is_admin) {
-      return NextResponse.redirect(
-        appendQuery(redirectUri, {
-          error: "access_denied",
-          error_description: "Admin access only",
-          state,
-          iss: issuer,
-        }),
-        303
-      );
-    }
-    grantedScopes = ["admin"];
-  }
+  // The `admin` scope belongs to the admin connector (admin.nandzz.com) and is
+  // never grantable here.
+  const grantedScopes = scopes.filter((s) => s !== "admin");
 
   const { data: code, error } = await supabase.rpc("mcp_issue_oauth_code", {
     p_client_id: clientId,

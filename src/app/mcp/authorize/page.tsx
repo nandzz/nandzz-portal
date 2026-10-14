@@ -23,24 +23,7 @@ const SCOPE_LABELS: Record<string, string[]> = {
     "Edit content title, description, hashtags, or visibility",
   ],
   read: ["List your collections"],
-  admin: [
-    "Create and edit Nandzz demo profiles",
-    "Publish content to demo profiles",
-    "Generate claim codes for demo profiles",
-  ],
 };
-
-// Admin MCP (/api/mcp-admin) requests are recognised by the RFC 8707
-// `resource` param or an explicit `admin` scope. They get an admin-only token.
-function isAdminRequest(sp: SP): boolean {
-  const scopes = (sp.scope ?? "").split(/\s+/);
-  if (scopes.includes("admin")) return true;
-  try {
-    return !!sp.resource && new URL(sp.resource).pathname.replace(/\/$/, "") === "/api/mcp-admin";
-  } catch {
-    return false;
-  }
-}
 
 export default async function AuthorizePage({
   searchParams,
@@ -101,21 +84,9 @@ export default async function AuthorizePage({
   try {
     redirectHost = new URL(sp.redirect_uri).host || sp.redirect_uri;
   } catch {}
-  const adminRequest = isAdminRequest(sp);
-  if (adminRequest) {
-    const { data: me } = await admin.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
-    if (!me?.is_admin) {
-      return (
-        <ErrorCard
-          title="Admin access only"
-          detail="The Nandzz admin connector can only be authorized by a Nandzz admin account."
-        />
-      );
-    }
-  }
-  const scopes = adminRequest
-    ? ["admin"]
-    : (sp.scope ?? "publish read").split(/\s+/).filter((s) => s && s !== "admin");
+  // The `admin` scope belongs to the admin connector (admin.nandzz.com) and is
+  // never grantable here.
+  const scopes = (sp.scope ?? "publish read").split(/\s+/).filter((s) => s && s !== "admin");
 
   return (
     <div className="relative flex min-h-[calc(100dvh-8rem)] items-center justify-center px-4 py-8">

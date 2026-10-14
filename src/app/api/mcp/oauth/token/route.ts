@@ -7,8 +7,6 @@ export async function OPTIONS() {
   return corsPreflight();
 }
 
-const ADMIN_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
 function err(code: string, description: string, status = 400) {
   return withCors(NextResponse.json({ error: code, error_description: description }, { status }));
 }
@@ -76,21 +74,23 @@ export async function POST(req: NextRequest) {
     return err("invalid_grant", "Code not found");
   }
 
+  // Admin-scoped codes are only exchangeable on the admin site's token endpoint.
+  if ((row.scopes as string[]).includes("admin")) {
+    console.warn(`[mcp-token][${rid}] rejected admin-scoped code`);
+    return err("invalid_grant", "Admin codes are not valid here");
+  }
+
   const expected = await sha256B64Url(p.code_verifier);
   if (expected !== row.code_challenge) {
     console.warn(`[mcp-token][${rid}] PKCE mismatch`);
     return err("invalid_grant", "PKCE verification failed");
   }
 
-  // Admin MCP tokens are short-lived (7 days); user tokens don't expire.
-  const isAdminToken = (row.scopes as string[]).includes("admin");
-  const expiresAt = isAdminToken ? new Date(Date.now() + ADMIN_TOKEN_TTL_MS).toISOString() : null;
-
   const { data: tokenRow, error: tokErr } = await admin.rpc("mcp_issue_token_for_user", {
     p_user_id: row.user_id,
-    p_name: isAdminToken ? "Admin OAuth grant" : "OAuth grant",
+    p_name: "OAuth grant",
     p_scopes: row.scopes,
-    p_expires_at: expiresAt,
+    p_expires_at: null,
   });
   if (tokErr) {
     console.error(`[mcp-token][${rid}] issue_token_for_user failed err="${safe(tokErr.message)}"`);
@@ -103,6 +103,5 @@ export async function POST(req: NextRequest) {
     access_token: t.token,
     token_type: "Bearer",
     scope: (row.scopes as string[]).join(" "),
-    ...(isAdminToken ? { expires_in: ADMIN_TOKEN_TTL_MS / 1000 } : {}),
   }));
 }
