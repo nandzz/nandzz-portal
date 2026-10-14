@@ -150,3 +150,24 @@ Deno.test("buildCalendarConfig: booking settings validated", () => {
   assertThrows(() => buildCalendarConfig({ timezone: "UTC" }, { whatsapp_reminder_hours: 5 }));
   assertThrows(() => buildCalendarConfig({ timezone: "UTC" }, { whatsapp_contact_phone: "12345" }));
 });
+
+Deno.test("buildProfilePatch: address, page colors, styles, section flags", () => {
+  const p = buildProfilePatch({
+    address: { formatted: " Via Roma 1, Torino ", lat: 45, lng: 7.6, extra: "x" },
+    background_color: "#1A0B2E",
+    text_color: null,
+    booking_button_style: { variant: "solid", color: "#C026D3" },
+    social_links_style: { tone: "brand" },
+    show_gallery: false,
+  });
+  assertEquals(p.address, { formatted: "Via Roma 1, Torino", lat: 45, lng: 7.6 });
+  assertEquals(p.background_color, "#1a0b2e");
+  assertEquals(p.text_color, null);
+  assertEquals(p.booking_button_style, { variant: "solid", shape: "pill", size: "md", color: "#c026d3" });
+  assertEquals(p.social_links_style, { layout: "icons", shape: "rounded", size: "md", tone: "brand" });
+  assertEquals(p.show_gallery, false);
+  assertThrows(() => buildProfilePatch({ address: { place_id: "x" } }));
+  assertThrows(() => buildProfilePatch({ button_color: "#fff" }));
+  assertThrows(() => buildProfilePatch({ booking_button_style: { variant: "neon" } }));
+  assertThrows(() => buildProfilePatch({ bio: "x".repeat(501) }));
+});

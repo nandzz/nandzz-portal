@@ -26,8 +26,11 @@ const WWW_AUTHENTICATE = `Bearer resource_metadata="${RESOURCE_METADATA_URL}", s
 
 const INSTRUCTIONS =
   "Nandzz admin tools for building demo profiles for prospective client businesses. " +
-  "Typical flow: create_demo_profile → add content with publish_link / publish_image / publish_html / publish_pdf " +
-  "(always pass demo_profile_id) → optionally configure_booking_widget (services, hours, staff, locations — demo profiles accept real bookings) → review at the profile URL → create_claim_code and hand the claim link to the business. " +
+  "Typical flow: create_demo_profile (fill the WHOLE profile: profile picture, address, social links, page colors " +
+  "from the business's brand — not just the bio) → add content with publish_link / publish_image / publish_html / publish_pdf " +
+  "(always pass demo_profile_id) → optionally configure_booking_widget (services, hours, staff, locations — demo profiles accept real bookings) → review with get_demo_profile (fix with update_demo_profile / delete_space) → create_claim_code and hand the claim link to the business. " +
+  "Rules: the address goes in the profile `address` field (not a Google Maps link); opening hours go in the booking " +
+  "widget (not the bio); keep the bio to what the business does. " +
   "These tools only ever act on demo profiles, never on real user accounts.";
 
 type JsonRpcRequest = {

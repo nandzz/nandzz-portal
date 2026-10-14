@@ -1,5 +1,10 @@
 import type { Ctx, ToolDefinition, ToolHandler, ToolResult } from "../../mcp/tools/types.ts";
-import { fetchBytes, resolveFileInput, type OpenAIFileInput } from "../../mcp/tools/_shared.ts";
+import {
+  fetchBytes,
+  openAIFileParamSchema,
+  resolveFileInput,
+  type OpenAIFileInput,
+} from "../../mcp/tools/_shared.ts";
 
 // Portal origin used to build public profile + claim links.
 export const PORTAL_ORIGIN = Deno.env.get("PORTAL_ORIGIN") ?? "https://nandzz.com";
@@ -102,20 +107,72 @@ const SOCIAL_KEYS = ["instagram", "linkedin", "twitter", "github", "email", "you
 const BRAND_COLOR_KEYS = ["primary", "accent", "background"] as const;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
+const hexProp = (description: string) => ({ type: "string", pattern: "^#[0-9a-fA-F]{6}$", description });
+
 export const profileFieldProps = {
-  display_name: { type: "string", description: "Business / display name shown on the profile." },
-  tagline: { type: "string", description: "Short one-line tagline under the name." },
-  bio: { type: "string", description: "Profile bio (a few sentences)." },
+  display_name: { type: "string", description: "Business / display name shown on the profile (max 50)." },
+  tagline: { type: "string", description: "Short one-line tagline under the name (max 100)." },
+  bio: {
+    type: "string",
+    description:
+      "Profile bio, max 500 chars. Describe the business only — do NOT put the address (use `address`), " +
+      "opening hours (configure_booking_widget) or contact handles (use `social_links`) here.",
+  },
   website_url: { type: "string", format: "uri", description: "Business website (https)." },
   social_links: {
     type: "object",
-    description: "Social handles/URLs. Keys: instagram, linkedin, twitter, github, email, youtube, whatsapp.",
+    description:
+      "Social handles/URLs shown as buttons. Keys: instagram, linkedin, twitter, github, email, youtube, " +
+      "whatsapp (E.164, e.g. +393931234567).",
     properties: Object.fromEntries(SOCIAL_KEYS.map((k) => [k, { type: "string" }])),
+    additionalProperties: false,
+  },
+  address: {
+    type: "object",
+    description:
+      "Business address, shown as an address pill under the bio that opens Google Maps. Use this instead of a " +
+      "'directions' link. place_id (Google Places) pins the exact place; lat/lng optional.",
+    required: ["formatted"],
+    properties: {
+      formatted: { type: "string", description: "Full address, e.g. 'Via Cardinal Massaia 44, 10147 Torino TO, Italia'." },
+      place_id: { type: "string" },
+      lat: { type: "number" },
+      lng: { type: "number" },
+    },
+    additionalProperties: false,
+  },
+  background_color: hexProp(
+    "Profile page background (#RRGGBB). Also locks the page to light/dark by its brightness. Pick from the business's brand.",
+  ),
+  button_color: hexProp("Surface color of the social buttons and address pill (#RRGGBB)."),
+  text_color: hexProp("Color of the header texts: name, handle, tagline, bio (#RRGGBB). Must contrast with background_color."),
+  booking_button_style: {
+    type: "object",
+    description: "Look of the 'Book now' button. Omitted keys use the defaults (soft / pill / md / emerald).",
+    properties: {
+      variant: { type: "string", enum: ["soft", "solid", "outline", "glass"] },
+      shape: { type: "string", enum: ["pill", "rounded", "square"] },
+      size: { type: "string", enum: ["md", "lg"] },
+      color: hexProp("Button color (#RRGGBB), usually the brand primary."),
+    },
+    additionalProperties: false,
+  },
+  social_links_style: {
+    type: "object",
+    description: "Look of the social link buttons.",
+    properties: {
+      layout: { type: "string", enum: ["icons", "chips", "stack", "minimal"] },
+      shape: { type: "string", enum: ["pill", "rounded", "square"] },
+      size: { type: "string", enum: ["md", "lg"] },
+      tone: { type: "string", enum: ["default", "brand", "filled"] },
+    },
     additionalProperties: false,
   },
   brand_colors: {
     type: "object",
-    description: "Brand colors as #RRGGBB hex. Keys: primary, accent, background.",
+    description:
+      "Brand colors (#RRGGBB) used in booking emails — NOT the profile page (use background_color / button_color / " +
+      "text_color / booking_button_style for that). Keys: primary, accent, background.",
     properties: Object.fromEntries(BRAND_COLOR_KEYS.map((k) => [k, { type: "string" }])),
     additionalProperties: false,
   },
@@ -123,9 +180,26 @@ export const profileFieldProps = {
   avatar_url: {
     type: "string",
     format: "uri",
-    description: "https URL of the logo/avatar image to fetch (jpeg/png/webp, ≤5MB).",
+    description:
+      "https URL of the profile picture / logo (jpeg/png/webp, ≤5MB) — e.g. the business's Instagram/Google/website " +
+      "logo. Square images work best. Very important: a profile without a picture looks unfinished.",
   },
+  avatar_file: {
+    ...openAIFileParamSchema,
+    description: "Profile picture as an uploaded file. Takes precedence over avatar_url.",
+  },
+  cover_image_url: {
+    type: "string",
+    format: "uri",
+    description: "https URL of a wide cover/background image for the top of the profile (jpeg/png/webp, ≤5MB), e.g. a salon interior photo.",
+  },
+  show_contents: { type: "boolean", description: "Show the Publications section (default true)." },
+  show_gallery: { type: "boolean", description: "Show the Gallery section (default true)." },
+  show_links: { type: "boolean", description: "Show the Links section (default true)." },
 } as const;
+
+// Tools that take profileFieldProps advertise avatar_file to the ChatGPT runtime.
+export const profileFieldsMeta = { "openai/fileParams": ["avatar_file"] };
 
 function optStr(v: unknown, field: string, max: number): string | null | undefined {
   if (v === undefined) return undefined;
@@ -141,9 +215,11 @@ export function buildProfilePatch(a: Record<string, unknown>): Record<string, un
   const patch: Record<string, unknown> = {};
   const set = (k: string, v: unknown) => { if (v !== undefined) patch[k] = v; };
 
-  set("display_name", optStr(a.display_name, "display_name", 80));
-  set("tagline", optStr(a.tagline, "tagline", 160));
-  set("bio", optStr(a.bio, "bio", 2000));
+  // Limits mirror updateProfileInfoSchema so the owner can still edit the
+  // values in EditProfileDialog after claiming.
+  set("display_name", optStr(a.display_name, "display_name", 50));
+  set("tagline", optStr(a.tagline, "tagline", 100));
+  set("bio", optStr(a.bio, "bio", 500));
   set("brand_description", optStr(a.brand_description, "brand_description", 2000));
 
   const site = optStr(a.website_url, "website_url", 500);
@@ -189,7 +265,112 @@ export function buildProfilePatch(a: Record<string, unknown>): Record<string, un
     }
   }
 
+  for (const k of ["background_color", "button_color", "text_color"] as const) {
+    const v = a[k];
+    if (v === undefined) continue;
+    if (v === null || v === "") patch[k] = null;
+    else if (typeof v === "string" && HEX_RE.test(v)) patch[k] = v.toLowerCase();
+    else throw new Error(`${k} must be #RRGGBB.`);
+  }
+
+  if (a.address !== undefined) {
+    if (a.address === null) {
+      patch.address = null;
+    } else if (typeof a.address === "object") {
+      const ad = a.address as Record<string, unknown>;
+      const formatted = optStr(ad.formatted, "address.formatted", 300);
+      if (!formatted) throw new Error("address.formatted is required.");
+      const out: Record<string, unknown> = { formatted };
+      const placeId = optStr(ad.place_id, "address.place_id", 300);
+      if (placeId) out.place_id = placeId;
+      if (typeof ad.lat === "number" && typeof ad.lng === "number") {
+        if (Math.abs(ad.lat) > 90 || Math.abs(ad.lng) > 180) throw new Error("address lat/lng out of range.");
+        out.lat = ad.lat;
+        out.lng = ad.lng;
+      }
+      patch.address = out;
+    } else {
+      throw new Error("address must be an object with `formatted`.");
+    }
+  }
+
+  setEnumObject(patch, a, "booking_button_style", {
+    variant: ["soft", "solid", "outline", "glass"],
+    shape: ["pill", "rounded", "square"],
+    size: ["md", "lg"],
+  }, { variant: "soft", shape: "pill", size: "md" }, true);
+  setEnumObject(patch, a, "social_links_style", {
+    layout: ["icons", "chips", "stack", "minimal"],
+    shape: ["pill", "rounded", "square"],
+    size: ["md", "lg"],
+    tone: ["default", "brand", "filled"],
+  }, { layout: "icons", shape: "rounded", size: "md", tone: "default" }, false);
+
+  for (const k of ["show_contents", "show_gallery", "show_links"] as const) {
+    if (a[k] === undefined) continue;
+    if (typeof a[k] !== "boolean") throw new Error(`${k} must be a boolean.`);
+    patch[k] = a[k];
+  }
+
   return patch;
+}
+
+// Validate a style jsonb ({key: enum, ...} plus optional hex `color`) and fill
+// omitted keys with the UI defaults, so the stored shape matches what the
+// Style picker writes.
+function setEnumObject(
+  patch: Record<string, unknown>,
+  a: Record<string, unknown>,
+  field: string,
+  enums: Record<string, readonly string[]>,
+  defaults: Record<string, string>,
+  withColor: boolean,
+): void {
+  const v = a[field];
+  if (v === undefined) return;
+  if (v === null) { patch[field] = null; return; }
+  if (typeof v !== "object") throw new Error(`${field} must be an object.`);
+  const src = v as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, allowed] of Object.entries(enums)) {
+    const val = src[k] ?? defaults[k];
+    if (typeof val !== "string" || !allowed.includes(val)) {
+      throw new Error(`${field}.${k} must be one of: ${allowed.join(", ")}.`);
+    }
+    out[k] = val;
+  }
+  if (withColor) {
+    const c = src.color;
+    if (c === undefined || c === null || c === "") out.color = null;
+    else if (typeof c === "string" && HEX_RE.test(c)) out.color = c.toLowerCase();
+    else throw new Error(`${field}.color must be #RRGGBB.`);
+  }
+  patch[field] = out;
+}
+
+// Resolve avatar_file / avatar_url / cover_image_url args into uploaded public
+// URLs on the patch. null clears.
+export async function applyProfileImages(
+  ctx: Ctx,
+  demoId: string,
+  a: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  if (a.avatar_file && typeof a.avatar_file === "object") {
+    patch.avatar_url = await uploadDemoAvatar(ctx, demoId, { file: a.avatar_file as OpenAIFileInput });
+  } else if (typeof a.avatar_url === "string" && a.avatar_url) {
+    patch.avatar_url = await uploadDemoAvatar(ctx, demoId, { url: a.avatar_url });
+  } else if (a.avatar_url === null) {
+    patch.avatar_url = null;
+  }
+
+  if (typeof a.cover_image_url === "string" && a.cover_image_url) {
+    patch.background_url = await uploadDemoCover(ctx, demoId, a.cover_image_url);
+    patch.background_position = "50% 50%";
+  } else if (a.cover_image_url === null) {
+    await removeDemoCovers(ctx, demoId);
+    patch.background_url = null;
+  }
 }
 
 const AVATAR_MAX = 5 * 1024 * 1024;
@@ -221,6 +402,30 @@ export async function uploadDemoAvatar(
   if (error) throw new Error(`Avatar upload failed: ${error.message}`);
   const { data } = ctx.admin.storage.from("avatars").getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;
+}
+
+// Cover image → profile-backgrounds/<demoId>/background-<ts>.<ext>, same
+// convention as uploadBackground in src/features/profile/storage.ts (old files
+// removed first so storage doesn't accumulate).
+async function removeDemoCovers(ctx: Ctx, demoId: string): Promise<void> {
+  const { data } = await ctx.admin.storage.from("profile-backgrounds").list(demoId);
+  if (data && data.length > 0) {
+    await ctx.admin.storage.from("profile-backgrounds").remove(data.map((f) => `${demoId}/${f.name}`));
+  }
+}
+
+async function uploadDemoCover(ctx: Ctx, demoId: string, url: string): Promise<string> {
+  const fetched = await fetchBytes(url, AVATAR_MAX);
+  const contentType = fetched.contentType.split(";")[0].trim().toLowerCase();
+  const ext = AVATAR_TYPES[contentType];
+  if (!ext) throw new Error(`Unsupported cover type: ${contentType} (use jpeg, png or webp).`);
+  await removeDemoCovers(ctx, demoId);
+  const path = `${demoId}/background-${Date.now()}.${ext}`;
+  const { error } = await ctx.admin.storage
+    .from("profile-backgrounds")
+    .upload(path, fetched.bytes, { contentType });
+  if (error) throw new Error(`Cover upload failed: ${error.message}`);
+  return ctx.admin.storage.from("profile-backgrounds").getPublicUrl(path).data.publicUrl;
 }
 
 // ── Claim codes ────────────────────────────────────────────────────────────

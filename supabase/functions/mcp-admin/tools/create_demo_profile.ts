@@ -2,10 +2,11 @@ import type { ToolDefinition, ToolHandler } from "../../mcp/tools/types.ts";
 import {
   buildProfilePatch,
   errorResult,
+  applyProfileImages,
   profileFieldProps,
+  profileFieldsMeta,
   profileUrl,
   textResult,
-  uploadDemoAvatar,
   validateUsername,
 } from "./_demo.ts";
 
@@ -14,6 +15,9 @@ export const createDemoProfileDef: ToolDefinition = {
   description:
     "Create a new public demo profile on Nandzz for a prospective client business (nandzz.com/<username>). " +
     "The profile is owned by a placeholder account until the business claims it with a code from create_claim_code. " +
+    "Fill the WHOLE profile, not just the bio: profile picture (avatar_url — essential), address, social_links, " +
+    "page colors matching the business's brand (background_color / button_color / text_color / booking_button_style), " +
+    "optional cover_image_url. Opening hours go in configure_booking_widget, not the bio. " +
     "Returns demo_profile_id — pass it to the other tools to fill the profile with content.",
   inputSchema: {
     type: "object",
@@ -27,6 +31,7 @@ export const createDemoProfileDef: ToolDefinition = {
     },
     additionalProperties: false,
   },
+  _meta: profileFieldsMeta,
 };
 
 export const createDemoProfile: ToolHandler = async (args, ctx) => {
@@ -61,9 +66,7 @@ export const createDemoProfile: ToolHandler = async (args, ctx) => {
   const demoId = created.user.id;
 
   try {
-    if (typeof args.avatar_url === "string" && args.avatar_url) {
-      patch.avatar_url = await uploadDemoAvatar(ctx, demoId, { url: args.avatar_url });
-    }
+    await applyProfileImages(ctx, demoId, args, patch);
     const { error: updErr } = await ctx.admin
       .from("profiles")
       .update({ ...patch, is_demo: true })
@@ -78,6 +81,7 @@ export const createDemoProfile: ToolHandler = async (args, ctx) => {
   const url = profileUrl(username);
   return textResult(
     `Created demo profile @${username}.\nProfile URL: ${url}\nDemo profile ID: ${demoId}\n` +
+      (patch.avatar_url ? "" : "⚠ No profile picture set — add one with update_demo_profile(avatar_url).\n") +
       "Next: add content with publish_link / publish_image / publish_html / publish_pdf (pass demo_profile_id), " +
       "then call create_claim_code when it's ready to share.",
     { demo_profile_id: demoId, username, profile_url: url },

@@ -14,6 +14,8 @@ import { listDemoProfiles, listDemoProfilesDef } from "./tools/list_demo_profile
 import { deleteDemoProfile, deleteDemoProfileDef } from "./tools/delete_demo_profile.ts";
 import { createClaimCode, createClaimCodeDef } from "./tools/create_claim_code.ts";
 import { publishLink, publishLinkDef } from "./tools/publish_link.ts";
+import { getDemoProfile, getDemoProfileDef } from "./tools/get_demo_profile.ts";
+import { deleteSpace, deleteSpaceDef } from "./tools/delete_space.ts";
 import {
   configureBookingWidget,
   configureBookingWidgetDef,
@@ -39,10 +41,12 @@ const demoTools = [
 export const toolDefinitions: ToolDefinition[] = [
   createDemoProfileDef,
   updateDemoProfileDef,
+  getDemoProfileDef,
   listDemoProfilesDef,
   deleteDemoProfileDef,
   createClaimCodeDef,
   publishLinkDef,
+  deleteSpaceDef,
   configureBookingWidgetDef,
   getBookingWidgetDef,
   ...demoTools.map((t) => t.def),
@@ -51,6 +55,8 @@ export const toolDefinitions: ToolDefinition[] = [
 export const toolHandlers: Record<string, ToolHandler> = {
   create_demo_profile: createDemoProfile,
   update_demo_profile: updateDemoProfile,
+  get_demo_profile: getDemoProfile,
+  delete_space: deleteSpace,
   list_demo_profiles: listDemoProfiles,
   delete_demo_profile: deleteDemoProfile,
   create_claim_code: createClaimCode,

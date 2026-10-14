@@ -3,19 +3,21 @@ import {
   buildProfilePatch,
   demoProfileIdProp,
   errorResult,
+  applyProfileImages,
   profileFieldProps,
+  profileFieldsMeta,
   profileUrl,
   requireDemo,
   textResult,
-  uploadDemoAvatar,
   validateUsername,
 } from "./_demo.ts";
 
 export const updateDemoProfileDef: ToolDefinition = {
   name: "update_demo_profile",
   description:
-    "Update profile fields of an existing demo profile (name, tagline, bio, website, social links, brand colors, avatar, username). " +
-    "Only the fields you pass are changed; pass null to clear a field.",
+    "Update an existing demo profile: name, tagline, bio, address, website, social links, profile picture, cover image, " +
+    "page colors (background/button/text), booking + social button styles, section visibility, username. " +
+    "Only the fields you pass are changed; pass null to clear a field. Use get_demo_profile to see current values.",
   inputSchema: {
     type: "object",
     required: ["demo_profile_id"],
@@ -26,6 +28,7 @@ export const updateDemoProfileDef: ToolDefinition = {
     },
     additionalProperties: false,
   },
+  _meta: profileFieldsMeta,
 };
 
 export const updateDemoProfile: ToolHandler = async (args, ctx) => {
@@ -40,11 +43,7 @@ export const updateDemoProfile: ToolHandler = async (args, ctx) => {
       patch.username = username;
     }
   }
-  if (typeof args.avatar_url === "string" && args.avatar_url) {
-    patch.avatar_url = await uploadDemoAvatar(ctx, demo.id, { url: args.avatar_url });
-  } else if (args.avatar_url === null) {
-    patch.avatar_url = null;
-  }
+  await applyProfileImages(ctx, demo.id, args, patch);
 
   if (Object.keys(patch).length === 0) return errorResult("Nothing to update — pass at least one field.");
 
