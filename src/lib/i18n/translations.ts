@@ -623,6 +623,10 @@ export type Translations = {
     layoutFeatured: string;
     followersPageSubtitle: string;
     followingPageSubtitle: string;
+    bookingPosition: string;
+    bookingPositionUsername: string;
+    bookingPositionDescription: string;
+    bookingPositionSocial: string;
   };
   agent: {
     suggestWhoAreYou: string;
@@ -2091,6 +2095,10 @@ const en: Translations = {
     layoutFeatured: "Featured",
     followersPageSubtitle: "People who follow you.",
     followingPageSubtitle: "People you follow.",
+    bookingPosition: "Position",
+    bookingPositionUsername: "Under name",
+    bookingPositionDescription: "After bio",
+    bookingPositionSocial: "After links",
   },
   agent: {
     suggestWhoAreYou: "Who are you?",
@@ -3559,6 +3567,10 @@ const pt: Translations = {
     layoutFeatured: "Destaque",
     followersPageSubtitle: "Pessoas que seguem você.",
     followingPageSubtitle: "Pessoas que você segue.",
+    bookingPosition: "Posição",
+    bookingPositionUsername: "Abaixo do nome",
+    bookingPositionDescription: "Após a bio",
+    bookingPositionSocial: "Após os links",
   },
   agent: {
     suggestWhoAreYou: "Quem é você?",
@@ -5027,6 +5039,10 @@ const fr: Translations = {
     layoutFeatured: "À la une",
     followersPageSubtitle: "Les personnes qui vous suivent.",
     followingPageSubtitle: "Les personnes que vous suivez.",
+    bookingPosition: "Position",
+    bookingPositionUsername: "Sous le nom",
+    bookingPositionDescription: "Après la bio",
+    bookingPositionSocial: "Après les liens",
   },
   agent: {
     suggestWhoAreYou: "Qui êtes-vous ?",
@@ -6495,6 +6511,10 @@ const es: Translations = {
     layoutFeatured: "Destacado",
     followersPageSubtitle: "Personas que te siguen.",
     followingPageSubtitle: "Personas a las que sigues.",
+    bookingPosition: "Posición",
+    bookingPositionUsername: "Bajo el nombre",
+    bookingPositionDescription: "Tras la bio",
+    bookingPositionSocial: "Tras los enlaces",
   },
   agent: {
     suggestWhoAreYou: "¿Quién eres?",
@@ -7963,6 +7983,10 @@ const ja: Translations = {
     layoutFeatured: "注目",
     followersPageSubtitle: "あなたをフォローしている人。",
     followingPageSubtitle: "あなたがフォローしている人。",
+    bookingPosition: "位置",
+    bookingPositionUsername: "名前の下",
+    bookingPositionDescription: "自己紹介の後",
+    bookingPositionSocial: "リンクの後",
   },
   agent: {
     suggestWhoAreYou: "あなたは誰ですか？",
@@ -9431,6 +9455,10 @@ const de: Translations = {
     layoutFeatured: "Hervorgehoben",
     followersPageSubtitle: "Personen, die dir folgen.",
     followingPageSubtitle: "Personen, denen du folgst.",
+    bookingPosition: "Position",
+    bookingPositionUsername: "Unter dem Namen",
+    bookingPositionDescription: "Nach der Bio",
+    bookingPositionSocial: "Nach den Links",
   },
   agent: {
     suggestWhoAreYou: "Wer bist du?",
@@ -10899,6 +10927,10 @@ const it: Translations = {
     layoutFeatured: "In evidenza",
     followersPageSubtitle: "Persone che ti seguono.",
     followingPageSubtitle: "Persone che segui.",
+    bookingPosition: "Posizione",
+    bookingPositionUsername: "Sotto il nome",
+    bookingPositionDescription: "Dopo la bio",
+    bookingPositionSocial: "Dopo i link",
   },
   agent: {
     suggestWhoAreYou: "Chi sei?",

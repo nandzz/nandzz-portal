@@ -15,6 +15,7 @@ import { uploadAvatar } from "../storage";
 import { updateAvatar } from "../actions/update-avatar";
 import { FEATURES } from "@/lib/flags";
 import { isColorDark } from "@/lib/color";
+import { resolveBookingButtonStyle } from "@/lib/bookingButtonStyle";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const MAX_AVATAR_SIZE = 1.5 * 1024 * 1024;
@@ -108,6 +109,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
 
   const links = buildSocialLinks(profile);
 
+  // The widget strip (Book now CTA) moves to the owner-chosen spot in the header.
+  const bookingPlacement = resolveBookingButtonStyle(profile.booking_button_style).placement;
+  const widgetStrip = (className: string) =>
+    FEATURES.widgets && widgets.length > 0 ? (
+      <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} className={className} />
+    ) : null;
+
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative group">
@@ -166,6 +174,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       <p className="mt-0.5 text-sm text-muted-foreground" style={textMutedStyle}>
         @{profile.username}
       </p>
+      {bookingPlacement === "username" && widgetStrip("mt-4")}
       {profile.tagline && (
         <p className="mt-2 text-sm font-medium text-violet-600 dark:text-violet-400" style={textStyle}>
           {profile.tagline}
@@ -176,6 +185,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
           {profile.bio}
         </p>
       )}
+      {bookingPlacement === "description" && widgetStrip("mt-4")}
 
       {profile.address?.formatted && (
         <AddressMenu
@@ -212,9 +222,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
         />
       )}
 
-      {FEATURES.widgets && widgets.length > 0 && (
-        <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} />
-      )}
+      {bookingPlacement === "social" && widgetStrip("mt-5")}
     </div>
   );
 }

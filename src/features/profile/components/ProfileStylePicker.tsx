@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { Palette, Check, Ban, RotateCcw, CalendarDays, X, Mail } from "lucide-react";
 import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
@@ -360,6 +361,7 @@ export function ProfileStylePicker({
   booking,
   onReset,
 }: ProfileStylePickerProps) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("page");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -634,6 +636,16 @@ export function ProfileStylePicker({
                   options={[
                     { value: "md", label: "Regular" },
                     { value: "lg", label: "Large" },
+                  ]}
+                />
+                <OptionRow
+                  label={t.profile.bookingPosition}
+                  value={bookingStyle.placement}
+                  onChange={(placement) => patchBooking({ placement })}
+                  options={[
+                    { value: "username", label: t.profile.bookingPositionUsername },
+                    { value: "description", label: t.profile.bookingPositionDescription },
+                    { value: "social", label: t.profile.bookingPositionSocial },
                   ]}
                 />
                 <ColorGroup

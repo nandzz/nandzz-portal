@@ -27,6 +27,8 @@ export type BookingButtonStyle = {
   shape?: "pill" | "rounded" | "square";
   size?: "md" | "lg";
   color?: string | null;
+  /** Where the CTA sits in the profile header: under the @handle (default), after the bio, or after the social links. */
+  placement?: "username" | "description" | "social";
 };
 
 // Owner-chosen look for the social link buttons on the public profile. Any

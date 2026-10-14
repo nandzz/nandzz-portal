@@ -82,6 +82,7 @@ export const updateBookingButtonStyleSchema = z.object({
       shape: z.enum(["pill", "rounded", "square"]),
       size: z.enum(["md", "lg"]),
       color: hexColor,
+      placement: z.enum(["username", "description", "social"]).optional(),
     })
     .nullable(),
 });

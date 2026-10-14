@@ -16,6 +16,7 @@ export const DEFAULT_BOOKING_BUTTON_STYLE: ResolvedBookingButtonStyle = {
   shape: "pill",
   size: "md",
   color: null,
+  placement: "username",
 };
 
 export function resolveBookingButtonStyle(

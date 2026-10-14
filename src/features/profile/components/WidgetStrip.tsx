@@ -9,14 +9,15 @@ interface WidgetStripProps {
   widgets: WidgetInstanceWithCatalog[];
   profile: Profile;
   isAuthenticated?: boolean;
+  className?: string;
 }
 
 // Renders the row of widget triggers that sit on top of a profile. Each widget
 // type maps to its own embed component; unknown types are skipped.
-export function WidgetStrip({ widgets, profile, isAuthenticated = false }: WidgetStripProps) {
+export function WidgetStrip({ widgets, profile, isAuthenticated = false, className = "mt-5" }: WidgetStripProps) {
   const { ai } = useFeatureFlags();
   return (
-    <div className="mt-5 flex w-full flex-wrap justify-center gap-2">
+    <div className={`${className} flex w-full flex-wrap justify-center gap-2`}>
       {widgets.map((w) => {
         switch (w.catalog.slug) {
           case "calendar":
