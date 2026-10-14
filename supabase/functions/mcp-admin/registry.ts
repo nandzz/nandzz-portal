@@ -16,6 +16,7 @@ import { createClaimCode, createClaimCodeDef } from "./tools/create_claim_code.t
 import { publishLink, publishLinkDef } from "./tools/publish_link.ts";
 import { getDemoProfile, getDemoProfileDef } from "./tools/get_demo_profile.ts";
 import { deleteSpace, deleteSpaceDef } from "./tools/delete_space.ts";
+import { findProfile, findProfileDef } from "./tools/find_profile.ts";
 import {
   configureBookingWidget,
   configureBookingWidgetDef,
@@ -23,10 +24,11 @@ import {
   getBookingWidgetDef,
 } from "./tools/booking_widget.ts";
 
-// Public-MCP content tools, re-targeted at a demo profile (required
-// demo_profile_id; ctx.userId swapped to the demo after an is_demo check).
-// The public booking tools (list_availability / book_appointment) are not
-// exposed — demos get configure_booking_widget instead and refuse bookings.
+// Public-MCP content tools, re-targeted at a profile (required
+// demo_profile_id; ctx.userId swapped to the target after requireTarget: a
+// demo, or a real account with owner-granted support access). The public
+// booking tools (list_availability / book_appointment) are not exposed —
+// configure_booking_widget is used instead.
 const demoTools = [
   onDemo(listCollectionsDef, listCollections),
   onDemo(publishHtmlDef, publishHtml),
@@ -43,6 +45,7 @@ export const toolDefinitions: ToolDefinition[] = [
   updateDemoProfileDef,
   getDemoProfileDef,
   listDemoProfilesDef,
+  findProfileDef,
   deleteDemoProfileDef,
   createClaimCodeDef,
   publishLinkDef,
@@ -58,6 +61,7 @@ export const toolHandlers: Record<string, ToolHandler> = {
   get_demo_profile: getDemoProfile,
   delete_space: deleteSpace,
   list_demo_profiles: listDemoProfiles,
+  find_profile: findProfile,
   delete_demo_profile: deleteDemoProfile,
   create_claim_code: createClaimCode,
   publish_link: publishLink,

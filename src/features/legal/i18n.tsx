@@ -26,6 +26,12 @@ export type LegalUi = {
   exportButton: string;
   exportError: string;
   deleteConsequences: string;
+  supportTitle: string;
+  supportDesc: string;
+  supportGrant: string;
+  supportRevoke: string;
+  supportActiveUntil: string; // tokens: {date}
+  supportError: string;
 };
 
 const en: LegalUi = {
@@ -51,6 +57,12 @@ const en: LegalUi = {
   exportError: "Export failed. Please try again.",
   deleteConsequences:
     "Any active subscription is cancelled immediately and unused credits are lost. Download your data first if you want a copy.",
+  supportTitle: "Support access",
+  supportDesc: "Let the Nandzz team edit your profile, content and booking setup for 7 days to help you configure your account. Every change is logged and you can revoke access at any time.",
+  supportGrant: "Allow for 7 days",
+  supportRevoke: "Revoke access",
+  supportActiveUntil: "Access active until {date}",
+  supportError: "Couldn't save. Please try again.",
 };
 
 const it: LegalUi = {
@@ -76,6 +88,12 @@ const it: LegalUi = {
   exportError: "Esportazione non riuscita. Riprova.",
   deleteConsequences:
     "Eventuali abbonamenti attivi vengono annullati subito e i crediti non usati vanno persi. Se vuoi una copia, scarica prima i tuoi dati.",
+  supportTitle: "Accesso assistenza",
+  supportDesc: "Consenti al team Nandzz di modificare profilo, contenuti e prenotazioni per 7 giorni per aiutarti a configurare l'account. Ogni modifica viene registrata e puoi revocare l'accesso in qualsiasi momento.",
+  supportGrant: "Consenti per 7 giorni",
+  supportRevoke: "Revoca accesso",
+  supportActiveUntil: "Accesso attivo fino al {date}",
+  supportError: "Salvataggio non riuscito. Riprova.",
 };
 
 const pt: LegalUi = {
@@ -101,6 +119,12 @@ const pt: LegalUi = {
   exportError: "Falha na exportação. Tente novamente.",
   deleteConsequences:
     "Qualquer assinatura ativa é cancelada imediatamente e os créditos não usados são perdidos. Baixe seus dados antes, se quiser uma cópia.",
+  supportTitle: "Acesso do suporte",
+  supportDesc: "Permita que a equipe Nandzz edite seu perfil, conteúdos e agendamentos por 7 dias para ajudar a configurar sua conta. Toda alteração é registrada e você pode revogar o acesso a qualquer momento.",
+  supportGrant: "Permitir por 7 dias",
+  supportRevoke: "Revogar acesso",
+  supportActiveUntil: "Acesso ativo até {date}",
+  supportError: "Não foi possível salvar. Tente novamente.",
 };
 
 const fr: LegalUi = {
@@ -126,6 +150,12 @@ const fr: LegalUi = {
   exportError: "L'export a échoué. Réessayez.",
   deleteConsequences:
     "Tout abonnement actif est annulé immédiatement et les crédits non utilisés sont perdus. Téléchargez d'abord vos données si vous en voulez une copie.",
+  supportTitle: "Accès support",
+  supportDesc: "Autorisez l'équipe Nandzz à modifier votre profil, vos contenus et vos réservations pendant 7 jours pour vous aider à configurer votre compte. Chaque modification est journalisée et vous pouvez révoquer l'accès à tout moment.",
+  supportGrant: "Autoriser 7 jours",
+  supportRevoke: "Révoquer l'accès",
+  supportActiveUntil: "Accès actif jusqu'au {date}",
+  supportError: "Échec de l'enregistrement. Réessayez.",
 };
 
 const es: LegalUi = {
@@ -151,6 +181,12 @@ const es: LegalUi = {
   exportError: "La exportación falló. Inténtalo de nuevo.",
   deleteConsequences:
     "Cualquier suscripción activa se cancela de inmediato y los créditos no usados se pierden. Descarga tus datos antes si quieres una copia.",
+  supportTitle: "Acceso de soporte",
+  supportDesc: "Permite que el equipo de Nandzz edite tu perfil, contenidos y reservas durante 7 días para ayudarte a configurar tu cuenta. Cada cambio queda registrado y puedes revocar el acceso en cualquier momento.",
+  supportGrant: "Permitir 7 días",
+  supportRevoke: "Revocar acceso",
+  supportActiveUntil: "Acceso activo hasta el {date}",
+  supportError: "No se pudo guardar. Inténtalo de nuevo.",
 };
 
 const de: LegalUi = {
@@ -176,6 +212,12 @@ const de: LegalUi = {
   exportError: "Export fehlgeschlagen. Bitte erneut versuchen.",
   deleteConsequences:
     "Aktive Abonnements werden sofort gekündigt und ungenutzte Credits verfallen. Lade vorher deine Daten herunter, wenn du eine Kopie möchtest.",
+  supportTitle: "Support-Zugriff",
+  supportDesc: "Erlaube dem Nandzz-Team, dein Profil, deine Inhalte und Buchungen 7 Tage lang zu bearbeiten, um dein Konto einzurichten. Jede Änderung wird protokolliert und du kannst den Zugriff jederzeit widerrufen.",
+  supportGrant: "7 Tage erlauben",
+  supportRevoke: "Zugriff widerrufen",
+  supportActiveUntil: "Zugriff aktiv bis {date}",
+  supportError: "Speichern fehlgeschlagen. Bitte erneut versuchen.",
 };
 
 const ja: LegalUi = {
@@ -200,6 +242,12 @@ const ja: LegalUi = {
   exportError: "エクスポートに失敗しました。もう一度お試しください。",
   deleteConsequences:
     "有効なサブスクリプションは直ちに解約され、未使用のクレジットは失われます。コピーが必要な場合は先にデータをダウンロードしてください。",
+  supportTitle: "サポートアクセス",
+  supportDesc: "アカウント設定をお手伝いするため、Nandzzチームが7日間プロフィール・コンテンツ・予約設定を編集できるようにします。すべての変更は記録され、いつでもアクセスを取り消せます。",
+  supportGrant: "7日間許可する",
+  supportRevoke: "アクセスを取り消す",
+  supportActiveUntil: "{date}までアクセス有効",
+  supportError: "保存できませんでした。もう一度お試しください。",
 };
 
 const UI: Record<Locale, LegalUi> = { en, it, pt, fr, es, de, ja };

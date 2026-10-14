@@ -30,6 +30,7 @@ import {
 } from "@/features/auth";
 import { setAccountType } from "@/features/analytics/auth";
 import { DataExport } from "@/features/legal/components/DataExport";
+import { SupportAccess } from "@/features/legal/components/SupportAccess";
 import type { AccountType, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -235,6 +236,7 @@ export default function SettingsPage() {
             </TabsContent>
           </Tabs>
 
+          <SupportAccess />
           <DataExport />
           <DeleteAccount username={profile.username} />
         </div>

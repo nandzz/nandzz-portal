@@ -11,4 +11,5 @@ export { BookingPrivacyNotice } from "./components/BookingPrivacyNotice";
 export { TermsUpdateBanner } from "./components/TermsUpdateBanner";
 export { ReportLink } from "./components/ReportLink";
 export { DataExport } from "./components/DataExport";
+export { SupportAccess } from "./components/SupportAccess";
 export { acceptCurrentTerms } from "./actions/accept-terms";

@@ -1,5 +1,5 @@
 import type { Ctx, ToolDefinition, ToolHandler } from "../../mcp/tools/types.ts";
-import { demoProfileIdProp, profileUrl, requireDemo, textResult } from "./_demo.ts";
+import { demoProfileIdProp, profileUrl, requireTarget, textResult } from "./_demo.ts";
 
 // Booking (calendar) widget setup for demo profiles. The config shape mirrors
 // CalendarConfig / Location in the portal (src/lib/types.ts) and is validated
@@ -110,10 +110,10 @@ const locationsSchema = {
 export const configureBookingWidgetDef: ToolDefinition = {
   name: "configure_booking_widget",
   description:
-    "[Demo profile] Add and configure the booking widget on a demo profile so its public page shows a working booking calendar: " +
+    "Add and configure the booking widget on a profile (demo, or a real account with support access) so its public page shows a working booking calendar: " +
     "services & prices, opening hours, staff, days off, locations/sites, and booking settings. Demo profiles accept real bookings. " +
     "Fields you pass replace the current ones; omitted fields are kept. Booking is included for demos and ends when the profile " +
-    "is claimed (unless the owner is granted or buys Pro).",
+    "is claimed (unless the owner is granted or buys Pro). On a real account the widget only shows if their plan includes booking.",
   inputSchema: {
     type: "object",
     required: ["demo_profile_id"],
@@ -376,7 +376,7 @@ async function calendarCatalogId(ctx: Ctx): Promise<string> {
 }
 
 export const configureBookingWidget: ToolHandler = async (args, ctx) => {
-  const demo = await requireDemo(ctx, args.demo_profile_id);
+  const demo = await requireTarget(ctx, args.demo_profile_id);
   const catalogId = await calendarCatalogId(ctx);
 
   const { data: existing, error: exErr } = await ctx.admin
@@ -422,6 +422,19 @@ export const configureBookingWidget: ToolHandler = async (args, ctx) => {
     if (error) throw new Error(`Widget create failed: ${error.message}`);
   }
 
+  // Real accounts need the widgets entitlement (plan or grant) for the widget
+  // to render; demos always have it.
+  let accessNote = "Booking is included while this is a demo; after claim it needs Pro (or an admin grant).";
+  if (!demo.isDemo) {
+    const { data: entitled } = await ctx.admin.rpc("user_has_entitlement", {
+      p_user_id: demo.id,
+      p_entitlement: "widgets",
+    });
+    accessNote = entitled
+      ? "Their plan includes booking, so the widget is live."
+      : "WARNING: their plan doesn't include booking — the widget stays hidden until they upgrade to Pro or an admin grants it.";
+  }
+
   const locs = ((config.locations as unknown[] | undefined) ?? []).length;
   const staffCount = ((config.staff as unknown[] | undefined) ?? []).length;
   return textResult(
@@ -429,14 +442,14 @@ export const configureBookingWidget: ToolHandler = async (args, ctx) => {
       `${services} service(s)` +
       (locs ? ` across ${locs} location(s)` : `, ${staffCount} staff`) +
       `, timezone ${config.timezone}.\n` +
-      "Booking is included while this is a demo; after claim it needs Pro (or an admin grant).\n" +
+      `${accessNote}\n` +
       `Profile: ${profileUrl(demo.username)}`,
     { demo_profile_id: demo.id, enabled, config },
   );
 };
 
 export const getBookingWidget: ToolHandler = async (args, ctx) => {
-  const demo = await requireDemo(ctx, args.demo_profile_id);
+  const demo = await requireTarget(ctx, args.demo_profile_id);
   const catalogId = await calendarCatalogId(ctx);
   const { data } = await ctx.admin
     .from("widget_instances")

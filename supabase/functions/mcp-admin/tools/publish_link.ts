@@ -6,12 +6,13 @@ import {
   requireStr,
   requireVisibility,
 } from "../../mcp/tools/_shared.ts";
-import { demoProfileIdProp, requireDemo, textResult } from "./_demo.ts";
+import { demoProfileIdProp, requireTarget, textResult } from "./_demo.ts";
 
 export const publishLinkDef: ToolDefinition = {
   name: "publish_link",
   description:
-    "[Demo profile] Add a link (website, menu, booking page, YouTube/Vimeo video, social post…) to a demo profile's Links section. " +
+    "Add a link (website, menu, booking page, YouTube/Vimeo video, social post…) to a profile's Links section " +
+    "(demo, or a real account with support access). " +
     "Video URLs are embedded automatically on the profile.",
   inputSchema: {
     type: "object",
@@ -28,7 +29,7 @@ export const publishLinkDef: ToolDefinition = {
 };
 
 export const publishLink: ToolHandler = async (args, ctx) => {
-  const demo = await requireDemo(ctx, args.demo_profile_id);
+  const demo = await requireTarget(ctx, args.demo_profile_id);
   const title = requireStr(args.title, "title");
   const visibility = requireVisibility(args.visibility);
   let url: string;

@@ -12,6 +12,7 @@ import {
   generateClaimCode,
   normalizeClaimCode,
   onDemo,
+  requireDemo,
   sha256Hex,
   validateUsername,
 } from "../tools/_demo.ts";
@@ -35,11 +36,36 @@ Deno.test("onDemo: runs the handler as the demo profile and strips demo_profile_
   assertEquals((t.def.inputSchema as { required: string[] }).required, ["demo_profile_id", "a"]);
 });
 
-Deno.test("onDemo: refuses a non-demo profile", async () => {
+Deno.test("onDemo: refuses a real account without support access", async () => {
   const { ctx } = makeCtx({
-    from: { profiles: { select: { data: { id: DEMO_ID, username: "real", is_demo: false }, error: null } } },
+    from: { profiles: { select: { data: { id: DEMO_ID, username: "real", is_demo: false, support_access_until: null }, error: null } } },
   });
-  await assertRejects(() => onDemo(def, echo).handler({ demo_profile_id: DEMO_ID, a: 1 }, ctx), Error, "not a demo");
+  await assertRejects(() => onDemo(def, echo).handler({ demo_profile_id: DEMO_ID, a: 1 }, ctx), Error, "support access");
+});
+
+Deno.test("onDemo: refuses a real account whose support access expired", async () => {
+  const past = new Date(Date.now() - 60_000).toISOString();
+  const { ctx } = makeCtx({
+    from: { profiles: { select: { data: { id: DEMO_ID, username: "real", is_demo: false, support_access_until: past }, error: null } } },
+  });
+  await assertRejects(() => onDemo(def, echo).handler({ demo_profile_id: DEMO_ID, a: 1 }, ctx), Error, "support access");
+});
+
+Deno.test("onDemo: runs on a real account with active support access", async () => {
+  const future = new Date(Date.now() + 86_400_000).toISOString();
+  const { ctx } = makeCtx({
+    from: { profiles: { select: { data: { id: DEMO_ID, username: "real", is_demo: false, support_access_until: future }, error: null } } },
+  });
+  const res = await onDemo(def, echo).handler({ demo_profile_id: DEMO_ID, a: 1 }, ctx);
+  assertEquals(res.content[0].text, DEMO_ID);
+});
+
+Deno.test("requireDemo: refuses a real account even with support access", async () => {
+  const future = new Date(Date.now() + 86_400_000).toISOString();
+  const { ctx } = makeCtx({
+    from: { profiles: { select: { data: { id: DEMO_ID, username: "real", is_demo: false, support_access_until: future }, error: null } } },
+  });
+  await assertRejects(() => requireDemo(ctx, DEMO_ID), Error, "not a demo");
 });
 
 Deno.test("onDemo: refuses a missing / malformed demo_profile_id", async () => {
@@ -50,7 +76,7 @@ Deno.test("onDemo: refuses a missing / malformed demo_profile_id", async () => {
 Deno.test("registry: every reused content tool requires demo_profile_id; no booking tools", () => {
   for (const d of toolDefinitions) {
     assert(toolHandlers[d.name], `missing handler for ${d.name}`);
-    if (["create_demo_profile", "list_demo_profiles"].includes(d.name)) continue;
+    if (["create_demo_profile", "list_demo_profiles", "find_profile"].includes(d.name)) continue;
     const req = (d.inputSchema as { required?: string[] }).required ?? [];
     assert(req.includes("demo_profile_id"), `${d.name} must require demo_profile_id`);
   }

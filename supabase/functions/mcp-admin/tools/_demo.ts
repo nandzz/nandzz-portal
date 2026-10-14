@@ -21,37 +21,67 @@ export function errorResult(text: string): ToolResult {
   return { content: [{ type: "text", text }], isError: true };
 }
 
-// ── Demo target guard ──────────────────────────────────────────────────────
+// ── Target guard ───────────────────────────────────────────────────────────
 // Every admin tool that writes content takes `demo_profile_id` and must only
-// ever act on a profile flagged is_demo — never a real user's account and
-// never the admin's own.
+// act on a profile flagged is_demo, or on a real account whose owner granted
+// support access (profiles.support_access_until in the future, set from
+// Settings → Support access). Destructive demo-lifecycle tools (delete, claim
+// codes) stay demo-only via requireDemo.
 
-export type DemoProfile = { id: string; username: string };
+export type TargetProfile = { id: string; username: string; isDemo: boolean };
+export type DemoProfile = TargetProfile;
 
-export async function requireDemo(ctx: Ctx, demoId: unknown): Promise<DemoProfile> {
-  if (typeof demoId !== "string" || !/^[0-9a-f-]{36}$/i.test(demoId)) {
-    throw new Error("demo_profile_id is required (UUID from create_demo_profile or list_demo_profiles).");
+async function loadTarget(ctx: Ctx, id: unknown) {
+  if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) {
+    throw new Error("demo_profile_id is required (UUID from create_demo_profile, list_demo_profiles or find_profile).");
   }
   const { data, error } = await ctx.admin
     .from("profiles")
-    .select("id, username, is_demo")
-    .eq("id", demoId)
+    .select("id, username, is_demo, support_access_until")
+    .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`Profile lookup failed: ${error.message}`);
-  const row = data as { id: string; username: string; is_demo: boolean } | null;
-  if (!row || !row.is_demo) {
-    throw new Error(`Profile ${demoId} is not a demo profile.`);
+  if (!data) throw new Error(`Profile ${id} not found.`);
+  return data as { id: string; username: string; is_demo: boolean; support_access_until: string | null };
+}
+
+export function hasSupportAccess(until: string | null | undefined): boolean {
+  return !!until && new Date(until).getTime() > Date.now();
+}
+
+// Demo profile, or a real account with active owner-granted support access.
+export async function requireTarget(ctx: Ctx, id: unknown): Promise<TargetProfile> {
+  const row = await loadTarget(ctx, id);
+  if (!row.is_demo && !hasSupportAccess(row.support_access_until)) {
+    throw new Error(
+      `@${row.username} is not a demo profile and its owner hasn't granted support access. ` +
+        "Ask them to enable it in Settings → Support access (valid 7 days).",
+    );
   }
-  return { id: row.id, username: row.username };
+  return { id: row.id, username: row.username, isDemo: row.is_demo };
+}
+
+// Demo profiles only — for tools that delete the account or hand it over.
+export async function requireDemo(ctx: Ctx, id: unknown): Promise<TargetProfile> {
+  const row = await loadTarget(ctx, id);
+  if (!row.is_demo) throw new Error(`Profile ${id} is not a demo profile.`);
+  return { id: row.id, username: row.username, isDemo: true };
 }
 
 export const demoProfileIdProp = {
   type: "string",
-  description: "UUID of the demo profile to act on (from create_demo_profile or list_demo_profiles).",
+  description:
+    "UUID of the profile to act on: a demo profile (create_demo_profile / list_demo_profiles) or a real account " +
+    "whose owner granted support access (find_profile by username).",
 } as const;
 
-// Wrap a public-MCP tool so it runs against a demo profile: adds a required
-// demo_profile_id, verifies the target is a demo, then runs the original
+export const demoOnlyIdProp = {
+  type: "string",
+  description: "UUID of the demo profile (from create_demo_profile or list_demo_profiles).",
+} as const;
+
+// Wrap a public-MCP tool so it runs against a target profile: adds a required
+// demo_profile_id, verifies the target (requireTarget), then runs the original
 // handler with ctx.userId swapped to the demo's id (all public tools scope
 // their reads/writes by ctx.userId).
 export function onDemo(
@@ -65,7 +95,7 @@ export function onDemo(
   return {
     def: {
       ...def,
-      description: `[Demo profile] ${def.description} Acts on the demo profile given by demo_profile_id.`,
+      description: `${def.description} Acts on the profile given by demo_profile_id (a demo, or a real account with support access).`,
       inputSchema: {
         ...def.inputSchema,
         properties: { demo_profile_id: demoProfileIdProp, ...(schema.properties ?? {}) },
@@ -73,7 +103,7 @@ export function onDemo(
       },
     },
     handler: async (args, ctx) => {
-      const demo = await requireDemo(ctx, args.demo_profile_id);
+      const demo = await requireTarget(ctx, args.demo_profile_id);
       const { demo_profile_id: _omit, ...rest } = args;
       return handler(rest, { ...ctx, userId: demo.id });
     },

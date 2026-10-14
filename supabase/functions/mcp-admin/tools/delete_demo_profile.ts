@@ -1,5 +1,5 @@
 import type { ToolDefinition, ToolHandler } from "../../mcp/tools/types.ts";
-import { demoProfileIdProp, errorResult, requireDemo, textResult } from "./_demo.ts";
+import { demoOnlyIdProp, errorResult, requireDemo, textResult } from "./_demo.ts";
 
 export const deleteDemoProfileDef: ToolDefinition = {
   name: "delete_demo_profile",
@@ -10,7 +10,7 @@ export const deleteDemoProfileDef: ToolDefinition = {
     type: "object",
     required: ["demo_profile_id", "confirm_username"],
     properties: {
-      demo_profile_id: demoProfileIdProp,
+      demo_profile_id: demoOnlyIdProp,
       confirm_username: { type: "string", description: "The demo's username, to confirm the deletion." },
     },
     additionalProperties: false,

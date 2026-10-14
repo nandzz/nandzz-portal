@@ -1,7 +1,7 @@
 import type { ToolDefinition, ToolHandler } from "../../mcp/tools/types.ts";
 import {
   claimUrl,
-  demoProfileIdProp,
+  demoOnlyIdProp,
   generateClaimCode,
   profileUrl,
   requireDemo,
@@ -19,7 +19,7 @@ export const createClaimCodeDef: ToolDefinition = {
     type: "object",
     required: ["demo_profile_id"],
     properties: {
-      demo_profile_id: demoProfileIdProp,
+      demo_profile_id: demoOnlyIdProp,
       expires_in_days: { type: "integer", minimum: 1, maximum: 365, description: "Validity in days (default 30)." },
     },
     additionalProperties: false,

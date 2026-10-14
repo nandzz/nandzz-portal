@@ -1,10 +1,10 @@
 import type { ToolDefinition, ToolHandler } from "../../mcp/tools/types.ts";
-import { demoProfileIdProp, profileUrl, requireDemo, textResult } from "./_demo.ts";
+import { demoProfileIdProp, profileUrl, requireTarget, textResult } from "./_demo.ts";
 
 export const getDemoProfileDef: ToolDefinition = {
   name: "get_demo_profile",
   description:
-    "Show a demo profile's current fields (bio, address, colors, avatar, styles, …) and its content items with " +
+    "Show a profile's current fields (demo, or a real account with support access) — bio, address, colors, avatar, styles, … — and its content items with " +
     "their space_ids — use before update_demo_profile / delete_space to see what's there and what's missing.",
   inputSchema: {
     type: "object",
@@ -20,7 +20,7 @@ const PROFILE_COLS =
   "brand_description, show_contents, show_gallery, show_links";
 
 export const getDemoProfile: ToolHandler = async (args, ctx) => {
-  const demo = await requireDemo(ctx, args.demo_profile_id);
+  const demo = await requireTarget(ctx, args.demo_profile_id);
   const [{ data: profile, error }, { data: spaces, error: spErr }] = await Promise.all([
     ctx.admin.from("profiles").select(PROFILE_COLS).eq("id", demo.id).single(),
     ctx.admin

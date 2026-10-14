@@ -1,10 +1,10 @@
 import type { ToolDefinition, ToolHandler } from "../../mcp/tools/types.ts";
-import { demoProfileIdProp, errorResult, requireDemo, textResult } from "./_demo.ts";
+import { demoProfileIdProp, errorResult, requireTarget, textResult } from "./_demo.ts";
 
 export const deleteSpaceDef: ToolDefinition = {
   name: "delete_space",
   description:
-    "Delete one content item (link, image, html, pdf…) from a demo profile. Get space_ids from get_demo_profile.",
+    "Delete one content item (link, image, html, pdf…) from a demo profile or a real account with support access. Get space_ids from get_demo_profile.",
   inputSchema: {
     type: "object",
     required: ["demo_profile_id", "space_id"],
@@ -26,7 +26,7 @@ const BUCKETS: Array<[string, string]> = [
 // Same cleanup as deleteSpace in src/features/spaces/actions/delete-space.ts:
 // remove uploaded blobs first so deleting never orphans storage.
 export const deleteSpace: ToolHandler = async (args, ctx) => {
-  const demo = await requireDemo(ctx, args.demo_profile_id);
+  const demo = await requireTarget(ctx, args.demo_profile_id);
   if (typeof args.space_id !== "string" || !/^[0-9a-f-]{36}$/i.test(args.space_id)) {
     return errorResult("space_id must be a UUID.");
   }
