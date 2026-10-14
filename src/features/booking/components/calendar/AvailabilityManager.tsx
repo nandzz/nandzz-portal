@@ -6,6 +6,7 @@ import type { CalendarConfig, WeekdayKey } from "@/lib/types";
 import { WEEKDAYS, getLocationScope, withLocationScope } from "@/features/booking/domain/calendar";
 import type { CalendarConfigController } from "@/features/booking/components/calendar/useCalendarConfig";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TimezoneSelect } from "@/features/booking/components/calendar/TimezoneSelect";
 
 interface Props {
   controller: CalendarConfigController;
@@ -84,15 +85,10 @@ export function AvailabilityManager({ controller, currentLocationId = null }: Pr
       <section className="rounded-2xl border border-border bg-background p-5 space-y-4">
         <h2 className="font-semibold">{t.booking.generalSection}</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
+          <div className="block">
             <span className="mb-1 block text-sm text-muted-foreground">{t.booking.timezoneLabel}</span>
-            <input
-              className={`${inputCls} w-full`}
-              value={config.timezone}
-              onChange={(e) => patch({ timezone: e.target.value })}
-              placeholder="Europe/Lisbon"
-            />
-          </label>
+            <TimezoneSelect value={config.timezone} onChange={(timezone) => patch({ timezone })} />
+          </div>
           <label className="block">
             <span className="mb-1 block text-sm text-muted-foreground">{t.booking.bufferLabel}</span>
             <input

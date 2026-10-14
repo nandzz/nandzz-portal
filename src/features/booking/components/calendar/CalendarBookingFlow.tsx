@@ -183,7 +183,7 @@ export function CalendarBookingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Infer the phone country the same way locale is inferred (browser language →
+  // Infer the phone country (browser timezone, then browser language →
   // likely region), then prefill contact details if the visitor already has a
   // Nandzz session. Guests just keep the inferred country. Runs once on mount.
   useEffect(() => {

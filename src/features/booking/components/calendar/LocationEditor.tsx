@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { Location, WeekdayKey } from "@/lib/types";
 import { WEEKDAYS } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TimezoneSelect } from "./TimezoneSelect";
 
 const inputCls = "rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-emerald-400";
 
@@ -120,12 +121,11 @@ export function LocationEditor({
               <label htmlFor={`location-tz-${location.id}`} className="text-xs font-medium text-muted-foreground">
                 {t.booking.locationTimezoneLabel}
               </label>
-              <input
+              <TimezoneSelect
                 id={`location-tz-${location.id}`}
-                className={`${inputCls} w-full`}
+                allowEmpty
                 value={location.timezone ?? ""}
-                onChange={(e) => onUpdate(location.id, { timezone: e.target.value || undefined })}
-                placeholder="Europe/Lisbon"
+                onChange={(tz) => onUpdate(location.id, { timezone: tz || undefined })}
               />
               <p className="text-xs text-muted-foreground">{t.booking.locationTimezoneHint}</p>
             </div>

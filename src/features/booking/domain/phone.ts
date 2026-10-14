@@ -118,15 +118,87 @@ export function regionName(region: string, locale: string): string {
 
 const KNOWN_REGIONS = new Set(PHONE_COUNTRIES.map((c) => c.region));
 
-// Infer the phone country the SAME way locale is inferred: from the visitor's
-// language tag. `Intl.Locale.maximize()` adds CLDR's likely region even for a
-// bare language ("pt" → "pt-Latn-BR", "en" → "en-Latn-US"), so we get a sane
-// default without geo-IP. Tries the raw browser tag first, then the resolved
-// locale, then falls back to "US".
+// IANA timezone → region for the countries in PHONE_COUNTRIES. The timezone
+// reflects where the visitor physically is (an en-GB browser in Rome reports
+// Europe/Rome), so it beats the language tag as a phone-country signal.
+// Only the main zones per country — unlisted zones fall through to language.
+const TZ_REGION: Record<string, string> = {
+  // North America
+  "America/New_York": "US", "America/Chicago": "US", "America/Denver": "US",
+  "America/Los_Angeles": "US", "America/Phoenix": "US", "America/Anchorage": "US",
+  "America/Detroit": "US", "America/Boise": "US", "America/Indiana/Indianapolis": "US",
+  "America/Kentucky/Louisville": "US", "Pacific/Honolulu": "US",
+  "America/Toronto": "CA", "America/Montreal": "CA", "America/Vancouver": "CA",
+  "America/Edmonton": "CA", "America/Winnipeg": "CA", "America/Halifax": "CA",
+  "America/St_Johns": "CA", "America/Regina": "CA",
+  // Europe
+  "Europe/London": "GB", "Europe/Belfast": "GB", "Europe/Dublin": "IE",
+  "Europe/Paris": "FR", "Europe/Berlin": "DE", "Europe/Rome": "IT",
+  "Europe/Madrid": "ES", "Atlantic/Canary": "ES", "Africa/Ceuta": "ES",
+  "Europe/Lisbon": "PT", "Atlantic/Madeira": "PT", "Atlantic/Azores": "PT",
+  "Europe/Amsterdam": "NL", "Europe/Brussels": "BE", "Europe/Luxembourg": "LU",
+  "Europe/Zurich": "CH", "Europe/Vienna": "AT", "Europe/Copenhagen": "DK",
+  "Europe/Stockholm": "SE", "Europe/Oslo": "NO", "Europe/Helsinki": "FI",
+  "Atlantic/Reykjavik": "IS", "Europe/Warsaw": "PL", "Europe/Prague": "CZ",
+  "Europe/Bratislava": "SK", "Europe/Budapest": "HU", "Europe/Bucharest": "RO",
+  "Europe/Sofia": "BG", "Europe/Athens": "GR", "Europe/Zagreb": "HR",
+  "Europe/Ljubljana": "SI", "Europe/Belgrade": "RS", "Europe/Kiev": "UA",
+  "Europe/Kyiv": "UA", "Europe/Moscow": "RU", "Europe/Istanbul": "TR",
+  "Asia/Istanbul": "TR",
+  // Latin America
+  "America/Sao_Paulo": "BR", "America/Fortaleza": "BR", "America/Recife": "BR",
+  "America/Bahia": "BR", "America/Belem": "BR", "America/Manaus": "BR",
+  "America/Mexico_City": "MX", "America/Cancun": "MX", "America/Monterrey": "MX",
+  "America/Tijuana": "MX", "America/Merida": "MX", "America/Chihuahua": "MX",
+  "America/Hermosillo": "MX", "America/Mazatlan": "MX",
+  "America/Argentina/Buenos_Aires": "AR", "America/Buenos_Aires": "AR",
+  "America/Argentina/Cordoba": "AR", "America/Santiago": "CL", "America/Bogota": "CO",
+  "America/Lima": "PE", "America/Montevideo": "UY", "America/Asuncion": "PY",
+  "America/La_Paz": "BO", "America/Guayaquil": "EC", "America/Caracas": "VE",
+  "America/Costa_Rica": "CR", "America/Panama": "PA", "America/Guatemala": "GT",
+  "America/Santo_Domingo": "DO",
+  // Oceania
+  "Australia/Sydney": "AU", "Australia/Melbourne": "AU", "Australia/Brisbane": "AU",
+  "Australia/Perth": "AU", "Australia/Adelaide": "AU", "Australia/Hobart": "AU",
+  "Australia/Darwin": "AU", "Pacific/Auckland": "NZ",
+  // Asia
+  "Asia/Tokyo": "JP", "Asia/Seoul": "KR", "Asia/Shanghai": "CN", "Asia/Chongqing": "CN",
+  "Asia/Urumqi": "CN", "Asia/Hong_Kong": "HK", "Asia/Taipei": "TW",
+  "Asia/Singapore": "SG", "Asia/Kuala_Lumpur": "MY", "Asia/Bangkok": "TH",
+  "Asia/Ho_Chi_Minh": "VN", "Asia/Saigon": "VN", "Asia/Manila": "PH",
+  "Asia/Jakarta": "ID", "Asia/Makassar": "ID", "Asia/Jayapura": "ID",
+  "Asia/Kolkata": "IN", "Asia/Calcutta": "IN", "Asia/Karachi": "PK",
+  "Asia/Dhaka": "BD", "Asia/Colombo": "LK", "Asia/Dubai": "AE", "Asia/Riyadh": "SA",
+  "Asia/Qatar": "QA", "Asia/Kuwait": "KW", "Asia/Bahrain": "BH", "Asia/Muscat": "OM",
+  "Asia/Jerusalem": "IL", "Asia/Tel_Aviv": "IL", "Asia/Amman": "JO", "Asia/Beirut": "LB",
+  // Africa
+  "Africa/Cairo": "EG", "Africa/Casablanca": "MA", "Africa/Tunis": "TN",
+  "Africa/Algiers": "DZ", "Africa/Johannesburg": "ZA", "Africa/Lagos": "NG",
+  "Africa/Nairobi": "KE", "Africa/Accra": "GH", "Africa/Addis_Ababa": "ET",
+  "Africa/Dar_es_Salaam": "TZ",
+};
+
+function browserTimeZone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Infer the visitor's phone country. Order: the browser TIMEZONE (where they
+// actually are — an English-UI browser in Italy still reports Europe/Rome),
+// then the language tag the same way locale is inferred: `Intl.Locale.maximize()`
+// adds CLDR's likely region even for a bare language ("pt" → "pt-Latn-BR"),
+// trying the raw browser tag first, then the resolved locale, then "US".
+// Client-only in practice (the server's timezone is meaningless here).
 export function inferPhoneRegion(
   navLang: string | undefined | null,
-  fallbackLocale: string
+  fallbackLocale: string,
+  timeZone: string | null = browserTimeZone()
 ): string {
+  const tzRegion = timeZone ? TZ_REGION[timeZone] : undefined;
+  if (tzRegion && KNOWN_REGIONS.has(tzRegion)) return tzRegion;
   for (const tag of [navLang, fallbackLocale]) {
     if (!tag) continue;
     try {
