@@ -5,6 +5,7 @@ import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { renderWidgetIcon } from "../widgetIcon";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { bookingButtonPresentation } from "@/lib/bookingButtonStyle";
+import { useProfileStyle } from "@/contexts/ProfileStyleContext";
 
 interface Props {
   instance: WidgetInstanceWithCatalog;
@@ -19,7 +20,11 @@ export function CalendarWidgetEmbed({ instance, profile }: Props) {
   const { t } = useLanguage();
 
   // Owner-chosen look (Style picker → Booking); null keeps the default pill.
-  const { className, style, iconClass } = bookingButtonPresentation(profile.booking_button_style);
+  // On the profile page the live style wins so the picker previews instantly.
+  const live = useProfileStyle()?.style;
+  const { className, style, iconClass } = bookingButtonPresentation(
+    live ? live.bookingButtonStyle : profile.booking_button_style
+  );
 
   return (
     <Link

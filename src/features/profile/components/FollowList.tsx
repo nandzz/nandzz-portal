@@ -29,14 +29,25 @@ export function FollowList({ profileId, type, scrollable = false, onNavigate }: 
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const fetchPage = useCallback(async (from: number, append: boolean) => {
-    const result = await loadFollowList({ profileId, type, offset: from });
-    if (!result.ok) return;
-
-    setUsers((prev) => (append ? [...prev, ...result.users] : result.users));
-    setHasMore(result.hasMore);
-    setOffset(from + result.users.length);
+    try {
+      const result = await loadFollowList({ profileId, type, offset: from });
+      if (!result.ok) throw new Error(result.error);
+      setFailed(false);
+      setUsers((prev) => {
+        if (!append) return result.users;
+        // A follow/unfollow between pages shifts offsets: never show a dupe.
+        const seen = new Set(prev.map((u) => u.id));
+        return [...prev, ...result.users.filter((u) => !seen.has(u.id))];
+      });
+      setHasMore(result.hasMore);
+      setOffset(result.nextOffset);
+    } catch (err) {
+      console.error("[follow-list] load failed:", err);
+      setFailed(true);
+    }
   }, [profileId, type]);
 
   useEffect(() => {
@@ -48,18 +59,36 @@ export function FollowList({ profileId, type, scrollable = false, onNavigate }: 
     setOffset(0);
     setHasMore(false);
     setLoading(true);
+    setFailed(false);
     fetchPage(0, false).finally(() => setLoading(false));
   }, [fetchPage]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
-    await fetchPage(offset, true);
-    setLoadingMore(false);
+    try {
+      await fetchPage(offset, true);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const retry = () => {
+    setLoading(true);
+    fetchPage(0, false).finally(() => setLoading(false));
   };
 
   if (loading) {
     return (
       <div className="flex justify-center py-8 text-sm text-muted-foreground">{t.profile.loadingUsers}</div>
+    );
+  }
+
+  if (failed && users.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-sm text-muted-foreground">
+        <p>{t.common.error}</p>
+        <Button variant="outline" size="sm" onClick={retry}>{t.common.retry}</Button>
+      </div>
     );
   }
 
@@ -76,7 +105,7 @@ export function FollowList({ profileId, type, scrollable = false, onNavigate }: 
       <ul
         className={cn(
           "divide-y divide-border -mx-2",
-          scrollable && "max-h-80 overflow-y-auto overscroll-contain"
+          scrollable && "scrollbar-hide max-h-80 overflow-y-auto overscroll-contain"
         )}
       >
         {users.map((u) => (

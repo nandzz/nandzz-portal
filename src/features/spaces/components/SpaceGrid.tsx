@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { SpaceCard } from "./SpaceCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, LayoutGrid, Grid3X3, EyeOff, SlidersHorizontal } from "lucide-react";
@@ -67,7 +66,6 @@ export function SpaceGrid({
   sectionSettings,
 }: SpaceGridProps) {
   const { t } = useLanguage();
-  const router = useRouter();
   const [compact, setCompact] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("all");
   // Per-section "load more" ceiling, only consumed in single-section view.
@@ -177,19 +175,15 @@ export function SpaceGrid({
 
   const toggleVisibility = async (section: SectionId, next: boolean) => {
     if (!sectionSettings || !visibility) return;
-    const previous = visibility;
-    setVisibility({ ...visibility, [section]: next }); // optimistic
+    setVisibility((v) => (v ? { ...v, [section]: next } : v)); // optimistic
     try {
+      // The action revalidates the public profile itself.
       const result = await setSectionVisibility({ section, value: next });
       if (!result.ok) throw new Error(result.error);
-      await fetch("/api/profile/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: sectionSettings.username }),
-      });
-      router.refresh();
     } catch {
-      setVisibility(previous); // revert on failure
+      // Revert only this section — a stale whole-object snapshot would also
+      // undo other toggles made while this request was in flight.
+      setVisibility((v) => (v ? { ...v, [section]: !next } : v));
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MapPin, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { ProfileAddress } from "@/lib/types";
@@ -38,6 +38,15 @@ export function AddressAutocomplete({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const listId = useId();
+
+  // Only text the user TYPED triggers a (billed) Places request — not the
+  // pre-filled saved address when the dialog opens, nor the label/formatted
+  // address we write back after a selection (those used to reopen the list).
+  const userTypedRef = useRef(false);
+  // Guards the details request against a newer pick/typing overwriting it.
+  const selectSeqRef = useRef(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   // One Places session token spans all keystrokes up to a selection; resetting it
@@ -47,22 +56,24 @@ export function AddressAutocomplete({
 
   // Close the dropdown on any outside pointer press.
   useEffect(() => {
-    const onPointerDown = (e: MouseEvent) => {
+    const onPointerDown = (e: PointerEvent) => {
       if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
   // Debounced autocomplete fetch. No-op without a key (plain-text fallback).
   // All state updates live inside the timer callback (async) so the effect body
   // itself never calls setState synchronously.
   useEffect(() => {
-    if (!PLACES_KEY) return;
+    if (!PLACES_KEY || !userTypedRef.current) return;
     const q = query.trim();
     const timer = setTimeout(async () => {
       if (q.length < MIN_QUERY) {
+        abortRef.current?.abort();
         setSuggestions([]);
+        setOpen(false);
         setLoading(false);
         return;
       }
@@ -107,7 +118,9 @@ export function AddressAutocomplete({
               secondaryText: p.structuredFormat?.secondaryText?.text ?? "",
             }),
           );
+        if (controller.signal.aborted) return;
         setSuggestions(next);
+        setActiveIndex(-1);
         setOpen(next.length > 0);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -115,20 +128,30 @@ export function AddressAutocomplete({
           setSuggestions([]);
         }
       } finally {
-        setLoading(false);
+        if (abortRef.current === controller) setLoading(false);
       }
     }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      // A response for an older query must never land after newer typing.
+      abortRef.current?.abort();
+    };
   }, [query, locale]);
 
   // Keep the parent in sync with the typed text so free text still persists
   // (and still deep-links to Maps) even when no suggestion is picked.
   const handleInput = (text: string) => {
+    userTypedRef.current = true;
+    selectSeqRef.current++;
     setQuery(text);
     onChange(text.trim() ? { formatted: text } : null);
   };
 
   const handleClear = () => {
+    userTypedRef.current = false;
+    selectSeqRef.current++;
+    abortRef.current?.abort();
+    setLoading(false);
     setQuery("");
     setSuggestions([]);
     setOpen(false);
@@ -136,7 +159,11 @@ export function AddressAutocomplete({
   };
 
   const handleSelect = async (s: Suggestion) => {
+    userTypedRef.current = false;
+    abortRef.current?.abort();
+    const seq = ++selectSeqRef.current;
     setOpen(false);
+    setActiveIndex(-1);
     setQuery(s.mainText);
     // Optimistically persist the label; enrich with details below.
     onChange({ formatted: [s.mainText, s.secondaryText].filter(Boolean).join(", ") });
@@ -153,6 +180,7 @@ export function AddressAutocomplete({
       );
       if (res.ok) {
         const d = await res.json();
+        if (seq !== selectSeqRef.current) return; // superseded by newer input
         setQuery(d.formattedAddress ?? s.mainText);
         onChange({
           formatted:
@@ -183,11 +211,28 @@ export function AddressAutocomplete({
           placeholder={placeholder}
           onChange={(e) => handleInput(e.target.value.slice(0, 300))}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
+          role="combobox"
+          aria-expanded={open && suggestions.length > 0}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
           onKeyDown={(e) => {
+            const listOpen = open && suggestions.length > 0;
             // Let Escape dismiss the dropdown without closing the whole dialog.
-            if (e.key === "Escape" && open) {
+            if (e.key === "Escape" && listOpen) {
               e.stopPropagation();
               setOpen(false);
+            } else if (e.key === "ArrowDown" && suggestions.length > 0) {
+              e.preventDefault();
+              setOpen(true);
+              setActiveIndex((i) => (i + 1) % suggestions.length);
+            } else if (e.key === "ArrowUp" && listOpen) {
+              e.preventDefault();
+              setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+            } else if (e.key === "Enter" && listOpen) {
+              // Pick the suggestion instead of submitting the whole profile form.
+              e.preventDefault();
+              void handleSelect(suggestions[activeIndex >= 0 ? activeIndex : 0]);
             }
           }}
           maxLength={300}
@@ -210,13 +255,15 @@ export function AddressAutocomplete({
       </div>
 
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-border/60 bg-background shadow-lg">
-          {suggestions.map((s) => (
-            <li key={s.placeId}>
+        <ul id={listId} role="listbox" className="scrollbar-hide absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-border/60 bg-background shadow-lg">
+          {suggestions.map((s, i) => (
+            <li key={s.placeId} id={`${listId}-${i}`} role="option" aria-selected={i === activeIndex}>
               <button
                 type="button"
+                tabIndex={-1}
                 onClick={() => handleSelect(s)}
-                className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
+                onMouseEnter={() => setActiveIndex(i)}
+                className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm transition-colors ${i === activeIndex ? "bg-accent" : "hover:bg-accent"}`}
               >
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="min-w-0">

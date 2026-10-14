@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchPublicProfile } from "@/features/profile/server";
 import { getPublicCalendar } from "@/features/booking/server";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
@@ -18,12 +18,7 @@ import type { Translations } from "@/lib/i18n/translations";
 
 // react.cache dedupes the fetch between generateMetadata and the page render.
 const getData = cache(async (username: string) => {
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("*")
-    .eq("username", username)
-    .single();
+  const profile = await fetchPublicProfile(username);
   if (!profile) return { profile: null as Profile | null, widget: null };
   const widget = await getPublicCalendar((profile as Profile).id);
   return { profile: profile as Profile, widget };

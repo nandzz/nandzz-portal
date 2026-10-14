@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { persistProfileUpdate } from "@/lib/profile/update";
+import { useCallback, useMemo, type ReactNode } from "react";
+import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
+import { useSerialSave } from "@/lib/useSerialSave";
 import { SectionOrderContext } from "./section-order-context";
 import type { SectionId } from "@/lib/gallery/layouts";
 
@@ -31,38 +31,23 @@ export function ProfileSections({
   sections,
   order: initialOrder,
   isOwner,
-  profileId,
-  username,
 }: ProfileSectionsProps) {
-  const router = useRouter();
-  const [order, setOrder] = useState<SectionId[]>(initialOrder);
-
-  // Adjust-during-render sync if the server sends a fresh order.
-  const [prevInitial, setPrevInitial] = useState(initialOrder);
-  if (!sameOrder(initialOrder, prevInitial)) {
-    setPrevInitial(initialOrder);
-    setOrder(initialOrder);
-  }
+  // Optimistic + strictly ordered saves: quick consecutive moves can't land
+  // out of order or be snapped back by an older save's refresh.
+  const [order, commit] = useSerialSave<SectionId[]>(
+    initialOrder,
+    async (next) => {
+      const result = await updateProfileLayout({ section_order: next });
+      if (!result.ok) throw new Error(result.error);
+    },
+    sameOrder,
+  );
 
   // Only sections with content are shown, so reordering operates on those; any
   // hidden section keeps its stored position by trailing the persisted order.
   const visibleOrder = useMemo(
     () => order.filter((id) => sections[id]),
     [order, sections],
-  );
-
-  const commit = useCallback(
-    async (next: SectionId[]) => {
-      const previous = order;
-      setOrder(next); // optimistic
-      try {
-        await persistProfileUpdate(profileId, username, { section_order: next });
-        router.refresh();
-      } catch {
-        setOrder(previous); // revert on failure
-      }
-    },
-    [order, profileId, username, router],
   );
 
   const move = useCallback(
@@ -74,7 +59,7 @@ export function ProfileSections({
       const next = [...visible];
       [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
       const hidden = order.filter((x) => !sections[x]);
-      void commit([...next, ...hidden]);
+      commit([...next, ...hidden]);
     },
     [order, sections, commit],
   );

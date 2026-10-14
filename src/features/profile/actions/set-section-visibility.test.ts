@@ -13,10 +13,15 @@ function builder() {
   };
   b.eq = (col: string, val: unknown) => {
     eqFilter = [col, val];
-    return Promise.resolve(updateResult);
+    return b;
   };
+  b.select = () => b;
+  b.single = () =>
+    Promise.resolve({ data: updateResult.error ? null : { username: "ada" }, ...updateResult });
   return b;
 }
+
+vi.mock("../revalidate", () => ({ revalidatePublicProfile: () => {} }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({

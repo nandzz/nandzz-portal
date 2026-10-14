@@ -1,20 +1,26 @@
 import { z } from "zod";
+import { isValidSocialValue, isValidWebsiteUrl, type SocialPlatform } from "./domain/social";
 
 // Input schemas for the profile Server Actions. These run at the POST-reachable
 // action boundary, so they validate untrusted client input before any DB access.
 // Limits mirror the client-side limits in EditProfileDialog / the brand page;
 // they stay lenient enough not to reject anything the current UI already allows.
 
+const socialValue = (platform: SocialPlatform) =>
+  z.string().refine((v) => isValidSocialValue(platform, v));
+
+// Handles, or full URLs on that platform only (never an arbitrary site behind
+// e.g. the Instagram icon). See domain/social.
 const socialLinks = z
   .object({
-    instagram: z.string(),
-    linkedin: z.string(),
-    twitter: z.string(),
-    github: z.string(),
-    email: z.string(),
-    youtube: z.string(),
+    instagram: socialValue("instagram"),
+    linkedin: socialValue("linkedin"),
+    twitter: socialValue("twitter"),
+    github: socialValue("github"),
+    youtube: socialValue("youtube"),
+    email: z.email().max(254).or(z.literal("")),
     // E.164 ("+<dial><digits>") or "" to clear; ProfileHeader links it via wa.me.
-    whatsapp: z.string().max(20),
+    whatsapp: z.string().regex(/^(\+\d{6,19})?$/),
   })
   .partial();
 
@@ -34,7 +40,7 @@ export const updateProfileInfoSchema = z.object({
   displayName: z.string().max(50).nullable(),
   tagline: z.string().max(100).nullable(),
   bio: z.string().max(500).nullable(),
-  websiteUrl: z.string().max(300).nullable(),
+  websiteUrl: z.string().max(300).refine(isValidWebsiteUrl).nullable(),
   socialLinks,
   address,
 });
@@ -43,13 +49,16 @@ export const updateProfileInfoSchema = z.object({
 // public URL is what these row-write actions persist.
 export const updateAvatarSchema = z.object({ avatarUrl: z.string() });
 
+// "<x>% <y>%" focal point, as written by the drag-to-reposition overlay.
+const backgroundPositionValue = z.string().regex(/^\d{1,3}% \d{1,3}%$/);
+
 export const updateBackgroundSchema = z.object({
   backgroundUrl: z.string().nullable(),
-  backgroundPosition: z.string().nullable(),
+  backgroundPosition: backgroundPositionValue.nullable(),
 });
 
 export const updateBackgroundPositionSchema = z.object({
-  backgroundPosition: z.string(),
+  backgroundPosition: backgroundPositionValue,
 });
 
 // A #rgb / #rrggbb hex string, or null to clear back to the default theme.
@@ -59,45 +68,37 @@ const hexColor = z
   .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
   .nullable();
 
-// Page background color.
-export const updateBackgroundColorSchema = z.object({
-  backgroundColor: hexColor,
-});
+const bookingButtonStyleSchema = z
+  .object({
+    variant: z.enum(["soft", "solid", "outline", "glass"]),
+    shape: z.enum(["pill", "rounded", "square"]),
+    size: z.enum(["md", "lg"]),
+    color: hexColor,
+    placement: z.enum(["username", "description", "social"]).optional(),
+  })
+  .nullable();
 
-// Button/pill surface color.
-export const updateButtonColorSchema = z.object({
-  buttonColor: hexColor,
-});
+const socialLinksStyleSchema = z
+  .object({
+    layout: z.enum(["icons", "chips", "stack", "minimal"]),
+    shape: z.enum(["pill", "rounded", "square"]),
+    size: z.enum(["md", "lg"]),
+    tone: z.enum(["default", "brand", "filled"]),
+  })
+  .nullable();
 
-// Header text color.
-export const updateTextColorSchema = z.object({
-  textColor: hexColor,
-});
-
-// Booking CTA style. null clears back to the default soft emerald pill.
-export const updateBookingButtonStyleSchema = z.object({
-  style: z
-    .object({
-      variant: z.enum(["soft", "solid", "outline", "glass"]),
-      shape: z.enum(["pill", "rounded", "square"]),
-      size: z.enum(["md", "lg"]),
-      color: hexColor,
-      placement: z.enum(["username", "description", "social"]).optional(),
-    })
-    .nullable(),
-});
-
-// Social link buttons style. null clears back to the default icon tiles.
-export const updateSocialLinksStyleSchema = z.object({
-  style: z
-    .object({
-      layout: z.enum(["icons", "chips", "stack", "minimal"]),
-      shape: z.enum(["pill", "rounded", "square"]),
-      size: z.enum(["md", "lg"]),
-      tone: z.enum(["default", "brand", "filled"]),
-    })
-    .nullable(),
-});
+// Partial patch of the profile Style picker fields, saved in ONE write. Every
+// field is optional (only what changed is sent); null clears back to the
+// default theme. Passing all five as null is the "Reset" action.
+export const updateProfileStyleSchema = z
+  .object({
+    backgroundColor: hexColor.optional(),
+    buttonColor: hexColor.optional(),
+    textColor: hexColor.optional(),
+    bookingButtonStyle: bookingButtonStyleSchema.optional(),
+    socialLinksStyle: socialLinksStyleSchema.optional(),
+  })
+  .strict();
 
 export const updateBrandSchema = z.object({
   logoUrl: z.string().nullable(),

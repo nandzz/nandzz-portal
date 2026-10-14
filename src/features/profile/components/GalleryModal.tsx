@@ -4,12 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, X } from "lucide-react";
+import { Loader2, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { loadGalleryPage } from "../actions/load-gallery-page";
 import type { Space } from "@/lib/types";
 import { spaceDisplayTitle } from "@/lib/spaces/display-title";
+import { useModalA11y } from "@/lib/useModalA11y";
 
 const PAGE_SIZE = 12;
 
@@ -35,6 +36,9 @@ export function GalleryModal({ onClose, profileId, username, totalCount }: Galle
   const [images, setImages] = useState<Space[]>([]);
   const [count, setCount] = useState(totalCount);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
 
@@ -43,35 +47,40 @@ export function GalleryModal({ onClose, profileId, username, totalCount }: Galle
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- show the spinner while this page's fetch is in flight; resolved in the .then below.
     setLoading(true);
-    loadGalleryPage({ profileId, page }).then((result) => {
-      if (cancelled || !result.ok) return;
-      setImages(result.spaces.filter((s) => imageSrc(s)));
-      if (typeof result.count === "number") setCount(result.count);
-      setLoading(false);
-    });
+    setFailed(false);
+    loadGalleryPage({ profileId, page })
+      .then((result) => {
+        if (cancelled) return;
+        if (!result.ok) {
+          setFailed(true);
+          return;
+        }
+        const total = typeof result.count === "number" ? result.count : null;
+        if (total !== null) setCount(total);
+        // Content deleted while open → this page no longer exists; step back
+        // to the last real one instead of showing an empty grid.
+        const lastPage = Math.max(1, Math.ceil((total ?? 0) / PAGE_SIZE));
+        if (total !== null && page > lastPage) {
+          setPage(lastPage);
+          return;
+        }
+        setImages(result.spaces.filter((s) => imageSrc(s)));
+      })
+      .catch((err) => {
+        // Network drop / deploy skew: never leave the spinner up forever.
+        console.error("[gallery] page load failed:", err);
+        if (!cancelled) setFailed(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, [page, profileId]);
+  }, [page, profileId, attempt]);
 
-  // Lock body scroll + close on Escape for the modal's lifetime. The latest
-  // onClose is read through a ref so the listener is bound once on mount.
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
-  useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCloseRef.current();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, []);
+  // Focus in + trapped, Escape closes, body scroll locked, focus restored.
+  useModalA11y(dialogRef, onClose);
 
   const handleSelect = useCallback(
     (space: Space) => {
@@ -89,10 +98,11 @@ export function GalleryModal({ onClose, profileId, username, totalCount }: Galle
         aria-hidden="true"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="gallery-modal-title"
-        className="relative z-10 mx-4 flex max-h-[85vh] w-full max-w-4xl flex-col"
+        className="relative z-10 mx-4 flex max-h-[85dvh] w-full max-w-4xl flex-col"
       >
         <div className="flex flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-xl">
           <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
@@ -111,10 +121,19 @@ export function GalleryModal({ onClose, profileId, username, totalCount }: Galle
             </button>
           </div>
 
-          <div className="relative min-h-[240px] flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+          <div className="scrollbar-hide relative min-h-[240px] flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
             {loading && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {failed && !loading && (
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted-foreground">
+                <p>{t.common.error}</p>
+                <Button variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+                  <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                  {t.common.retry}
+                </Button>
               </div>
             )}
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

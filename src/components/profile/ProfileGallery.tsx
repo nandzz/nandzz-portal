@@ -3,13 +3,14 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import type { Space, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useProfileStyle } from "@/contexts/ProfileStyleContext";
 import { GalleryModal } from "@/features/profile";
 import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
-import { persistProfileUpdate } from "@/lib/profile/update";
+import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
+import { useSerialSave } from "@/lib/useSerialSave";
 import { GALLERY_LAYOUTS, type GalleryLayout } from "@/lib/gallery/layouts";
 import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
@@ -38,32 +39,19 @@ export function ProfileGallery({
   enableModal,
 }: ProfileGalleryProps) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const [layout, setLayout] = useState<GalleryLayout>(initialLayout);
+  // Live text color (owner Style picker previews instantly); prop outside a profile page.
+  const liveStyle = useProfileStyle()?.style;
+  const textColor = liveStyle ? liveStyle.textColor : profile.text_color;
+  // Optimistic + strictly ordered saves (rapid picks can't land out of order
+  // or be snapped back by an older save's refresh). The action revalidates the
+  // public profile itself — no client revalidate fetch / router.refresh.
+  const [layout, handleLayoutChange] = useSerialSave<GalleryLayout>(initialLayout, async (value) => {
+    const result = await updateProfileLayout({ gallery_layout: value });
+    if (!result.ok) throw new Error(result.error);
+  });
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Keep local layout in sync if the server re-renders with a fresh value
-  // (React's recommended "adjust state during render" pattern — no effect).
-  const [prevInitial, setPrevInitial] = useState(initialLayout);
-  if (initialLayout !== prevInitial) {
-    setPrevInitial(initialLayout);
-    setLayout(initialLayout);
-  }
-
   const withImage = useMemo(() => images.filter((s) => imageSrc(s)), [images]);
-
-  const handleLayoutChange = useCallback(
-    async (value: GalleryLayout) => {
-      setLayout(value); // optimistic
-      try {
-        await persistProfileUpdate(profile.id, profile.username, { gallery_layout: value });
-        router.refresh();
-      } catch {
-        setLayout(initialLayout); // revert on failure
-      }
-    },
-    [profile.id, profile.username, initialLayout, router]
-  );
 
   if (withImage.length === 0) return null;
 
@@ -74,12 +62,12 @@ export function ProfileGallery({
       <div className="flex items-center justify-between mb-4">
         <h2
           className="text-lg font-semibold"
-          style={profile.text_color ? { color: profile.text_color } : undefined}
+          style={textColor ? { color: textColor } : undefined}
         >
           {t.profile.galleryTitle}
           <span
             className="ml-1.5 text-sm font-normal text-muted-foreground tabular-nums"
-            style={profile.text_color ? { color: profile.text_color, opacity: 0.65 } : undefined}
+            style={textColor ? { color: textColor, opacity: 0.65 } : undefined}
           >
             {totalCount}
           </span>
@@ -177,7 +165,7 @@ function GridLayout({ images, username }: { images: Space[]; username: string })
             src={imageSrc(space)!}
             alt={spaceDisplayTitle(space)}
             fill
-            sizes="(max-width: 640px) 33vw, 30vw"
+            sizes="(max-width: 640px) 33vw, (max-width: 1280px) 30vw, 400px"
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
           />
         </HoverPrefetchLink>
@@ -188,21 +176,30 @@ function GridLayout({ images, username }: { images: Space[]; username: string })
 
 /** Pinterest-style columns preserving natural aspect ratios. */
 function MasonryLayout({ images, username }: { images: Space[]; username: string }) {
+  // No stored dimensions: each tile reserves a 4:5 box (so the page doesn't
+  // jump from 0px as images stream in), then adopts the real ratio on load.
+  const [ratios, setRatios] = useState<Record<string, number>>({});
   return (
     <div className="columns-2 gap-2 sm:columns-3 [&>*]:mb-2 pb-6">
       {images.map((space) => (
         <HoverPrefetchLink
           key={space.id}
           href={tileHref(username, space)}
-          className="group block break-inside-avoid overflow-hidden rounded-md sm:rounded-lg bg-muted"
+          className="group relative block break-inside-avoid overflow-hidden rounded-md sm:rounded-lg bg-muted"
+          style={{ aspectRatio: ratios[space.id] ?? 0.8 }}
         >
           <Image
             src={imageSrc(space)!}
             alt={spaceDisplayTitle(space)}
-            width={0}
-            height={0}
-            sizes="(max-width: 640px) 50vw, 30vw"
-            className="h-auto w-full transition-transform duration-300 motion-safe:group-hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 30vw, 400px"
+            className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
+            onLoad={(e) => {
+              const img = e.currentTarget;
+              if (!img.naturalHeight) return;
+              const r = img.naturalWidth / img.naturalHeight;
+              setRatios((prev) => (prev[space.id] === r ? prev : { ...prev, [space.id]: r }));
+            }}
           />
         </HoverPrefetchLink>
       ))}
@@ -276,9 +273,33 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
     []
   );
 
-  // Before the container is measured (first paint), rows is empty and only the
-  // ref container renders; the measure effect fires on mount and re-renders
-  // with real rows, whose <Image>s then report their natural ratios on load.
+  // Before the container is measured (server render + first paint) show a
+  // CSS-only approximation of justified rows, so the gallery is in the HTML
+  // (SEO/LCP) and doesn't pop in after hydration, pushing the page down. Once
+  // measured, the exact rows take over; images then report natural ratios.
+  if (containerWidth <= 0) {
+    return (
+      <div ref={containerRef} className="flex flex-wrap gap-2 pb-6">
+        {images.map((space) => (
+          <HoverPrefetchLink
+            key={space.id}
+            href={tileHref(username, space)}
+            className="group relative block h-[220px] grow basis-[330px] overflow-hidden rounded-md sm:rounded-lg bg-muted"
+          >
+            <Image
+              src={imageSrc(space)!}
+              alt={spaceDisplayTitle(space)}
+              fill
+              sizes="(max-width: 640px) 100vw, 400px"
+              className="object-cover"
+              onLoad={(e) => handleLoad(space.id, e)}
+            />
+          </HoverPrefetchLink>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="flex flex-col gap-2 pb-6">
       {rows.map((row, i) => (
@@ -294,7 +315,7 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
                 src={imageSrc(space)!}
                 alt={spaceDisplayTitle(space)}
                 fill
-                sizes="50vw"
+                sizes="(max-width: 640px) 100vw, 400px"
                 className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
                 onLoad={(e) => handleLoad(space.id, e)}
               />
@@ -317,7 +338,7 @@ function FeaturedLayout({ images, username }: { images: Space[]; username: strin
       >
         <Image
           src={imageSrc(hero)!}
-          alt={hero.title}
+          alt={spaceDisplayTitle(hero)}
           fill
           sizes="(max-width: 1024px) 100vw, 66vw"
           className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"

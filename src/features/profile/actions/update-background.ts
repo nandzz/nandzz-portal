@@ -4,12 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import {
   updateBackgroundSchema,
   updateBackgroundPositionSchema,
-  updateBackgroundColorSchema,
-  updateButtonColorSchema,
-  updateTextColorSchema,
-  updateBookingButtonStyleSchema,
-  updateSocialLinksStyleSchema,
+  updateProfileStyleSchema,
 } from "../schemas";
+import { isOwnStorageUrl, revalidatePublicProfile } from "../revalidate";
 import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
 
 export type UpdateBackgroundResult =
@@ -35,16 +32,23 @@ export async function updateBackground(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+  const { backgroundUrl } = parsed.data;
+  if (backgroundUrl && !isOwnStorageUrl(backgroundUrl, "profile-backgrounds", user.id)) {
+    return { ok: false, error: "INVALID_INPUT" };
+  }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({
-      background_url: parsed.data.backgroundUrl,
+      background_url: backgroundUrl,
       background_position: parsed.data.backgroundPosition,
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("username")
+    .single();
   if (error) return { ok: false, error: "FAILED", message: error.message };
 
+  revalidatePublicProfile(data?.username);
   return { ok: true };
 }
 
@@ -61,46 +65,50 @@ export async function updateBackgroundPosition(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({ background_position: parsed.data.backgroundPosition })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("username")
+    .single();
   if (error) return { ok: false, error: "FAILED", message: error.message };
 
+  revalidatePublicProfile(data?.username);
   return { ok: true };
 }
 
-// Sets or clears the page background color (a hex string, or null to reset to
-// the default theme background). This is independent of the cover image — a
-// profile can have a tinted page with or without a cover.
-export async function updateBackgroundColor(input: {
-  backgroundColor: string | null;
-}): Promise<UpdateBackgroundResult> {
-  const parsed = updateBackgroundColorSchema.safeParse(input);
+export type ProfileStylePatch = {
+  backgroundColor?: string | null;
+  buttonColor?: string | null;
+  textColor?: string | null;
+  bookingButtonStyle?: BookingButtonStyle | null;
+  socialLinksStyle?: SocialLinksStyle | null;
+};
+
+const STYLE_COLUMNS = {
+  backgroundColor: "background_color",
+  buttonColor: "button_color",
+  textColor: "text_color",
+  bookingButtonStyle: "booking_button_style",
+  socialLinksStyle: "social_links_style",
+} as const;
+
+// Saves any subset of the Style picker fields in ONE write (the client coalesces
+// rapid changes into a single debounced patch). All five as null = Reset.
+// Revalidates the public profile itself, so visitors never see a stale style
+// even if the owner closes the tab right after.
+export async function updateProfileStyle(
+  input: ProfileStylePatch
+): Promise<UpdateBackgroundResult> {
+  const parsed = updateProfileStyleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ background_color: parsed.data.backgroundColor })
-    .eq("id", user.id);
-  if (error) return { ok: false, error: "FAILED", message: error.message };
-
-  return { ok: true };
-}
-
-// Sets or clears the button/pill surface color (hex, or null to reset to the
-// default theme surface).
-export async function updateButtonColor(input: {
-  buttonColor: string | null;
-}): Promise<UpdateBackgroundResult> {
-  const parsed = updateButtonColorSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+  const update: Record<string, unknown> = {};
+  for (const [key, column] of Object.entries(STYLE_COLUMNS)) {
+    const value = parsed.data[key as keyof typeof STYLE_COLUMNS];
+    if (value !== undefined) update[column] = value;
+  }
+  if (Object.keys(update).length === 0) return { ok: true };
 
   const supabase = await createClient();
   const {
@@ -108,100 +116,14 @@ export async function updateButtonColor(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
-    .update({ button_color: parsed.data.buttonColor })
-    .eq("id", user.id);
+    .update(update)
+    .eq("id", user.id)
+    .select("username")
+    .single();
   if (error) return { ok: false, error: "FAILED", message: error.message };
 
-  return { ok: true };
-}
-
-// Sets or clears the header text color (hex, or null to reset to theme text).
-export async function updateTextColor(input: {
-  textColor: string | null;
-}): Promise<UpdateBackgroundResult> {
-  const parsed = updateTextColorSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ text_color: parsed.data.textColor })
-    .eq("id", user.id);
-  if (error) return { ok: false, error: "FAILED", message: error.message };
-
-  return { ok: true };
-}
-
-// Sets or clears the booking CTA style (null = default soft emerald pill).
-export async function updateBookingButtonStyle(input: {
-  style: BookingButtonStyle | null;
-}): Promise<UpdateBackgroundResult> {
-  const parsed = updateBookingButtonStyleSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ booking_button_style: parsed.data.style })
-    .eq("id", user.id);
-  if (error) return { ok: false, error: "FAILED", message: error.message };
-
-  return { ok: true };
-}
-
-// Sets or clears the social link buttons style (null = default icon tiles).
-export async function updateSocialLinksStyle(input: {
-  style: SocialLinksStyle | null;
-}): Promise<UpdateBackgroundResult> {
-  const parsed = updateSocialLinksStyleSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ social_links_style: parsed.data.style })
-    .eq("id", user.id);
-  if (error) return { ok: false, error: "FAILED", message: error.message };
-
-  return { ok: true };
-}
-
-// Resets all profile style customizations back to the default theme in one shot.
-export async function resetProfileStyle(): Promise<UpdateBackgroundResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "UNAUTHENTICATED" };
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      background_color: null,
-      button_color: null,
-      text_color: null,
-      booking_button_style: null,
-      social_links_style: null,
-    })
-    .eq("id", user.id);
-  if (error) return { ok: false, error: "FAILED", message: error.message };
-
+  revalidatePublicProfile(data?.username);
   return { ok: true };
 }

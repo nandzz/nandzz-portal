@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import type { Profile, SocialLinksStyle, WidgetInstanceWithCatalog } from "@/lib/types";
@@ -17,8 +16,11 @@ import { FEATURES } from "@/lib/flags";
 import { isColorDark } from "@/lib/color";
 import { resolveBookingButtonStyle } from "@/lib/bookingButtonStyle";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useProfileStyle } from "@/contexts/ProfileStyleContext";
 
-const MAX_AVATAR_SIZE = 1.5 * 1024 * 1024;
+// Guard against absurd inputs only (memory). The cropper always re-encodes to a
+// 400×400 JPEG (~50 KB), so ordinary 3–10 MB phone photos must be accepted.
+const MAX_AVATAR_INPUT_SIZE = 25 * 1024 * 1024;
 
 interface ProfileHeaderProps {
   profile: Profile;
@@ -26,6 +28,8 @@ interface ProfileHeaderProps {
   currentUserId?: string | null;
   isFollowing?: boolean;
   widgets?: WidgetInstanceWithCatalog[];
+  // Style props are fallbacks for use outside a ProfileStyleRoot; on the profile
+  // page the live (owner-editable) style from context wins.
   /** Owner-chosen tint for the neutral button/pill surfaces. null = theme. */
   buttonColor?: string | null;
   /** Owner-chosen color for the header texts. null = theme. */
@@ -34,9 +38,13 @@ interface ProfileHeaderProps {
   socialLinksStyle?: SocialLinksStyle | null;
 }
 
-export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor = null, textColor = null, socialLinksStyle = null }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor: buttonColorProp = null, textColor: textColorProp = null, socialLinksStyle: socialLinksStyleProp = null }: ProfileHeaderProps) {
   const { t } = useLanguage();
-  const router = useRouter();
+  const live = useProfileStyle()?.style;
+  const buttonColor = live ? live.buttonColor : buttonColorProp;
+  const textColor = live ? live.textColor : textColorProp;
+  const socialLinksStyle = live ? live.socialLinksStyle : socialLinksStyleProp;
+  const bookingButtonStyle = live ? live.bookingButtonStyle : profile.booking_button_style;
 
   // When the owner tints the buttons, override the surface + a readable text
   // color inline (inline wins over the theme `bg-background` / hover classes).
@@ -63,23 +71,39 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setLocalAvatarUrl(profile.avatar_url ?? null); }, [profile.avatar_url]);
 
+  // Object URLs (crop source + optimistic preview) must be revoked or each
+  // pick leaks a full-size photo in memory.
+  const previewUrlRef = useRef<string | null>(null);
+  const revokePreview = () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+  };
+  useEffect(() => () => revokePreview(), []);
+
+  const closeCropper = () => {
+    if (cropImageSrc) URL.revokeObjectURL(cropImageSrc);
+    setCropImageSrc(null);
+  };
+
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > MAX_AVATAR_SIZE) {
-      setAvatarError("Profile picture must be under 1.5 MB");
-      e.target.value = "";
+    if (!file.type.startsWith("image/") || file.size > MAX_AVATAR_INPUT_SIZE) {
+      setAvatarError(t.common.error);
       return;
     }
     setAvatarError("");
-    const reader = new FileReader();
-    reader.onload = () => setCropImageSrc(reader.result as string);
-    reader.readAsDataURL(file);
-    e.target.value = "";
+    setCropImageSrc(URL.createObjectURL(file));
   };
 
   const handleCroppedAvatar = async (blob: Blob) => {
-    setCropImageSrc(null);
+    closeCropper();
+    const prevUrl = localAvatarUrl;
+    // Show the cropped picture immediately; the upload happens behind it.
+    revokePreview();
+    previewUrlRef.current = URL.createObjectURL(blob);
+    setLocalAvatarUrl(previewUrlRef.current);
     setAvatarUploading(true);
     setAvatarError("");
     try {
@@ -87,22 +111,20 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       // Query string busts the browser/CDN cache since the storage path is stable
       const nextUrl = `${publicUrl}?t=${Date.now()}`;
 
+      // The action revalidates the public profile itself (the fresh server
+      // render comes back with its response — no extra fetch / router.refresh).
       const result = await updateAvatar({ avatarUrl: nextUrl });
       if (!result.ok) throw new Error(result.message || "Failed to update picture");
 
       setLocalAvatarUrl(nextUrl);
-      // Invalidate the profile page's unstable_cache tag so router.refresh reads fresh data
-      await fetch("/api/profile/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: profile.username }),
-      });
       window.dispatchEvent(new CustomEvent("profile-updated"));
-      router.refresh();
     } catch (err) {
       console.error("[profile] avatar update failed:", err);
+      setLocalAvatarUrl(prevUrl);
       setAvatarError(t.common.error);
     } finally {
+      // Keep the blob preview alive until the real URL has replaced it.
+      setTimeout(revokePreview, 0);
       setAvatarUploading(false);
     }
   };
@@ -110,7 +132,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   const links = buildSocialLinks(profile);
 
   // The widget strip (Book now CTA) moves to the owner-chosen spot in the header.
-  const bookingPlacement = resolveBookingButtonStyle(profile.booking_button_style).placement;
+  const bookingPlacement = resolveBookingButtonStyle(bookingButtonStyle).placement;
   const widgetStrip = (className: string) =>
     FEATURES.widgets && widgets.length > 0 ? (
       <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} className={className} />
@@ -164,7 +186,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       {cropImageSrc && (
         <AvatarCropModal
           imageSrc={cropImageSrc}
-          onCancel={() => setCropImageSrc(null)}
+          onCancel={closeCropper}
           onCrop={handleCroppedAvatar}
         />
       )}

@@ -6,6 +6,7 @@ export { FollowersDialog } from "./components/FollowersDialog";
 export { GalleryModal } from "./components/GalleryModal";
 export { ProfileHeader } from "./components/ProfileHeader";
 export { ProfileBackground } from "./components/ProfileBackground";
+export { ProfileStyleRoot } from "./components/ProfileStyleRoot";
 export { EditProfileDialog } from "./components/EditProfileDialog";
 export { loadMyProfile } from "./actions/load-my-profile";
 export { updateBrand } from "./actions/update-brand";

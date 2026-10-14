@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { SpaceCard } from "@/features/spaces";
 import type { Space, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useProfileStyle } from "@/contexts/ProfileStyleContext";
 import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
-import { persistProfileUpdate } from "@/lib/profile/update";
+import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
+import { useSerialSave } from "@/lib/useSerialSave";
 import { CARD_LAYOUTS, type SectionLayout } from "@/lib/gallery/layouts";
 
 interface ProfileContentProps {
@@ -32,29 +32,16 @@ export function ProfileContent({
   currentUserId,
 }: ProfileContentProps) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const [layout, setLayout] = useState<SectionLayout>(initialLayout);
-
-  // Keep local layout in sync when the server re-renders with a fresh value
-  // (React's "adjust state during render" pattern — no effect).
-  const [prevInitial, setPrevInitial] = useState(initialLayout);
-  if (initialLayout !== prevInitial) {
-    setPrevInitial(initialLayout);
-    setLayout(initialLayout);
-  }
-
-  const handleLayoutChange = useCallback(
-    async (value: SectionLayout) => {
-      setLayout(value); // optimistic
-      try {
-        await persistProfileUpdate(profile.id, profile.username, { contents_layout: value });
-        router.refresh();
-      } catch {
-        setLayout(initialLayout); // revert on failure
-      }
-    },
-    [profile.id, profile.username, initialLayout, router],
-  );
+  // Live text color (owner Style picker previews instantly); prop outside a profile page.
+  const liveStyle = useProfileStyle()?.style;
+  const textColor = liveStyle ? liveStyle.textColor : profile.text_color;
+  // Optimistic + strictly ordered saves (rapid picks can't land out of order
+  // or be snapped back by an older save's refresh). The action revalidates the
+  // public profile itself — no client revalidate fetch / router.refresh.
+  const [layout, handleLayoutChange] = useSerialSave<SectionLayout>(initialLayout, async (value) => {
+    const result = await updateProfileLayout({ contents_layout: value });
+    if (!result.ok) throw new Error(result.error);
+  });
 
   // Empty state is handled at the page level (so it isn't shown when the
   // gallery has images but there are no non-image contents).
@@ -78,12 +65,12 @@ export function ProfileContent({
       <div className="flex items-center justify-between mb-4">
         <h2
           className="text-lg font-semibold"
-          style={profile.text_color ? { color: profile.text_color } : undefined}
+          style={textColor ? { color: textColor } : undefined}
         >
           {t.profile.contentsTitle}
           <span
             className="ml-1.5 text-sm font-normal text-muted-foreground tabular-nums"
-            style={profile.text_color ? { color: profile.text_color, opacity: 0.65 } : undefined}
+            style={textColor ? { color: textColor, opacity: 0.65 } : undefined}
           >
             {totalCount}
           </span>

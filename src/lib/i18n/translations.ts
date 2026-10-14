@@ -268,6 +268,9 @@ export type Translations = {
   common: {
     loading: string;
     cancel: string;
+    retry: string;
+    discardChanges: string;
+    checkHighlighted: string;
     error: string;
     periodWeek: string;
     periodMonth: string;
@@ -1766,6 +1769,9 @@ const en: Translations = {
   common: {
     loading: "Loading...",
     cancel: "Cancel",
+    retry: "Retry",
+    discardChanges: "Discard unsaved changes?",
+    checkHighlighted: "Please check the highlighted fields.",
     error: "Something went wrong",
     periodWeek: "Week",
     periodMonth: "Month",
@@ -3264,6 +3270,9 @@ const pt: Translations = {
   common: {
     loading: "Carregando...",
     cancel: "Cancelar",
+    retry: "Tentar novamente",
+    discardChanges: "Descartar as alterações não salvas?",
+    checkHighlighted: "Verifique os campos destacados.",
     error: "Algo deu errado",
     periodWeek: "Semana",
     periodMonth: "Mês",
@@ -4762,6 +4771,9 @@ const fr: Translations = {
   common: {
     loading: "Chargement...",
     cancel: "Annuler",
+    retry: "Réessayer",
+    discardChanges: "Abandonner les modifications non enregistrées ?",
+    checkHighlighted: "Veuillez vérifier les champs en surbrillance.",
     error: "Une erreur s'est produite",
     periodWeek: "Semaine",
     periodMonth: "Mois",
@@ -6260,6 +6272,9 @@ const es: Translations = {
   common: {
     loading: "Cargando...",
     cancel: "Cancelar",
+    retry: "Reintentar",
+    discardChanges: "¿Descartar los cambios sin guardar?",
+    checkHighlighted: "Revisa los campos resaltados.",
     error: "Algo salió mal",
     periodWeek: "Semana",
     periodMonth: "Mes",
@@ -7758,6 +7773,9 @@ const ja: Translations = {
   common: {
     loading: "読み込み中...",
     cancel: "キャンセル",
+    retry: "再試行",
+    discardChanges: "保存していない変更を破棄しますか？",
+    checkHighlighted: "強調表示された項目を確認してください。",
     error: "問題が発生しました",
     periodWeek: "週",
     periodMonth: "月",
@@ -9256,6 +9274,9 @@ const de: Translations = {
   common: {
     loading: "Laden...",
     cancel: "Abbrechen",
+    retry: "Erneut versuchen",
+    discardChanges: "Nicht gespeicherte Änderungen verwerfen?",
+    checkHighlighted: "Bitte prüfe die markierten Felder.",
     error: "Etwas ist schiefgelaufen",
     periodWeek: "Woche",
     periodMonth: "Monat",
@@ -10754,6 +10775,9 @@ const it: Translations = {
   common: {
     loading: "Caricamento...",
     cancel: "Annulla",
+    retry: "Riprova",
+    discardChanges: "Annullare le modifiche non salvate?",
+    checkHighlighted: "Controlla i campi evidenziati.",
     error: "Qualcosa è andato storto",
     periodWeek: "Settimana",
     periodMonth: "Mese",

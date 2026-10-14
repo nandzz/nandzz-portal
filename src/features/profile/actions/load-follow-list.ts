@@ -7,7 +7,7 @@ import { getFollowList, type FollowUser } from "../data/profiles";
 const PAGE_SIZE = 20;
 
 export type LoadFollowListResult =
-  | { ok: true; users: FollowUser[]; hasMore: boolean }
+  | { ok: true; users: FollowUser[]; hasMore: boolean; nextOffset: number }
   | { ok: false; error: "INVALID_INPUT" };
 
 // Client-invoked, offset-paginated loader for the followers/following list
@@ -22,7 +22,7 @@ export async function loadFollowList(input: {
   const { profileId, type, offset } = parsed.data;
 
   const supabase = await createClient();
-  const users = await getFollowList(
+  const { users, rowCount } = await getFollowList(
     supabase,
     profileId,
     type,
@@ -30,5 +30,10 @@ export async function loadFollowList(input: {
     offset + PAGE_SIZE - 1
   );
 
-  return { ok: true, users, hasMore: users.length === PAGE_SIZE };
+  return {
+    ok: true,
+    users,
+    hasMore: rowCount === PAGE_SIZE,
+    nextOffset: offset + rowCount,
+  };
 }

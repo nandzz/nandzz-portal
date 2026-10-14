@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getPublicProfile, redirectToCanonicalUsername } from "@/features/profile/server";
+import { ProfileStyleRoot } from "@/features/profile";
+import { profileStyleFromRow } from "@/features/profile/domain/style";
 import { SpaceGrid } from "@/features/spaces";
 import { Button } from "@/components/ui/button";
 import { getServerTranslations } from "@/lib/i18n/server";
@@ -13,23 +15,13 @@ import { getSavedSpaceIds } from "@/features/collections/server";
 
 const PAGE_SIZE = 24;
 
-const fetchProfileByUsername = async (username: string) => {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("profiles")
-    .select("*")
-    .eq("username", username)
-    .single();
-  return data;
-};
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const profile = await fetchProfileByUsername(username);
+  const profile = await getPublicProfile(username);
 
   if (!profile) {
     return {};
@@ -54,8 +46,9 @@ export default async function ProfileContentsPage({
 }) {
   const { username } = await params;
   const { page } = await searchParams;
+  redirectToCanonicalUsername(username, "/contents" + (page ? `?page=${encodeURIComponent(page)}` : ""));
 
-  const profile = await fetchProfileByUsername(username);
+  const profile = await getPublicProfile(username);
   if (!profile) {
     notFound();
   }
@@ -73,20 +66,28 @@ export default async function ProfileContentsPage({
 
   const [supabase, t] = await Promise.all([createClient(), getServerTranslations()]);
 
-  const { data: spaces, count } = await supabase
-    .from("spaces")
-    .select("*", { count: "exact" })
-    .eq("user_id", profile.id)
-    .eq("is_public", true)
-    .neq("content_type", "image") // images live in the gallery
-    .neq("content_type", "link") // links live in the /links section
-    .neq("content_type", "video")
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const [{ data: spaces, count }, { data: { user } }] = await Promise.all([
+    supabase
+      .from("spaces")
+      .select("*", { count: "exact" })
+      .eq("user_id", profile.id)
+      .eq("is_public", true)
+      .neq("content_type", "image") // images live in the gallery
+      .neq("content_type", "link") // links live in the /links section
+      .neq("content_type", "video")
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, to),
+    supabase.auth.getUser(),
+  ]);
 
   const totalPages = Math.ceil((count || 0) / PAGE_SIZE);
+  // A stale/hand-typed `?page=` past the end (e.g. after deletions) lands on
+  // the last real page instead of an empty grid.
+  if (totalPages > 0 && currentPage > totalPages) {
+    redirect(`/${profile.username}/contents?page=${totalPages}`);
+  }
 
-  const { data: { user } } = await supabase.auth.getUser();
   let likedSpaceIds: string[] = [];
   let savedSpaceIds: string[] = [];
 
@@ -105,7 +106,13 @@ export default async function ProfileContentsPage({
   const displayName = profile.display_name || profile.username;
 
   return (
-    <div className="relative min-h-[calc(100vh-8rem)]">
+    // Same page color + light/dark lock as the profile itself, so "See more"
+    // doesn't drop the owner's style.
+    <ProfileStyleRoot
+      initial={profileStyleFromRow(profile)}
+      isOwner={false}
+      className="relative min-h-[calc(100vh-8rem)]"
+    >
       <PageShell width="wide">
         <div className="mb-8">
           <Link
@@ -153,6 +160,6 @@ export default async function ProfileContentsPage({
           </div>
         )}
       </PageShell>
-    </div>
+    </ProfileStyleRoot>
   );
 }

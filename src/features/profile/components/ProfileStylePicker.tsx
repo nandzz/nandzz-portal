@@ -143,6 +143,7 @@ function ColorGroup({
           type="button"
           onClick={() => onChange(null)}
           aria-label={defaultLabel}
+          aria-pressed={value === null}
           title={defaultLabel}
           className={`${SWATCH} ${value === null ? SELECTED : "border-border/70"}`}
         >
@@ -157,6 +158,7 @@ function ColorGroup({
               key={c.value}
               onClick={() => onChange(c.value)}
               aria-label={c.label}
+              aria-pressed={selected}
               title={c.label}
               style={{ backgroundColor: c.value }}
               className={`${SWATCH} ${selected ? SELECTED : "border-border/40"}`}
@@ -369,14 +371,16 @@ export function ProfileStylePicker({
   // Close on outside click / Escape so the panel behaves like a popover.
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent) => {
+    // pointerdown (not mousedown): iOS Safari sends no mouse events for taps on
+    // non-clickable areas, so tapping the page wouldn't close the panel.
+    const onDown = (e: PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("mousedown", onDown);
+    document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
@@ -422,7 +426,7 @@ export function ProfileStylePicker({
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 z-40 mt-2 flex max-h-[75vh] w-[19rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/95 shadow-xl backdrop-blur-md">
+        <div role="dialog" aria-label="Style" className="absolute top-full right-0 z-40 mt-2 flex max-h-[75dvh] w-[19rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/95 shadow-xl backdrop-blur-md">
           {/* Header */}
           <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5">
             <p className="text-sm font-semibold text-foreground">Style</p>
@@ -471,7 +475,7 @@ export function ProfileStylePicker({
           </div>
 
           {/* Body */}
-          <div className="flex-1 space-y-5 overflow-y-auto border-t border-border/50 px-4 py-4">
+          <div className="scrollbar-hide flex-1 space-y-5 overflow-y-auto border-t border-border/50 px-4 py-4">
             {activeTab === "page" && (
               <>
                 <ColorGroup

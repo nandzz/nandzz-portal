@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Camera, X, Move, Check, Share2, Pencil, Trash2, UserPen, Eye, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,17 +13,9 @@ import { ShareMenu } from "@/features/spaces/components/ShareMenu";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { ProfileStylePicker } from "./ProfileStylePicker";
 import { uploadBackground, removeBackgroundFiles } from "../storage";
-import {
-  updateBackground,
-  updateBackgroundPosition,
-  updateBackgroundColor,
-  updateButtonColor,
-  updateTextColor,
-  updateBookingButtonStyle,
-  updateSocialLinksStyle,
-  resetProfileStyle,
-} from "../actions/update-background";
-import type { BookingButtonStyle, Profile, SocialLinksStyle } from "@/lib/types";
+import { updateBackground, updateBackgroundPosition } from "../actions/update-background";
+import type { Profile } from "@/lib/types";
+import { EMPTY_PROFILE_STYLE, useProfileStyle } from "@/contexts/ProfileStyleContext";
 import { buildSocialLinks } from "./SocialLinkButtons";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
@@ -42,11 +33,6 @@ function parsePosition(pos: string | null): { x: number; y: number } {
 interface ProfileBackgroundProps {
   backgroundUrl: string | null;
   backgroundPosition: string | null;
-  backgroundColor: string | null;
-  buttonColor: string | null;
-  textColor: string | null;
-  bookingButtonStyle: BookingButtonStyle | null;
-  socialLinksStyle: SocialLinksStyle | null;
   hasBookingWidget: boolean;
   isOwner: boolean;
   profileId: string;
@@ -58,11 +44,6 @@ interface ProfileBackgroundProps {
 export function ProfileBackground({
   backgroundUrl,
   backgroundPosition,
-  backgroundColor,
-  buttonColor,
-  textColor,
-  bookingButtonStyle,
-  socialLinksStyle,
   hasBookingWidget,
   isOwner,
   profileId,
@@ -71,7 +52,6 @@ export function ProfileBackground({
   profile,
 }: ProfileBackgroundProps) {
   const { t } = useLanguage();
-  const router = useRouter();
   const { profilePreview, setProfilePreview } = useChrome();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -88,24 +68,14 @@ export function ProfileBackground({
 
   const [editInfoOpen, setEditInfoOpen] = useState(false);
 
-  // Local style colors so swatch selection previews the page background instantly,
-  // before the server round-trip / router.refresh reads the persisted value back.
-  // (Button color lives on ProfileHeader, so it only reflects after refresh.)
-  const [localColor, setLocalColor] = useState(backgroundColor);
-  const [localButtonColor, setLocalButtonColor] = useState(buttonColor);
-  const [localTextColor, setLocalTextColor] = useState(textColor);
-  const [localBookingStyle, setLocalBookingStyle] = useState(bookingButtonStyle);
-  const [localSocialStyle, setLocalSocialStyle] = useState(socialLinksStyle);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setLocalColor(backgroundColor); }, [backgroundColor]);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setLocalButtonColor(buttonColor); }, [buttonColor]);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setLocalTextColor(textColor); }, [textColor]);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setLocalBookingStyle(bookingButtonStyle); }, [bookingButtonStyle]);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setLocalSocialStyle(socialLinksStyle); }, [socialLinksStyle]);
+  // Live style from ProfileStyleRoot: picker changes apply to the whole page
+  // instantly and are persisted in the background (debounced, ordered, with
+  // rollback) — see ProfileStyleRoot.
+  const styleCtx = useProfileStyle();
+  const style = styleCtx?.style ?? EMPTY_PROFILE_STYLE;
+  const updateStyle = styleCtx?.update;
+  const localColor = style.backgroundColor;
+  const localTextColor = style.textColor;
 
   // Escape leaves preview mode.
   useEffect(() => {
@@ -115,111 +85,10 @@ export function ProfileBackground({
     return () => document.removeEventListener("keydown", onKey);
   }, [profilePreview, setProfilePreview]);
 
-  // Invalidate the cached profile page then re-render with fresh server data.
-  const revalidateProfile = async () => {
-    await fetch("/api/profile/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username }),
-    });
-    router.refresh();
-  };
-
-  const handleColorChange = async (color: string | null) => {
-    const prev = localColor;
-    setLocalColor(color); // optimistic preview
-    try {
-      const result = await updateBackgroundColor({ backgroundColor: color });
-      if (!result.ok) throw new Error(result.message || "Failed to save color");
-      await revalidateProfile();
-    } catch (err) {
-      console.error("[profile] background color save failed:", err);
-      setLocalColor(prev); // roll back on failure
-      setError(t.common.error);
-    }
-  };
-
-  const handleButtonColorChange = async (color: string | null) => {
-    const prev = localButtonColor;
-    setLocalButtonColor(color);
-    try {
-      const result = await updateButtonColor({ buttonColor: color });
-      if (!result.ok) throw new Error(result.message || "Failed to save color");
-      await revalidateProfile();
-    } catch (err) {
-      console.error("[profile] button color save failed:", err);
-      setLocalButtonColor(prev);
-      setError(t.common.error);
-    }
-  };
-
-  const handleTextColorChange = async (color: string | null) => {
-    const prev = localTextColor;
-    setLocalTextColor(color);
-    try {
-      const result = await updateTextColor({ textColor: color });
-      if (!result.ok) throw new Error(result.message || "Failed to save color");
-      await revalidateProfile();
-    } catch (err) {
-      console.error("[profile] text color save failed:", err);
-      setLocalTextColor(prev);
-      setError(t.common.error);
-    }
-  };
-
-  const handleBookingStyleChange = async (style: BookingButtonStyle | null) => {
-    const prev = localBookingStyle;
-    setLocalBookingStyle(style);
-    try {
-      const result = await updateBookingButtonStyle({ style });
-      if (!result.ok) throw new Error(result.message || "Failed to save booking style");
-      await revalidateProfile();
-    } catch (err) {
-      console.error("[profile] booking button style save failed:", err);
-      setLocalBookingStyle(prev);
-      setError(t.common.error);
-    }
-  };
-
-  const handleSocialStyleChange = async (style: SocialLinksStyle | null) => {
-    const prev = localSocialStyle;
-    setLocalSocialStyle(style);
-    try {
-      const result = await updateSocialLinksStyle({ style });
-      if (!result.ok) throw new Error(result.message || "Failed to save social links style");
-      await revalidateProfile();
-    } catch (err) {
-      console.error("[profile] social links style save failed:", err);
-      setLocalSocialStyle(prev);
-      setError(t.common.error);
-    }
-  };
-
-  const handleResetStyle = async () => {
-    const prevColor = localColor;
-    const prevButton = localButtonColor;
-    const prevText = localTextColor;
-    const prevBooking = localBookingStyle;
-    const prevSocial = localSocialStyle;
-    setLocalColor(null);
-    setLocalButtonColor(null);
-    setLocalTextColor(null);
-    setLocalBookingStyle(null);
-    setLocalSocialStyle(null);
-    try {
-      const result = await resetProfileStyle();
-      if (!result.ok) throw new Error(result.message || "Failed to reset style");
-      await revalidateProfile();
-    } catch (err) {
-      console.error("[profile] style reset failed:", err);
-      setLocalColor(prevColor);
-      setLocalButtonColor(prevButton);
-      setLocalTextColor(prevText);
-      setLocalBookingStyle(prevBooking);
-      setLocalSocialStyle(prevSocial);
-      setError(t.common.error);
-    }
-  };
+  // Preview is global chrome state: leaving this profile (e.g. tapping a link to
+  // another profile, where there's no "Exit preview" pill) must not strand the
+  // user with no navbar / tab bar.
+  useEffect(() => () => setProfilePreview(false), [setProfilePreview]);
 
   const isDragging = useRef(false);
   const dragStart = useRef({ clientX: 0, clientY: 0, posX: 50, posY: 50 });
@@ -264,17 +133,10 @@ export function ProfileBackground({
       setLocalUrl(publicUrl);
       setPosition(resetPos);
       setSavedPosition(resetPos);
-      // Enter reposition mode right away so the user can frame the shot
+      // Enter reposition mode right away so the user can frame the shot.
+      // (The action revalidated the profile itself; its response carries the
+      // fresh server render, so no extra fetch / router.refresh round-trips.)
       setRepositioning(true);
-      // Invalidate the profile page's unstable_cache tag BEFORE router.refresh(),
-      // otherwise the server re-render returns the stale background_url and the
-      // useEffect below snaps localUrl back to the old value.
-      await fetch("/api/profile/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
-      });
-      router.refresh();
     } catch (err) {
       console.error("[profile] background upload failed:", err);
       setError(t.common.error);
@@ -304,12 +166,6 @@ export function ProfileBackground({
       setPosition({ x: 50, y: 50 });
       setSavedPosition({ x: 50, y: 50 });
       setRepositioning(false);
-      await fetch("/api/profile/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
-      });
-      router.refresh();
     } catch (err) {
       console.error("[profile] background remove failed:", err);
       setError(t.common.error);
@@ -348,21 +204,20 @@ export function ProfileBackground({
     isDragging.current = false;
   };
 
+  // Optimistic: the new framing sticks immediately; reverted if the save fails.
   const handleSavePosition = async () => {
+    const prevSaved = savedPosition;
+    const next = { x: Math.round(position.x), y: Math.round(position.y) };
+    setSavedPosition(next);
+    setRepositioning(false);
+    setError("");
     try {
-      const posStr = `${Math.round(position.x)}% ${Math.round(position.y)}%`;
-      const result = await updateBackgroundPosition({ backgroundPosition: posStr });
+      const result = await updateBackgroundPosition({ backgroundPosition: `${next.x}% ${next.y}%` });
       if (!result.ok) throw new Error(result.message || "Failed to save position");
-      setSavedPosition(position);
-      setRepositioning(false);
-      await fetch("/api/profile/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
-      });
-      router.refresh();
     } catch (err) {
       console.error("[profile] background position save failed:", err);
+      setSavedPosition(prevSaved);
+      setPosition(prevSaved);
       setError(t.common.error);
     }
   };
@@ -555,29 +410,31 @@ export function ProfileBackground({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <ProfileStylePicker
-                backgroundColor={localColor}
-                onBackgroundChange={handleColorChange}
-                buttonColor={localButtonColor}
-                onButtonChange={handleButtonColorChange}
-                textColor={localTextColor}
-                onTextChange={handleTextColorChange}
-                social={{
-                  links: buildSocialLinks(profile),
-                  style: localSocialStyle,
-                  onChange: handleSocialStyleChange,
-                }}
-                booking={
-                  hasBookingWidget
-                    ? {
-                        label: t.booking.bookNow,
-                        style: localBookingStyle,
-                        onChange: handleBookingStyleChange,
-                      }
-                    : undefined
-                }
-                onReset={handleResetStyle}
-              />
+              {updateStyle && (
+                <ProfileStylePicker
+                  backgroundColor={style.backgroundColor}
+                  onBackgroundChange={(backgroundColor) => updateStyle({ backgroundColor })}
+                  buttonColor={style.buttonColor}
+                  onButtonChange={(buttonColor) => updateStyle({ buttonColor })}
+                  textColor={style.textColor}
+                  onTextChange={(textColor) => updateStyle({ textColor })}
+                  social={{
+                    links: buildSocialLinks(profile),
+                    style: style.socialLinksStyle,
+                    onChange: (socialLinksStyle) => updateStyle({ socialLinksStyle }),
+                  }}
+                  booking={
+                    hasBookingWidget
+                      ? {
+                          label: t.booking.bookNow,
+                          style: style.bookingButtonStyle,
+                          onChange: (bookingButtonStyle) => updateStyle({ bookingButtonStyle }),
+                        }
+                      : undefined
+                  }
+                  onReset={() => updateStyle(EMPTY_PROFILE_STYLE)}
+                />
+              )}
               <button
                 onClick={() => { window.scrollTo({ top: 0 }); setProfilePreview(true); }}
                 aria-label="Preview"
@@ -596,9 +453,9 @@ export function ProfileBackground({
             </div>
           )}
 
-          {error && (
-            <p className="text-xs text-destructive bg-background/90 rounded-md px-2 py-1 border border-destructive/20 shadow-sm">
-              {error}
+          {(error || styleCtx?.saveError) && (
+            <p role="alert" className="text-xs text-destructive bg-background/90 rounded-md px-2 py-1 border border-destructive/20 shadow-sm">
+              {error || t.common.error}
             </p>
           )}
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Mail, Globe, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,15 @@ import type { Profile, SocialLinks, ProfileAddress } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { updateProfileInfo } from "../actions/update-profile-info";
 import { AddressAutocomplete } from "./AddressAutocomplete";
+import { useModalA11y } from "@/lib/useModalA11y";
+import {
+  SOCIAL_VALUE_MAX,
+  isValidSocialValue,
+  isValidWebsiteUrl,
+  normalizeSocialValue,
+  normalizeWebsiteUrl,
+  type SocialPlatform,
+} from "../domain/social";
 import {
   InstagramIcon,
   LinkedinIcon,
@@ -37,7 +45,6 @@ const LIMITS = {
   bio: 500,
   bioLines: 5,
   websiteUrl: 300,
-  socialUsername: 50,
   socialEmail: 254,
   socialPhone: 20,
 };
@@ -50,8 +57,8 @@ interface EditProfileDialogProps {
 // Mounted only while open (see ProfileBackground), so useState initializers seed
 // the form fresh from `profile` each time it opens — no re-seed effect needed.
 export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) {
-  const router = useRouter();
   const { t, locale } = useLanguage();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [displayName, setDisplayName] = useState(profile.display_name || "");
   const [tagline, setTagline] = useState(profile.tagline || "");
@@ -78,70 +85,73 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [invalid, setInvalid] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
+  const buildPayload = () => ({
+    displayName: displayName.trim() || null,
+    tagline: tagline.trim() || null,
+    bio: bio.trim() || null,
+    websiteUrl: normalizeWebsiteUrl(websiteUrl) || null,
+    socialLinks: {
+      ...(Object.fromEntries(
+        Object.entries(socialLinks).map(([k, v]) => [
+          k,
+          k === "email" ? (v ?? "").trim() : normalizeSocialValue(k as SocialPlatform, v ?? ""),
+        ])
+      ) as SocialLinks),
+      whatsapp: whatsappNational.trim()
+        ? toE164(dialForRegion(whatsappRegion), whatsappNational)
+        : "",
+    } as SocialLinks,
+    address,
+  });
+
+  // Snapshot of the form as opened, to warn before discarding edits.
+  const [initialPayload] = useState(() => JSON.stringify(buildPayload()));
+  const isDirty = () => JSON.stringify(buildPayload()) !== initialPayload;
+
+  // Never close mid-save (the result/error would be lost), and confirm before
+  // throwing away unsaved edits (Escape / backdrop / X / Cancel).
+  const requestClose = () => {
+    if (loading) return;
+    if (isDirty() && !window.confirm(t.common.discardChanges)) return;
+    onClose();
+  };
+
+  useModalA11y(panelRef, requestClose);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
+
+    const payload = buildPayload();
+    const bad = new Set<string>();
+    if (payload.websiteUrl && (payload.websiteUrl.length > LIMITS.websiteUrl || !isValidWebsiteUrl(payload.websiteUrl))) {
+      bad.add("website");
+    }
+    for (const key of ["instagram", "linkedin", "twitter", "github", "youtube"] as const) {
+      if (!isValidSocialValue(key, payload.socialLinks[key] ?? "")) bad.add(key);
+    }
+    const email = payload.socialLinks.email ?? "";
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) bad.add("email");
+    if (whatsappNational.trim() && !isPossiblePhoneNumber(whatsappNational)) bad.add("whatsapp");
+    setInvalid(bad);
+    if (bad.size > 0) {
+      setError(bad.size === 1 && bad.has("whatsapp") ? t.booking.invalidPhone : t.common.checkHighlighted);
+      return;
+    }
+
     setLoading(true);
-
     try {
-      if (displayName.length > LIMITS.displayName) {
-        setError(`Display name must be ${LIMITS.displayName} characters or less`);
+      // The action revalidates the public profile itself; its response brings
+      // the fresh server render, so the header updates as the dialog closes.
+      const result = await updateProfileInfo(payload);
+      if (!result.ok) {
+        setError(result.error === "INVALID_INPUT" ? t.common.checkHighlighted : t.common.error);
         return;
       }
-      if (tagline.length > LIMITS.tagline) {
-        setError(`Tagline must be ${LIMITS.tagline} characters or less`);
-        return;
-      }
-      if (bio.length > LIMITS.bio) {
-        setError(`Bio must be ${LIMITS.bio} characters or less`);
-        return;
-      }
-      if (websiteUrl && websiteUrl.length > LIMITS.websiteUrl) {
-        setError(`Website URL must be ${LIMITS.websiteUrl} characters or less`);
-        return;
-      }
-      if (websiteUrl && !/^https?:\/\//i.test(websiteUrl)) {
-        setError("Website URL must start with http:// or https://");
-        return;
-      }
-      if (whatsappNational.trim() && !isPossiblePhoneNumber(whatsappNational)) {
-        setError(t.booking.invalidPhone);
-        return;
-      }
-
-      const result = await updateProfileInfo({
-        displayName: displayName || null,
-        tagline: tagline || null,
-        bio: bio || null,
-        websiteUrl: websiteUrl || null,
-        socialLinks: {
-          ...socialLinks,
-          whatsapp: whatsappNational.trim()
-            ? toE164(dialForRegion(whatsappRegion), whatsappNational)
-            : "",
-        },
-        address,
-      });
-
-      if (!result.ok) throw new Error(result.message || "Something went wrong");
-
-      await fetch("/api/profile/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: profile.username }),
-      });
-
       window.dispatchEvent(new CustomEvent("profile-updated"));
-      router.refresh();
       onClose();
     } catch (err: unknown) {
       console.error("[profile] update failed:", err);
@@ -151,23 +161,33 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
     }
   };
 
+  const invalidRing = (key: string) =>
+    invalid.has(key) ? "border-destructive focus-within:border-destructive" : "border-border/60 focus-within:border-violet-500/50";
+
   const socialRows = [
-    { key: "instagram", Icon: InstagramIcon, prefix: "instagram.com/", placeholder: "username", max: LIMITS.socialUsername },
-    { key: "linkedin", Icon: LinkedinIcon, prefix: "linkedin.com/in/", placeholder: "username", max: LIMITS.socialUsername },
-    { key: "twitter", Icon: XIcon, prefix: "x.com/", placeholder: "username", max: LIMITS.socialUsername },
-    { key: "github", Icon: GithubIcon, prefix: "github.com/", placeholder: "username", max: LIMITS.socialUsername },
-    { key: "youtube", Icon: YoutubeIcon, prefix: "youtube.com/@", placeholder: "channel", max: LIMITS.socialUsername },
+    { key: "instagram", Icon: InstagramIcon, prefix: "instagram.com/", placeholder: "username" },
+    { key: "linkedin", Icon: LinkedinIcon, prefix: "linkedin.com/in/", placeholder: "username" },
+    { key: "twitter", Icon: XIcon, prefix: "x.com/", placeholder: "username" },
+    { key: "github", Icon: GithubIcon, prefix: "github.com/", placeholder: "username" },
+    { key: "youtube", Icon: YoutubeIcon, prefix: "youtube.com/@", placeholder: "channel" },
   ] as const;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] flex flex-col">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={requestClose} aria-hidden="true" />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-profile-title"
+        className="relative z-10 w-full max-w-lg mx-4 max-h-[90dvh] flex flex-col"
+      >
         <div className="bg-background border border-border/60 rounded-xl shadow-xl flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
-            <h2 className="text-lg font-semibold">{t.settings.profileTitle}</h2>
+            <h2 id="edit-profile-title" className="text-lg font-semibold">{t.settings.profileTitle}</h2>
             <button
-              onClick={onClose}
+              type="button"
+              onClick={requestClose}
               className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="Close"
             >
@@ -175,8 +195,8 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
-            <div className="space-y-5 overflow-y-auto px-6 py-5">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col overflow-hidden">
+            <div className="scrollbar-hide space-y-5 overflow-y-auto px-6 py-5">
               <div className="space-y-2">
                 <Label htmlFor="edit-displayName">{t.settings.displayName}</Label>
                 <Input
@@ -231,16 +251,20 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="edit-websiteUrl">{t.settings.websiteUrl}</Label>
-                <div className="flex items-center gap-0 rounded-md border border-border/60 bg-background overflow-hidden focus-within:border-violet-500/50 transition-colors">
+                <div className={`flex items-center gap-0 rounded-md border bg-background overflow-hidden transition-colors ${invalidRing("website")}`}>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center border-r border-border/60 bg-muted/50 text-muted-foreground">
                     <Globe className="h-4 w-4" />
                   </span>
                   <Input
                     id="edit-websiteUrl"
                     type="url"
+                    inputMode="url"
+                    autoCapitalize="none"
                     placeholder="https://yourwebsite.com"
                     value={websiteUrl}
+                    aria-invalid={invalid.has("website") || undefined}
                     onChange={(e) => setWebsiteUrl(e.target.value.slice(0, LIMITS.websiteUrl))}
+                    onBlur={(e) => setWebsiteUrl(normalizeWebsiteUrl(e.target.value))}
                     maxLength={LIMITS.websiteUrl}
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -262,20 +286,31 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                 <Label className="text-base font-semibold">{t.settings.socialLinks}</Label>
 
                 <div className="space-y-3 rounded-xl border border-border/50 bg-muted/20 p-4">
-                  {socialRows.map(({ key, Icon, prefix, placeholder, max }) => (
+                  {socialRows.map(({ key, Icon, prefix, placeholder }) => (
                     <div key={key} className="flex items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background border border-border/50 text-muted-foreground">
                         <Icon className="h-4 w-4" />
                       </div>
-                      <div className="flex items-center gap-0 flex-1 rounded-md border border-border/60 bg-background overflow-hidden focus-within:border-violet-500/50 transition-colors">
+                      <div className={`flex items-center gap-0 flex-1 min-w-0 rounded-md border bg-background overflow-hidden transition-colors ${invalidRing(key)}`}>
                         <span className="px-3 text-xs text-muted-foreground bg-muted/50 h-9 flex items-center border-r border-border/60 whitespace-nowrap">{prefix}</span>
+                        {/* Pasting a full profile URL is fine: it's reduced to the
+                            handle on blur/save (see domain/social), so long
+                            LinkedIn/YouTube URLs aren't truncated into broken links. */}
                         <Input
                           placeholder={placeholder}
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          aria-label={prefix}
+                          aria-invalid={invalid.has(key) || undefined}
                           value={socialLinks[key as keyof SocialLinks] || ""}
                           onChange={(e) =>
-                            setSocialLinks({ ...socialLinks, [key]: e.target.value.slice(0, max) })
+                            setSocialLinks({ ...socialLinks, [key]: e.target.value.slice(0, SOCIAL_VALUE_MAX) })
                           }
-                          maxLength={max}
+                          onBlur={(e) =>
+                            setSocialLinks({ ...socialLinks, [key]: normalizeSocialValue(key, e.target.value) })
+                          }
+                          maxLength={SOCIAL_VALUE_MAX}
                           className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                       </div>
@@ -286,14 +321,14 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background border border-border/50 text-muted-foreground">
                       <WhatsAppIcon className="h-4 w-4" />
                     </div>
-                    <div className="flex items-center gap-0 flex-1 rounded-md border border-border/60 bg-background overflow-hidden focus-within:border-violet-500/50 transition-colors">
+                    <div className={`flex items-center gap-0 flex-1 min-w-0 rounded-md border bg-background overflow-hidden transition-colors ${invalidRing("whatsapp")}`}>
                       {/* Country dial-code selector in place of the static prefix. */}
                       <div className="relative shrink-0 h-9 border-r border-border/60 bg-muted/50">
                         <select
                           aria-label={t.booking.phoneCountryAria}
                           value={whatsappRegion}
                           onChange={(e) => setWhatsappRegion(e.target.value)}
-                          className="h-full appearance-none bg-transparent pl-3 pr-7 text-xs text-muted-foreground focus:outline-none cursor-pointer"
+                          className="h-full appearance-none bg-transparent pl-3 pr-7 text-base sm:text-xs text-muted-foreground focus:outline-none cursor-pointer"
                         >
                           {phoneCountryOptions.map((c) => (
                             <option key={c.region} value={c.region}>
@@ -322,27 +357,30 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                     </div>
                     <Input
                       type="email"
+                      autoCapitalize="none"
+                      aria-label="Email"
+                      aria-invalid={invalid.has("email") || undefined}
                       placeholder="you@example.com"
                       value={socialLinks.email || ""}
                       onChange={(e) =>
                         setSocialLinks({ ...socialLinks, email: e.target.value.slice(0, LIMITS.socialEmail) })
                       }
                       maxLength={LIMITS.socialEmail}
-                      className="bg-background border-border/60 focus:border-violet-500/50 transition-colors"
+                      className={`bg-background transition-colors ${invalid.has("email") ? "border-destructive" : "border-border/60 focus:border-violet-500/50"}`}
                     />
                   </div>
                 </div>
               </div>
 
               {error && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
+                <div role="alert" className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2">
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
             </div>
 
             <div className="flex justify-end gap-3 border-t border-border/60 px-6 py-4">
-              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={loading}>
+              <Button type="button" variant="outline" size="sm" onClick={requestClose} disabled={loading}>
                 {t.settings.deleteDialogCancel}
               </Button>
               <Button type="submit" size="sm" disabled={loading}>

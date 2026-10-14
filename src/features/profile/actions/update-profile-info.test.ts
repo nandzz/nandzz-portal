@@ -13,10 +13,18 @@ function builder() {
   };
   b.eq = (column: string, value: unknown) => {
     updateFilter = { column, value };
-    return Promise.resolve(updateResult);
+    return b;
   };
+  b.select = () => b;
+  b.single = () =>
+    Promise.resolve({ data: updateResult.error ? null : { username: "ada" }, ...updateResult });
   return b;
 }
+
+const revalidated: string[] = [];
+vi.mock("../revalidate", () => ({
+  revalidatePublicProfile: (u: string) => revalidated.push(u),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -67,6 +75,20 @@ describe("updateProfileInfo", () => {
       address: null,
     });
     expect(updateFilter).toEqual({ column: "id", value: "user_1" });
+    expect(revalidated).toContain("ada");
+  });
+
+  it("rejects a social URL pointing at another site", async () => {
+    const res = await updateProfileInfo({
+      ...valid,
+      socialLinks: { instagram: "https://evil.example/login" },
+    });
+    expect(res).toEqual({ ok: false, error: "INVALID_INPUT" });
+  });
+
+  it("rejects a website without http(s)", async () => {
+    const res = await updateProfileInfo({ ...valid, websiteUrl: "javascript:alert(1)" });
+    expect(res).toEqual({ ok: false, error: "INVALID_INPUT" });
   });
 
   it("surfaces a DB error as FAILED", async () => {

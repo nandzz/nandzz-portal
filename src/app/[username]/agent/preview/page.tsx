@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchPublicProfile } from "@/features/profile/server";
 import { AgentPublic } from "@/features/agent";
 import { getFeatureFlags } from "@/lib/featureFlags";
 
@@ -11,12 +11,7 @@ export default async function AgentPreviewPage({
 }) {
   const { username } = await params;
 
-  const admin = createAdminClient();
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("*")
-    .eq("username", username)
-    .single();
+  const profile = await fetchPublicProfile(username);
 
   if (!(await getFeatureFlags()).ai || !profile) notFound();
 

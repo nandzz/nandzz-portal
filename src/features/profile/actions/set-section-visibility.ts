@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { SECTION_VISIBILITY_COLUMN } from "@/lib/spaces/content-types";
 import { setSectionVisibilitySchema } from "../schemas";
+import { revalidatePublicProfile } from "../revalidate";
 
 export type SetSectionVisibilityResult =
   | { ok: true }
@@ -14,8 +15,8 @@ export type SetSectionVisibilityResult =
 
 // Toggles whether one profile section (informative / gallery / links) shows on
 // the public profile. Scoped to the caller's own row via `.eq("id", user.id)`,
-// so the client never passes a profile id. Cache revalidation stays in the
-// component's existing /api/profile/revalidate call (behavior preserved).
+// so the client never passes a profile id. Revalidates the public profile
+// itself so visitors never keep seeing a section the owner just hid.
 export async function setSectionVisibility(input: {
   section: string;
   value: boolean;
@@ -30,11 +31,14 @@ export async function setSectionVisibility(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({ [SECTION_VISIBILITY_COLUMN[section]]: value })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("username")
+    .single();
   if (error) return { ok: false, error: "FAILED", message: error.message };
 
+  revalidatePublicProfile(data?.username);
   return { ok: true };
 }

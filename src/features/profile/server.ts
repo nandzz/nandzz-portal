@@ -6,3 +6,9 @@ export {
   getPublicImageSpaces,
 } from "./data/profiles";
 export type { FollowUser } from "./data/profiles";
+export {
+  PUBLIC_PROFILE_COLUMNS,
+  fetchPublicProfile,
+  getPublicProfile,
+  redirectToCanonicalUsername,
+} from "./data/public-profile";

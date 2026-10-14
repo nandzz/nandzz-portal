@@ -10,6 +10,12 @@ import {
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { Profile, SocialLinksStyle } from "@/lib/types";
 import { isColorDark } from "@/lib/color";
+import {
+  isPlatformUrl,
+  normalizeSocialValue,
+  normalizeWebsiteUrl,
+  type SocialPlatform,
+} from "../domain/social";
 
 // Shared by the profile header and the Style picker's live preview so the two
 // can never drift.
@@ -44,11 +50,11 @@ export type SocialLink = {
 
 type LinkDef = Omit<SocialLink, "href"> & { value: string | null | undefined };
 
-function buildUrl(key: string, value: string): string {
+function buildUrl(key: string, value: string): string | null {
   const v = value.trim();
   if (key === "email") return `mailto:${v}`;
   if (key === "whatsapp") return `https://wa.me/${v.replace(/\D/g, "")}`;
-  if (key === "website") return v.startsWith("http") ? v : `https://${v}`;
+  if (key === "website") return normalizeWebsiteUrl(v);
   const baseUrls: Record<string, string> = {
     instagram: "https://instagram.com/",
     linkedin: "https://linkedin.com/in/",
@@ -56,10 +62,16 @@ function buildUrl(key: string, value: string): string {
     github: "https://github.com/",
     youtube: "https://youtube.com/@",
   };
-  // If user pasted a full URL, use it as-is
-  if (v.startsWith("http")) return v;
+  if (/^https?:\/\//i.test(v)) {
+    // A full URL is only trusted on its own platform — never let e.g. the
+    // Instagram icon point at an arbitrary (phishing) site. Legacy profile
+    // URLs are reduced to their handle.
+    if (isPlatformUrl(key as SocialPlatform, v)) return v;
+    const handle = normalizeSocialValue(key as SocialPlatform, v);
+    return /^https?:/i.test(handle) ? null : `${baseUrls[key]}${handle}`;
+  }
   // Otherwise prepend the base URL to the handle
-  return `${baseUrls[key]}${v.replace(/^@/, "")}`;
+  return `${baseUrls[key]}${encodeURIComponent(v.replace(/^@/, ""))}`;
 }
 
 export const INSTAGRAM_FILL =
@@ -81,7 +93,8 @@ export function buildSocialLinks(
   ];
   return defs
     .filter((d) => d.value && d.value.trim() !== "")
-    .map(({ value, ...d }) => ({ ...d, href: buildUrl(d.key, value!) }));
+    .map(({ value, ...d }) => ({ ...d, href: buildUrl(d.key, value!) }))
+    .filter((d): d is SocialLink => d.href !== null);
 }
 
 const SHAPE_CLASS = {

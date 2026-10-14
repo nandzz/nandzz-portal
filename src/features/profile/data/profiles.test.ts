@@ -34,14 +34,15 @@ describe("getFollowList", () => {
         { profiles: null },
       ],
     });
-    expect(await getFollowList(supabase, "p1", "followers", 0, 19)).toEqual([
-      { id: "u1", username: "a", display_name: null, avatar_url: null },
-    ]);
+    expect(await getFollowList(supabase, "p1", "followers", 0, 19)).toEqual({
+      users: [{ id: "u1", username: "a", display_name: null, avatar_url: null }],
+      rowCount: 2,
+    });
   });
 
   it("returns [] when there are no rows", async () => {
     const { supabase } = stub({ data: null });
-    expect(await getFollowList(supabase, "p1", "following", 0, 19)).toEqual([]);
+    expect(await getFollowList(supabase, "p1", "following", 0, 19)).toEqual({ users: [], rowCount: 0 });
   });
 });
 

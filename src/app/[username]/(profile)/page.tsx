@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { cache } from "react";
-import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { ProfileHeader, ProfileBackground } from "@/features/profile";
+import { ProfileHeader, ProfileBackground, ProfileStyleRoot } from "@/features/profile";
+import { getPublicProfile, redirectToCanonicalUsername } from "@/features/profile/server";
+import { profileStyleFromRow, safeHex } from "@/features/profile/domain/style";
 import { ProfileViewTracker } from "@/features/analytics";
 import { ProfileContent } from "@/components/profile/ProfileContent";
 import { ProfileLinks } from "@/components/profile/ProfileLinks";
@@ -24,26 +23,6 @@ import { getIsFollowing, getLikedSpaceIds } from "@/features/social/server";
 import { getSavedSpaceIds } from "@/features/collections/server";
 import { PageShell } from "@/components/layout/PageShell";
 import { ReportLink } from "@/features/legal/components/ReportLink";
-import { isColorDark } from "@/lib/color";
-
-const fetchProfileByUsername = async (username: string) => {
-  const admin = createAdminClient();
-  const { data } = await admin
-    .from("profiles")
-    .select("*")
-    .eq("username", username)
-    .single();
-  return data;
-};
-
-// Per-username tag so a single profile can be invalidated with revalidateTag(`profile:${username}`)
-const getProfile = cache((username: string) =>
-  unstable_cache(
-    () => fetchProfileByUsername(username),
-    ["profile", username],
-    { revalidate: 60, tags: [`profile:${username}`] }
-  )()
-);
 
 export async function generateMetadata({
   params,
@@ -51,7 +30,7 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const [profile, t] = await Promise.all([getProfile(username), getServerTranslations()]);
+  const [profile, t] = await Promise.all([getPublicProfile(username), getServerTranslations()]);
 
   if (!profile) {
     return { title: t.meta.profileNotFoundTitle };
@@ -86,9 +65,6 @@ export async function generateMetadata({
   };
 }
 
-const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}){1,2}$/;
-const safeHex = (c: string | null | undefined) => (c && HEX_COLOR.test(c) ? c : null);
-
 // Edge-to-edge on phones (Linktree-style): `viewport-fit=cover` lets the cover
 // photo draw under the status bar / Safari toolbars instead of stopping at the
 // safe area, and the browser chrome is tinted with the profile's own color.
@@ -99,7 +75,7 @@ export async function generateViewport({
   params: Promise<{ username: string }>;
 }): Promise<Viewport> {
   const { username } = await params;
-  const profile = await getProfile(username);
+  const profile = await getPublicProfile(username);
   const bg = safeHex(profile?.background_color);
   return {
     viewportFit: "cover",
@@ -118,8 +94,9 @@ export default async function ProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
+  redirectToCanonicalUsername(username);
 
-  const profile = await getProfile(username);
+  const profile = await getPublicProfile(username);
 
   if (!profile) {
     notFound();
@@ -154,6 +131,7 @@ export default async function ProfilePage({
           .neq("content_type", "link")
           .neq("content_type", "video")
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(0, PROFILE_PREVIEW_SIZE - 1)
       : Promise.resolve(emptyResult),
     // Links: link/video-type spaces, rendered as favicon chips.
@@ -165,6 +143,7 @@ export default async function ProfilePage({
           .eq("is_public", true)
           .in("content_type", ["link", "video"])
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(0, PROFILE_PREVIEW_SIZE - 1)
       : Promise.resolve(emptyResult),
     // Gallery: image-type spaces only.
@@ -176,6 +155,7 @@ export default async function ProfilePage({
           .eq("is_public", true)
           .eq("content_type", "image")
           .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
           .range(0, PROFILE_PREVIEW_SIZE - 1)
       : Promise.resolve(emptyResult),
     supabase.auth.getUser(),
@@ -190,19 +170,14 @@ export default async function ProfilePage({
 
   if (user) {
     const allSpaceIds = [...(spaces ?? []), ...(galleryImages ?? [])].map(s => s.id);
-
-    if (user.id !== profile.id) {
-      isFollowing = await getIsFollowing(supabase, user.id, profile.id);
-    }
-
-    if (allSpaceIds.length > 0) {
-      const [likes, saved] = await Promise.all([
-        getLikedSpaceIds(supabase, user.id, allSpaceIds),
-        getSavedSpaceIds(supabase, user.id, allSpaceIds),
-      ]);
-      likedSpaceIds = likes;
-      savedSpaceIds = saved;
-    }
+    const hasSpaces = allSpaceIds.length > 0;
+    [isFollowing, likedSpaceIds, savedSpaceIds] = await Promise.all([
+      user.id !== profile.id
+        ? getIsFollowing(supabase, user.id, profile.id)
+        : Promise.resolve(false),
+      hasSpaces ? getLikedSpaceIds(supabase, user.id, allSpaceIds) : Promise.resolve([]),
+      hasSpaces ? getSavedSpaceIds(supabase, user.id, allSpaceIds) : Promise.resolve([]),
+    ]);
   }
 
   const isOwner = user?.id === profile.id;
@@ -210,11 +185,11 @@ export default async function ProfilePage({
   const hasLinks = (linkSpaces?.length ?? 0) > 0;
   const hasGallery = (galleryImages?.length ?? 0) > 0;
 
-  // A custom background color locks the profile to a light/dark theme derived
-  // from that color's brightness, so all chrome + text stay legible regardless
-  // of the visitor's device theme. Computed server-side → no flash.
-  const bgColor = safeHex(profile.background_color);
-  const profileTheme = bgColor ? (isColorDark(bgColor) ? "dark" : "light") : "";
+  // Live, owner-editable style. A custom background color locks the profile to
+  // a light/dark theme derived from that color's brightness (ProfileStyleRoot
+  // computes it identically on the server render → no flash, and live while the
+  // owner edits).
+  const initialStyle = profileStyleFromRow(profile);
 
   // Logged-in users get a sticky top Navbar here (mobile only; the Sidebar
   // takes over at md+). Pull the whole profile up behind it (h-16) and add back
@@ -229,27 +204,15 @@ export default async function ProfilePage({
     : "pt-[env(safe-area-inset-top)]";
 
   return (
-    <div data-profile-root className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav} ${profileTheme}`}>
-      {/* Paint the document itself with the profile color so overscroll, the
-          area behind the floating CTA / Safari toolbars and any space below
-          the content never flashes the app's white (or dark-mode) body.
-          Scoped to this page: it unmounts on navigation. Only `html` gets the
-          color; `body` must go transparent — once html has its own background,
-          body's stops propagating to the canvas and would paint as an opaque
-          box OVER the negative-z cover image. Dropped the moment a link away
-          is tapped (see ThemeColorSync) so the status bar reverts instantly. */}
-      {bgColor && (
-        <style>{`html:not([data-nav-leaving]){background-color:${bgColor}}html:not([data-nav-leaving]) body{background-color:transparent}`}</style>
-      )}
+    <ProfileStyleRoot
+      initial={initialStyle}
+      isOwner={isOwner}
+      className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav}`}
+    >
       {!isOwner && <ProfileViewTracker profileId={profile.id} />}
       <ProfileBackground
         backgroundUrl={profile.background_url ?? null}
         backgroundPosition={profile.background_position ?? null}
-        backgroundColor={bgColor}
-        buttonColor={profile.button_color ?? null}
-        textColor={profile.text_color ?? null}
-        bookingButtonStyle={profile.booking_button_style ?? null}
-        socialLinksStyle={profile.social_links_style ?? null}
         hasBookingWidget={widgets.some((w) => w.catalog.slug === "calendar")}
         isOwner={isOwner}
         profileId={profile.id}
@@ -265,9 +228,6 @@ export default async function ProfilePage({
           currentUserId={user?.id ?? null}
           isFollowing={isFollowing}
           widgets={widgets}
-          buttonColor={profile.button_color ?? null}
-          textColor={profile.text_color ?? null}
-          socialLinksStyle={profile.social_links_style ?? null}
         />
         <ProfileSections
           order={resolveSectionOrder(profile)}
@@ -314,6 +274,6 @@ export default async function ProfilePage({
           </div>
         )}
       </PageShell>
-    </div>
+    </ProfileStyleRoot>
   );
 }

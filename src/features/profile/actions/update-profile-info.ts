@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ProfileAddress } from "@/lib/types";
 import { updateProfileInfoSchema } from "../schemas";
+import { revalidatePublicProfile } from "../revalidate";
 
 export type UpdateProfileInfoResult =
   | { ok: true }
@@ -13,8 +14,9 @@ export type UpdateProfileInfoResult =
     };
 
 // Persists the EditProfileDialog fields. Scoped to the caller's own row via
-// `.eq("id", user.id)`, so RLS + query agree. Cache revalidation stays in the
-// component's existing /api/profile/revalidate call (behavior preserved).
+// `.eq("id", user.id)`, so RLS + query agree. Revalidates the public profile
+// itself, so the action's response carries the fresh render (no client
+// /api/profile/revalidate + router.refresh round-trips).
 export async function updateProfileInfo(input: {
   displayName: string | null;
   tagline: string | null;
@@ -34,7 +36,7 @@ export async function updateProfileInfo(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({
       display_name: displayName,
@@ -44,8 +46,11 @@ export async function updateProfileInfo(input: {
       social_links: socialLinks,
       address,
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("username")
+    .single();
   if (error) return { ok: false, error: "FAILED", message: error.message };
 
+  revalidatePublicProfile(data?.username);
   return { ok: true };
 }

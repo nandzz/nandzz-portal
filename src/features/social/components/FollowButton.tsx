@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,31 +15,44 @@ interface FollowButtonProps {
 
 export function FollowButton({ profileId, initialIsFollowing }: FollowButtonProps) {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
+  const inFlight = useRef(false);
   const router = useRouter();
   const { t } = useLanguage();
 
   const handleClick = async () => {
-    // Optimistic update
+    // One request at a time: a double-tap used to send two toggles and land
+    // back on the original state.
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setIsPending(true);
+
+    // Optimistic update; the server gets the desired end state (idempotent).
     const wasFollowing = isFollowing;
     setIsFollowing(!wasFollowing);
 
-    const result = await toggleFollow({ profileId });
-
-    if (!result.ok) {
+    try {
+      // The action revalidates both profiles and returns the fresh render.
+      const result = await toggleFollow({ profileId, follow: !wasFollowing });
+      if (!result.ok) {
+        setIsFollowing(wasFollowing);
+        if (result.error === "UNAUTHENTICATED") router.push("/login");
+        return;
+      }
+      setIsFollowing(result.isFollowing);
+    } catch {
       setIsFollowing(wasFollowing);
-      if (result.error === "UNAUTHENTICATED") router.push("/login");
-      return;
+    } finally {
+      inFlight.current = false;
+      setIsPending(false);
     }
-
-    setIsFollowing(result.isFollowing);
-    startTransition(() => router.refresh());
   };
 
   return (
     <Button
       onClick={handleClick}
       disabled={isPending}
+      aria-pressed={isFollowing}
       variant={isFollowing ? "outline" : "default"}
       size="sm"
       className={cn(

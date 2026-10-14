@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { updateAvatarSchema } from "../schemas";
+import { isOwnStorageUrl, revalidatePublicProfile } from "../revalidate";
 
 export type UpdateAvatarResult =
   | { ok: true }
@@ -24,12 +25,18 @@ export async function updateAvatar(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+  if (!isOwnStorageUrl(parsed.data.avatarUrl, "avatars", user.id)) {
+    return { ok: false, error: "INVALID_INPUT" };
+  }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({ avatar_url: parsed.data.avatarUrl })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("username")
+    .single();
   if (error) return { ok: false, error: "FAILED", message: error.message };
 
+  revalidatePublicProfile(data?.username);
   return { ok: true };
 }

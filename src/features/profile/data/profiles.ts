@@ -38,28 +38,28 @@ export async function getFollowList(
   type: "followers" | "following",
   from: number,
   to: number
-): Promise<FollowUser[]> {
-  const query =
+): Promise<{ users: FollowUser[]; rowCount: number }> {
+  const embed =
     type === "followers"
-      ? supabase
-          .from("user_follows")
-          .select(
-            "profiles!user_follows_follower_id_fkey(id, username, display_name, avatar_url)"
-          )
-          .eq("following_id", profileId)
-          .range(from, to)
-      : supabase
-          .from("user_follows")
-          .select(
-            "profiles!user_follows_following_id_fkey(id, username, display_name, avatar_url)"
-          )
-          .eq("follower_id", profileId)
-          .range(from, to);
+      ? "profiles!user_follows_follower_id_fkey(id, username, display_name, avatar_url)"
+      : "profiles!user_follows_following_id_fkey(id, username, display_name, avatar_url)";
+  // Deterministic order (newest first, id tiebreak): without it, offset pages
+  // can overlap or skip rows between requests.
+  const { data } = await supabase
+    .from("user_follows")
+    .select(embed)
+    .eq(type === "followers" ? "following_id" : "follower_id", profileId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(from, to);
 
-  const { data } = await query;
-  return ((data ?? []) as unknown as Array<{ profiles: FollowUser | null }>)
-    .map((row) => row.profiles)
-    .filter((p): p is FollowUser => Boolean(p));
+  const rows = (data ?? []) as unknown as Array<{ profiles: FollowUser | null }>;
+  return {
+    // Rows whose joined profile is hidden/deleted are dropped from display, but
+    // the RAW row count drives pagination so the next offset stays correct.
+    users: rows.map((row) => row.profiles).filter((p): p is FollowUser => Boolean(p)),
+    rowCount: rows.length,
+  };
 }
 
 // One page of a profile's public image-type spaces, newest first, plus the exact
