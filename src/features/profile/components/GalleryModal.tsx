@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { loadGalleryPage } from "../actions/load-gallery-page";
 import type { Space } from "@/lib/types";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 const PAGE_SIZE = 12;
 
@@ -126,7 +127,7 @@ export function GalleryModal({ onClose, profileId, username, totalCount }: Galle
                 >
                   <Image
                     src={imageSrc(space)!}
-                    alt={space.title}
+                    alt={spaceDisplayTitle(space)}
                     fill
                     sizes="(max-width: 640px) 33vw, 22vw"
                     className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"

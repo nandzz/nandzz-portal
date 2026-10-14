@@ -30,6 +30,7 @@ import { IdleChromeActivator } from "@/contexts/ChromeContext";
 import { isOwnSpaceHtmlUrl } from "@/lib/spaces/html-url";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { ReportLink } from "@/features/legal/components/ReportLink";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 function hasDownloadableContent(html: string): boolean {
   return (
@@ -82,25 +83,27 @@ export async function generateMetadata({
   const author = profile?.display_name || profile?.username || "Unknown";
   const description = space.description || t.meta.spaceDescriptionFallback.replace("{author}", author);
 
+  const displayTitle = spaceDisplayTitle(space, author);
+
   return {
-    title: space.title,
+    title: displayTitle,
     description,
     alternates: {
       canonical: `https://nandzz.com/${username}/space/${id}`,
     },
     openGraph: {
-      title: space.title,
+      title: displayTitle,
       description,
       type: "website",
       url: `https://nandzz.com/${username}/space/${id}`,
       siteName: "Nandzz",
       ...(space.preview_image_url && {
-        images: [{ url: space.preview_image_url, alt: space.title }],
+        images: [{ url: space.preview_image_url, alt: displayTitle }],
       }),
     },
     twitter: {
       card: space.preview_image_url ? "summary_large_image" : "summary",
-      title: `${space.title} | Nandzz`,
+      title: `${displayTitle} | Nandzz`,
       description,
       ...(space.preview_image_url && { images: [space.preview_image_url] }),
     },
@@ -217,7 +220,7 @@ export default async function SpaceViewPage({
         <div className="flex items-center gap-3 min-w-0">
           <BackButton />
           <div className="h-4 w-px bg-border shrink-0" />
-          <h1 className="font-semibold truncate">{space.title}</h1>
+          <h1 className="font-semibold truncate">{spaceDisplayTitle(space, `@${username}`)}</h1>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <LikeButton
@@ -237,12 +240,12 @@ export default async function SpaceViewPage({
             initialOpen={comments === "open"}
           />
           {!isOwner && (
-            <StarButton spaceId={space.id} spaceTitle={space.title} initialSaved={saved} size="md" />
+            <StarButton spaceId={space.id} spaceTitle={spaceDisplayTitle(space, `@${username}`)} initialSaved={saved} size="md" />
           )}
           {!isOwner && space.is_public && (
             <DuplicateSpaceButton spaceId={space.id} size="md" />
           )}
-          <ShareMenu url={`/${username}/space/${space.id}`} title={space.title} size="md" />
+          <ShareMenu url={`/${username}/space/${space.id}`} title={spaceDisplayTitle(space, `@${username}`)} size="md" />
           {profile && (
             <Link
               href={`/${profile.username}`}
@@ -344,7 +347,7 @@ export default async function SpaceViewPage({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={space.image_url}
-              alt={space.title}
+              alt={spaceDisplayTitle(space)}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
           </div>

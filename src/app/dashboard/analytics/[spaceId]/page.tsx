@@ -11,6 +11,7 @@ import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { getUserEntitlements } from "@/lib/plan";
 import { FeatureGate } from "@/components/plan/FeatureGate";
 import { parseStatsPeriod } from "@/lib/period";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 export default async function SpaceAnalyticsPage({
   params,
@@ -57,7 +58,7 @@ export default async function SpaceAnalyticsPage({
         <div className="h-4 w-px bg-border" />
         <BarChart2 className="h-4 w-4 text-violet-500 shrink-0" />
         <div className="min-w-0">
-          <h1 className="text-xl font-bold truncate">{space.title}</h1>
+          <h1 className="text-xl font-bold truncate">{spaceDisplayTitle(space, "—")}</h1>
           <Link
             href="/dashboard/analytics"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"

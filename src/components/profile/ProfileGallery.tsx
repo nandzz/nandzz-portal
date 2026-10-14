@@ -11,6 +11,7 @@ import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
 import { persistProfileUpdate } from "@/lib/profile/update";
 import { GALLERY_LAYOUTS, type GalleryLayout } from "@/lib/gallery/layouts";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 interface ProfileGalleryProps {
   images: Space[];
@@ -150,7 +151,7 @@ function CarouselLayout({ images, username }: { images: Space[]; username: strin
         >
           <Image
             src={imageSrc(space)!}
-            alt={space.title}
+            alt={spaceDisplayTitle(space)}
             fill
             sizes="200px"
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
@@ -174,7 +175,7 @@ function GridLayout({ images, username }: { images: Space[]; username: string })
         >
           <Image
             src={imageSrc(space)!}
-            alt={space.title}
+            alt={spaceDisplayTitle(space)}
             fill
             sizes="(max-width: 640px) 33vw, 30vw"
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
@@ -197,7 +198,7 @@ function MasonryLayout({ images, username }: { images: Space[]; username: string
         >
           <Image
             src={imageSrc(space)!}
-            alt={space.title}
+            alt={spaceDisplayTitle(space)}
             width={0}
             height={0}
             sizes="(max-width: 640px) 50vw, 30vw"
@@ -291,7 +292,7 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
             >
               <Image
                 src={imageSrc(space)!}
-                alt={space.title}
+                alt={spaceDisplayTitle(space)}
                 fill
                 sizes="50vw"
                 className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"

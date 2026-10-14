@@ -23,6 +23,7 @@ import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { getUserEntitlements } from "@/lib/plan";
 import { FeatureGate } from "@/components/plan/FeatureGate";
 import { parseStatsPeriod } from "@/lib/period";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 export default async function AnalyticsDashboardPage({
   searchParams,
@@ -137,7 +138,7 @@ export default async function AnalyticsDashboardPage({
                     key={space.id}
                     className="flex items-center justify-between px-5 py-3 gap-4 text-sm"
                   >
-                    <span className="truncate font-medium flex-1">{space.title}</span>
+                    <span className="truncate font-medium flex-1">{spaceDisplayTitle(space, "—")}</span>
                     <div className="flex items-center gap-6 text-muted-foreground shrink-0">
                       <span className="hidden sm:block w-16 text-right">
                         <span className="text-foreground font-medium">{space.views7d}</span> 7d

@@ -176,7 +176,8 @@ export async function uploadSpaceImage(
 ): Promise<string> {
   const supabase = createClient();
   const fileExt = file.name.split(".").pop();
-  const filePath = `${userId}/${Date.now()}.${fileExt}`;
+  // Random suffix: batch uploads run in parallel and can share a millisecond.
+  const filePath = `${userId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExt}`;
   const { error } = await supabase.storage
     .from("space-images")
     .upload(filePath, file, { contentType: file.type, upsert: false });

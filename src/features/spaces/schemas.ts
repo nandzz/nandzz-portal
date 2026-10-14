@@ -16,7 +16,8 @@ export type AiEditJobIdInput = z.infer<typeof aiEditJobIdSchema>;
 // `publishSpace` payload) so the builder hook can forward the same shape.
 export const updateSpaceSchema = z.object({
   id: z.uuid(),
-  title: z.string().min(1).max(100).optional(),
+  // Empty allowed: image spaces have no title (caption + hashtags only).
+  title: z.string().max(100).optional(),
   description: z.string().nullable().optional(),
   url: z.string().nullable().optional(),
   html_url: z.string().nullable().optional(),

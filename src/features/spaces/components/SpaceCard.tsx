@@ -21,6 +21,7 @@ import { StarButton, AddToCollectionDialog, removeSpaceFromCollection } from "@/
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Space } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 /** Only http(s) links are safe to navigate to directly — rejects javascript:,
  * data:, vbscript:, etc. */
@@ -122,16 +123,20 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
             </div>
           )}
           {/* Title + subtitle — always-on gradient overlay, no separate footer */}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2.5 pt-10 pb-2">
-            <p className="text-[11px] @[140px]:text-[13px] font-semibold text-white truncate">
-              {space.title}
-            </p>
-            {space.description && (
-              <p className="mt-0.5 text-[9px] @[140px]:text-[11px] leading-tight text-white/75 line-clamp-2">
-                {space.description}
-              </p>
-            )}
-          </div>
+          {(space.title.trim() || space.description) && (
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2.5 pt-10 pb-2">
+              {space.title.trim() && (
+                <p className="text-[11px] @[140px]:text-[13px] font-semibold text-white truncate">
+                  {space.title}
+                </p>
+              )}
+              {space.description && (
+                <p className="mt-0.5 text-[9px] @[140px]:text-[11px] leading-tight text-white/75 line-clamp-2">
+                  {space.description}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </Link>
     </Card>
@@ -173,10 +178,10 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
             ))}
           </div>
           <h3 className="text-sm @[280px]:text-base @[380px]:text-lg font-bold truncate mt-2 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
-            {space.title}
+            {spaceDisplayTitle(space)}
           </h3>
           <p className="mt-1 text-[10px] @[280px]:text-xs @[380px]:text-sm text-muted-foreground line-clamp-2 h-10 leading-5">
-            {space.description ?? ""}
+            {space.title.trim() ? space.description ?? "" : ""}
           </p>
           <div className="mt-3 flex items-center justify-between">
             {username ? (
@@ -196,10 +201,10 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
                     initialLiked={liked}
                     size="sm"
                   />
-                  <StarButton spaceId={space.id} spaceTitle={space.title} initialSaved={isSaved} size="sm" onToggle={setIsSaved} />
+                  <StarButton spaceId={space.id} spaceTitle={spaceDisplayTitle(space)} initialSaved={isSaved} size="sm" onToggle={setIsSaved} />
                 </>
               )}
-              <ShareButton url={spaceUrl} title={space.title} size="sm" />
+              <ShareButton url={spaceUrl} title={spaceDisplayTitle(space)} size="sm" />
             </div>
           </div>
         </CardContent>
@@ -273,7 +278,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
         open={collectionDialogOpen}
         onClose={() => setCollectionDialogOpen(false)}
         spaceId={space.id}
-        spaceTitle={space.title}
+        spaceTitle={spaceDisplayTitle(space)}
         onSavedChange={setIsSaved}
         onUnauthenticated={() => router.push("/login")}
       />

@@ -31,11 +31,13 @@ export type PublishSpaceError = {
   message?: string;
 };
 
-export async function publishSpace(
+/** Inserts one space via publish_space_tx (+ optional collection link) and
+ * returns its id. Shared by the redirecting single publish and the batch item. */
+async function insertSpace(
   payload: PublishSpacePayload,
   clientRequestId: string,
   collectionId?: string
-): Promise<PublishSpaceError | void> {
+): Promise<PublishSpaceError | { ok: true; spaceId: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
@@ -66,9 +68,32 @@ export async function publishSpace(
       .insert({ collection_id: collectionId, space_id: row.space_id });
   }
 
+  return { ok: true, spaceId: row.space_id as string };
+}
+
+export async function publishSpace(
+  payload: PublishSpacePayload,
+  clientRequestId: string,
+  collectionId?: string
+): Promise<PublishSpaceError | void> {
+  const result = await insertSpace(payload, clientRequestId, collectionId);
+  if (!result.ok) return result;
+
   // Server-side redirect — recommended pattern for post-mutation navigation
   // in Next.js server actions. Throws NEXT_REDIRECT which Next.js turns into
   // a 303 the client always honors; avoids the router.push race with the
   // enclosing server-action transition.
   redirect(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard/contents");
+}
+
+/** One item of a multi-publish (batch image upload). Same as `publishSpace`
+ * but returns the new id instead of redirecting, so the client can publish
+ * several in a row and navigate once at the end. Each item carries its own
+ * stable clientRequestId, so a retried item resolves to the same row. */
+export async function publishSpaceItem(
+  payload: PublishSpacePayload,
+  clientRequestId: string,
+  collectionId?: string
+): Promise<PublishSpaceError | { ok: true; spaceId: string }> {
+  return insertSpace(payload, clientRequestId, collectionId);
 }

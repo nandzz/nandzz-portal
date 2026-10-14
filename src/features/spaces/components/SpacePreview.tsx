@@ -3,6 +3,7 @@ import { Globe } from "lucide-react";
 import type { Space } from "@/lib/types";
 import { getGradient } from "@/lib/preview-gradients";
 import { resolveContentType } from "@/lib/spaces/content-types";
+import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 interface SpacePreviewProps {
   space: Space;
@@ -18,7 +19,7 @@ export function SpacePreview({ space, priority = false }: SpacePreviewProps) {
     return (
       <Image
         src={previewSrc}
-        alt={space.title}
+        alt={spaceDisplayTitle(space)}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="object-cover transition-transform group-hover:scale-105"
@@ -41,7 +42,7 @@ export function SpacePreview({ space, priority = false }: SpacePreviewProps) {
         <Globe className={`h-8 w-8 @[200px]:h-10 @[200px]:w-10 @[320px]:h-14 @[320px]:w-14 ${gradient.text}`} />
       ) : (
         <span className={`text-lg @[200px]:text-xl @[320px]:text-3xl font-bold ${gradient.text}`}>
-          {space.title[0]?.toUpperCase()}
+          {spaceDisplayTitle(space)[0]?.toUpperCase()}
         </span>
       )}
     </div>

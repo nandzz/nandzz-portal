@@ -71,29 +71,33 @@ export function ContentBuilderShell({
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="title" className="flex items-center gap-1.5">
-                {t.contentBuilder.titleLabel}
-                <span className="rounded-full bg-violet-100 dark:bg-violet-950/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
-                  {t.contentBuilder.requiredBadge}
+          {form.titleOptional && children}
+
+          {!form.titleOptional && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="title" className="flex items-center gap-1.5">
+                  {t.contentBuilder.titleLabel}
+                  <span className="rounded-full bg-violet-100 dark:bg-violet-950/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+                    {t.contentBuilder.requiredBadge}
+                  </span>
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  {form.title.length}/{form.LIMITS.title}
                 </span>
-              </Label>
-              <span className="text-xs text-muted-foreground">
-                {form.title.length}/{form.LIMITS.title}
-              </span>
+              </div>
+              <Input
+                id="title"
+                placeholder={t.contentBuilder.titlePlaceholder}
+                value={form.title}
+                onChange={(e) => form.setTitle(e.target.value.slice(0, form.LIMITS.title))}
+                maxLength={form.LIMITS.title}
+                required
+                aria-required="true"
+                className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
+              />
             </div>
-            <Input
-              id="title"
-              placeholder={t.contentBuilder.titlePlaceholder}
-              value={form.title}
-              onChange={(e) => form.setTitle(e.target.value.slice(0, form.LIMITS.title))}
-              maxLength={form.LIMITS.title}
-              required
-              aria-required="true"
-              className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
-            />
-          </div>
+          )}
 
           <div className="space-y-2">
             <Label>{t.contentBuilder.hashtagsLabel}</Label>
@@ -105,7 +109,7 @@ export function ContentBuilderShell({
             />
           </div>
 
-          {children}
+          {!form.titleOptional && children}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -322,7 +326,7 @@ export function ContentBuilderShell({
           )}
 
           <div className="flex gap-3 pt-2">
-            <Button type="submit" disabled={form.loading || !form.title.trim()}>
+            <Button type="submit" disabled={form.loading || (!form.titleOptional && !form.title.trim())}>
               {form.loading
                 ? t.contentBuilder.saving
                 : form.isEditing

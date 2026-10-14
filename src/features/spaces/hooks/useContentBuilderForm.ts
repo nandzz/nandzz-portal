@@ -40,6 +40,8 @@ export interface UseContentBuilderFormParams {
 
 export interface UseContentBuilderFormReturn {
   isEditing: boolean;
+  /** Images have no title (caption + hashtags only). */
+  titleOptional: boolean;
   LIMITS: typeof SHARED_LIMITS;
 
   title: string;
@@ -93,6 +95,7 @@ export function useContentBuilderForm({
   const router = useRouter();
   const { t } = useLanguage();
   const isEditing = !!space;
+  const titleOptional = contentType === "image";
 
   const [title, setTitle] = useState(space?.title || "");
   const [description, setDescription] = useState(space?.description || "");
@@ -234,7 +237,7 @@ export function useContentBuilderForm({
         return;
       }
 
-      if (!title.trim()) {
+      if (!titleOptional && !title.trim()) {
         setError(t.contentBuilder.titleRequiredError);
         setLoading(false);
         return;
@@ -295,7 +298,7 @@ export function useContentBuilderForm({
       const spaceData = {
         ...typePayload,
         content_type: contentType,
-        title,
+        title: title.trim(),
         description: description || null,
         preview_image_url,
         preview_gradient: previewGradient,
@@ -351,6 +354,7 @@ export function useContentBuilderForm({
 
   return {
     isEditing,
+    titleOptional,
     LIMITS: SHARED_LIMITS,
     title,
     setTitle,

@@ -8,11 +8,18 @@ import { ContentBuilderShell } from "./ContentBuilderShell";
 import { useContentBuilderForm } from "../../hooks/useContentBuilderForm";
 import { uploadSpaceImage } from "../../storage";
 import { FileDropzone } from "./FileDropzone";
+import { ImageBatchBuilder } from "./ImageBatchBuilder";
 import type { BuilderFieldsProps } from "./types";
 
 const MAX_CONTENT_IMAGE_SIZE = 5 * 1024 * 1024;
 
 export function ImageBuilder({ space, collectionId }: BuilderFieldsProps) {
+  // Creating supports many photos at once; editing stays single-image.
+  if (!space) return <ImageBatchBuilder collectionId={collectionId} />;
+  return <SingleImageEditor space={space} collectionId={collectionId} />;
+}
+
+function SingleImageEditor({ space, collectionId }: BuilderFieldsProps) {
   const { t } = useLanguage();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageObjectUrl, setImageObjectUrl] = useState<string | null>(null);
