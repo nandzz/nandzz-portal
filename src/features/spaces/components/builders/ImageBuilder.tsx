@@ -7,11 +7,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ContentBuilderShell } from "./ContentBuilderShell";
 import { useContentBuilderForm } from "../../hooks/useContentBuilderForm";
 import { uploadSpaceImage } from "../../storage";
+import { compressImage, isUploadableImage, MAX_RAW_IMAGE_BYTES } from "../../compress-image";
 import { FileDropzone } from "./FileDropzone";
 import { ImageBatchBuilder } from "./ImageBatchBuilder";
 import type { BuilderFieldsProps } from "./types";
 
-const MAX_CONTENT_IMAGE_SIZE = 5 * 1024 * 1024;
+// Raw picks up to 30 MB are accepted; they are downscaled before upload.
+const MAX_CONTENT_IMAGE_SIZE = MAX_RAW_IMAGE_BYTES;
 
 export function ImageBuilder({ space, collectionId }: BuilderFieldsProps) {
   // Creating supports many photos at once; editing stays single-image.
@@ -34,6 +36,17 @@ function SingleImageEditor({ space, collectionId }: BuilderFieldsProps) {
     setImageObjectUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
+
+  // Downscale on pick so the preview, size and upload all use the final file.
+  const selectFile = async (file: File) => {
+    const ready = await compressImage(file);
+    if (!isUploadableImage(ready)) {
+      form.setError(t.contentBuilder.imageBatchUnsupported);
+      return;
+    }
+    form.setError("");
+    setImageFile(ready);
+  };
 
   const validate = (): string | null => {
     if (!imageFile && !space?.image_url) return t.contentBuilder.imageFileRequiredError;
@@ -105,7 +118,7 @@ function SingleImageEditor({ space, collectionId }: BuilderFieldsProps) {
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">{t.contentBuilder.imageCurrentImage}</p>
-              <UploadNewImageButton onFileSelected={setImageFile} onError={form.setError} />
+              <UploadNewImageButton onFileSelected={selectFile} onError={form.setError} />
             </div>
           </div>
         ) : (
@@ -118,7 +131,7 @@ function SingleImageEditor({ space, collectionId }: BuilderFieldsProps) {
             icon={ImageIcon}
             title={t.contentBuilder.imageDropzoneTitle}
             hint={t.contentBuilder.imageDropzoneHint}
-            onFileSelected={setImageFile}
+            onFileSelected={selectFile}
             onError={form.setError}
           />
         )}

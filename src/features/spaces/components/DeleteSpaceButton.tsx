@@ -15,9 +15,9 @@ export function DeleteSpaceButton({ spaceId, redirectTo }: DeleteSpaceButtonProp
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this content? This cannot be undone.")) return;
+    // deleteSpace revalidates server-side; a refresh() here would cancel the push.
     await deleteSpace({ id: spaceId });
     router.push(redirectTo);
-    router.refresh();
   };
 
   return (

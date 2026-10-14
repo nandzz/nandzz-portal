@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, unstable_rethrow } from "next/navigation";
 import { publishSpace, type PublishSpacePayload } from "../actions/publish-space";
 import { updateSpace } from "../actions/update-space";
+import { revalidateContents } from "../actions/revalidate-contents";
 import { loadHashtagSuggestions } from "../actions/load-hashtag-suggestions";
 import {
   getCurrentUserId,
@@ -316,8 +317,9 @@ export function useContentBuilderForm({
         void _omit;
         const result = await updateSpace({ id: space.id, ...updatePayload });
         if (!result.ok) throw new Error(result.message || result.error);
+        await revalidateContents();
         router.push(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard/contents");
-        router.refresh();
+        return;
       } else {
         // First-time publish goes through the server action so credits are deducted atomically.
         // On success the action calls redirect() — nothing is returned, and control

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Space, Profile } from "@/lib/types";
@@ -144,7 +144,7 @@ function CarouselLayout({ images, username }: { images: Space[]; username: strin
   return (
     <div className="-mx-1 flex gap-2 overflow-x-auto scroll-smooth px-1 pb-6 snap-x snap-mandatory scrollbar-hide">
       {images.map((space, i) => (
-        <Link
+        <HoverPrefetchLink
           key={space.id}
           href={tileHref(username, space)}
           className="group relative block aspect-[3/4] w-[160px] shrink-0 snap-start overflow-hidden rounded-lg bg-muted sm:w-[200px]"
@@ -157,7 +157,7 @@ function CarouselLayout({ images, username }: { images: Space[]; username: strin
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
             priority={i === 0}
           />
-        </Link>
+        </HoverPrefetchLink>
       ))}
     </div>
   );
@@ -168,7 +168,7 @@ function GridLayout({ images, username }: { images: Space[]; username: string })
   return (
     <div className="grid grid-cols-3 gap-1 sm:gap-2 pb-6">
       {images.map((space) => (
-        <Link
+        <HoverPrefetchLink
           key={space.id}
           href={tileHref(username, space)}
           className="group relative block aspect-square overflow-hidden rounded-md sm:rounded-lg bg-muted"
@@ -180,7 +180,7 @@ function GridLayout({ images, username }: { images: Space[]; username: string })
             sizes="(max-width: 640px) 33vw, 30vw"
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
           />
-        </Link>
+        </HoverPrefetchLink>
       ))}
     </div>
   );
@@ -191,7 +191,7 @@ function MasonryLayout({ images, username }: { images: Space[]; username: string
   return (
     <div className="columns-2 gap-2 sm:columns-3 [&>*]:mb-2 pb-6">
       {images.map((space) => (
-        <Link
+        <HoverPrefetchLink
           key={space.id}
           href={tileHref(username, space)}
           className="group block break-inside-avoid overflow-hidden rounded-md sm:rounded-lg bg-muted"
@@ -204,7 +204,7 @@ function MasonryLayout({ images, username }: { images: Space[]; username: string
             sizes="(max-width: 640px) 50vw, 30vw"
             className="h-auto w-full transition-transform duration-300 motion-safe:group-hover:scale-105"
           />
-        </Link>
+        </HoverPrefetchLink>
       ))}
     </div>
   );
@@ -284,7 +284,7 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
       {rows.map((row, i) => (
         <div key={i} className="flex gap-2">
           {row.map(({ space, width, height }) => (
-            <Link
+            <HoverPrefetchLink
               key={space.id}
               href={tileHref(username, space)}
               className="group relative block overflow-hidden rounded-md sm:rounded-lg bg-muted"
@@ -298,7 +298,7 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
                 className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
                 onLoad={(e) => handleLoad(space.id, e)}
               />
-            </Link>
+            </HoverPrefetchLink>
           ))}
         </div>
       ))}
@@ -311,7 +311,7 @@ function FeaturedLayout({ images, username }: { images: Space[]; username: strin
   const [hero, ...rest] = images;
   return (
     <div className="pb-6">
-      <Link
+      <HoverPrefetchLink
         href={tileHref(username, hero)}
         className="group relative mb-2 block aspect-[16/9] overflow-hidden rounded-lg sm:rounded-xl bg-muted"
       >
@@ -323,7 +323,7 @@ function FeaturedLayout({ images, username }: { images: Space[]; username: strin
           className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
           priority
         />
-      </Link>
+      </HoverPrefetchLink>
       {rest.length > 0 && <GridLayout images={rest} username={username} />}
     </div>
   );

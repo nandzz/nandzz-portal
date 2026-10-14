@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import { Globe } from "lucide-react";
 import { SpacePreview } from "@/features/spaces";
 import type { Space } from "@/lib/types";
@@ -29,7 +29,7 @@ export function LinkChip({ space, priority = false }: LinkChipProps) {
     : {};
 
   return (
-    <Link
+    <HoverPrefetchLink
       href={href}
       {...externalProps}
       className="group @container relative block aspect-video h-full w-full overflow-hidden rounded-xl border border-foreground/10 bg-muted transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-violet-500/40 hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-white/10"
@@ -64,6 +64,6 @@ export function LinkChip({ space, priority = false }: LinkChipProps) {
           {host && <p className="mt-0.5 truncate text-xs text-white/70">{host}</p>}
         </div>
       </div>
-    </Link>
+    </HoverPrefetchLink>
   );
 }

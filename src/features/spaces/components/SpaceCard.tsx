@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import { Card, CardContent } from "@/components/ui/card";
 import { SpacePreview } from "./SpacePreview";
 import { deleteSpace } from "../actions/delete-space";
@@ -103,7 +103,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
 
   const cardContent = compact ? (
     <Card className="@container group overflow-hidden rounded-xl p-0 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-white/10 border-foreground/10 hover:border-violet-500/40 dark:hover:border-violet-500/25">
-      <Link href={clickHref} {...externalLinkProps} className="block">
+      <HoverPrefetchLink href={clickHref} {...externalLinkProps} className="block">
         <div className="aspect-square bg-muted relative overflow-hidden">
           <SpacePreview space={space} priority={priority} />
           {/* Visibility badge — owner only */}
@@ -138,11 +138,11 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
             </div>
           )}
         </div>
-      </Link>
+      </HoverPrefetchLink>
     </Card>
   ) : (
     <Card className="@container group overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/5 hover:-translate-y-1 border-foreground/10 hover:border-violet-500/35 dark:hover:border-violet-500/20 p-0">
-      <Link href={clickHref} {...externalLinkProps} className="block">
+      <HoverPrefetchLink href={clickHref} {...externalLinkProps} className="block">
         <div className="aspect-video bg-muted relative overflow-hidden">
           <SpacePreview space={space} priority={priority} />
           {/* Hover gradient overlay */}
@@ -208,7 +208,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
             </div>
           </div>
         </CardContent>
-      </Link>
+      </HoverPrefetchLink>
     </Card>
   );
 

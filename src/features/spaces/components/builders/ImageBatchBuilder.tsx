@@ -26,10 +26,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { HashtagPicker } from "../HashtagPicker";
 import { SHARED_LIMITS } from "../../hooks/useContentBuilderForm";
 import { loadHashtagSuggestions } from "../../actions/load-hashtag-suggestions";
+import { revalidateContents } from "../../actions/revalidate-contents";
 import { publishSpaceItem, type PublishSpacePayload } from "../../actions/publish-space";
 import { getCurrentUserId, uploadSpaceImage } from "../../storage";
+import { compressImage, isUploadableImage, MAX_RAW_IMAGE_BYTES } from "../../compress-image";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_BATCH = 20;
 const UPLOAD_CONCURRENCY = 3;
 
@@ -41,11 +42,15 @@ interface BatchItem {
   objectUrl: string;
   caption: string;
   status: ItemStatus;
+  /** Why this item failed, shown in the caption panel. */
+  errorMessage?: string;
   /** Set once the file is in storage, so a retry never re-uploads it. */
   imageUrl?: string;
   /** Stable per item — a retried publish resolves to the same space row. */
   requestId: string;
 }
+
+class UnsupportedImageError extends Error {}
 
 /** Tiny promise pool: runs at most `max` tasks at once. */
 function createLimiter(max: number) {
@@ -114,7 +119,7 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
     if (publishing || files.length === 0) return;
     setError("");
     setNotice("");
-    const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= MAX_IMAGE_SIZE);
+    const valid = files.filter((f) => f.type.startsWith("image/") && f.size <= MAX_RAW_IMAGE_BYTES);
     const skipped = files.length - valid.length;
     const room = MAX_BATCH - itemsRef.current.length;
     const accepted = valid.slice(0, Math.max(0, room));
@@ -200,7 +205,7 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
     const queue = itemsRef.current.filter((i) => i.status !== "done");
     if (queue.length === 0) return;
     setPublishing(true);
-    queue.forEach((i) => patchItem(i.id, { status: "working" }));
+    queue.forEach((i) => patchItem(i.id, { status: "working", errorMessage: undefined }));
 
     // Uploads run a few at a time; publishes then go strictly in selection
     // order so the photos land on the profile in the order they were picked.
@@ -208,7 +213,12 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
     const uploads = queue.map((item) =>
       item.imageUrl
         ? Promise.resolve(item.imageUrl)
-        : limit(() => uploadSpaceImage(userId, item.file)).then((url) => {
+        : limit(async () => {
+            // Downscale + re-encode in the browser before it leaves the device.
+            const ready = await compressImage(item.file);
+            if (!isUploadableImage(ready)) throw new UnsupportedImageError();
+            return uploadSpaceImage(userId, ready);
+          }).then((url) => {
             patchItem(item.id, { imageUrl: url });
             return url;
           })
@@ -256,7 +266,10 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
         done++;
       } catch (err) {
         console.error("[image-batch] publish failed:", err);
-        patchItem(item.id, { status: "error" });
+        patchItem(item.id, {
+          status: "error",
+          errorMessage: err instanceof UnsupportedImageError ? cb.imageBatchUnsupported : undefined,
+        });
         failed++;
       }
     }
@@ -264,8 +277,8 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
     setPublishing(false);
 
     if (!limitHit && failed === 0) {
+      await revalidateContents();
       router.push(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard/contents");
-      router.refresh();
       return;
     }
     if (limitHit) {
@@ -483,6 +496,12 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
                     onChange={(e) => setCaption(selected.id, e.target.value)}
                     className="min-h-0 resize-none bg-background/60 border-border/60 text-sm focus:border-violet-500/50 focus:bg-background transition-colors"
                   />
+                  {selected.status === "error" && selected.errorMessage && (
+                    <p className="flex items-center gap-1 text-xs text-destructive">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {selected.errorMessage}
+                    </p>
+                  )}
                   {total > 1 && selected.caption.trim() && !publishing && (
                     <button
                       type="button"

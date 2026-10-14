@@ -109,7 +109,9 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
       if (seq !== loadSeq.current) return; // superseded by a newer auth event
       const nextProfile = (data as Profile) ?? null;
       setProfile(nextProfile);
-      loadedProfileUserId.current = uid;
+      // Only mark as loaded on success so a failed read is retried on the
+      // next auth event (which otherwise skips already-loaded users).
+      loadedProfileUserId.current = nextProfile ? uid : null;
       const nextEntitlements = await fetchEntitlementsForSlug(nextProfile?.plan_slug);
       if (seq !== loadSeq.current) return; // superseded while resolving the plan
       setEntitlements(nextEntitlements);
@@ -158,10 +160,12 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
         setUserId(uid);
 
         if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
-          // The first INITIAL_SESSION for the SSR-seeded user is already
-          // covered by `initialProfile` (handled in the mount effect above) —
-          // skip the redundant profile fetch, only entitlements were needed.
-          if (event === "INITIAL_SESSION" && loadedProfileUserId.current === uid) {
+          // Skip when this user's profile is already loaded: the SSR-seeded
+          // INITIAL_SESSION, token refreshes, and the SIGNED_IN supabase-js
+          // re-emits on tab refocus don't change the profile row (they used
+          // to fire 2 duplicate `profiles` reads per refocus). Explicit
+          // changes go through `refetchProfile` / the "profile-updated" event.
+          if (loadedProfileUserId.current === uid) {
             return;
           }
           loadForUser(uid);
