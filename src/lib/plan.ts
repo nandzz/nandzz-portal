@@ -40,6 +40,7 @@ type ProfilePlanRow = {
   plan_current_period_end: string | null;
   plan_cancel_at_period_end: boolean | null;
   comp_expires_at: string | null;
+  is_demo?: boolean | null;
 };
 
 function resolve(
@@ -47,7 +48,10 @@ function resolve(
   plan: SubscriptionPlan | null
 ): UserPlan {
   const slug = (profile?.plan_slug ?? "free") as PlanSlug;
-  const entitlements = plan ? entitlementsFromPlan(plan) : FREE_FALLBACK.entitlements;
+  const base = plan ? entitlementsFromPlan(plan) : FREE_FALLBACK.entitlements;
+  // Unclaimed demo profiles get booking (widgets) as a demo perk, independent
+  // of plan — mirrors user_has_entitlement('widgets') in the DB.
+  const entitlements = profile?.is_demo ? { ...base, hasWidgets: true } : base;
   const name = plan?.name ?? FREE_FALLBACK.name;
   return {
     slug,
@@ -95,7 +99,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   const [{ data: profile }, plansBySlug] = await Promise.all([
     admin
       .from("profiles")
-      .select("plan_slug, plan_status, plan_credits, paid_credits, plan_current_period_end, plan_cancel_at_period_end, comp_expires_at")
+      .select("plan_slug, plan_status, plan_credits, paid_credits, plan_current_period_end, plan_cancel_at_period_end, comp_expires_at, is_demo")
       .eq("id", userId)
       .maybeSingle(),
     loadPlansBySlug(admin),

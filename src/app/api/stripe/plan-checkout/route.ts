@@ -67,8 +67,40 @@ export async function POST(request: Request) {
     .eq("id", user.id)
     .single();
 
+  try {
+    return await createSession({ admin, user, plan, priceId, interval, profile });
+  } catch (err) {
+    // Stripe errors (stale customer from another account, bad price, ToS not
+    // configured, …) would otherwise surface as an empty-body 500.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[plan-checkout] failed:", err);
+    return Response.json({ error: message }, { status: 500 });
+  }
+}
+
+async function createSession({
+  admin,
+  user,
+  plan,
+  priceId,
+  interval,
+  profile,
+}: {
+  admin: ReturnType<typeof createAdminClient>;
+  user: { id: string; email?: string };
+  plan: { slug: string; trial_days: number | null };
+  priceId: string;
+  interval: "month" | "year";
+  profile: { stripe_customer_id: string | null; has_used_trial: boolean | null } | null;
+}) {
   const stripe = getStripe();
   let customerId = profile?.stripe_customer_id ?? null;
+  if (customerId) {
+    // A customer id minted under the old Stripe account (or deleted) 404s on
+    // checkout — drop it and mint a fresh one in the current account.
+    const existing = await stripe.customers.retrieve(customerId).catch(() => null);
+    if (!existing || existing.deleted) customerId = null;
+  }
   if (!customerId) {
     const customer = await stripe.customers.create({
       email: user.email ?? undefined,

@@ -85,6 +85,7 @@ export function AuthForm({
   defaultMode,
   ctaLabel,
   initialDisplayName,
+  skipUsernameStep = false,
 }: {
   variant?: "page" | "embedded";
   onSuccess?: (result: AuthResult) => void;
@@ -101,6 +102,10 @@ export function AuthForm({
   // Seeds the display-name field (e.g. the name Google returned) so the setup
   // step arrives pre-filled.
   initialDisplayName?: string;
+  // Email signup normally continues to the choose-a-username step. Flows that
+  // provide the profile themselves (claiming a demo profile at /claim) finish
+  // right after the account is created instead.
+  skipUsernameStep?: boolean;
 } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -238,7 +243,8 @@ export function AuthForm({
         if (error) {
           setError(mapAuthError(error.message, t));
         } else if (hasSession) {
-          setMode("setup");
+          if (skipUsernameStep) finishSuccess({ mode: "signup", email, displayName: "" });
+          else setMode("setup");
         } else {
           // No session means email confirmation is enabled: the account exists
           // but must be confirmed before a session (and the username step) can

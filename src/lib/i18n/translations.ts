@@ -353,6 +353,21 @@ export type Translations = {
     usernameInvalid: string;
     usernameTaken: string;
   };
+  claim: {
+    title: string;
+    desc: string;
+    signInFirst: string;
+    codeLabel: string;
+    codePlaceholder: string;
+    claimButton: string;
+    claiming: string;
+    invalidCode: string;
+    alreadyHasProfile: string;
+    signedInAs: string;
+    signOut: string;
+    success: string;
+    failed: string;
+  };
   hashtag: {
     spacesSingular: string;
     spacesPlural: string;
@@ -1805,6 +1820,21 @@ const en: Translations = {
     getStarted: "Get started",
     usernameInvalid: "Username must be 3–30 characters: lowercase letters, numbers, hyphens, underscores",
     usernameTaken: "That username is already taken. Try another.",
+  },
+  claim: {
+    title: "Claim your profile",
+    desc: "We've set up a Nandzz profile for your business. Sign in or create an account, then enter your activation code to make it yours.",
+    signInFirst: "Sign in or create an account to continue",
+    codeLabel: "Activation code",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "Claim profile",
+    claiming: "Claiming…",
+    invalidCode: "This code is invalid, expired or already used.",
+    alreadyHasProfile: "This account already has a Nandzz profile, so it can't claim another one. Sign out and use a different account, or contact us.",
+    signedInAs: "Signed in as {email}",
+    signOut: "Sign out",
+    success: "Profile claimed! Taking you to your dashboard…",
+    failed: "Something went wrong. Please try again.",
   },
   hashtag: {
     spacesSingular: "{count} content tagged with this hashtag",
@@ -3259,6 +3289,21 @@ const pt: Translations = {
     usernameInvalid: "O nome de usuário deve ter 3–30 caracteres: letras minúsculas, números, hífens, underscores",
     usernameTaken: "Esse nome de usuário já está em uso. Tente outro.",
   },
+  claim: {
+    title: "Reivindique seu perfil",
+    desc: "Criamos um perfil Nandzz para a sua empresa. Entre ou crie uma conta e depois insira seu código de ativação para torná-lo seu.",
+    signInFirst: "Entre ou crie uma conta para continuar",
+    codeLabel: "Código de ativação",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "Reivindicar perfil",
+    claiming: "Reivindicando…",
+    invalidCode: "Este código é inválido, expirou ou já foi usado.",
+    alreadyHasProfile: "Esta conta já tem um perfil Nandzz e não pode reivindicar outro. Saia e use outra conta, ou fale conosco.",
+    signedInAs: "Conectado como {email}",
+    signOut: "Sair",
+    success: "Perfil reivindicado! Levando você ao painel…",
+    failed: "Algo deu errado. Tente novamente.",
+  },
   hashtag: {
     spacesSingular: "{count} conteúdo com esta hashtag",
     spacesPlural: "{count} conteúdos com esta hashtag",
@@ -4711,6 +4756,21 @@ const fr: Translations = {
     getStarted: "Commencer",
     usernameInvalid: "Le nom d'utilisateur doit contenir 3 à 30 caractères : lettres minuscules, chiffres, tirets, underscores",
     usernameTaken: "Ce nom d'utilisateur est déjà pris. Essayez un autre.",
+  },
+  claim: {
+    title: "Réclamez votre profil",
+    desc: "Nous avons créé un profil Nandzz pour votre entreprise. Connectez-vous ou créez un compte, puis saisissez votre code d'activation pour vous l'approprier.",
+    signInFirst: "Connectez-vous ou créez un compte pour continuer",
+    codeLabel: "Code d'activation",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "Réclamer le profil",
+    claiming: "Réclamation…",
+    invalidCode: "Ce code est invalide, expiré ou déjà utilisé.",
+    alreadyHasProfile: "Ce compte possède déjà un profil Nandzz et ne peut pas en réclamer un autre. Déconnectez-vous et utilisez un autre compte, ou contactez-nous.",
+    signedInAs: "Connecté en tant que {email}",
+    signOut: "Se déconnecter",
+    success: "Profil réclamé ! Redirection vers votre tableau de bord…",
+    failed: "Une erreur s'est produite. Veuillez réessayer.",
   },
   hashtag: {
     spacesSingular: "{count} contenu avec ce hashtag",
@@ -6165,6 +6225,21 @@ const es: Translations = {
     usernameInvalid: "El nombre de usuario debe tener 3–30 caracteres: letras minúsculas, números, guiones, guiones bajos",
     usernameTaken: "Ese nombre de usuario ya está en uso. Intenta otro.",
   },
+  claim: {
+    title: "Reclama tu perfil",
+    desc: "Hemos creado un perfil de Nandzz para tu negocio. Inicia sesión o crea una cuenta y luego introduce tu código de activación para hacerlo tuyo.",
+    signInFirst: "Inicia sesión o crea una cuenta para continuar",
+    codeLabel: "Código de activación",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "Reclamar perfil",
+    claiming: "Reclamando…",
+    invalidCode: "Este código no es válido, ha caducado o ya se ha usado.",
+    alreadyHasProfile: "Esta cuenta ya tiene un perfil de Nandzz y no puede reclamar otro. Cierra sesión y usa otra cuenta, o contáctanos.",
+    signedInAs: "Sesión iniciada como {email}",
+    signOut: "Cerrar sesión",
+    success: "¡Perfil reclamado! Te llevamos a tu panel…",
+    failed: "Algo salió mal. Inténtalo de nuevo.",
+  },
   hashtag: {
     spacesSingular: "{count} contenido con este hashtag",
     spacesPlural: "{count} contenidos con este hashtag",
@@ -7617,6 +7692,21 @@ const ja: Translations = {
     getStarted: "始める",
     usernameInvalid: "ユーザー名は3〜30文字で、小文字、数字、ハイフン、アンダースコアのみ使用できます",
     usernameTaken: "そのユーザー名はすでに使用されています。別のものを試してください。",
+  },
+  claim: {
+    title: "プロフィールを受け取る",
+    desc: "あなたのビジネス用のNandzzプロフィールを用意しました。ログインまたはアカウントを作成し、アクティベーションコードを入力して自分のものにしましょう。",
+    signInFirst: "続行するにはログインまたはアカウントを作成してください",
+    codeLabel: "アクティベーションコード",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "プロフィールを受け取る",
+    claiming: "処理中…",
+    invalidCode: "このコードは無効、期限切れ、または使用済みです。",
+    alreadyHasProfile: "このアカウントにはすでにNandzzプロフィールがあるため、別のプロフィールを受け取れません。ログアウトして別のアカウントを使うか、お問い合わせください。",
+    signedInAs: "{email} としてログイン中",
+    signOut: "ログアウト",
+    success: "プロフィールを受け取りました！ダッシュボードに移動します…",
+    failed: "問題が発生しました。もう一度お試しください。",
   },
   hashtag: {
     spacesSingular: "このハッシュタグの{count}件のコンテンツ",
@@ -9071,6 +9161,21 @@ const de: Translations = {
     usernameInvalid: "Benutzername muss 3–30 Zeichen haben: Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche",
     usernameTaken: "Dieser Benutzername ist bereits vergeben. Versuche einen anderen.",
   },
+  claim: {
+    title: "Beanspruche dein Profil",
+    desc: "Wir haben ein Nandzz-Profil für dein Unternehmen eingerichtet. Melde dich an oder erstelle ein Konto und gib dann deinen Aktivierungscode ein, um es zu übernehmen.",
+    signInFirst: "Melde dich an oder erstelle ein Konto, um fortzufahren",
+    codeLabel: "Aktivierungscode",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "Profil beanspruchen",
+    claiming: "Wird beansprucht…",
+    invalidCode: "Dieser Code ist ungültig, abgelaufen oder wurde bereits verwendet.",
+    alreadyHasProfile: "Dieses Konto hat bereits ein Nandzz-Profil und kann kein weiteres beanspruchen. Melde dich ab und nutze ein anderes Konto oder kontaktiere uns.",
+    signedInAs: "Angemeldet als {email}",
+    signOut: "Abmelden",
+    success: "Profil beansprucht! Weiter zu deinem Dashboard…",
+    failed: "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+  },
   hashtag: {
     spacesSingular: "{count} Inhalt mit diesem Hashtag",
     spacesPlural: "{count} Inhalte mit diesem Hashtag",
@@ -10523,6 +10628,21 @@ const it: Translations = {
     getStarted: "Inizia",
     usernameInvalid: "Il nome utente deve avere 3–30 caratteri: lettere minuscole, numeri, trattini, underscore",
     usernameTaken: "Quel nome utente è già in uso. Prova un altro.",
+  },
+  claim: {
+    title: "Rivendica il tuo profilo",
+    desc: "Abbiamo creato un profilo Nandzz per la tua attività. Accedi o crea un account, poi inserisci il codice di attivazione per renderlo tuo.",
+    signInFirst: "Accedi o crea un account per continuare",
+    codeLabel: "Codice di attivazione",
+    codePlaceholder: "NDZ-XXXXX-XXXXX",
+    claimButton: "Rivendica profilo",
+    claiming: "Rivendicazione…",
+    invalidCode: "Questo codice non è valido, è scaduto o è già stato usato.",
+    alreadyHasProfile: "Questo account ha già un profilo Nandzz e non può rivendicarne un altro. Esci e usa un account diverso, oppure contattaci.",
+    signedInAs: "Accesso effettuato come {email}",
+    signOut: "Esci",
+    success: "Profilo rivendicato! Ti portiamo alla tua dashboard…",
+    failed: "Qualcosa è andato storto. Riprova.",
   },
   hashtag: {
     spacesSingular: "{count} contenuto con questo hashtag",

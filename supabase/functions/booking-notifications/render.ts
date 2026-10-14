@@ -267,7 +267,9 @@ export function buildEmailJobs(
   }
 
   if (businessKind) {
-    if (!businessEmail) {
+    // Unclaimed demo profiles are backed by a placeholder `@….invalid` auth
+    // email that can never receive mail — treat it as no address.
+    if (!businessEmail || /\.invalid$/i.test(businessEmail)) {
       skipped.push(`business:${businessKind}:no_email`);
     } else {
       const rendered = renderEmail(

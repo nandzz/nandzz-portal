@@ -13,13 +13,16 @@ export async function OPTIONS() {
 // `/.well-known/oauth-protected-resource/api/mcp` must return the same doc.
 export async function GET(req: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || new URL(req.url).origin;
-  const resource = `${origin}/api/mcp`;
+  // The admin MCP (/api/mcp-admin) is a separate resource with its own scope.
+  const subpath = new URL(req.url).pathname.replace(/^\/\.well-known\/oauth-protected-resource/, "").replace(/\/$/, "");
+  const isAdmin = subpath === "/api/mcp-admin";
+  const resource = isAdmin ? `${origin}/api/mcp-admin` : `${origin}/api/mcp`;
 
   return withCors(NextResponse.json({
     resource,
     authorization_servers: [origin],
     bearer_methods_supported: ["header"],
     resource_documentation: `${origin}/mcp`,
-    scopes_supported: ["publish", "read"],
+    scopes_supported: isAdmin ? ["admin"] : ["publish", "read"],
   }));
 }

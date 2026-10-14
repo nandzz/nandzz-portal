@@ -37,7 +37,10 @@ export async function GET(request: Request) {
           // setup page, carrying `next` so they return where they started after.
           const inModalAuth = searchParams.get("modal") === "1";
           const WIDGET_ROUTE_RE = /^\/[^/]+\/widget\/[^/]+/;
-          if (inModalAuth || WIDGET_ROUTE_RE.test(next)) {
+          // /claim supplies the profile (a demo being claimed), so it never
+          // goes through the choose-a-username step either.
+          const isClaim = next === "/claim" || next.startsWith("/claim?");
+          if (inModalAuth || isClaim || WIDGET_ROUTE_RE.test(next)) {
             return NextResponse.redirect(`${base}${next}`);
           }
           const setupUrl = new URL(`${base}/setup-username`);
