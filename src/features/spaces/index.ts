@@ -35,6 +35,7 @@ export { PdfViewerWrapper } from "./components/PdfViewerWrapper";
 export { VideoEmbed, detectVideo } from "./components/VideoEmbed";
 export { IframeLoader } from "./components/IframeLoader";
 export { ViewTracker } from "./components/ViewTracker";
+export { SpaceViewer } from "./components/SpaceViewer";
 export { HashtagPicker } from "./components/HashtagPicker";
 export { PreviewCropper } from "./components/PreviewCropper";
 export { MetadataOnlyEditor } from "./components/builders/MetadataOnlyEditor";

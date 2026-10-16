@@ -91,6 +91,9 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
   // Navbar + footer) so the page reads as the owner's own branded page
   // (Linktree-style). Their only Nandzz affordance is the floating CTA pill.
   const isVisitorProfile = !userId && onProfilePage;
+  // A logged-out visitor in the immersive viewer: no tab bar (Home / Sign in)
+  // over the content — the viewer's own top bar carries Back.
+  const isVisitorImmersive = !userId && onImmersivePage;
 
   return (
     <>
@@ -118,7 +121,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
           // at md+; widget/onboarding own their viewport (none).
           isVisitorProfile
             ? "pb-24"
-            : onWidgetPage || onBareAuthPage || previewing
+            : onWidgetPage || onBareAuthPage || previewing || isVisitorImmersive
               ? "pb-0"
               : "pb-16 md:pb-0",
           // No Navbar to absorb the status-bar inset (viewport-fit=cover):
@@ -133,9 +136,10 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
 
       {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && !previewing && <ConditionalFooter />}
 
-      {/* Hidden for logged-out visitors on a profile page, on the widget page
-          (which owns its whole viewport), and during post-signup onboarding. */}
-      {!isVisitorProfile && !onWidgetPage && !onBareAuthPage && !previewing && <MobileTabBar />}
+      {/* Hidden for logged-out visitors on a profile page or in the space
+          viewer, on the widget page (which owns its whole viewport), and during
+          post-signup onboarding. */}
+      {!isVisitorProfile && !isVisitorImmersive && !onWidgetPage && !onBareAuthPage && !previewing && <MobileTabBar />}
 
       {/* The lone Nandzz affordance on a clean, logged-out profile page:
           a floating "Sign in / Create your page" pill. */}

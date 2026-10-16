@@ -280,6 +280,8 @@ export type Translations = {
     hidePassword: string;
   };
   space: {
+    previousItem: string;
+    nextItem: string;
     public: string;
     private: string;
     open: string;
@@ -1782,6 +1784,8 @@ const en: Translations = {
     hidePassword: "Hide password",
   },
   space: {
+    previousItem: "Previous",
+    nextItem: "Next",
     public: "Public",
     private: "Private",
     open: "Open",
@@ -3284,6 +3288,8 @@ const pt: Translations = {
     hidePassword: "Ocultar senha",
   },
   space: {
+    previousItem: "Anterior",
+    nextItem: "Próximo",
     public: "Público",
     private: "Privado",
     open: "Abrir",
@@ -4786,6 +4792,8 @@ const fr: Translations = {
     hidePassword: "Masquer le mot de passe",
   },
   space: {
+    previousItem: "Précédent",
+    nextItem: "Suivant",
     public: "Public",
     private: "Privé",
     open: "Ouvrir",
@@ -6288,6 +6296,8 @@ const es: Translations = {
     hidePassword: "Ocultar contraseña",
   },
   space: {
+    previousItem: "Anterior",
+    nextItem: "Siguiente",
     public: "Público",
     private: "Privado",
     open: "Abrir",
@@ -7790,6 +7800,8 @@ const ja: Translations = {
     hidePassword: "パスワードを非表示",
   },
   space: {
+    previousItem: "前へ",
+    nextItem: "次へ",
     public: "公開",
     private: "非公開",
     open: "開く",
@@ -9292,6 +9304,8 @@ const de: Translations = {
     hidePassword: "Passwort verbergen",
   },
   space: {
+    previousItem: "Zurück",
+    nextItem: "Weiter",
     public: "Öffentlich",
     private: "Privat",
     open: "Öffnen",
@@ -10794,6 +10808,8 @@ const it: Translations = {
     hidePassword: "Nascondi password",
   },
   space: {
+    previousItem: "Precedente",
+    nextItem: "Successivo",
     public: "Pubblico",
     private: "Privato",
     open: "Apri",
