@@ -5,6 +5,7 @@ import { Shield, ExternalLink, ArrowLeft, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Suspense } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { isInAppBrowser, openExternal } from "@/lib/in-app-browser";
 
 function RedirectContent() {
   const searchParams = useSearchParams();
@@ -41,6 +42,8 @@ function RedirectContent() {
   }
 
   const handleContinue = () => {
+    // In-app browsers: replace /go so back returns to the page that linked here.
+    if (isInAppBrowser()) return openExternal(destination!.href, { replace: true });
     window.open(destination!.href, "_blank", "noopener,noreferrer");
     router.back();
   };

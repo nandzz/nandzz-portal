@@ -1,5 +1,6 @@
 "use client";
 
+import { openExternal } from "@/lib/in-app-browser";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
@@ -220,7 +221,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
           <ContextMenuItem
             onClick={() =>
               isExternalLink
-                ? window.open(externalUrl!, "_blank", "noopener,noreferrer")
+                ? openExternal(externalUrl!)
                 : router.push(spaceUrl)
             }
           >

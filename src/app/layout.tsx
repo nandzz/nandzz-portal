@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeColorSync } from "@/components/theme-color-sync";
+import { InAppLinkFix } from "@/components/in-app-link-fix";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ChromeProvider } from "@/contexts/ChromeContext";
 import { AppChrome } from "@/components/layout/AppChrome";
@@ -157,6 +158,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <ThemeColorSync />
+          <InAppLinkFix />
           <LanguageProvider initialLocale={initialLocale}>
             <ChromeProvider>
               <AuthProvider
