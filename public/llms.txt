@@ -32,6 +32,7 @@
 
 - Homepage: https://nandzz.com/
 - Pricing: https://nandzz.com/pricing
+- Setup guide (six steps from sign-up to first booking): https://nandzz.com/guide
 - Machine-readable pricing: https://nandzz.com/pricing.md
 - A business page (pattern): https://nandzz.com/[handle]
 - Terms: https://nandzz.com/terms

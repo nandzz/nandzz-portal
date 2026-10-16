@@ -1,4 +1,12 @@
-import { COMPANY as C, GARANTE_URL, MIN_AGE } from "../company";
+import {
+  COMPANY as C,
+  COMPANY_DETAILS_READY,
+  GARANTE_URL,
+  MIN_AGE,
+  operatorAddress,
+  operatorName,
+  PENDING_INCORPORATION_NOTE,
+} from "../company";
 import { A, B, H3, Mail, P, Summary, Table, Ul } from "../components/primitives";
 import { SubprocessorTable } from "../components/SubprocessorTable";
 import type { LegalDocument } from "../types";
@@ -30,8 +38,11 @@ export const privacyEn: LegalDocument = {
       body: (
         <>
           <P>
-            The data controller is <B>{C.legalName}</B>, {C.registeredOffice}, VAT {C.vatNumber}. You can reach
-            us at <Mail to={C.emails.privacy} /> or by PEC at {C.pec}.
+            The data controller is <B>{operatorName("en")}</B>, {operatorAddress()}
+            {COMPANY_DETAILS_READY && <>, VAT {C.vatNumber}</>}. You can reach us at{" "}
+            <Mail to={C.emails.privacy} />
+            {COMPANY_DETAILS_READY && <> or by PEC at {C.pec}</>}.
+            {!COMPANY_DETAILS_READY && <> {PENDING_INCORPORATION_NOTE.en}</>}
           </P>
           <P>
             We have not appointed a Data Protection Officer, because the law does not require it for our

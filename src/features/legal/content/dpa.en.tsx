@@ -1,4 +1,4 @@
-import { COMPANY as C } from "../company";
+import { COMPANY as C, operatorName } from "../company";
 import { A, B, H3, Mail, P, Ul } from "../components/primitives";
 import { SubprocessorTable } from "../components/SubprocessorTable";
 import type { LegalDocument } from "../types";
@@ -21,7 +21,7 @@ export const dpaEn: LegalDocument = {
               the business account holder (&quot;<B>Controller</B>&quot;, &quot;<B>you</B>&quot;)
             </li>
             <li>
-              {C.legalName} (&quot;<B>Processor</B>&quot;, &quot;<B>Nandzz</B>&quot;)
+              {operatorName("en")} (&quot;<B>Processor</B>&quot;, &quot;<B>Nandzz</B>&quot;)
             </li>
           </Ul>
           <P>

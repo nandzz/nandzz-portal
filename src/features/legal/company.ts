@@ -1,6 +1,12 @@
+import type { LegalLocale } from "./locale";
+
 // Single source of truth for the operator's legal identity and the version of
 // each legal document. Every legal page, the footer and the imprint read from
 // here — fill the [PLACEHOLDER] values once the company is registered.
+//
+// Until then the Service is run by the founder as a natural person, on behalf
+// of the company being formed ("società in costituzione"): every page prints
+// `operatorName()` / `operatorAddress()` and hides VAT, REA, capital and PEC.
 //
 // Bumping `LEGAL_DOCS.terms.version` asks every signed-in user to re-accept
 // (see TermsUpdateBanner). Only bump it for MATERIAL changes, and publish the
@@ -15,6 +21,9 @@ export const COMPANY = {
   shareCapital: "[SHARE CAPITAL]",
   pec: "[PEC ADDRESS]",
   website: "https://nandzz.com",
+  // Operator until incorporation (art. 7 D.Lgs. 70/2003 needs a real name).
+  founder: "Felipe Fernandes",
+  founderLocation: "[CITY (PROVINCE)], Italia",
   emails: {
     support: "support@nandzz.com",
     privacy: "privacy@nandzz.com",
@@ -27,6 +36,22 @@ export const COMPANY = {
 // False while any identity field still holds a [PLACEHOLDER] — the footer then
 // keeps the plain brand line instead of printing placeholders site-wide.
 export const COMPANY_DETAILS_READY = ![COMPANY.legalName, COMPANY.vatNumber].some((v) => v.startsWith("["));
+
+export function operatorName(locale: LegalLocale): string {
+  if (COMPANY_DETAILS_READY) return COMPANY.legalName;
+  return locale === "it"
+    ? `${COMPANY.brand} (società in costituzione), progetto gestito da ${COMPANY.founder}, persona fisica`
+    : `${COMPANY.brand} (company in formation), operated by ${COMPANY.founder} as an individual`;
+}
+
+export function operatorAddress(): string {
+  return COMPANY_DETAILS_READY ? COMPANY.registeredOffice : COMPANY.founderLocation;
+}
+
+export const PENDING_INCORPORATION_NOTE: Record<LegalLocale, string> = {
+  it: "I dati societari (ragione sociale, P.IVA, sede legale) saranno aggiornati al completamento della costituzione.",
+  en: "Company details (legal name, VAT number, registered office) will be updated once incorporation is complete.",
+};
 
 export type LegalDocKey =
   | "terms"

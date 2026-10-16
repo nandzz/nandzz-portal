@@ -1,4 +1,12 @@
-import { COMPANY as C, MIN_AGE, MIN_BUSINESS_AGE } from "../company";
+import {
+  COMPANY as C,
+  COMPANY_DETAILS_READY,
+  operatorAddress,
+  operatorName,
+  PENDING_INCORPORATION_NOTE,
+  MIN_AGE,
+  MIN_BUSINESS_AGE,
+} from "../company";
 import { A, B, Mail, P, Summary, Ul } from "../components/primitives";
 import type { LegalDocument } from "../types";
 
@@ -24,9 +32,15 @@ export const termsIt: LegalDocument = {
       body: (
         <>
           <P>
-            Nandzz (il &quot;<B>Servizio</B>&quot;) è gestito da <B>{C.legalName}</B>, con sede legale in{" "}
-            {C.registeredOffice}, P.IVA {C.vatNumber} (&quot;<B>Nandzz</B>&quot;, &quot;<B>noi</B>&quot;). I
-            dati societari completi sono nelle <A href="/legal">Note legali</A>.
+            Nandzz (il &quot;<B>Servizio</B>&quot;) è gestito da <B>{operatorName("it")}</B>,{" "}
+            {COMPANY_DETAILS_READY ? (
+              <>con sede legale in {C.registeredOffice}, P.IVA {C.vatNumber}</>
+            ) : (
+              <>con sede in {operatorAddress()}</>
+            )}{" "}
+            (&quot;<B>Nandzz</B>&quot;, &quot;<B>noi</B>&quot;). I dati completi sono nelle{" "}
+            <A href="/legal">Note legali</A>.
+            {!COMPANY_DETAILS_READY && <> {PENDING_INCORPORATION_NOTE.it}</>}
           </P>
           <P>
             Questi Termini costituiscono un contratto vincolante tra te e Nandzz. Per usare il Servizio devi
@@ -649,9 +663,10 @@ export const termsIt: LegalDocument = {
       title: "Contatti",
       body: (
         <P>
-          {C.legalName}, {C.registeredOffice}.
+          {operatorName("it")}, {operatorAddress()}.
           <br />
-          Assistenza: <Mail to={C.emails.support} /> · Legale: <Mail to={C.emails.legal} /> · PEC: {C.pec}
+          Assistenza: <Mail to={C.emails.support} /> · Legale: <Mail to={C.emails.legal} />
+          {COMPANY_DETAILS_READY && <> · PEC: {C.pec}</>}
         </P>
       ),
     },

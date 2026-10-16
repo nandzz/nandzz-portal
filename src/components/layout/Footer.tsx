@@ -37,6 +37,12 @@ export function Footer() {
               >
                 {t.footer.getStarted}
               </Link>
+              <Link
+                href="/guide"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t.footer.guide}
+              </Link>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">

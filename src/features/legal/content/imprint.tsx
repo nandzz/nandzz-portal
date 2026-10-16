@@ -1,4 +1,10 @@
-import { COMPANY as C } from "../company";
+import {
+  COMPANY as C,
+  COMPANY_DETAILS_READY,
+  operatorAddress,
+  operatorName,
+  PENDING_INCORPORATION_NOTE,
+} from "../company";
 import { A, Mail, P, Table } from "../components/primitives";
 import type { LegalLocale } from "../locale";
 import type { LegalDocument } from "../types";
@@ -12,12 +18,20 @@ function details(locale: LegalLocale) {
     <Table
       head={[it ? "Voce" : "Item", it ? "Dato" : "Detail"]}
       rows={[
-        [it ? "Ragione sociale" : "Company name", C.legalName],
-        [it ? "Sede legale" : "Registered office", C.registeredOffice],
-        [it ? "Partita IVA / Codice fiscale" : "VAT number / Tax code", C.vatNumber],
-        [it ? "Iscrizione REA" : "Companies register (REA)", C.reaNumber],
-        [it ? "Capitale sociale" : "Share capital", C.shareCapital],
-        ["PEC", C.pec],
+        ...(COMPANY_DETAILS_READY
+          ? [
+              [it ? "Ragione sociale" : "Company name", C.legalName],
+              [it ? "Sede legale" : "Registered office", C.registeredOffice],
+              [it ? "Partita IVA / Codice fiscale" : "VAT number / Tax code", C.vatNumber],
+              [it ? "Iscrizione REA" : "Companies register (REA)", C.reaNumber],
+              [it ? "Capitale sociale" : "Share capital", C.shareCapital],
+              ["PEC", C.pec],
+            ]
+          : [
+              [it ? "Titolare del servizio" : "Service provider", operatorName(locale)],
+              [it ? "Sede" : "Based in", operatorAddress()],
+              [it ? "Stato" : "Status", PENDING_INCORPORATION_NOTE[locale]],
+            ]),
         [it ? "Assistenza" : "Support", <Mail key="s" to={C.emails.support} />],
         [it ? "Privacy" : "Privacy", <Mail key="p" to={C.emails.privacy} />],
         [
@@ -33,7 +47,7 @@ export const imprintEn: LegalDocument = {
   title: "Legal notice",
   subtitle: "Who operates nandzz.com.",
   sections: [
-    { id: "company", title: "Company details", body: details("en") },
+    { id: "company", title: COMPANY_DETAILS_READY ? "Company details" : "Service provider", body: details("en") },
     {
       id: "documents",
       title: "Legal documents",
@@ -63,7 +77,7 @@ export const imprintIt: LegalDocument = {
   title: "Note legali",
   subtitle: "Chi gestisce nandzz.com.",
   sections: [
-    { id: "company", title: "Dati societari", body: details("it") },
+    { id: "company", title: COMPANY_DETAILS_READY ? "Dati societari" : "Titolare del servizio", body: details("it") },
     {
       id: "documents",
       title: "Documenti legali",

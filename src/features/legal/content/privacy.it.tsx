@@ -1,4 +1,12 @@
-import { COMPANY as C, GARANTE_URL, MIN_AGE } from "../company";
+import {
+  COMPANY as C,
+  COMPANY_DETAILS_READY,
+  GARANTE_URL,
+  MIN_AGE,
+  operatorAddress,
+  operatorName,
+  PENDING_INCORPORATION_NOTE,
+} from "../company";
 import { A, B, H3, Mail, P, Summary, Table, Ul } from "../components/primitives";
 import { SubprocessorTable } from "../components/SubprocessorTable";
 import type { LegalDocument } from "../types";
@@ -30,8 +38,11 @@ export const privacyIt: LegalDocument = {
       body: (
         <>
           <P>
-            Il titolare del trattamento è <B>{C.legalName}</B>, {C.registeredOffice}, P.IVA {C.vatNumber}. Puoi
-            contattarci a <Mail to={C.emails.privacy} /> o via PEC a {C.pec}.
+            Il titolare del trattamento è <B>{operatorName("it")}</B>, {operatorAddress()}
+            {COMPANY_DETAILS_READY && <>, P.IVA {C.vatNumber}</>}. Puoi contattarci a{" "}
+            <Mail to={C.emails.privacy} />
+            {COMPANY_DETAILS_READY && <> o via PEC a {C.pec}</>}.
+            {!COMPANY_DETAILS_READY && <> {PENDING_INCORPORATION_NOTE.it}</>}
           </P>
           <P>
             Non abbiamo nominato un Responsabile della protezione dei dati (DPO), perché per le nostre attività

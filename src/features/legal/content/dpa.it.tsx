@@ -1,4 +1,4 @@
-import { COMPANY as C } from "../company";
+import { COMPANY as C, operatorName } from "../company";
 import { A, B, H3, Mail, P, Ul } from "../components/primitives";
 import { SubprocessorTable } from "../components/SubprocessorTable";
 import type { LegalDocument } from "../types";
@@ -21,7 +21,7 @@ export const dpaIt: LegalDocument = {
               il titolare dell&apos;account business (&quot;<B>Titolare</B>&quot;, &quot;<B>tu</B>&quot;)
             </li>
             <li>
-              {C.legalName} (&quot;<B>Responsabile</B>&quot;, &quot;<B>Nandzz</B>&quot;)
+              {operatorName("it")} (&quot;<B>Responsabile</B>&quot;, &quot;<B>Nandzz</B>&quot;)
             </li>
           </Ul>
           <P>

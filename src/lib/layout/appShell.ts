@@ -62,6 +62,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "acceptable-use",
   "report",
   "legal",
+  "guide",
   "setup-username",
   "claim",
   "mcp",
