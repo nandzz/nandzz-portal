@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { getPublicPricing } from "@/lib/pricing";
 import { PricingClient } from "./PricingClient";
 import { pricingFaqsFor } from "./faqs";
 import type { CreditPack, SubscriptionPlan } from "@/lib/types";
@@ -27,18 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 300;
 
 export default async function PricingPage() {
-  const supabase = await createClient();
-  const [{ data: plans }, { data: packs }, { ai: aiEnabled }] = await Promise.all([
-    supabase
-      .from("subscription_plans")
-      .select("*")
-      .eq("active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("credit_packs")
-      .select("*")
-      .eq("active", true)
-      .order("sort_order", { ascending: true }),
+  const [{ plans, packs }, { ai: aiEnabled }] = await Promise.all([
+    getPublicPricing(),
     getFeatureFlags(),
   ]);
 

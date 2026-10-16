@@ -92,7 +92,7 @@ export default async function WidgetPage({
   const initial = displayName[0]?.toUpperCase() ?? "?";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-screen overflow-x-clip bg-background">
       {/* Ambient brand glow behind the hero — soft, slow, purely decorative. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 overflow-hidden">
         <div className="animate-hero-gradient absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-300/30 blur-3xl dark:bg-emerald-600/20" />
@@ -151,6 +151,7 @@ export default async function WidgetPage({
               collectAddress={config.collect_address}
               addressRequired={config.address_required}
               offerWhatsAppReminder={whatsappLive && config.whatsapp_reminder}
+              stickyActions
             />
           ) : (
             <p className="py-12 text-center text-sm text-muted-foreground">

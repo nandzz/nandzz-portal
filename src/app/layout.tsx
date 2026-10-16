@@ -11,7 +11,7 @@ import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { getChromeProfile } from "@/features/analytics/server";
 import { getFeatureFlags } from "@/lib/featureFlags";
-import { getEntitlementsForSlug } from "@/lib/plan";
+import { getEntitlementsLookup } from "@/lib/plan";
 import { SIDEBAR_COLLAPSED_COOKIE } from "@/lib/layout/appShell";
 import { cookies } from "next/headers";
 import { TermsUpdateBanner } from "@/features/legal";
@@ -114,29 +114,34 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialLocale = await getCurrentLocale();
-
+  // Everything here is independent, so resolve it concurrently — on a cold
+  // instance each await is a Supabase round-trip, and chaining them was a
+  // visible chunk of first-request latency.
   const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
+  const [initialLocale, { data: claimsData }, initialFlags, cookieStore] = await Promise.all([
+    getCurrentLocale(),
+    supabase.auth.getClaims(),
+    getFeatureFlags(),
+    cookies(),
+  ]);
   const initialUserId = claimsData?.claims?.sub ?? null;
+  const initialSidebarCollapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE)?.value === "1";
 
   let initialProfile: Profile | null = null;
   let initialEntitlements: PlanEntitlements | undefined;
   let needsTermsAcceptance = false;
   if (initialUserId) {
-    const [profile, terms] = await Promise.all([
+    const [profile, terms, entitlementsFor] = await Promise.all([
       getChromeProfile(supabase, initialUserId),
       getTermsAcceptanceStatus(supabase, initialUserId),
+      getEntitlementsLookup(),
     ]);
     initialProfile = profile;
-    initialEntitlements = await getEntitlementsForSlug(profile?.plan_slug);
+    initialEntitlements = entitlementsFor(profile?.plan_slug);
     // Only users who finished signup (have a profile) are asked to re-accept;
     // mid-signup users accept when they claim their username.
     needsTermsAcceptance = !!profile && terms.needsAcceptance;
   }
-
-  const initialFlags = await getFeatureFlags();
-  const initialSidebarCollapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE)?.value === "1";
 
   return (
     <html

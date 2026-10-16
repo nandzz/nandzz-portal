@@ -19,13 +19,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT locally — no /auth/v1/user round-trip on the
+  // hottest public route (the proxy has already refreshed the session).
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
 
-  if (user) {
+  if (userId) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("username")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
     redirect(profile?.username ? `/${profile.username}` : "/dashboard/contents");
   }

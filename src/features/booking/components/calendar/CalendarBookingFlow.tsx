@@ -59,6 +59,10 @@ interface Props {
   // Show the WhatsApp-reminder consent checkbox (pre-checked). True only when the
   // platform feature and the business's own toggle are both on.
   offerWhatsAppReminder?: boolean;
+  // Pin the step's primary action (Continue) to the bottom of the viewport while
+  // the list scrolls, so it's always visible. For full-page hosts on a bg-card
+  // surface; inline embeds (agent chat) keep the in-flow button.
+  stickyActions?: boolean;
   initialServiceId?: string;
   onBooked?: (manageUrl: string) => void;
 }
@@ -78,6 +82,7 @@ export function CalendarBookingFlow({
   collectAddress = false,
   addressRequired = false,
   offerWhatsAppReminder = false,
+  stickyActions = false,
   initialServiceId,
   onBooked,
 }: Props) {
@@ -676,6 +681,12 @@ export function CalendarBookingFlow({
     else if (step === "service" && locations.length > 1) setStep("location");
   };
 
+  // Sticky bottom bar for the Continue action. The negative margins bleed it to
+  // the card edges; the gradient fades list items out as they pass beneath.
+  const actionBarClass = stickyActions
+    ? "sticky bottom-0 z-10 -mx-4 bg-card px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 before:pointer-events-none before:absolute before:inset-x-0 before:-top-6 before:h-6 before:bg-gradient-to-t before:from-card before:to-transparent"
+    : "";
+
   return (
     <div className="space-y-4">
       {step !== firstStep && step !== "done" && (
@@ -742,7 +753,7 @@ export function CalendarBookingFlow({
           {renderServiceList()}
 
           {selectedServices.length > 0 && (
-            <div className="mt-3 space-y-3">
+            <div className={`mt-3 space-y-3 ${actionBarClass}`}>
               <div className="flex items-center justify-between rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 px-4 py-3">
                 <span className="text-sm font-medium">{t.booking.total}</span>
                 <span className="inline-flex items-center gap-3 text-sm">
@@ -940,14 +951,16 @@ export function CalendarBookingFlow({
             );
           })}
 
-          <button
-            type="button"
-            onClick={proceedFromStaff}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            {t.booking.continue}
-            <ChevronRight className="h-4 w-4" />
-          </button>
+          <div className={actionBarClass}>
+            <button
+              type="button"
+              onClick={proceedFromStaff}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            >
+              {t.booking.continue}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
 
