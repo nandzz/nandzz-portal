@@ -35,6 +35,8 @@ interface ProfileBackgroundProps {
   backgroundPosition: string | null;
   hasBookingWidget: boolean;
   isOwner: boolean;
+  /** Signed-in viewers get the sticky mobile navbar, so floating controls must clear it. */
+  isAuthenticated: boolean;
   profileId: string;
   username: string;
   displayName: string;
@@ -46,6 +48,7 @@ export function ProfileBackground({
   backgroundPosition,
   hasBookingWidget,
   isOwner,
+  isAuthenticated,
   profileId,
   username,
   displayName,
@@ -458,6 +461,26 @@ export function ProfileBackground({
               {error || t.common.error}
             </p>
           )}
+        </div>
+      )}
+
+      {/* ── Visitor share — same corner as the owner's controls (mirrors the
+          booking page). Also shown in owner Preview so it matches what visitors
+          see. Logged-out visitors have no navbar to clear, just the notch. ── */}
+      {(!isOwner || profilePreview) && (
+        <div
+          className={`absolute right-4 z-10 ${
+            isAuthenticated
+              ? "top-[calc(5rem+env(safe-area-inset-top))] md:top-4"
+              : "top-[calc(1rem+env(safe-area-inset-top))]"
+          }`}
+        >
+          <ShareMenu
+            url={`/${username}`}
+            title={`${displayName} on Nandzz`}
+            triggerClassName="flex h-9 w-9 items-center justify-center rounded-full bg-background/70 backdrop-blur-md border border-border/60 text-foreground/80 hover:text-foreground hover:bg-background/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
+            triggerContent={<Share2 className="h-4 w-4" />}
+          />
         </div>
       )}
 

@@ -215,6 +215,7 @@ export default async function ProfilePage({
         backgroundPosition={profile.background_position ?? null}
         hasBookingWidget={widgets.some((w) => w.catalog.slug === "calendar")}
         isOwner={isOwner}
+        isAuthenticated={!!user}
         profileId={profile.id}
         username={profile.username}
         displayName={profile.display_name || profile.username}
