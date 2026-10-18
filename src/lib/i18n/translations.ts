@@ -1090,6 +1090,7 @@ export type Translations = {
     poweredBy: string;
     errorLoadAvailability: string;
     errorRequiredFields: string;
+    errorAddressRequired: string;
     errorBookingFailed: string;
     errorWidgetUnavailable: string;
     errorNoAccess: string;
@@ -1370,6 +1371,10 @@ export type Translations = {
     customerStatBookings: string;
     customerStatRevenue: string;
     customerHistoryTitle: string;
+    viewProfile: string;
+    openBookingAria: string;
+    bookingDetailsClient: string;
+    bookingDetailsPrice: string;
     customerHistoryEmpty: string;
     customerHistoryError: string;
     subscribeDefaultLabel: string;
@@ -2594,6 +2599,7 @@ const en: Translations = {
     poweredBy: "Powered by {business}'s calendar · times in {tz}",
     errorLoadAvailability: "Could not load availability.",
     errorRequiredFields: "Name and phone are required.",
+    errorAddressRequired: "Please enter your address.",
     errorBookingFailed: "Could not complete the booking.",
     errorWidgetUnavailable: "Booking isn't available for this business.",
     errorNoAccess: "Booking isn't active right now.",
@@ -2874,6 +2880,10 @@ const en: Translations = {
     customerStatBookings: "Bookings",
     customerStatRevenue: "Revenue",
     customerHistoryTitle: "Booking history",
+    viewProfile: "View profile",
+    openBookingAria: "Open booking for {name}",
+    bookingDetailsClient: "Client",
+    bookingDetailsPrice: "Price",
     customerHistoryEmpty: "No bookings yet.",
     customerHistoryError: "Couldn't load booking history.",
     subscribeDefaultLabel: "Subscribe",
@@ -4098,6 +4108,7 @@ const pt: Translations = {
     poweredBy: "Agenda de {business} · horários em {tz}",
     errorLoadAvailability: "Não foi possível carregar a disponibilidade.",
     errorRequiredFields: "Nome e telefone são obrigatórios.",
+    errorAddressRequired: "Informe seu endereço.",
     errorBookingFailed: "Não foi possível concluir o agendamento.",
     errorWidgetUnavailable: "O agendamento não está disponível para esta empresa.",
     errorNoAccess: "O agendamento não está ativo no momento.",
@@ -4378,6 +4389,10 @@ const pt: Translations = {
     customerStatBookings: "Agendamentos",
     customerStatRevenue: "Receita",
     customerHistoryTitle: "Histórico de agendamentos",
+    viewProfile: "Ver perfil",
+    openBookingAria: "Abrir agendamento de {name}",
+    bookingDetailsClient: "Cliente",
+    bookingDetailsPrice: "Preço",
     customerHistoryEmpty: "Nenhum agendamento ainda.",
     customerHistoryError: "Não foi possível carregar o histórico.",
     subscribeDefaultLabel: "Assinar",
@@ -5602,6 +5617,7 @@ const fr: Translations = {
     poweredBy: "Agenda de {business} · horaires en {tz}",
     errorLoadAvailability: "Impossible de charger les disponibilités.",
     errorRequiredFields: "Le nom et le téléphone sont requis.",
+    errorAddressRequired: "Veuillez saisir votre adresse.",
     errorBookingFailed: "Impossible de finaliser la réservation.",
     errorWidgetUnavailable: "La réservation n'est pas disponible pour cette entreprise.",
     errorNoAccess: "La réservation n'est pas active en ce moment.",
@@ -5882,6 +5898,10 @@ const fr: Translations = {
     customerStatBookings: "Réservations",
     customerStatRevenue: "Revenus",
     customerHistoryTitle: "Historique des réservations",
+    viewProfile: "Voir le profil",
+    openBookingAria: "Ouvrir la réservation de {name}",
+    bookingDetailsClient: "Client",
+    bookingDetailsPrice: "Prix",
     customerHistoryEmpty: "Aucune réservation pour le moment.",
     customerHistoryError: "Impossible de charger l’historique.",
     subscribeDefaultLabel: "S'abonner",
@@ -7106,6 +7126,7 @@ const es: Translations = {
     poweredBy: "Agenda de {business} · horarios en {tz}",
     errorLoadAvailability: "No se pudo cargar la disponibilidad.",
     errorRequiredFields: "El nombre y el teléfono son obligatorios.",
+    errorAddressRequired: "Introduce tu dirección.",
     errorBookingFailed: "No se pudo completar la reserva.",
     errorWidgetUnavailable: "Las reservas no están disponibles para este negocio.",
     errorNoAccess: "Las reservas no están activas en este momento.",
@@ -7386,6 +7407,10 @@ const es: Translations = {
     customerStatBookings: "Reservas",
     customerStatRevenue: "Ingresos",
     customerHistoryTitle: "Historial de reservas",
+    viewProfile: "Ver perfil",
+    openBookingAria: "Abrir la reserva de {name}",
+    bookingDetailsClient: "Cliente",
+    bookingDetailsPrice: "Precio",
     customerHistoryEmpty: "Aún no hay reservas.",
     customerHistoryError: "No se pudo cargar el historial.",
     subscribeDefaultLabel: "Suscribirse",
@@ -8610,6 +8635,7 @@ const ja: Translations = {
     poweredBy: "{business}のカレンダー · タイムゾーン：{tz}",
     errorLoadAvailability: "空き状況を読み込めませんでした。",
     errorRequiredFields: "氏名と電話番号は必須です。",
+    errorAddressRequired: "住所を入力してください。",
     errorBookingFailed: "予約を完了できませんでした。",
     errorWidgetUnavailable: "このビジネスでは予約を利用できません。",
     errorNoAccess: "現在、予約は有効ではありません。",
@@ -8890,6 +8916,10 @@ const ja: Translations = {
     customerStatBookings: "予約",
     customerStatRevenue: "売上",
     customerHistoryTitle: "予約履歴",
+    viewProfile: "プロフィールを見る",
+    openBookingAria: "{name}さんの予約を開く",
+    bookingDetailsClient: "お客様",
+    bookingDetailsPrice: "料金",
     customerHistoryEmpty: "まだ予約はありません。",
     customerHistoryError: "予約履歴を読み込めませんでした。",
     subscribeDefaultLabel: "登録する",
@@ -10114,6 +10144,7 @@ const de: Translations = {
     poweredBy: "Kalender von {business} · Zeiten in {tz}",
     errorLoadAvailability: "Verfügbarkeit konnte nicht geladen werden.",
     errorRequiredFields: "Name und Telefon sind erforderlich.",
+    errorAddressRequired: "Bitte gib deine Adresse ein.",
     errorBookingFailed: "Buchung konnte nicht abgeschlossen werden.",
     errorWidgetUnavailable: "Buchungen sind für dieses Unternehmen nicht verfügbar.",
     errorNoAccess: "Buchungen sind derzeit nicht aktiv.",
@@ -10394,6 +10425,10 @@ const de: Translations = {
     customerStatBookings: "Buchungen",
     customerStatRevenue: "Umsatz",
     customerHistoryTitle: "Buchungsverlauf",
+    viewProfile: "Profil ansehen",
+    openBookingAria: "Buchung von {name} öffnen",
+    bookingDetailsClient: "Kunde",
+    bookingDetailsPrice: "Preis",
     customerHistoryEmpty: "Noch keine Buchungen.",
     customerHistoryError: "Buchungsverlauf konnte nicht geladen werden.",
     subscribeDefaultLabel: "Abonnieren",
@@ -11618,6 +11653,7 @@ const it: Translations = {
     poweredBy: "Calendario di {business} · orari in {tz}",
     errorLoadAvailability: "Impossibile caricare la disponibilità.",
     errorRequiredFields: "Nome e telefono sono obbligatori.",
+    errorAddressRequired: "Inserisci il tuo indirizzo.",
     errorBookingFailed: "Impossibile completare la prenotazione.",
     errorWidgetUnavailable: "Le prenotazioni non sono disponibili per questa attività.",
     errorNoAccess: "Le prenotazioni non sono attive al momento.",
@@ -11898,6 +11934,10 @@ const it: Translations = {
     customerStatBookings: "Prenotazioni",
     customerStatRevenue: "Ricavi",
     customerHistoryTitle: "Storico prenotazioni",
+    viewProfile: "Vedi profilo",
+    openBookingAria: "Apri la prenotazione di {name}",
+    bookingDetailsClient: "Cliente",
+    bookingDetailsPrice: "Prezzo",
     customerHistoryEmpty: "Nessuna prenotazione.",
     customerHistoryError: "Impossibile caricare lo storico.",
     subscribeDefaultLabel: "Abbonati",

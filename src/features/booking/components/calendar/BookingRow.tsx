@@ -9,9 +9,19 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { ReschedulePicker } from "./ReschedulePicker";
 import { AssignStaffDialog } from "./AssignStaffDialog";
+import { BookingDetailsDialog } from "./BookingDetailsDialog";
+import { CustomerAvatar } from "./CustomerIdentity";
 import type { Slot } from "@/features/booking/domain/calendar";
 import type { BookingServiceSnapshot } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// The booker's public Nandzz profile — present only when they booked while
+// logged in (resolved server-side from created_by_user_id, never by email).
+export type CustomerProfileLink = {
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+};
 
 export type BookingRowData = {
   id: string;
@@ -33,6 +43,8 @@ export type BookingRowData = {
   services?: BookingServiceSnapshot[] | null;
   location_id: string | null;
   manage_token: string;
+  notes?: string | null;
+  customer_profile?: CustomerProfileLink | null;
 };
 
 // Chronological status pill shown above the customer name. Each category gets
@@ -76,6 +88,7 @@ export function BookingRow({
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
+  const [details, setDetails] = useState(false);
 
   // The booked services with their assigned staff: the per-service breakdown
   // when present, else the single aggregate line. Drives the row's staff display.
@@ -198,108 +211,164 @@ export function BookingRow({
     }
   }
 
+  // Row icon buttons sit inside the clickable row — keep their clicks from also
+  // opening the details modal.
+  const stop = (fn: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fn();
+  };
+
+  function openReschedule() {
+    setDetails(false);
+    setRescheduleError(null);
+    setRescheduling(true);
+  }
+
   return (
-    <div
-      className={`flex items-center justify-between gap-3 px-5 py-3.5 ${dim ? "opacity-70" : ""}`}
-    >
-      <div className="min-w-0">
-        {tag && (
-          <span
-            className={`mb-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tag.className}`}
-          >
-            {tag.live && (
-              <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" aria-hidden />
+    <>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setDetails(true)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setDetails(true);
+          }
+        }}
+        aria-label={t.booking.openBookingAria.replace("{name}", b.customer_name)}
+        className={`flex cursor-pointer items-center justify-between gap-3 px-5 py-3.5 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 ${dim ? "opacity-70" : ""}`}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <CustomerAvatar name={b.customer_name} profile={b.customer_profile} className="hidden h-9 w-9 text-xs sm:flex" />
+          <div className="min-w-0">
+            {tag && (
+              <span
+                className={`mb-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tag.className}`}
+              >
+                {tag.live && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" aria-hidden />
+                )}
+                {tag.label}
+              </span>
             )}
-            {tag.label}
-          </span>
-        )}
-        <p className="truncate font-medium">{b.customer_name}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          <p className="truncate text-sm text-muted-foreground">{b.service_name}</p>
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-            <Clock className="h-3 w-3" />
-            {when}
-          </span>
-        </div>
-        {anyStaff && (
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-            {bookedServices
-              .filter((s) => s.staff_name)
-              .map((s) => (
-                <span
-                  key={s.service_id}
-                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <Avatar size="sm" className="h-4 w-4">
-                    <AvatarFallback className="text-[9px]">
-                      {s.staff_name![0]?.toUpperCase() ?? "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  {bookedServices.length > 1 ? `${s.name}: ${s.staff_name}` : s.staff_name}
-                </span>
-              ))}
+            <p className="truncate font-medium">{b.customer_name}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <p className="truncate text-sm text-muted-foreground">{b.service_name}</p>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <Clock className="h-3 w-3" />
+                {when}
+              </span>
+            </div>
+            {anyStaff && (
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                {bookedServices
+                  .filter((s) => s.staff_name)
+                  .map((s) => (
+                    <span
+                      key={s.service_id}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                    >
+                      <Avatar size="sm" className="h-4 w-4">
+                        <AvatarFallback className="text-[9px]">
+                          {s.staff_name![0]?.toUpperCase() ?? "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      {bookedServices.length > 1 ? `${s.name}: ${s.staff_name}` : s.staff_name}
+                    </span>
+                  ))}
+              </div>
+            )}
+            {b.customer_address && (
+              <span className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+                <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                <span className="break-words">{b.customer_address}</span>
+              </span>
+            )}
           </div>
-        )}
-        {b.customer_address && (
-          <span className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
-            <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-            <span className="break-words">{b.customer_address}</span>
-          </span>
-        )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {b.price_cents != null && b.price_cents > 0 && (
+            <span className="mr-1 hidden text-sm font-medium tabular-nums sm:inline">{money(b.price_cents)}</span>
+          )}
+          {wa && (
+            <a
+              href={wa}
+              onClick={(e) => e.stopPropagation()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30"
+              aria-label={t.booking.whatsappAria.replace("{name}", b.customer_name)}
+              title={t.booking.whatsappTitle}
+            >
+              <WhatsAppIcon className="h-4 w-4" />
+            </a>
+          )}
+          {canReassign && (
+            <button
+              onClick={stop(() => setAssigning(true))}
+              disabled={busy}
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
+              aria-label={t.booking.assignStaff}
+              title={t.booking.assignStaff}
+            >
+              <Users className="h-4 w-4" />
+            </button>
+          )}
+          {cancellable && (
+            <button
+              onClick={stop(openReschedule)}
+              disabled={busy}
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
+              aria-label={t.booking.rescheduleAria.replace("{name}", b.customer_name)}
+              title={t.booking.rescheduleTitle}
+            >
+              <CalendarClock className="h-4 w-4" />
+            </button>
+          )}
+          {cancellable && (
+            <button
+              onClick={stop(cancel)}
+              disabled={busy}
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
+              aria-label={t.booking.cancelAria.replace("{name}", b.customer_name)}
+              title={t.booking.cancelTitle}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
       </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        {b.price_cents != null && b.price_cents > 0 && (
-          <span className="mr-1 hidden text-sm font-medium tabular-nums sm:inline">{money(b.price_cents)}</span>
-        )}
-        {wa && (
-          <a
-            href={wa}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30"
-            aria-label={t.booking.whatsappAria.replace("{name}", b.customer_name)}
-            title={t.booking.whatsappTitle}
-          >
-            <WhatsAppIcon className="h-4 w-4" />
-          </a>
-        )}
-        {canReassign && (
-          <button
-            onClick={() => setAssigning(true)}
-            disabled={busy}
-            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
-            aria-label={t.booking.assignStaff}
-            title={t.booking.assignStaff}
-          >
-            <Users className="h-4 w-4" />
-          </button>
-        )}
-        {cancellable && (
-          <button
-            onClick={() => {
-              setRescheduleError(null);
-              setRescheduling(true);
-            }}
-            disabled={busy}
-            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
-            aria-label={t.booking.rescheduleAria.replace("{name}", b.customer_name)}
-            title={t.booking.rescheduleTitle}
-          >
-            <CalendarClock className="h-4 w-4" />
-          </button>
-        )}
-        {cancellable && (
-          <button
-            onClick={cancel}
-            disabled={busy}
-            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950/30"
-            aria-label={t.booking.cancelAria.replace("{name}", b.customer_name)}
-            title={t.booking.cancelTitle}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
-          </button>
-        )}
-      </div>
+
+      <BookingDetailsDialog
+        open={details}
+        onClose={() => setDetails(false)}
+        b={b}
+        tag={tag}
+        when={when}
+        timezone={timezone}
+        money={money}
+        wa={wa}
+        busy={busy}
+        onReschedule={cancellable ? openReschedule : undefined}
+        onAssign={
+          canReassign
+            ? () => {
+                setDetails(false);
+                setAssigning(true);
+              }
+            : undefined
+        }
+        onCancel={
+          cancellable
+            ? () => {
+                setDetails(false);
+                void cancel();
+              }
+            : undefined
+        }
+      />
 
       <Dialog
         open={rescheduling}
@@ -327,6 +396,6 @@ export function BookingRow({
         onClose={() => setAssigning(false)}
         onDone={() => router.refresh()}
       />
-    </div>
+    </>
   );
 }

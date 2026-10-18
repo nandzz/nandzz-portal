@@ -7,6 +7,8 @@ import { whatsappLink } from "@/features/booking/domain/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Translations } from "@/lib/i18n/translations";
 import { CustomerDetailsDialog } from "@/features/booking/components/calendar/CustomerDetailsDialog";
+import { CustomerAvatar } from "@/features/booking/components/calendar/CustomerIdentity";
+import type { CustomerProfileLink } from "@/features/booking/components/calendar/BookingRow";
 
 const PAGE_SIZE = 12;
 
@@ -23,6 +25,7 @@ export type CustomerSummary = {
   revenueCents: number;
   lastVisit: string | null; // ISO — most recent confirmed in the past
   nextVisit: string | null; // ISO — soonest upcoming confirmed
+  profile: CustomerProfileLink | null; // linked account, if they ever booked logged in
 };
 
 export type WidgetCustomersData = {
@@ -187,14 +190,6 @@ function CustomerRow({
   t: Translations;
   onOpen: () => void;
 }) {
-  const initials = c.name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   const firstName = c.name.split(" ")[0] || c.name;
   const wa = c.phone ? whatsappLink(c.phone, t.booking.whatsappSimpleGreeting.replace("{name}", firstName)) : null;
 
@@ -213,9 +208,7 @@ function CustomerRow({
       aria-label={t.booking.openCustomerAria.replace("{name}", c.name)}
       className="flex cursor-pointer items-center gap-4 px-5 py-4 outline-none transition-colors hover:bg-muted/50 focus-visible:bg-muted/50"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-        {initials || "?"}
-      </div>
+      <CustomerAvatar name={c.name} profile={c.profile} className="h-10 w-10 text-sm" />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

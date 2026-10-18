@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CalendarConfig, WidgetBooking } from "@/lib/types";
-import type { BookingRowData } from "@/features/booking/components/calendar/BookingRow";
+import type { BookingRowData, CustomerProfileLink } from "@/features/booking/components/calendar/BookingRow";
 import type { WidgetOverviewData } from "@/features/booking/components/calendar/WidgetOverview";
 import type { WidgetCustomersData, CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";
 import { buildOverview, type OverviewBookingRow, type OverviewSegment } from "@/features/booking/calendarStats";
@@ -22,17 +22,52 @@ export type { TodaySnapshot, CalendarData, ListData, BookingsFilter } from "@/fe
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// The exact BookingRowData column set — nothing wider crosses the wire.
+// The BookingRowData column set, plus the two ids used to resolve the booker's
+// account (they never cross the wire — toRow drops them).
 const ROW_COLUMNS =
-  "id, instance_id, service_id, customer_name, customer_email, service_name, starts_at, ends_at, price_cents, status, customer_phone, customer_address, staff_id, staff_name, services, location_id, manage_token";
+  "id, instance_id, service_id, customer_name, customer_email, service_name, starts_at, ends_at, price_cents, status, customer_phone, customer_address, staff_id, staff_name, services, location_id, manage_token, notes, created_by_user_id, owner_user_id";
 
 type RowRecord = Pick<
   WidgetBooking,
   | "id" | "instance_id" | "service_id" | "customer_name" | "customer_email"
   | "service_name" | "starts_at" | "ends_at" | "price_cents" | "status"
   | "customer_phone" | "customer_address" | "staff_id" | "staff_name"
-  | "services" | "location_id" | "manage_token"
+  | "services" | "location_id" | "manage_token" | "notes" | "owner_user_id" | "created_by_user_id"
 >;
+
+// The customer's account, when they booked while logged in. Manual bookings
+// carry the OWNER's id in created_by_user_id, so those never link. Never
+// matched by email (would attach strangers' accounts / leak account existence).
+function bookerId(r: RowRecord): string | null {
+  return r.created_by_user_id && r.created_by_user_id !== r.owner_user_id ? r.created_by_user_id : null;
+}
+
+// Batch-load the public profile bits (profiles are world-readable) for a set of
+// account ids. Demo/placeholder profiles are still real public pages, so they link.
+async function fetchProfileLinks(
+  supabase: SupabaseClient,
+  ids: (string | null)[]
+): Promise<Map<string, CustomerProfileLink>> {
+  const unique = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+  const map = new Map<string, CustomerProfileLink>();
+  if (unique.length === 0) return map;
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, avatar_url")
+    .in("id", unique);
+  for (const p of (data ?? []) as ({ id: string } & CustomerProfileLink)[]) {
+    map.set(p.id, { username: p.username, display_name: p.display_name, avatar_url: p.avatar_url });
+  }
+  return map;
+}
+
+async function toRows(supabase: SupabaseClient, records: RowRecord[]): Promise<BookingRowData[]> {
+  const profiles = await fetchProfileLinks(supabase, records.map(bookerId));
+  return records.map((r) => {
+    const id = bookerId(r);
+    return { ...toRow(r), customer_profile: (id && profiles.get(id)) || null };
+  });
+}
 
 function toRow(r: RowRecord): BookingRowData {
   return {
@@ -53,6 +88,7 @@ function toRow(r: RowRecord): BookingRowData {
     services: r.services ?? null,
     location_id: r.location_id,
     manage_token: r.manage_token,
+    notes: r.notes,
   };
 }
 
@@ -98,7 +134,7 @@ export async function fetchCalendarData(
     .limit(2000);
   q = scopeLocation(q, locationId);
   const { data } = await q;
-  const bookings = ((data ?? []) as RowRecord[]).map(toRow);
+  const bookings = await toRows(supabase, (data ?? []) as RowRecord[]);
 
   return { monthKey, bookings, today: await fetchToday(supabase, { instanceId, locationId, timezone }) };
 }
@@ -175,7 +211,7 @@ export async function fetchListData(
     else if (filter === "past") q = q.eq("status", "confirmed").lt("starts_at", nowIso).order("starts_at", { ascending: false });
     else q = q.eq("status", "cancelled").order("starts_at", { ascending: false });
     const { data, count } = await q.range(offset, offset + limit - 1);
-    return { bookings: ((data ?? []) as RowRecord[]).map(toRow), total: count ?? 0 };
+    return { bookings: await toRows(supabase, (data ?? []) as RowRecord[]), total: count ?? 0 };
   }
 
   // "all" mirrors the old client ordering: upcoming group (starts_at >= now)
@@ -192,22 +228,22 @@ export async function fetchListData(
   const countB = await countHead(bBuild);
   const total = countA + countB;
 
-  const rows: BookingRowData[] = [];
+  const rows: RowRecord[] = [];
   // Slice from bucket A (ascending) while the window still overlaps it.
   if (offset < countA && rows.length < limit) {
     const from = offset;
     const to = Math.min(countA - 1, offset + limit - 1);
     const { data } = await aBuild(base()).order("starts_at", { ascending: true }).range(from, to);
-    rows.push(...((data ?? []) as RowRecord[]).map(toRow));
+    rows.push(...((data ?? []) as RowRecord[]));
   }
   // Then continue into bucket B (descending) for whatever remains.
   if (rows.length < limit) {
     const need = limit - rows.length;
     const bStart = Math.max(0, offset - countA);
     const { data } = await bBuild(base()).order("starts_at", { ascending: false }).range(bStart, bStart + need - 1);
-    rows.push(...((data ?? []) as RowRecord[]).map(toRow));
+    rows.push(...((data ?? []) as RowRecord[]));
   }
-  return { bookings: rows, total };
+  return { bookings: await toRows(supabase, rows), total };
 }
 
 // ── Overview (trend + KPIs + capacity/forecast), aggregated server-side ──────
@@ -310,7 +346,9 @@ export async function fetchCustomersData(
     revenue_cents: number;
     last_visit: string | null;
     next_visit: string | null;
+    profile_id: string | null;
   }[];
+  const profiles = await fetchProfileLinks(supabase, rows.map((r) => r.profile_id));
   const customers: CustomerSummary[] = rows.map((r) => ({
     id: r.id,
     email: r.email,
@@ -322,13 +360,15 @@ export async function fetchCustomersData(
     revenueCents: r.revenue_cents,
     lastVisit: r.last_visit,
     nextVisit: r.next_visit,
+    profile: (r.profile_id && profiles.get(r.profile_id)) || null,
   }));
   return { timezone, currencySymbol, customers };
 }
 
 // ── One customer's booking history (the Customers-tab detail modal) ──────────
 // `customerId` is the rollup key from widget_customers_summary: the lowercased
-// email, or `phone:<phone>` for an email-less customer. Matching mirrors that
+// email, `phone:<phone>` for an email-less customer, or `user:<id>` for an
+// account booking with neither. Matching mirrors that
 // key so the history lines up with the row's counts. Capped — a single customer
 // never comes close, and the modal only needs recent history.
 export async function fetchCustomerBookings(
@@ -338,12 +378,18 @@ export async function fetchCustomerBookings(
   const { instanceId, locationId, customerId } = opts;
   let q = supabase.from("widget_bookings").select(ROW_COLUMNS).eq("instance_id", instanceId);
   q = scopeLocation(q, locationId);
-  if (customerId.startsWith("phone:")) {
+  if (customerId.startsWith("user:")) {
+    // Mirror the RPC: only bookings with no email and no phone fall back to this key.
+    q = q
+      .eq("created_by_user_id", customerId.slice("user:".length))
+      .or("customer_email.is.null,customer_email.eq.")
+      .or("customer_phone.is.null,customer_phone.eq.");
+  } else if (customerId.startsWith("phone:")) {
     q = q.eq("customer_phone", customerId.slice("phone:".length)).or("customer_email.is.null,customer_email.eq.");
   } else {
     // ilike for case-insensitivity; escape its wildcards so the email matches literally.
     q = q.ilike("customer_email", customerId.replace(/[\\%_]/g, (c) => `\\${c}`));
   }
   const { data } = await q.order("starts_at", { ascending: false }).limit(200);
-  return ((data ?? []) as RowRecord[]).map(toRow);
+  return toRows(supabase, (data ?? []) as RowRecord[]);
 }

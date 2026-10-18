@@ -8,6 +8,7 @@ import { whatsappLink } from "@/features/booking/domain/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { BookingRowData } from "@/features/booking/components/calendar/BookingRow";
 import type { CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";
+import { CustomerAvatar, ViewProfileLink } from "@/features/booking/components/calendar/CustomerIdentity";
 
 // Detail modal for one row of the Customers tab: contact info, the rollup stats
 // the row already carries, and the customer's booking history (fetched on open
@@ -87,13 +88,6 @@ export function CustomerDetailsDialog({ customer, onClose, instanceId, locationI
   if (!customer) return null;
 
   const c = customer;
-  const initials = c.name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
   const firstName = c.name.split(" ")[0] || c.name;
   const wa = c.phone ? whatsappLink(c.phone, t.booking.whatsappSimpleGreeting.replace("{name}", firstName)) : null;
 
@@ -107,17 +101,17 @@ export function CustomerDetailsDialog({ customer, onClose, instanceId, locationI
   return (
     <Dialog open onClose={onClose} maxWidthClass="max-w-lg">
       <div className="-mt-2 flex items-center gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-          {initials || "?"}
-        </div>
-        <div className="min-w-0">
+        <CustomerAvatar name={c.name} profile={c.profile} className="h-14 w-14 text-lg" />
+        <div className="min-w-0 flex-1">
           <h2 className="truncate text-lg font-semibold">{c.name}</h2>
+          {c.profile && <p className="truncate text-sm text-muted-foreground">@{c.profile.username}</p>}
           {c.upcoming > 0 && (
             <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
               {t.booking.upcomingBadge.replace("{count}", String(c.upcoming))}
             </span>
           )}
         </div>
+        {c.profile && <ViewProfileLink profile={c.profile} />}
       </div>
 
       <div className="mt-5 space-y-1">
