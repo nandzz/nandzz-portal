@@ -10,7 +10,7 @@ export type LegalUi = {
   signupNotice: string; // tokens: {terms} {privacy} {age}
   termsLink: string;
   privacyLink: string;
-  bookingNotice: string; // tokens: {business} {privacy}
+  bookingNotice: string; // tokens: {terms} {business} {privacy}
   bannerTitle: string;
   bannerBody: string; // tokens: {terms} {privacy}
   bannerAccept: string;
@@ -40,7 +40,7 @@ const en: LegalUi = {
   termsLink: "Terms of Service",
   privacyLink: "Privacy Policy",
   bookingNotice:
-    "{business} receives your details to manage this booking and is responsible for them. Nandzz processes them on its behalf — see the {privacy}.",
+    "By booking you agree to the {terms}. {business} receives your details to manage this booking and is responsible for them. Nandzz processes them on its behalf — see the {privacy}.",
   bannerTitle: "We've updated our Terms",
   bannerBody: "Please review the updated {terms} and {privacy}. Accept to keep using Nandzz.",
   bannerAccept: "Accept",
@@ -71,7 +71,7 @@ const it: LegalUi = {
   termsLink: "Termini di Servizio",
   privacyLink: "Informativa privacy",
   bookingNotice:
-    "{business} riceve i tuoi dati per gestire questa prenotazione e ne è titolare. Nandzz li tratta per suo conto — vedi l'{privacy}.",
+    "Prenotando accetti i {terms}. {business} riceve i tuoi dati per gestire questa prenotazione e ne è titolare. Nandzz li tratta per suo conto — vedi l'{privacy}.",
   bannerTitle: "Abbiamo aggiornato i Termini",
   bannerBody: "Leggi i {terms} e l'{privacy} aggiornati. Accetta per continuare a usare Nandzz.",
   bannerAccept: "Accetta",
@@ -102,7 +102,7 @@ const pt: LegalUi = {
   termsLink: "Termos de Serviço",
   privacyLink: "Política de Privacidade",
   bookingNotice:
-    "{business} recebe seus dados para gerenciar esta reserva e é responsável por eles. A Nandzz os processa em nome dela — veja a {privacy}.",
+    "Ao reservar, você aceita os {terms}. {business} recebe seus dados para gerenciar esta reserva e é responsável por eles. A Nandzz os processa em nome dela — veja a {privacy}.",
   bannerTitle: "Atualizamos nossos Termos",
   bannerBody: "Leia os {terms} e a {privacy} atualizados. Aceite para continuar usando a Nandzz.",
   bannerAccept: "Aceitar",
@@ -133,7 +133,7 @@ const fr: LegalUi = {
   termsLink: "Conditions d'utilisation",
   privacyLink: "Politique de confidentialité",
   bookingNotice:
-    "{business} reçoit vos données pour gérer cette réservation et en est responsable. Nandzz les traite pour son compte — voir la {privacy}.",
+    "En réservant, vous acceptez les {terms}. {business} reçoit vos données pour gérer cette réservation et en est responsable. Nandzz les traite pour son compte — voir la {privacy}.",
   bannerTitle: "Nous avons mis à jour nos Conditions",
   bannerBody: "Consultez les {terms} et la {privacy} mises à jour. Acceptez pour continuer à utiliser Nandzz.",
   bannerAccept: "Accepter",
@@ -164,7 +164,7 @@ const es: LegalUi = {
   termsLink: "Términos de Servicio",
   privacyLink: "Política de Privacidad",
   bookingNotice:
-    "{business} recibe tus datos para gestionar esta reserva y es responsable de ellos. Nandzz los trata en su nombre — consulta la {privacy}.",
+    "Al reservar, aceptas los {terms}. {business} recibe tus datos para gestionar esta reserva y es responsable de ellos. Nandzz los trata en su nombre — consulta la {privacy}.",
   bannerTitle: "Hemos actualizado nuestros Términos",
   bannerBody: "Revisa los {terms} y la {privacy} actualizados. Acepta para seguir usando Nandzz.",
   bannerAccept: "Aceptar",
@@ -195,7 +195,7 @@ const de: LegalUi = {
   termsLink: "Nutzungsbedingungen",
   privacyLink: "Datenschutzerklärung",
   bookingNotice:
-    "{business} erhält deine Daten zur Verwaltung dieser Buchung und ist dafür verantwortlich. Nandzz verarbeitet sie in deren Auftrag — siehe {privacy}.",
+    "Mit der Buchung akzeptierst du die {terms}. {business} erhält deine Daten zur Verwaltung dieser Buchung und ist dafür verantwortlich. Nandzz verarbeitet sie in deren Auftrag — siehe {privacy}.",
   bannerTitle: "Wir haben unsere Bedingungen aktualisiert",
   bannerBody: "Bitte lies die aktualisierten {terms} und die {privacy}. Akzeptiere, um Nandzz weiter zu nutzen.",
   bannerAccept: "Akzeptieren",
@@ -225,7 +225,7 @@ const ja: LegalUi = {
   termsLink: "利用規約",
   privacyLink: "プライバシーポリシー",
   bookingNotice:
-    "{business}がこの予約を管理するためにあなたの情報を受け取り、その管理責任を負います。Nandzzは同社に代わって処理します（{privacy}参照）。",
+    "予約することで{terms}に同意したものとみなされます。{business}がこの予約を管理するためにあなたの情報を受け取り、その管理責任を負います。Nandzzは同社に代わって処理します（{privacy}参照）。",
   bannerTitle: "利用規約を更新しました",
   bannerBody: "更新された{terms}と{privacy}をご確認ください。Nandzzを引き続き利用するには同意してください。",
   bannerAccept: "同意する",

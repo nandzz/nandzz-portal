@@ -12,6 +12,7 @@ describe("legal UI strings", () => {
       expect(ui.signupNotice).toContain("{age}");
       expect(ui.bookingNotice).toContain("{business}");
       expect(ui.bookingNotice).toContain("{privacy}");
+      expect(ui.bookingNotice).toContain("{terms}");
       expect(ui.bannerBody).toContain("{terms}");
     }
   });
