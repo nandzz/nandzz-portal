@@ -31,7 +31,7 @@ const INSTRUCTIONS =
   "business accounts whose owner granted support access. " +
   "Typical flow: create_demo_profile (fill the WHOLE profile: profile picture, address, social links, page colors " +
   "from the business's brand — not just the bio) → add content with publish_link / publish_image / publish_html / publish_pdf " +
-  "(always pass demo_profile_id) → optionally configure_booking_widget (services, hours, staff, locations — demo profiles accept real bookings) → review with get_demo_profile (fix with update_demo_profile / delete_space) → create_claim_code and hand the claim link to the business. " +
+  "(always pass demo_profile_id) → optionally configure_booking_widget (services, hours, staff, locations — demo profiles accept real bookings) → review with get_demo_profile (fix with update_demo_profile / delete_space) → create_claim_code (ask the admin first whether to grant Pro on claim, and for how many months) and hand the claim link to the business. " +
   "Rules: the address goes in the profile `address` field (not a Google Maps link); opening hours go in the booking " +
   "widget (not the bio); keep the bio to what the business does. " +
   "Real accounts: to help an existing business set up their profile, use find_profile(username) — it works only if " +
