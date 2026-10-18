@@ -25,7 +25,7 @@ export async function GET(request: Request) {
           .from("profiles")
           .select("username")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (!profile) {
           // In-modal auth flows (the booking widget, and the agent/profile

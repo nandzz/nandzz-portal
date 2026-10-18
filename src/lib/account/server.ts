@@ -17,6 +17,6 @@ export async function getAccountType(
     .from("profiles")
     .select("account_type")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   return ((data?.account_type as AccountType) ?? "personal");
 }

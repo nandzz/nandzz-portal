@@ -29,7 +29,7 @@ export default async function HomePage() {
       .from("profiles")
       .select("username")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
     redirect(profile?.username ? `/${profile.username}` : "/dashboard/contents");
   }
 

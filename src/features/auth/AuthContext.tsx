@@ -105,7 +105,7 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
   const loadForUser = useCallback(
     async (uid: string) => {
       const seq = ++loadSeq.current;
-      const { data } = await supabase.from("profiles").select("*").eq("id", uid).single();
+      const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
       if (seq !== loadSeq.current) return; // superseded by a newer auth event
       const nextProfile = (data as Profile) ?? null;
       setProfile(nextProfile);
