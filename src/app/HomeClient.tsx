@@ -1,264 +1,311 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, Check, FileText, Link2, Sparkles, X } from "lucide-react";
+import { ArrowRight, CalendarCheck, Check, Clock, Link2, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import mockupLight from "../../public/home/mockup-light.webp";
+import mockupDark from "../../public/home/mockup-dark.webp";
+
+const SERVICE_META = [
+  { minutes: 45, price: 30 },
+  { minutes: 90, price: 45 },
+  { minutes: 30, price: 18 },
+];
+const SLOTS = ["9:00", "9:45", "10:30", "11:15", "12:00", "12:45"];
+const GALLERY_TINTS = [
+  "from-violet-300 to-violet-100 dark:from-violet-700/70 dark:to-violet-900/40",
+  "from-stone-300 to-stone-100 dark:from-stone-600/60 dark:to-stone-800/40",
+  "from-fuchsia-200 to-rose-100 dark:from-fuchsia-800/50 dark:to-rose-900/30",
+  "from-zinc-300 to-zinc-100 dark:from-zinc-600/60 dark:to-zinc-800/40",
+  "from-indigo-200 to-violet-100 dark:from-indigo-800/50 dark:to-violet-900/30",
+  "from-amber-100 to-stone-100 dark:from-amber-900/40 dark:to-stone-800/40",
+];
+const BRAND_SWATCHES = ["#7c3aed", "#1d1a26", "#f4c7d8", "#e9e4f7"];
 
 export function HomeClient() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const h = t.home;
 
-  const features = [
-    { icon: Calendar, title: t.home.featureBookingTitle, desc: t.home.featureBookingDesc, live: true },
-    { icon: FileText, title: t.home.featureContentTitle, desc: t.home.featureContentDesc, live: true },
-    { icon: Link2, title: t.home.featureLinksTitle, desc: t.home.featureLinksDesc, live: true },
-    { icon: Sparkles, title: t.home.featuresMore, desc: "", live: false },
-  ];
-
-  const audienceExamples = t.home.audienceExamples.split(",").map((s) => s.trim());
-  const notYetExamples = t.home.audienceNotYetExamples.split(",").map((s) => s.trim());
-
+  const price = new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const services = h.mockServices.split("|").map((name, i) => ({ name, ...SERVICE_META[i] }));
+  const audienceExamples = h.audienceExamples.split(",").map((s) => s.trim());
+  const notYetExamples = h.audienceNotYetExamples.split(",").map((s) => s.trim());
   const steps = [
-    { title: t.home.step1Title, desc: t.home.step1Desc },
-    { title: t.home.step2Title, desc: t.home.step2Desc },
-    { title: t.home.step3Title, desc: t.home.step3Desc },
+    { title: h.step1Title, desc: h.step1Desc },
+    { title: h.step2Title, desc: h.step2Desc },
+    { title: h.step3Title, desc: h.step3Desc },
   ];
 
   return (
-    <div>
-      {/* Hero Section */}
+    <div className="home-clay">
+      {/* Hero: what Nandzz is, said plainly, next to the real product */}
       <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 py-20 sm:py-28">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-            {/* Left: Text */}
-            <div>
-              <div className="mb-8 flex items-center gap-3">
-                <span className="h-px w-8 bg-violet-500 flex-shrink-0" />
-                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  {t.home.badge}
-                </span>
-              </div>
-
-              <h1 className="text-[clamp(3rem,8vw,5.5rem)] font-bold tracking-tight leading-[1.04]">
-                {t.home.heroLine1}
-                <br />
-                <span className="text-violet-600">{t.home.heroLine2}</span>
-              </h1>
-
-              <p className="mt-6 text-lg text-muted-foreground leading-relaxed max-w-md">
-                {t.home.heroDescription}
-              </p>
-
-              <div className="mt-10 flex flex-wrap items-center gap-4">
-                <Link href="/login?tab=signup">
-                  <Button size="lg" className="px-8">
-                    {t.home.getStarted}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="#how">
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    {t.home.howItWorks}
-                    <ArrowRight className="ml-1.5 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Right: Branded page mockup */}
-            <div className="relative lg:ml-8">
-              <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-violet-200/50 blur-3xl dark:bg-violet-800/25 pointer-events-none" />
-              <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-fuchsia-200/40 blur-2xl dark:bg-fuchsia-800/20 pointer-events-none" />
-
-              <div className="relative rounded-2xl border border-border/50 shadow-2xl shadow-black/10 overflow-hidden bg-card">
-                {/* Browser chrome */}
-                <div className="flex items-center gap-1.5 bg-muted/60 px-4 py-2.5 border-b border-border/40">
-                  <div className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-green-400/70" />
-                  <div className="ml-3 flex-1 bg-background rounded-md h-5 flex items-center px-3 border border-border/30">
-                    <span className="text-[11px] text-muted-foreground/50 font-mono">
-                      nandzz.com/yourbrand
-                    </span>
-                  </div>
-                </div>
-
-                {/* Branded page preview */}
-                <div className="p-4 bg-background/50 space-y-3">
-                  {/* Profile header */}
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400" />
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-2.5 w-24 rounded bg-foreground/15" />
-                      <div className="h-2 w-16 rounded bg-foreground/10" />
-                    </div>
-                  </div>
-
-                  {/* Booking block */}
-                  <div className="rounded-lg border border-violet-200 dark:border-violet-800/60 bg-violet-50/60 dark:bg-violet-900/20 p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-violet-500" />
-                      <span className="text-[11px] font-medium text-violet-700 dark:text-violet-300">
-                        {t.home.featureBookingTitle}
-                      </span>
-                    </div>
-                    <span className="rounded-md bg-violet-600 px-2.5 py-1 text-[10px] font-semibold text-white">
-                      {t.home.getStarted}
-                    </span>
-                  </div>
-
-                  {/* Content tiles */}
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="aspect-video rounded-lg bg-gradient-to-br from-sky-100 to-sky-50 dark:from-sky-900/40 dark:to-sky-800/20" />
-                    <div className="aspect-video rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-800/20" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* Feature suite */}
-      <section className="mx-auto max-w-7xl px-4 pb-20">
-        <div className="mb-10 max-w-2xl">
-          <h2 className="text-3xl font-bold tracking-tight">{t.home.featuresTitle}</h2>
-          <p className="mt-3 text-muted-foreground text-lg">{t.home.featuresDesc}</p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map(({ icon: Icon, title, desc, live }) => (
-            <div
-              key={title}
-              className={`rounded-2xl border p-5 transition-colors ${
-                live
-                  ? "border-border/60 bg-card hover:border-violet-300 dark:hover:border-violet-700"
-                  : "border-dashed border-border/60 bg-muted/30"
-              }`}
-            >
-              <div
-                className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${
-                  live ? "bg-violet-100 dark:bg-violet-900/50" : "bg-muted"
-                }`}
-              >
-                <Icon
-                  className={`h-5 w-5 ${live ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`}
-                />
-              </div>
-              <h3 className="font-semibold">{title}</h3>
-              {desc && <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{desc}</p>}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Who it's for — generic, page-centered */}
-      <section className="border-y border-border/50 bg-muted/20">
-        <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {t.home.audienceTitle}
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-            {t.home.audienceDesc}
-          </p>
-          <p className="mt-10 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            {t.home.audienceFitLabel}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
-            {audienceExamples.map((label) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-4 py-2 text-sm font-medium text-muted-foreground"
-              >
-                <Check className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
-                {label}
-              </span>
-            ))}
-          </div>
-
-          {/* Not a fit — set expectations before signup */}
-          <div className="mt-12 rounded-2xl border border-dashed border-border/70 bg-background/40 px-5 py-6">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              {t.home.audienceNotYetLabel}
+        <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pb-28">
+          <div className="max-w-xl">
+            <h1 className="text-[clamp(2.6rem,6.6vw,4.9rem)] font-bold leading-[1.02] tracking-[-0.035em]">
+              {h.heroLine1}
+              <br />
+              {h.heroLine2}
+            </h1>
+            <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_68%,transparent)]">
+              {h.heroDescription}
             </p>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              {notYetExamples.map((label) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border/60 px-3.5 py-1.5 text-sm text-muted-foreground/80"
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Link
+                href="/login?tab=signup"
+                className="clay-violet inline-flex h-12 items-center gap-2 rounded-full px-7 text-[15px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+              >
+                {h.getStarted}
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+              <Link
+                href="#how"
+                className="clay inline-flex h-12 items-center rounded-full px-6 text-[15px] font-medium transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+              >
+                {h.howItWorks}
+              </Link>
+            </div>
+            <p className="mt-5 text-sm text-[color-mix(in_oklab,var(--clay-ink)_55%,transparent)]">{h.heroNote}</p>
+          </div>
+
+          {/* Floating layered mockup */}
+          <div className="relative mx-auto w-full max-w-[25rem] lg:max-w-[29rem]">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-[8%] rounded-full blur-3xl"
+              style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
+            />
+            <div className="clay-float relative">
+              <Image
+                src={mockupLight}
+                alt=""
+                priority
+                sizes="(min-width: 1024px) 464px, 400px"
+                className="h-auto w-full drop-shadow-[0_40px_50px_rgb(58_38_112_/_0.22)] dark:hidden"
+              />
+              <Image
+                src={mockupDark}
+                alt=""
+                priority
+                sizes="(min-width: 1024px) 464px, 400px"
+                className="hidden h-auto w-full drop-shadow-[0_40px_60px_rgb(0_0_0_/_0.6)] dark:block"
+              />
+            </div>
+
+            {/* New booking toast */}
+            <div
+              className="clay clay-pop absolute top-[16%] -left-3 flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-10"
+              style={{ animationDelay: "350ms" }}
+            >
+              <span className="clay-violet flex h-9 w-9 items-center justify-center rounded-xl">
+                <CalendarCheck className="h-4.5 w-4.5" aria-hidden />
+              </span>
+              <span className="leading-tight">
+                <span className="block text-[13px] font-semibold">{h.mockToastTitle}</span>
+                <span className="block text-xs text-[color-mix(in_oklab,var(--clay-ink)_60%,transparent)]">
+                  {h.mockToastBody}
+                </span>
+              </span>
+            </div>
+
+            {/* Your link chip */}
+            <div
+              className="clay clay-pop absolute -right-2 bottom-[9%] flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2 sm:-right-8"
+              style={{ animationDelay: "550ms" }}
+            >
+              <span className="clay-well flex h-8 w-8 items-center justify-center rounded-full">
+                <Link2 className="h-4 w-4 text-violet-600 dark:text-violet-400" aria-hidden />
+              </span>
+              <span className="leading-tight">
+                <span className="block text-[11px] text-[color-mix(in_oklab,var(--clay-ink)_55%,transparent)]">
+                  {h.mockLinkLabel}
+                </span>
+                <span className="block text-[13px] font-semibold">nandzz.com/yourbrand</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What's on the page: work, services, booking, brand */}
+      <section className="mx-auto max-w-7xl px-4 pb-24">
+        <div className="mb-12 max-w-2xl">
+          <h2 className="text-3xl font-bold tracking-[-0.025em] sm:text-4xl">{h.featuresTitle}</h2>
+          <p className="mt-4 text-lg leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_65%,transparent)]">
+            {h.featuresDesc}
+          </p>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-6">
+          {/* Work */}
+          <article className="clay flex flex-col rounded-[2rem] p-6 sm:p-8 lg:col-span-3">
+            <h3 className="text-xl font-semibold tracking-tight">{h.featureWorkTitle}</h3>
+            <p className="mt-2 max-w-sm leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_62%,transparent)]">
+              {h.featureWorkDesc}
+            </p>
+            <div className="clay-well mt-8 grid grid-cols-3 gap-2.5 rounded-3xl p-3" aria-hidden>
+              {GALLERY_TINTS.map((tint, i) => (
+                <div
+                  key={tint}
+                  className={`aspect-square rounded-2xl bg-gradient-to-br ${tint} ${i === 1 ? "translate-y-[-6px] shadow-lg shadow-violet-900/10" : ""}`}
+                />
+              ))}
+            </div>
+          </article>
+
+          {/* Services */}
+          <article className="clay flex flex-col rounded-[2rem] p-6 sm:p-8 lg:col-span-3">
+            <h3 className="text-xl font-semibold tracking-tight">{h.featureServicesTitle}</h3>
+            <p className="mt-2 max-w-sm leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_62%,transparent)]">
+              {h.featureServicesDesc}
+            </p>
+            <ul className="clay-well mt-8 space-y-2.5 rounded-3xl p-3" aria-hidden>
+              {services.map((s, i) => (
+                <li
+                  key={s.name}
+                  className={`clay flex items-center gap-3 rounded-2xl px-4 py-3 ${i === 0 ? "ring-2 ring-violet-500/70" : ""}`}
                 >
-                  <X className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{s.name}</span>
+                    <span className="mt-0.5 flex items-center gap-1 text-xs text-[color-mix(in_oklab,var(--clay-ink)_55%,transparent)]">
+                      <Clock className="h-3 w-3" />
+                      {s.minutes} min
+                    </span>
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums">{price.format(s.price)}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          {/* Booking */}
+          <article className="clay flex flex-col gap-8 rounded-[2rem] p-6 sm:flex-row sm:items-center sm:p-8 lg:col-span-4">
+            <div className="sm:max-w-[16rem]">
+              <h3 className="text-xl font-semibold tracking-tight">{h.featureBookingTitle}</h3>
+              <p className="mt-2 leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_62%,transparent)]">
+                {h.featureBookingDesc}
+              </p>
+            </div>
+            <div className="clay-well grid flex-1 grid-cols-3 gap-2.5 rounded-3xl p-3" aria-hidden>
+              {SLOTS.map((slot) => (
+                <span
+                  key={slot}
+                  className={`rounded-xl py-2.5 text-center text-sm font-medium tabular-nums ${
+                    slot === "10:30" ? "clay-violet" : "clay"
+                  }`}
+                >
+                  {slot}
+                </span>
+              ))}
+            </div>
+          </article>
+
+          {/* Brand */}
+          <article className="clay flex flex-col rounded-[2rem] p-6 sm:p-8 lg:col-span-2">
+            <h3 className="text-xl font-semibold tracking-tight">{h.featureBrandTitle}</h3>
+            <p className="mt-2 leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_62%,transparent)]">
+              {h.featureBrandDesc}
+            </p>
+            <div className="mt-auto flex items-center gap-2 pt-8" aria-hidden>
+              {BRAND_SWATCHES.map((c) => (
+                <span key={c} className="clay h-9 w-9 rounded-full" style={{ background: c }} />
+              ))}
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {/* Who it's for */}
+      <section className="mx-auto max-w-7xl px-4 pb-24">
+        <div className="clay rounded-[2.5rem] px-6 py-14 sm:px-12">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-bold tracking-[-0.025em]">{h.audienceTitle}</h2>
+            <p className="mt-4 text-lg leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_65%,transparent)]">
+              {h.audienceDesc}
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+              {audienceExamples.map((label) => (
+                <span key={label} className="clay inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium">
+                  <Check className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" aria-hidden />
                   {label}
                 </span>
               ))}
             </div>
-            <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground leading-relaxed">
-              {t.home.audienceNotYetNote}
-            </p>
+
+            <div className="clay-well mt-12 rounded-3xl px-5 py-6">
+              <p className="text-sm font-semibold">{h.audienceNotYetLabel}</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                {notYetExamples.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm text-[color-mix(in_oklab,var(--clay-ink)_60%,transparent)]"
+                  >
+                    <X className="h-3.5 w-3.5 opacity-60" aria-hidden />
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_60%,transparent)]">
+                {h.audienceNotYetNote}
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="mx-auto max-w-7xl px-4 py-20 scroll-mt-20">
-        <h2 className="mb-12 text-3xl font-bold tracking-tight text-center">
-          {t.home.stepsTitle}
-        </h2>
-        <div className="grid gap-8 sm:grid-cols-3">
+      {/* How it works — a real sequence, so it's numbered */}
+      <section id="how" className="mx-auto max-w-7xl scroll-mt-20 px-4 pb-24">
+        <h2 className="mb-12 text-center text-3xl font-bold tracking-[-0.025em]">{h.stepsTitle}</h2>
+        <ol className="grid gap-5 sm:grid-cols-3">
           {steps.map((step, i) => (
-            <div key={step.title} className="relative">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-sm font-bold text-white">
+            <li key={step.title} className="clay rounded-[2rem] p-7">
+              <span className="clay-violet flex h-11 w-11 items-center justify-center rounded-2xl text-base font-bold">
                 {i + 1}
-              </div>
-              <h3 className="text-lg font-semibold">{step.title}</h3>
-              <p className="mt-2 text-muted-foreground leading-relaxed">{step.desc}</p>
-            </div>
+              </span>
+              <h3 className="mt-5 text-lg font-semibold">{step.title}</h3>
+              <p className="mt-2 leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_62%,transparent)]">{step.desc}</p>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-2xl px-4 py-20">
-        <h2 className="mb-10 text-3xl font-bold tracking-tight text-center">
-          {t.home.faqTitle}
-        </h2>
-        <div className="divide-y divide-border/50">
-          {t.home.faq.map((item) => (
-            <div key={item.q} className="py-6">
-              <h3 className="font-semibold mb-2">{item.q}</h3>
-              <p className="text-muted-foreground leading-relaxed">{item.a}</p>
-            </div>
+      <section className="mx-auto max-w-2xl px-4 pb-24">
+        <h2 className="mb-10 text-center text-3xl font-bold tracking-[-0.025em]">{h.faqTitle}</h2>
+        <div className="space-y-3">
+          {h.faq.map((item) => (
+            <details key={item.q} className="clay group rounded-3xl px-6 py-5 open:pb-6">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <span className="clay-well flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-violet-600 transition-transform group-open:rotate-45 dark:text-violet-400">
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_65%,transparent)]">{item.a}</p>
+            </details>
           ))}
         </div>
       </section>
 
-      {/* CTA Banner */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-violet-700 to-fuchsia-700 dark:from-violet-800 dark:via-violet-900 dark:to-fuchsia-900" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(1_0_0_/_0.05)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0_/_0.05)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
-        <div className="relative mx-auto max-w-7xl px-4 py-20">
-          <div className="flex flex-col items-center justify-between gap-8 sm:flex-row">
+      {/* CTA */}
+      <section className="mx-auto max-w-7xl px-4 pb-24">
+        <div className="clay-violet relative overflow-hidden rounded-[2.5rem] px-6 py-14 sm:px-14">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-white/15 blur-3xl"
+          />
+          <div className="relative flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-3xl font-bold text-white tracking-tight">
-                {t.home.ctaTitle}
-              </h2>
-              <p className="mt-3 text-violet-100/90 text-lg">
-                {t.home.ctaDesc}
-              </p>
+              <h2 className="text-3xl font-bold tracking-[-0.025em] text-white">{h.ctaTitle}</h2>
+              <p className="mt-3 text-lg text-violet-100/90">{h.ctaDesc}</p>
             </div>
-            <Link href="/login?tab=signup">
-              <Button
-                size="lg"
-                className="bg-white text-violet-700 hover:bg-violet-50 whitespace-nowrap px-8 shadow-lg shadow-black/10 font-semibold"
-              >
-                {t.home.ctaButton}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+            <Link
+              href="/login?tab=signup"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-7 text-[15px] font-semibold whitespace-nowrap text-violet-700 shadow-[inset_0_-3px_6px_rgb(124_58_237_/_0.15),0_12px_24px_-10px_rgb(30_10_80_/_0.5)] transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              {h.ctaButton}
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
         </div>
