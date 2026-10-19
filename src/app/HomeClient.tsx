@@ -13,14 +13,7 @@ const SERVICE_META = [
   { minutes: 30, price: 18 },
 ];
 const SLOTS = ["9:00", "9:45", "10:30", "11:15", "12:00", "12:45"];
-const GALLERY_TINTS = [
-  "from-violet-300 to-violet-100 dark:from-violet-700/70 dark:to-violet-900/40",
-  "from-stone-300 to-stone-100 dark:from-stone-600/60 dark:to-stone-800/40",
-  "from-fuchsia-200 to-rose-100 dark:from-fuchsia-800/50 dark:to-rose-900/30",
-  "from-zinc-300 to-zinc-100 dark:from-zinc-600/60 dark:to-zinc-800/40",
-  "from-indigo-200 to-violet-100 dark:from-indigo-800/50 dark:to-violet-900/30",
-  "from-amber-100 to-stone-100 dark:from-amber-900/40 dark:to-stone-800/40",
-];
+const GALLERY = [1, 2, 3, 4, 5, 6].map((n) => `/home/work-${n}.webp`);
 const BRAND_SWATCHES = ["#7c3aed", "#1d1a26", "#f4c7d8", "#e9e4f7"];
 
 export function HomeClient() {
@@ -42,8 +35,8 @@ export function HomeClient() {
       {/* Hero: what Nandzz is, said plainly, next to the real product */}
       <section className="relative overflow-hidden">
         <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pb-28">
-          <div className="max-w-xl">
-            <h1 className="text-[clamp(2.6rem,6.6vw,4.9rem)] font-bold leading-[1.02] tracking-[-0.035em]">
+          <div className="max-w-2xl">
+            <h1 className="text-[clamp(2.6rem,5.6vw,4.4rem)] font-bold leading-[1.02] tracking-[-0.035em]">
               {h.heroLine1}
               <br />
               {h.heroLine2}
@@ -95,7 +88,7 @@ export function HomeClient() {
 
             {/* New booking toast */}
             <div
-              className="clay clay-pop absolute top-[16%] -left-3 flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-10"
+              className="clay clay-pop absolute top-[3%] left-0 sm:top-[16%] flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-10"
               style={{ animationDelay: "350ms" }}
             >
               <span className="clay-violet flex h-9 w-9 items-center justify-center rounded-xl">
@@ -111,7 +104,7 @@ export function HomeClient() {
 
             {/* Your link chip */}
             <div
-              className="clay clay-pop absolute -right-2 bottom-[9%] flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2 sm:-right-8"
+              className="clay clay-pop absolute right-0 bottom-[9%] flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2 sm:-right-8"
               style={{ animationDelay: "550ms" }}
             >
               <span className="clay-well flex h-8 w-8 items-center justify-center rounded-full">
@@ -145,11 +138,13 @@ export function HomeClient() {
               {h.featureWorkDesc}
             </p>
             <div className="clay-well mt-8 grid grid-cols-3 gap-2.5 rounded-3xl p-3" aria-hidden>
-              {GALLERY_TINTS.map((tint, i) => (
+              {GALLERY.map((src, i) => (
                 <div
-                  key={tint}
-                  className={`aspect-square rounded-2xl bg-gradient-to-br ${tint} ${i === 1 ? "translate-y-[-6px] shadow-lg shadow-violet-900/10" : ""}`}
-                />
+                  key={src}
+                  className={`relative aspect-[5/4] overflow-hidden rounded-xl sm:rounded-2xl ${i === 1 ? "-translate-y-1.5 shadow-lg shadow-violet-900/15" : ""}`}
+                >
+                  <Image src={src} alt="" fill sizes="(min-width: 1024px) 180px, 30vw" className="object-cover" />
+                </div>
               ))}
             </div>
           </article>
@@ -209,7 +204,7 @@ export function HomeClient() {
             </p>
             <div className="mt-auto flex items-center gap-2 pt-8" aria-hidden>
               {BRAND_SWATCHES.map((c) => (
-                <span key={c} className="clay h-9 w-9 rounded-full" style={{ background: c }} />
+                <span key={c} className="clay h-9 w-9 rounded-full ring-1 ring-black/5 dark:ring-white/15" style={{ background: c }} />
               ))}
             </div>
           </article>
