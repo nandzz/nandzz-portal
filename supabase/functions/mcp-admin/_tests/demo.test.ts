@@ -8,6 +8,7 @@ import {
 import { makeCtx } from "../../mcp/_tests/fakes.ts";
 import type { ToolHandler } from "../../mcp/tools/types.ts";
 import {
+  BUSINESS_CATEGORIES,
   buildProfilePatch,
   generateClaimCode,
   normalizeClaimCode,
@@ -196,4 +197,29 @@ Deno.test("buildProfilePatch: address, page colors, styles, section flags", () =
   assertThrows(() => buildProfilePatch({ button_color: "#fff" }));
   assertThrows(() => buildProfilePatch({ booking_button_style: { variant: "neon" } }));
   assertThrows(() => buildProfilePatch({ bio: "x".repeat(501) }));
+});
+
+Deno.test("buildProfilePatch: category validated against the business category list", () => {
+  assertEquals(buildProfilePatch({ category: "barber" }), { category: "barber" });
+  assertEquals(buildProfilePatch({ category: null }), { category: null });
+  assertThrows(() => buildProfilePatch({ category: "restaurant" }), Error, "category must be one of");
+  assertThrows(() => buildProfilePatch({ category: 3 }), Error, "category must be one of");
+});
+
+Deno.test("BUSINESS_CATEGORIES mirrors the app list and the DB check constraint", async () => {
+  const root = new URL("../../../../", import.meta.url);
+  const app = await Deno.readTextFile(new URL("src/features/profile/domain/business-category.ts", root));
+  const appList = app.match(/BUSINESS_CATEGORIES = \[([\s\S]*?)\]/)![1].match(/"([a-z_]+)"/g)!.map((s) => s.slice(1, -1));
+  const sql = await Deno.readTextFile(new URL("supabase/migrations/20261019120000_profile_business_category.sql", root));
+  const dbList = sql.match(/category in \(([\s\S]*?)\)/)![1].match(/'([a-z_]+)'/g)!.map((s) => s.slice(1, -1));
+  assertEquals([...BUSINESS_CATEGORIES], appList);
+  assertEquals([...BUSINESS_CATEGORIES], dbList);
+});
+
+Deno.test("create/update_demo_profile expose category as an enum", () => {
+  for (const name of ["create_demo_profile", "update_demo_profile"]) {
+    const d = toolDefinitions.find((t) => t.name === name)!;
+    const props = (d.inputSchema as { properties: Record<string, { enum?: readonly string[] }> }).properties;
+    assertEquals(props.category.enum, BUSINESS_CATEGORIES);
+  }
 });

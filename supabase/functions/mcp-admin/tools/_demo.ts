@@ -133,6 +133,17 @@ export function validateUsername(raw: unknown): string {
   return u;
 }
 
+// Mirrors BUSINESS_CATEGORIES in src/features/profile/domain/business-category.ts
+// and the profiles.category check constraint (migration 20261019120000) — keep
+// all three in sync. Restaurants/food are deliberately absent.
+export const BUSINESS_CATEGORIES = [
+  "hair_salon", "barber", "beauty", "spa_massage", "tattoo_piercing",
+  "fitness", "yoga_pilates", "personal_trainer", "medical", "dental",
+  "physiotherapy", "psychology", "nutrition", "pet_care", "photography",
+  "education", "music_dance", "consulting", "events", "home_services",
+  "automotive", "retail", "other",
+] as const;
+
 const SOCIAL_KEYS = ["instagram", "linkedin", "twitter", "github", "email", "youtube", "whatsapp"] as const;
 const BRAND_COLOR_KEYS = ["primary", "accent", "background"] as const;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -147,6 +158,13 @@ export const profileFieldProps = {
     description:
       "Profile bio, max 500 chars. Describe the business only — do NOT put the address (use `address`), " +
       "opening hours (configure_booking_widget) or contact handles (use `social_links`) here.",
+  },
+  category: {
+    type: "string",
+    enum: BUSINESS_CATEGORIES,
+    description:
+      "Business category slug — ALWAYS set it (businesses are listed/filtered on the map by category; the profile " +
+      "becomes a Business on claim). Pick the closest match; use \"other\" only if nothing fits.",
   },
   website_url: { type: "string", format: "uri", description: "Business website (https)." },
   social_links: {
@@ -251,6 +269,15 @@ export function buildProfilePatch(a: Record<string, unknown>): Record<string, un
   set("tagline", optStr(a.tagline, "tagline", 100));
   set("bio", optStr(a.bio, "bio", 500));
   set("brand_description", optStr(a.brand_description, "brand_description", 2000));
+
+  if (a.category !== undefined) {
+    if (a.category === null || a.category === "") patch.category = null;
+    else if (typeof a.category === "string" && (BUSINESS_CATEGORIES as readonly string[]).includes(a.category)) {
+      patch.category = a.category;
+    } else {
+      throw new Error(`category must be one of: ${BUSINESS_CATEGORIES.join(", ")}.`);
+    }
+  }
 
   const site = optStr(a.website_url, "website_url", 500);
   if (site) {

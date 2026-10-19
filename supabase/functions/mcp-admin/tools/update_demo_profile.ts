@@ -15,9 +15,10 @@ import {
 export const updateDemoProfileDef: ToolDefinition = {
   name: "update_demo_profile",
   description:
-    "Update a demo profile, or a real account whose owner granted support access: name, tagline, bio, address, website, social links, profile picture, cover image, " +
+    "Update a demo profile, or a real account whose owner granted support access: name, tagline, bio, category, address, website, social links, profile picture, cover image, " +
     "page colors (background/button/text), booking + social button styles, section visibility, username. " +
-    "Only the fields you pass are changed; pass null to clear a field. Use get_demo_profile to see current values.",
+    "Only the fields you pass are changed; pass null to clear a field. Use get_demo_profile to see current values. " +
+    "If the profile has no category yet, set one.",
   inputSchema: {
     type: "object",
     required: ["demo_profile_id"],

@@ -15,7 +15,7 @@ export const createDemoProfileDef: ToolDefinition = {
   description:
     "Create a new public demo profile on Nandzz for a prospective client business (nandzz.com/<username>). " +
     "The profile is owned by a placeholder account until the business claims it with a code from create_claim_code. " +
-    "Fill the WHOLE profile, not just the bio: profile picture (avatar_url — essential), address, social_links, " +
+    "Fill the WHOLE profile, not just the bio: category (always set it), profile picture (avatar_url — essential), address, social_links, " +
     "page colors matching the business's brand (background_color / button_color / text_color / booking_button_style), " +
     "optional cover_image_url. Opening hours go in configure_booking_widget, not the bio. " +
     "Returns demo_profile_id — pass it to the other tools to fill the profile with content.",

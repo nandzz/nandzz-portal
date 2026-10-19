@@ -4,7 +4,7 @@ import { demoProfileIdProp, profileUrl, requireTarget, textResult } from "./_dem
 export const getDemoProfileDef: ToolDefinition = {
   name: "get_demo_profile",
   description:
-    "Show a profile's current fields (demo, or a real account with support access) — bio, address, colors, avatar, styles, … — and its content items with " +
+    "Show a profile's current fields (demo, or a real account with support access) — category, bio, address, colors, avatar, styles, … — and its content items with " +
     "their space_ids — use before update_demo_profile / delete_space to see what's there and what's missing.",
   inputSchema: {
     type: "object",
@@ -15,7 +15,7 @@ export const getDemoProfileDef: ToolDefinition = {
 };
 
 const PROFILE_COLS =
-  "username, display_name, tagline, bio, website_url, social_links, address, avatar_url, background_url, " +
+  "username, display_name, category, tagline, bio, website_url, social_links, address, avatar_url, background_url, " +
   "background_color, button_color, text_color, booking_button_style, social_links_style, brand_colors, " +
   "brand_description, show_contents, show_gallery, show_links";
 
@@ -34,6 +34,7 @@ export const getDemoProfile: ToolHandler = async (args, ctx) => {
 
   const p = profile as unknown as Record<string, unknown>;
   const missing = [
+    !p.category && "business category (category)",
     !p.avatar_url && "profile picture (avatar_url)",
     !p.address && "address",
     !p.background_color && "page colors (background_color/button_color/text_color)",
