@@ -13,7 +13,7 @@ const SERVICE_META = [
   { minutes: 30, price: 18 },
 ];
 const SLOTS = ["9:00", "9:45", "10:30", "11:15", "12:00", "12:45"];
-const GALLERY = [1, 2, 3, 4, 5, 6].map((n) => `/home/work-${n}.webp`);
+const GALLERY = [1, 2, 3, 4, 5, 6].map((n) => `/home/gallery-${n}.webp`);
 const BRAND_SWATCHES = ["#7c3aed", "#1d1a26", "#f4c7d8", "#e9e4f7"];
 
 export function HomeClient() {
