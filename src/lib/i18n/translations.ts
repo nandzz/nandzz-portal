@@ -621,6 +621,7 @@ export type Translations = {
     addressCopy: string;
     addressCopied: string;
     addressShare: string;
+    follower: string;
     followers: string;
     following: string;
     followersTitle: string;
@@ -2146,6 +2147,7 @@ const en: Translations = {
     addressCopy: "Copy address",
     addressCopied: "Address copied",
     addressShare: "Share address",
+    follower: "follower",
     followers: "followers",
     following: "following",
     followersTitle: "Followers",
@@ -3671,6 +3673,7 @@ const pt: Translations = {
     addressCopy: "Copiar endereço",
     addressCopied: "Endereço copiado",
     addressShare: "Compartilhar endereço",
+    follower: "seguidor",
     followers: "seguidores",
     following: "seguindo",
     followersTitle: "Seguidores",
@@ -5196,6 +5199,7 @@ const fr: Translations = {
     addressCopy: "Copier l'adresse",
     addressCopied: "Adresse copiée",
     addressShare: "Partager l'adresse",
+    follower: "abonné",
     followers: "abonnés",
     following: "abonnements",
     followersTitle: "Abonnés",
@@ -6721,6 +6725,7 @@ const es: Translations = {
     addressCopy: "Copiar dirección",
     addressCopied: "Dirección copiada",
     addressShare: "Compartir dirección",
+    follower: "seguidor",
     followers: "seguidores",
     following: "siguiendo",
     followersTitle: "Seguidores",
@@ -8246,6 +8251,7 @@ const ja: Translations = {
     addressCopy: "住所をコピー",
     addressCopied: "住所をコピーしました",
     addressShare: "住所を共有",
+    follower: "フォロワー",
     followers: "フォロワー",
     following: "フォロー中",
     followersTitle: "フォロワー",
@@ -9771,6 +9777,7 @@ const de: Translations = {
     addressCopy: "Adresse kopieren",
     addressCopied: "Adresse kopiert",
     addressShare: "Adresse teilen",
+    follower: "Follower",
     followers: "Follower",
     following: "Folge ich",
     followersTitle: "Follower",
@@ -11296,6 +11303,7 @@ const it: Translations = {
     addressCopy: "Copia indirizzo",
     addressCopied: "Indirizzo copiato",
     addressShare: "Condividi indirizzo",
+    follower: "follower",
     followers: "follower",
     following: "seguiti",
     followersTitle: "Follower",

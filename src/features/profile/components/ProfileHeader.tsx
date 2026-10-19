@@ -221,7 +221,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
         <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
           <div className="flex items-center gap-1.5 text-sm">
             <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
-            <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.followers}</span>
+            <span className="text-muted-foreground" style={textMutedStyle}>{(profile.followers_count ?? 0) === 1 ? t.profile.follower : t.profile.followers}</span>
           </div>
         </FollowersDialog>
         <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
