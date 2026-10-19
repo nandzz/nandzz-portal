@@ -508,7 +508,7 @@ export function ProfileStylePicker({
                   />
                   {!hasLinks && (
                     <p className="text-[10px] text-muted-foreground">
-                      Sample links — add yours in Edit.
+                      Sample links. Add yours in Edit.
                     </p>
                   )}
                 </div>
@@ -590,7 +590,7 @@ export function ProfileStylePicker({
                   />
                   <p className="text-[10px] leading-relaxed text-muted-foreground">
                     {socialStyle.tone === "filled"
-                      ? "Filled links use brand colors — this tints the address pill."
+                      ? "Filled links use brand colors, which also tint the address pill."
                       : socialStyle.layout === "minimal"
                         ? "Tints the icons and the address pill."
                         : "Tints the link buttons and the address pill."}

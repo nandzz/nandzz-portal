@@ -40,7 +40,7 @@ const en: LegalUi = {
   termsLink: "Terms of Service",
   privacyLink: "Privacy Policy",
   bookingNotice:
-    "By booking you agree to the {terms}. {business} receives your details to manage this booking and is responsible for them. Nandzz processes them on its behalf — see the {privacy}.",
+    "By booking you agree to the {terms}. {business} receives your details to manage this booking and is responsible for them. Nandzz processes them on its behalf. See the {privacy}.",
   bannerTitle: "We've updated our Terms",
   bannerBody: "Please review the updated {terms} and {privacy}. Accept to keep using Nandzz.",
   bannerAccept: "Accept",
@@ -71,7 +71,7 @@ const it: LegalUi = {
   termsLink: "Termini di Servizio",
   privacyLink: "Informativa privacy",
   bookingNotice:
-    "Prenotando accetti i {terms}. {business} riceve i tuoi dati per gestire questa prenotazione e ne è titolare. Nandzz li tratta per suo conto — vedi l'{privacy}.",
+    "Prenotando accetti i {terms}. {business} riceve i tuoi dati per gestire questa prenotazione e ne è titolare. Nandzz li tratta per suo conto. Vedi l'{privacy}.",
   bannerTitle: "Abbiamo aggiornato i Termini",
   bannerBody: "Leggi i {terms} e l'{privacy} aggiornati. Accetta per continuare a usare Nandzz.",
   bannerAccept: "Accetta",
@@ -102,7 +102,7 @@ const pt: LegalUi = {
   termsLink: "Termos de Serviço",
   privacyLink: "Política de Privacidade",
   bookingNotice:
-    "Ao reservar, você aceita os {terms}. {business} recebe seus dados para gerenciar esta reserva e é responsável por eles. A Nandzz os processa em nome dela — veja a {privacy}.",
+    "Ao reservar, você aceita os {terms}. {business} recebe seus dados para gerenciar esta reserva e é responsável por eles. A Nandzz os processa em nome dela. Veja a {privacy}.",
   bannerTitle: "Atualizamos nossos Termos",
   bannerBody: "Leia os {terms} e a {privacy} atualizados. Aceite para continuar usando a Nandzz.",
   bannerAccept: "Aceitar",
@@ -133,7 +133,7 @@ const fr: LegalUi = {
   termsLink: "Conditions d'utilisation",
   privacyLink: "Politique de confidentialité",
   bookingNotice:
-    "En réservant, vous acceptez les {terms}. {business} reçoit vos données pour gérer cette réservation et en est responsable. Nandzz les traite pour son compte — voir la {privacy}.",
+    "En réservant, vous acceptez les {terms}. {business} reçoit vos données pour gérer cette réservation et en est responsable. Nandzz les traite pour son compte. Voir la {privacy}.",
   bannerTitle: "Nous avons mis à jour nos Conditions",
   bannerBody: "Consultez les {terms} et la {privacy} mises à jour. Acceptez pour continuer à utiliser Nandzz.",
   bannerAccept: "Accepter",
@@ -164,7 +164,7 @@ const es: LegalUi = {
   termsLink: "Términos de Servicio",
   privacyLink: "Política de Privacidad",
   bookingNotice:
-    "Al reservar, aceptas los {terms}. {business} recibe tus datos para gestionar esta reserva y es responsable de ellos. Nandzz los trata en su nombre — consulta la {privacy}.",
+    "Al reservar, aceptas los {terms}. {business} recibe tus datos para gestionar esta reserva y es responsable de ellos. Nandzz los trata en su nombre. Consulta la {privacy}.",
   bannerTitle: "Hemos actualizado nuestros Términos",
   bannerBody: "Revisa los {terms} y la {privacy} actualizados. Acepta para seguir usando Nandzz.",
   bannerAccept: "Aceptar",
@@ -195,7 +195,7 @@ const de: LegalUi = {
   termsLink: "Nutzungsbedingungen",
   privacyLink: "Datenschutzerklärung",
   bookingNotice:
-    "Mit der Buchung akzeptierst du die {terms}. {business} erhält deine Daten zur Verwaltung dieser Buchung und ist dafür verantwortlich. Nandzz verarbeitet sie in deren Auftrag — siehe {privacy}.",
+    "Mit der Buchung akzeptierst du die {terms}. {business} erhält deine Daten zur Verwaltung dieser Buchung und ist dafür verantwortlich. Nandzz verarbeitet sie in deren Auftrag. Siehe {privacy}.",
   bannerTitle: "Wir haben unsere Bedingungen aktualisiert",
   bannerBody: "Bitte lies die aktualisierten {terms} und die {privacy}. Akzeptiere, um Nandzz weiter zu nutzen.",
   bannerAccept: "Akzeptieren",

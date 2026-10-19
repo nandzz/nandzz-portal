@@ -255,7 +255,7 @@ export function BookingsCalendar({ bookings, monthKey, onMonthChange, timezone, 
                     openDay();
                   }
                 }}
-                aria-label={`${labelForKey(locale, key)} — ${events.length} ${
+                aria-label={`${labelForKey(locale, key)}, ${events.length} ${
                   events.length === 1 ? t.booking.bookingCountSingular : t.booking.bookingCountPlural
                 }`}
                 aria-pressed={isSelected}

@@ -219,7 +219,7 @@ export function PricingClient({
           </div>
         ) : (
           <p className="text-center text-muted-foreground">
-            Plans aren&apos;t available yet — check back soon.
+            Plans aren&apos;t available yet. Check back soon.
           </p>
         )}
 

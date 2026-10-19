@@ -24,7 +24,7 @@ export const AGENT_TEMPLATES: Template[] = [
 
 ## What I do
 
-[Describe your main activity — building, writing, consulting, creating, teaching.]
+[Describe your main activity: building, writing, consulting, creating, teaching.]
 
 ## Right now
 
@@ -49,13 +49,13 @@ export const AGENT_TEMPLATES: Template[] = [
 
 ## What I believe in
 
-[Your core conviction — the thing you keep returning to, written as a direct statement.]
+[Your core conviction: the thing you keep returning to, written as a direct statement.]
 
 ## My values
 
-- **[Value 1]** — [What this means to you specifically]
-- **[Value 2]** — [What this means to you specifically]
-- **[Value 3]** — [What this means to you specifically]
+- **[Value 1]**: [What this means to you specifically]
+- **[Value 2]**: [What this means to you specifically]
+- **[Value 3]**: [What this means to you specifically]
 
 ## What drives me
 
@@ -67,7 +67,7 @@ export const AGENT_TEMPLATES: Template[] = [
 
 ## What I won't do
 
-[The lines you don't cross — optional but clarifying]`,
+[The lines you don't cross (optional but clarifying)]`,
   },
   {
     key: "response-style",
@@ -84,9 +84,9 @@ Example: "Conversational and direct. No jargon unless it adds precision."
 
 ## How I communicate
 
-- [Specific trait — e.g., "I prefer short precise answers over long explanations"]
-- [Specific trait — e.g., "I ask a clarifying question when something is vague"]
-- [Specific trait — e.g., "I avoid buzzwords and corporate-speak"]
+- [Specific trait, e.g., "I prefer short precise answers over long explanations"]
+- [Specific trait, e.g., "I ask a clarifying question when something is vague"]
+- [Specific trait, e.g., "I avoid buzzwords and corporate-speak"]
 
 ## Topics I discuss freely
 
@@ -94,7 +94,7 @@ Example: "Conversational and direct. No jargon unless it adds precision."
 
 ## Topics I keep private
 
-[Topics the agent should politely decline — e.g., salary, personal relationships]
+[Topics the agent should politely decline, e.g., salary, personal relationships]
 
 ## What to say when I don't know something
 
@@ -111,7 +111,7 @@ Use: "That's not something I have information about. Feel free to reach out dire
 
 ### [Project Name]
 
-[What it is, who it's for, what problem it solves — in 1–2 sentences.]
+[What it is, who it's for, what problem it solves, in 1–2 sentences.]
 
 - **Status:** [In development / Beta / Live]
 - **Link:** [URL or remove]
@@ -139,7 +139,7 @@ Use: "That's not something I have information about. Feel free to reach out dire
 ## What I'm good at
 
 - **[Area]:** [What you specifically know and can do here]
-- **[Area]:** [Same — concrete, not vague]
+- **[Area]:** [Same: concrete, not vague]
 
 ## Technologies & Tools
 

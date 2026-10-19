@@ -367,8 +367,7 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
             <p className="text-base font-semibold text-foreground">{cb.imageBatchDropTitle}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {cb.dropzoneOr}{" "}
-              <span className="text-violet-600 dark:text-violet-400 underline underline-offset-2">{cb.dropzoneBrowse}</span>{" "}
-              — {cb.imageBatchDropHint}
+              <span className="text-violet-600 dark:text-violet-400 underline underline-offset-2">{cb.dropzoneBrowse}</span>. {cb.imageBatchDropHint}
             </p>
             <p className="mt-3 text-[11px] text-muted-foreground/70">{cb.imageBatchPasteHint}</p>
           </button>

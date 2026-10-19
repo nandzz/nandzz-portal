@@ -17,12 +17,12 @@ const COPY = {
     details: "Explain why the content is illegal or breaks our policies",
     detailsHint: "Be as precise as possible: what, where on the page, and which law or rule it breaks.",
     name: "Your name (optional)",
-    email: "Your email (optional — needed to receive our decision)",
+    email: "Your email (optional, needed to receive our decision)",
     goodFaith:
       "I confirm, in good faith, that the information and allegations in this notice are accurate and complete.",
     submit: "Send report",
     sending: "Sending…",
-    done: "Thank you — your report was received.",
+    done: "Thank you, your report was received.",
     ref: "Reference",
     errors: {
       INVALID_INPUT: "Please check the fields: a valid URL, a reason and at least a short explanation are required.",
@@ -48,12 +48,12 @@ const COPY = {
     details: "Spiega perché il contenuto è illecito o viola le nostre policy",
     detailsHint: "Sii il più preciso possibile: cosa, in quale punto della pagina e quale norma o regola viola.",
     name: "Il tuo nome (facoltativo)",
-    email: "La tua email (facoltativa — serve per ricevere la nostra decisione)",
+    email: "La tua email (facoltativa, serve per ricevere la nostra decisione)",
     goodFaith:
       "Dichiaro in buona fede che le informazioni e le affermazioni contenute in questa segnalazione sono esatte e complete.",
     submit: "Invia segnalazione",
     sending: "Invio…",
-    done: "Grazie — abbiamo ricevuto la tua segnalazione.",
+    done: "Grazie, abbiamo ricevuto la tua segnalazione.",
     ref: "Riferimento",
     errors: {
       INVALID_INPUT: "Controlla i campi: servono un URL valido, un motivo e almeno una breve spiegazione.",

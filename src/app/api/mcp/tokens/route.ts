@@ -45,6 +45,6 @@ export async function POST(req: NextRequest) {
     id: row.id,
     prefix: row.prefix,
     token: row.token,
-    warning: "Save this token now — it will never be shown again.",
+    warning: "Save this token now. It will never be shown again.",
   });
 }

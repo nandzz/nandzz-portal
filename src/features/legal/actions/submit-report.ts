@@ -80,7 +80,7 @@ export async function submitContentReport(input: ContentReportInput): Promise<Su
     r.email
       ? sendEmail({
           to: r.email,
-          subject: "We received your report — Nandzz",
+          subject: "Nandzz: we received your report",
           html: `<p>Thank you. We received your report about ${escapeHtml(
             r.url
           )} and will review it without undue delay. Reference: ${data.id}</p>`,

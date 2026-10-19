@@ -1,8 +1,8 @@
 # Nandzz
 
 > Nandzz is a social platform that connects businesses and their clients. Each business
-> gets a branded page (nandzz.com/yourbrand) that works like a link-in-bio — bookings,
-> content, and links in one place — and clients can follow it, discover its work, and
+> gets a branded page (nandzz.com/yourbrand) that works like a link-in-bio, with bookings,
+> content, and links in one place, and clients can follow it, discover its work, and
 > book in a tap. No website needed: claim a handle, add what you offer, and share the link.
 
 ## What Nandzz is
@@ -24,7 +24,7 @@
 ## Pricing
 
 - Free: a branded page with content, gallery, and links sections (up to 25 spaces).
-- One paid plan — €27/month or €270/year (2 months free): unlocks Booking, MCP access, analytics, and unlimited spaces.
+- One paid plan, €27/month or €270/year (2 months free), unlocks Booking, MCP access, analytics, and unlimited spaces.
 - Machine-readable pricing: https://nandzz.com/pricing.md
 - Human pricing page: https://nandzz.com/pricing
 

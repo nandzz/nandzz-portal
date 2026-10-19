@@ -98,8 +98,7 @@ export function FileDropzone({
           {t.contentBuilder.dropzoneOr}{" "}
           <span className="text-violet-600 dark:text-violet-400 underline underline-offset-2">
             {t.contentBuilder.dropzoneBrowse}
-          </span>{" "}
-          — {hint}
+          </span>. {hint}
         </p>
       </button>
     </>

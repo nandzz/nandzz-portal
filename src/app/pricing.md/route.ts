@@ -19,7 +19,7 @@ export async function GET() {
     getFeatureFlags(),
   ]);
 
-  const lines: string[] = ["# Pricing — Nandzz", ""];
+  const lines: string[] = ["# Nandzz pricing", ""];
 
   if (plans.length === 0) {
     lines.push("Pricing is temporarily unavailable. See https://nandzz.com/pricing.");

@@ -49,7 +49,7 @@ export function buildAccountExport(input: {
     version: 1,
     generated_at: (input.now ?? new Date()).toISOString(),
     notice:
-      "Copy of your personal data held by Nandzz (GDPR Arts. 15 and 20). bookings_received contains your customers' data: you are its controller — handle it accordingly.",
+      "Copy of your personal data held by Nandzz (GDPR Arts. 15 and 20). bookings_received contains your customers' data: you are its controller, so handle it accordingly.",
     account: input.user,
     profile: Array.isArray(profile) ? redact(profile[0] ?? null) : redact(profile ?? null),
     data: redact(rest),

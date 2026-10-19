@@ -302,7 +302,7 @@ export function AgentStudio({ profile }: AgentStudioProps) {
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                 {t.agent.promptOrder}
-                <span className="font-normal ml-1 text-muted-foreground/60">— {t.agent.promptOrderHint}</span>
+                <span className="font-normal ml-1 text-muted-foreground/60">({t.agent.promptOrderHint})</span>
               </label>
               <input
                 type="number"
@@ -323,8 +323,8 @@ export function AgentStudio({ profile }: AgentStudioProps) {
                 className="w-4 h-4 accent-red-500 cursor-pointer"
               />
               <span className="text-xs text-muted-foreground">
-                <span className="font-medium text-red-600 dark:text-red-400">{t.agent.sensitiveLabel}</span>
-                {" "}— {t.agent.sensitiveDesc}
+                <span className="font-medium text-red-600 dark:text-red-400">{t.agent.sensitiveLabel}:</span>
+                {" "}{t.agent.sensitiveDesc}
               </span>
             </label>
 

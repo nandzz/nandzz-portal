@@ -244,10 +244,10 @@ export function MonthCalendar({
           const count = countFor?.(key) ?? 0;
 
           const label = selectable
-            ? `${labelForKey(locale, key)} — ${count} ${
+            ? `${labelForKey(locale, key)}, ${count} ${
                 count === 1 ? t.booking.timeSingular : t.booking.timePlural
               } ${t.booking.availableSuffix}`
-            : `${labelForKey(locale, key)} — ${t.booking.unavailableSuffix}`;
+            : `${labelForKey(locale, key)}, ${t.booking.unavailableSuffix}`;
 
           const base =
             "relative flex h-11 w-full items-center justify-center rounded-lg text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500";
