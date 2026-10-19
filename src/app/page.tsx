@@ -57,7 +57,7 @@ export default async function HomePage() {
         url: "https://nandzz.com",
         name: "nandzz",
         description:
-          "A social platform that connects businesses and their clients — a branded page with booking, content and links.",
+          "A social platform that connects businesses and their clients: a branded page with booking, content and links.",
       },
       {
         "@type": "Organization",
