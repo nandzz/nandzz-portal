@@ -442,11 +442,10 @@ export function AuthForm({
         <span className="ml-2">{t.auth.continueGoogle}</span>
       </Button>
 
-      {mode === "signup" && (
-        <div className="mt-4">
-          <SignupLegalNotice />
-        </div>
-      )}
+      {/* Both modes: "Continue with Google" from login can create an account. */}
+      <div className="mt-4">
+        <SignupLegalNotice />
+      </div>
 
       <div className="mt-6 text-center text-sm text-muted-foreground">
         {mode === "login" ? (
