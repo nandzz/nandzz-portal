@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,13 +16,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Plug, CalendarDays, BarChart3, Palette, Briefcase, Plus } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { NotificationBell } from "./NotificationBell";
 import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { cn } from "@/lib/utils";
-import { setAccountType } from "../auth";
+import { BecomeBusinessDialog } from "@/features/profile";
 import { useAuth } from "@/features/auth/AuthContext";
 
 export function Navbar() {
@@ -39,15 +38,6 @@ export function Navbar() {
   // The mobile top-bar avatar links straight to the public profile; before a
   // username exists (mid-onboarding) it falls back to settings.
   const profileHref = profile?.username ? `/${profile.username}` : "/dashboard/settings";
-
-  const handleSwitchToBusiness = useCallback(async () => {
-    if (!userId) return;
-    const ok = await setAccountType(userId, "business");
-    if (ok) {
-      // The provider's own `profile-updated` listener re-reads the row.
-      window.dispatchEvent(new Event("profile-updated"));
-    }
-  }, [userId]);
 
   const handleLogout = () => {
     // Hand off to the server sign-out route: it clears the auth cookies on its
@@ -401,16 +391,16 @@ export function Navbar() {
         </div>
       </div>
 
-      <ConfirmDialog
-        open={switchOpen}
-        onClose={() => setSwitchOpen(false)}
-        onConfirm={handleSwitchToBusiness}
-        title={t.nav.switchToBusinessTitle}
-        description={t.nav.switchToBusinessDesc}
-        confirmLabel={t.nav.switchToBusinessConfirm}
-        cancelLabel={t.common.cancel}
-        variant="default"
-      />
+      {/* Mounted only while open so it seeds fresh from the loaded profile;
+          it persists the switch + dispatches `profile-updated` itself. */}
+      {switchOpen && (
+        <BecomeBusinessDialog
+          open
+          onClose={() => setSwitchOpen(false)}
+          initialCategory={profile?.category}
+          initialAddress={profile?.address}
+        />
+      )}
     </nav>
   );
 }

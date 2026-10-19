@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loadMyProfile } from "@/features/profile";
+import { BecomeBusinessDialog, loadMyProfile } from "@/features/profile";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -49,9 +49,9 @@ export default function SettingsPage() {
   const accountType: AccountType = profile?.account_type ?? "personal";
   const isBusiness = accountType === "business";
 
-  const handleSwitchAccountType = async () => {
+  const handleSwitchToPersonal = async () => {
     if (!profile) return;
-    const next: AccountType = isBusiness ? "personal" : "business";
+    const next: AccountType = "personal";
     const ok = await setAccountType(profile.id, next);
     if (ok) {
       setProfile((prev) => (prev ? { ...prev, account_type: next } : prev));
@@ -242,16 +242,29 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Business → Personal is a plain confirm; Personal → Business needs a
+          category + geocoded address, so it gets its own dialog. */}
       <ConfirmDialog
-        open={switchOpen}
+        open={switchOpen && isBusiness}
         onClose={() => setSwitchOpen(false)}
-        onConfirm={handleSwitchAccountType}
-        title={isBusiness ? t.nav.switchToPersonalTitle : t.nav.switchToBusinessTitle}
-        description={isBusiness ? t.nav.switchToPersonalDesc : t.nav.switchToBusinessDesc}
-        confirmLabel={isBusiness ? t.nav.switchToPersonalConfirm : t.nav.switchToBusinessConfirm}
+        onConfirm={handleSwitchToPersonal}
+        title={t.nav.switchToPersonalTitle}
+        description={t.nav.switchToPersonalDesc}
+        confirmLabel={t.nav.switchToPersonalConfirm}
         cancelLabel={t.common.cancel}
         variant="default"
       />
+      {switchOpen && !isBusiness && (
+        <BecomeBusinessDialog
+          open
+          onClose={() => setSwitchOpen(false)}
+          initialCategory={profile.category}
+          initialAddress={profile.address}
+          onSuccess={() =>
+            setProfile((prev) => (prev ? { ...prev, account_type: "business" } : prev))
+          }
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,12 +26,11 @@ import {
   Briefcase,
 } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { NotificationBell } from "./NotificationBell";
 import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
-import { setAccountType } from "../auth";
+import { BecomeBusinessDialog } from "@/features/profile";
 import { useAuth } from "@/features/auth/AuthContext";
 
 type NavItem = {
@@ -67,15 +66,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot mount flag to gate theme-dependent icon rendering (avoids hydration mismatch)
   useEffect(() => setMounted(true), []);
-
-  const handleSwitchToBusiness = useCallback(async () => {
-    if (!userId) return;
-    const ok = await setAccountType(userId, "business");
-    if (ok) {
-      // The provider's own `profile-updated` listener re-reads the row.
-      window.dispatchEvent(new Event("profile-updated"));
-    }
-  }, [userId]);
 
   const handleLogout = () => {
     // Hand off to the server sign-out route: it clears the auth cookies on its
@@ -339,16 +329,16 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      <ConfirmDialog
-        open={switchOpen}
-        onClose={() => setSwitchOpen(false)}
-        onConfirm={handleSwitchToBusiness}
-        title={t.nav.switchToBusinessTitle}
-        description={t.nav.switchToBusinessDesc}
-        confirmLabel={t.nav.switchToBusinessConfirm}
-        cancelLabel={t.common.cancel}
-        variant="default"
-      />
+      {/* Mounted only while open so it seeds fresh from the loaded profile;
+          it persists the switch + dispatches `profile-updated` itself. */}
+      {switchOpen && (
+        <BecomeBusinessDialog
+          open
+          onClose={() => setSwitchOpen(false)}
+          initialCategory={profile?.category}
+          initialAddress={profile?.address}
+        />
+      )}
 
       {/* Bottom: theme, logout */}
       <div className="border-t border-sidebar-border p-2 flex flex-col gap-0.5">

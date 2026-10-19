@@ -73,6 +73,8 @@ export type Profile = {
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;
+  /** Business category slug (see features/profile/domain/business-category.ts); null for personal / legacy businesses. */
+  category: string | null;
   created_at: string;
   stripe_customer_id?: string | null;
   paid_credits?: number | null;

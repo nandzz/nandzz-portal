@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidSocialValue, isValidWebsiteUrl, type SocialPlatform } from "./domain/social";
+import { BUSINESS_CATEGORIES } from "./domain/business-category";
 
 // Input schemas for the profile Server Actions. These run at the POST-reachable
 // action boundary, so they validate untrusted client input before any DB access.
@@ -36,6 +37,18 @@ const address = z
   })
   .nullable();
 
+// Switching to a Business account: a known category + an address picked from
+// Places (coordinates required — the DB trigger enforces the same).
+export const becomeBusinessSchema = z.object({
+  category: z.enum(BUSINESS_CATEGORIES),
+  address: z.object({
+    formatted: z.string().trim().min(1).max(300),
+    place_id: z.string().max(300).optional(),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+  }),
+});
+
 export const updateProfileInfoSchema = z.object({
   displayName: z.string().max(50).nullable(),
   tagline: z.string().max(100).nullable(),
@@ -43,6 +56,8 @@ export const updateProfileInfoSchema = z.object({
   websiteUrl: z.string().max(300).refine(isValidWebsiteUrl).nullable(),
   socialLinks,
   address,
+  // Business accounts only; omitted (undefined) leaves the stored value alone.
+  category: z.enum(BUSINESS_CATEGORIES).optional(),
 });
 
 // Storage uploads stay client-side (browser → Supabase directly); the resulting

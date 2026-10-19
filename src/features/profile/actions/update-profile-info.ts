@@ -24,10 +24,11 @@ export async function updateProfileInfo(input: {
   websiteUrl: string | null;
   socialLinks: Record<string, string | undefined>;
   address: ProfileAddress | null;
+  category?: string;
 }): Promise<UpdateProfileInfoResult> {
   const parsed = updateProfileInfoSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
-  const { displayName, tagline, bio, websiteUrl, socialLinks, address } =
+  const { displayName, tagline, bio, websiteUrl, socialLinks, address, category } =
     parsed.data;
 
   const supabase = await createClient();
@@ -45,6 +46,7 @@ export async function updateProfileInfo(input: {
       website_url: websiteUrl,
       social_links: socialLinks,
       address,
+      ...(category ? { category } : {}),
     })
     .eq("id", user.id)
     .select("username")

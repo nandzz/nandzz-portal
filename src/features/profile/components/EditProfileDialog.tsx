@@ -11,6 +11,11 @@ import type { Profile, SocialLinks, ProfileAddress } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { updateProfileInfo } from "../actions/update-profile-info";
 import { AddressAutocomplete } from "./AddressAutocomplete";
+import {
+  BUSINESS_CATEGORIES,
+  businessCategoryLabel,
+  isBusinessCategory,
+} from "../domain/business-category";
 import { useModalA11y } from "@/lib/useModalA11y";
 import {
   SOCIAL_VALUE_MAX,
@@ -65,6 +70,17 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
   const [bio, setBio] = useState(profile.bio || "");
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || "");
   const [address, setAddress] = useState<ProfileAddress | null>(profile.address ?? null);
+  const isBusiness = profile.account_type === "business";
+  const [category, setCategory] = useState(
+    isBusinessCategory(profile.category) ? profile.category : ""
+  );
+  const categoryOptions = useMemo(
+    () =>
+      BUSINESS_CATEGORIES.map((c) => ({ id: c, label: businessCategoryLabel(c, locale) })).sort(
+        (a, b) => (a.id === "other" ? 1 : b.id === "other" ? -1 : a.label.localeCompare(b.label, locale))
+      ),
+    [locale]
+  );
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(profile.social_links || {});
   // WhatsApp is stored as E.164 in social_links.whatsapp but edited as country
   // selector + national number — same phone data/helpers as the booking widget.
@@ -104,6 +120,7 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
         : "",
     } as SocialLinks,
     address,
+    ...(isBusiness && category ? { category } : {}),
   });
 
   // Snapshot of the form as opened, to warn before discarding edits.
@@ -270,6 +287,29 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                   />
                 </div>
               </div>
+
+              {isBusiness && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">{t.nav.businessCategory}</Label>
+                  <div className="relative">
+                    <select
+                      id="edit-category"
+                      value={category}
+                      onChange={(e) => setCategory(isBusinessCategory(e.target.value) ? e.target.value : "")}
+                      className="h-9 w-full appearance-none rounded-md border border-border/60 bg-background pl-3 pr-8 text-base sm:text-sm focus:outline-none focus:border-violet-500/50 cursor-pointer"
+                    >
+                      {/* Legacy businesses have none yet; once set it can't be cleared. */}
+                      {!category && <option value="">—</option>}
+                      {categoryOptions.map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="edit-address">{t.settings.address}</Label>

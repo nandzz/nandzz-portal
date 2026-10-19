@@ -14,6 +14,7 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "id",
   "username",
   "account_type",
+  "category",
   "display_name",
   "tagline",
   "bio",

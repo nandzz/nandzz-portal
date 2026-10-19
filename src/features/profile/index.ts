@@ -14,3 +14,6 @@ export { setSectionVisibility } from "./actions/set-section-visibility";
 export type { LoadMyProfileResult } from "./actions/load-my-profile";
 export type { UpdateBrandResult } from "./actions/update-brand";
 export type { SetSectionVisibilityResult } from "./actions/set-section-visibility";
+export { BecomeBusinessDialog } from "./components/BecomeBusinessDialog";
+export { becomeBusiness } from "./actions/become-business";
+export type { BecomeBusinessResult } from "./actions/become-business";
