@@ -376,6 +376,10 @@ export type Translations = {
     claiming: string;
     invalidCode: string;
     alreadyHasProfile: string;
+    emailConfirmed: string;
+    mergeNotice: string;
+    mergeButton: string;
+    widgetConflict: string;
     signedInAs: string;
     signOut: string;
     success: string;
@@ -1892,6 +1896,10 @@ const en: Translations = {
     claiming: "Claiming…",
     invalidCode: "This code is invalid, expired or already used.",
     alreadyHasProfile: "This account already has a Nandzz profile, so it can't claim another one. Sign out and use a different account, or contact us.",
+    emailConfirmed: "Email confirmed! Sign in to finish claiming your profile.",
+    mergeNotice: "You're signed in with an existing profile (@{username}). Claiming moves the profile we built onto this account: its page (name, username, bio, photos, colors) replaces yours, while your account, plan, followers and your own content are kept.",
+    mergeButton: "Claim with this account",
+    widgetConflict: "Your current booking calendar already has bookings, so it can't be replaced automatically. Contact us and we'll move it for you.",
     signedInAs: "Signed in as {email}",
     signOut: "Sign out",
     success: "Profile claimed! Taking you to your dashboard…",
@@ -3408,6 +3416,10 @@ const pt: Translations = {
     claiming: "Reivindicando…",
     invalidCode: "Este código é inválido, expirou ou já foi usado.",
     alreadyHasProfile: "Esta conta já tem um perfil Nandzz e não pode reivindicar outro. Saia e use outra conta, ou fale conosco.",
+    emailConfirmed: "E-mail confirmado! Entre para concluir a reivindicação do seu perfil.",
+    mergeNotice: "Você entrou com um perfil existente (@{username}). Ao reivindicar, o perfil que criamos passa para esta conta: a página dele (nome, usuário, bio, fotos, cores) substitui a sua, e sua conta, plano, seguidores e seus próprios conteúdos são mantidos.",
+    mergeButton: "Reivindicar com esta conta",
+    widgetConflict: "Seu calendário de reservas atual já tem reservas, por isso não pode ser substituído automaticamente. Fale conosco e faremos a transferência.",
     signedInAs: "Conectado como {email}",
     signOut: "Sair",
     success: "Perfil reivindicado! Levando você ao painel…",
@@ -4924,6 +4936,10 @@ const fr: Translations = {
     claiming: "Réclamation…",
     invalidCode: "Ce code est invalide, expiré ou déjà utilisé.",
     alreadyHasProfile: "Ce compte possède déjà un profil Nandzz et ne peut pas en réclamer un autre. Déconnectez-vous et utilisez un autre compte, ou contactez-nous.",
+    emailConfirmed: "E-mail confirmé ! Connectez-vous pour terminer la réclamation de votre profil.",
+    mergeNotice: "Vous êtes connecté avec un profil existant (@{username}). La réclamation transfère le profil que nous avons créé vers ce compte : sa page (nom, nom d'utilisateur, bio, photos, couleurs) remplace la vôtre, tandis que votre compte, votre forfait, vos abonnés et vos propres contenus sont conservés.",
+    mergeButton: "Réclamer avec ce compte",
+    widgetConflict: "Votre calendrier de réservation actuel contient déjà des réservations et ne peut pas être remplacé automatiquement. Contactez-nous et nous le transférerons pour vous.",
     signedInAs: "Connecté en tant que {email}",
     signOut: "Se déconnecter",
     success: "Profil réclamé ! Redirection vers votre tableau de bord…",
@@ -6440,6 +6456,10 @@ const es: Translations = {
     claiming: "Reclamando…",
     invalidCode: "Este código no es válido, ha caducado o ya se ha usado.",
     alreadyHasProfile: "Esta cuenta ya tiene un perfil de Nandzz y no puede reclamar otro. Cierra sesión y usa otra cuenta, o contáctanos.",
+    emailConfirmed: "¡Correo confirmado! Inicia sesión para terminar de reclamar tu perfil.",
+    mergeNotice: "Has iniciado sesión con un perfil existente (@{username}). Al reclamar, el perfil que creamos pasa a esta cuenta: su página (nombre, usuario, bio, fotos, colores) reemplaza la tuya, y se conservan tu cuenta, plan, seguidores y tu propio contenido.",
+    mergeButton: "Reclamar con esta cuenta",
+    widgetConflict: "Tu calendario de reservas actual ya tiene reservas, así que no se puede reemplazar automáticamente. Contáctanos y lo trasladaremos por ti.",
     signedInAs: "Sesión iniciada como {email}",
     signOut: "Cerrar sesión",
     success: "¡Perfil reclamado! Te llevamos a tu panel…",
@@ -7956,6 +7976,10 @@ const ja: Translations = {
     claiming: "処理中…",
     invalidCode: "このコードは無効、期限切れ、または使用済みです。",
     alreadyHasProfile: "このアカウントにはすでにNandzzプロフィールがあるため、別のプロフィールを受け取れません。ログアウトして別のアカウントを使うか、お問い合わせください。",
+    emailConfirmed: "メールアドレスが確認されました！ログインしてプロフィールの受け取りを完了してください。",
+    mergeNotice: "既存のプロフィール（@{username}）でログインしています。受け取ると、作成済みのプロフィールがこのアカウントに移されます。ページ（名前、ユーザー名、自己紹介、写真、カラー）はあなたのものに置き換わり、アカウント、プラン、フォロワー、ご自身のコンテンツはそのまま残ります。",
+    mergeButton: "このアカウントで受け取る",
+    widgetConflict: "現在の予約カレンダーにはすでに予約があるため、自動的に置き換えられません。お問い合わせいただければ移行します。",
     signedInAs: "{email} としてログイン中",
     signOut: "ログアウト",
     success: "プロフィールを受け取りました！ダッシュボードに移動します…",
@@ -9472,6 +9496,10 @@ const de: Translations = {
     claiming: "Wird beansprucht…",
     invalidCode: "Dieser Code ist ungültig, abgelaufen oder wurde bereits verwendet.",
     alreadyHasProfile: "Dieses Konto hat bereits ein Nandzz-Profil und kann kein weiteres beanspruchen. Melde dich ab und nutze ein anderes Konto oder kontaktiere uns.",
+    emailConfirmed: "E-Mail bestätigt! Melde dich an, um dein Profil zu übernehmen.",
+    mergeNotice: "Du bist mit einem bestehenden Profil (@{username}) angemeldet. Beim Übernehmen wird das von uns erstellte Profil auf dieses Konto übertragen: Seine Seite (Name, Benutzername, Bio, Fotos, Farben) ersetzt deine, während dein Konto, dein Tarif, deine Follower und deine eigenen Inhalte erhalten bleiben.",
+    mergeButton: "Mit diesem Konto übernehmen",
+    widgetConflict: "Dein aktueller Buchungskalender hat bereits Buchungen und kann nicht automatisch ersetzt werden. Kontaktiere uns, wir übertragen ihn für dich.",
     signedInAs: "Angemeldet als {email}",
     signOut: "Abmelden",
     success: "Profil beansprucht! Weiter zu deinem Dashboard…",
@@ -10988,6 +11016,10 @@ const it: Translations = {
     claiming: "Rivendicazione…",
     invalidCode: "Questo codice non è valido, è scaduto o è già stato usato.",
     alreadyHasProfile: "Questo account ha già un profilo Nandzz e non può rivendicarne un altro. Esci e usa un account diverso, oppure contattaci.",
+    emailConfirmed: "Email confermata! Accedi per completare la rivendicazione del tuo profilo.",
+    mergeNotice: "Hai effettuato l'accesso con un profilo esistente (@{username}). Rivendicando, il profilo che abbiamo creato passa a questo account: la sua pagina (nome, username, bio, foto, colori) sostituisce la tua, mentre account, piano, follower e i tuoi contenuti restano.",
+    mergeButton: "Rivendica con questo account",
+    widgetConflict: "Il tuo calendario prenotazioni attuale ha già delle prenotazioni, quindi non può essere sostituito automaticamente. Contattaci e lo trasferiremo noi.",
     signedInAs: "Accesso effettuato come {email}",
     signOut: "Esci",
     success: "Profilo rivendicato! Ti portiamo alla tua dashboard…",

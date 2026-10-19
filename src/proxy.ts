@@ -8,9 +8,32 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 const SETUP_PATH = "/setup-username";
+// Set by /claim while a demo-profile claim is in progress (see ClaimFlow), so
+// a visitor who leaves mid-signup still lands back on the claim screen.
+const PENDING_CLAIM_COOKIE = "nandzz-pending-claim";
+
+function pendingClaimPath(request: NextRequest): string | null {
+  const raw = request.cookies.get(PENDING_CLAIM_COOKIE)?.value ?? "";
+  const code = raw.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 64);
+  return code ? `/claim?code=${encodeURIComponent(code)}` : null;
+}
 const POST_SETUP_PATH = "/dashboard/contents";
 
 export async function proxy(request: NextRequest) {
+  // When Supabase rejects an email link's redirect target it falls back to the
+  // Site URL (`/?code=…`), dropping our /auth/callback + `next`. Route that
+  // code through the callback anyway so the session is exchanged server-side
+  // and a pending claim resumes instead of stranding the visitor on the home page.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.search = "";
+    url.searchParams.set("code", request.nextUrl.searchParams.get("code")!);
+    const claim = pendingClaimPath(request);
+    if (claim) url.searchParams.set("next", claim);
+    return NextResponse.redirect(url);
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -103,6 +126,12 @@ export async function proxy(request: NextRequest) {
     // onto the standalone /setup-username page (and, because that page bounces
     // back, into a redirect loop → blank screen). Let them stay; the page opens
     // the modal on the username step itself.
+    // Mid-claim: the demo profile IS their profile — never the username step.
+    const claim = !hasProfile ? pendingClaimPath(request) : null;
+    if (claim && (pathname.startsWith("/dashboard") || pathname === SETUP_PATH)) {
+      return NextResponse.redirect(new URL(claim, request.url));
+    }
+
     if (!hasProfile && pathname.startsWith("/dashboard")) {
       const url = request.nextUrl.clone();
       url.pathname = SETUP_PATH;

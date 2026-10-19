@@ -53,5 +53,14 @@ export async function GET(request: Request) {
     }
   }
 
+  // A claim's confirmation link opened in another browser/app (or a stale
+  // link) can't be exchanged here, but the email IS confirmed by now — send
+  // them back to the claim screen to sign in, code intact, instead of /login.
+  if (next === "/claim" || next.startsWith("/claim?")) {
+    const claimUrl = new URL(`${base}${next}`);
+    claimUrl.searchParams.set("confirmed", "1");
+    return NextResponse.redirect(claimUrl.toString());
+  }
+
   return NextResponse.redirect(`${base}/login?error=auth`);
 }
