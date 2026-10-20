@@ -88,7 +88,7 @@ export function HomeClient() {
 
             {/* New booking toast */}
             <div
-              className="clay clay-pop absolute top-[3%] left-0 sm:top-[16%] flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-10"
+              className="clay clay-pop absolute -top-8 left-0 sm:top-[5%] flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-10"
               style={{ animationDelay: "350ms" }}
             >
               <span className="clay-violet flex h-9 w-9 items-center justify-center rounded-xl">
