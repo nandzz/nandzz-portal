@@ -32,7 +32,7 @@ export function isPlatformUrl(platform: SocialPlatform, value: string): boolean 
   const url = parseUrl(value);
   if (!url || !/^https?:$/.test(url.protocol)) return false;
   const host = url.hostname.toLowerCase().replace(/^(www\.|m\.|mobile\.)/, "");
-  return HOSTS[platform].includes(host);
+  return HOSTS[platform]?.includes(host) ?? false;
 }
 
 /**
@@ -44,6 +44,8 @@ export function isPlatformUrl(platform: SocialPlatform, value: string): boolean 
 export function normalizeSocialValue(platform: SocialPlatform, raw: string): string {
   const v = raw.trim();
   if (!v) return "";
+  // Keys outside the URL platforms (whatsapp, legacy keys) are kept as typed.
+  if (!HOSTS[platform]) return v;
   const looksLikeUrl = /^https?:\/\//i.test(v) || HOSTS[platform].some((h) => v.toLowerCase().replace(/^www\./, "").startsWith(`${h}/`));
   if (!looksLikeUrl) return v.replace(/^@/, "");
 
