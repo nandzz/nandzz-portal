@@ -37,7 +37,7 @@ export function defaultCalendarMessages(): CalendarMessages {
   return {
     confirmation: {
       channel: "both",
-      subject: "Booking confirmed — {{service}} with {{business}}",
+      subject: "Booking confirmed: {{service}} with {{business}}",
       body:
         "Hi {{customer_first_name}}, your booking with {{business}} is confirmed ✅\n\n" +
         "*{{service}}*\n🗓️ {{date_time}}\n\n" +
@@ -45,21 +45,21 @@ export function defaultCalendarMessages(): CalendarMessages {
     },
     cancellation: {
       channel: "both",
-      subject: "Booking cancelled — {{service}} with {{business}}",
+      subject: "Booking cancelled: {{service}} with {{business}}",
       body:
         "Hi {{customer_first_name}}, your {{service}} booking with {{business}} on " +
         "{{date_time}} has been cancelled.\n\nHope to see you again soon.",
     },
     reschedule: {
       channel: "both",
-      subject: "Booking rescheduled — {{service}} with {{business}}",
+      subject: "Booking rescheduled: {{service}} with {{business}}",
       body:
         "Hi {{customer_first_name}}, your {{service}} booking with {{business}} has been " +
         "rescheduled.\n\n🗓️ New time: {{date_time}}\n\nManage: {{manage_url}}",
     },
     reminder: {
       channel: "both",
-      subject: "Reminder — {{service}} with {{business}} tomorrow",
+      subject: "Reminder: {{service}} with {{business}} tomorrow",
       body:
         "Hi {{customer_first_name}}, a reminder for your upcoming booking with {{business}}.\n\n" +
         "*{{service}}*\n🗓️ {{date_time}}\n\nManage or reschedule: {{manage_url}}",
