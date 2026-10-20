@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { COMPANY, COMPANY_DETAILS_READY } from "@/features/legal/company";
 import { getLegalUi } from "@/features/legal/i18n";
 
-export function Footer() {
+// `tabBar`: whether the mobile tab bar is showing, so the footer keeps clear of it.
+export function Footer({ tabBar = true }: { tabBar?: boolean }) {
   const { t, locale } = useLanguage();
   const legalUi = getLegalUi(locale);
 
   return (
-    <footer className="border-t bg-muted/20 dark:bg-muted/10 pb-16 md:pb-0">
+    <footer className={cn("border-t bg-muted/20 dark:bg-muted/10", tabBar && "pb-16 md:pb-0")}>
       <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           {/* Brand */}

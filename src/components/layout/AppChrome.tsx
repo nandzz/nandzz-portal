@@ -137,7 +137,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
         {children}
       </main>
 
-      {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && !previewing && <ConditionalFooter />}
+      {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && !previewing && <ConditionalFooter tabBar={!isVisitorHome} />}
 
       {/* Hidden for logged-out visitors on the home page, a profile page or
           in the space viewer, on the widget page (which owns its whole viewport), and during
