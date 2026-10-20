@@ -44,17 +44,18 @@ export function HomeClient() {
             <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_68%,transparent)]">
               {h.heroDescription}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            {/* Side by side at every width: equal halves on mobile (labels may wrap to two lines), natural width from sm up */}
+            <div className="mt-9 flex items-stretch gap-2.5 sm:flex-wrap sm:items-center sm:gap-3">
               <Link
                 href="/login?tab=signup"
-                className="clay-violet inline-flex h-12 items-center gap-2 rounded-full px-7 text-[15px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+                className="clay-violet inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-semibold leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-7 sm:py-0 sm:text-[15px]"
               >
                 {h.getStarted}
-                <ArrowRight className="h-4 w-4" aria-hidden />
+                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
               <Link
                 href="#how"
-                className="clay inline-flex h-12 items-center rounded-full px-6 text-[15px] font-medium transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+                className="clay inline-flex min-h-12 flex-1 items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
               >
                 {h.howItWorks}
               </Link>
