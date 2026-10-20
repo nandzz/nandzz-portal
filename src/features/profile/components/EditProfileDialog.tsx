@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { Profile, SocialLinks, ProfileAddress } from "@/lib/types";
+import type { GoogleReviewListing, Profile, SocialLinks, ProfileAddress } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { updateProfileInfo } from "../actions/update-profile-info";
 import { AddressAutocomplete } from "./AddressAutocomplete";
+import { GoogleReviewField } from "./GoogleReviewField";
 import {
   BUSINESS_CATEGORIES,
   businessCategoryLabel,
@@ -71,6 +72,7 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
   const [websiteUrl, setWebsiteUrl] = useState(profile.website_url || "");
   const [address, setAddress] = useState<ProfileAddress | null>(profile.address ?? null);
   const isBusiness = profile.account_type === "business";
+  const [googleReview, setGoogleReview] = useState<GoogleReviewListing | null>(profile.google_review ?? null);
   const [category, setCategory] = useState(
     isBusinessCategory(profile.category) ? profile.category : ""
   );
@@ -121,6 +123,7 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
     } as SocialLinks,
     address,
     ...(isBusiness && category ? { category } : {}),
+    ...(isBusiness ? { googleReview } : {}),
   });
 
   // Snapshot of the form as opened, to warn before discarding edits.
@@ -321,6 +324,8 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                 />
                 <p className="text-xs text-muted-foreground">{t.settings.addressHint}</p>
               </div>
+
+              {isBusiness && <GoogleReviewField value={googleReview} onChange={setGoogleReview} />}
 
               <div className="space-y-3">
                 <Label className="text-base font-semibold">{t.settings.socialLinks}</Label>

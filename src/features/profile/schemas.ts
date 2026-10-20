@@ -49,6 +49,15 @@ export const becomeBusinessSchema = z.object({
   }),
 });
 
+export const googleReviewSchema = z
+  .object({
+    place_id: z.string().min(1).max(300),
+    name: z.string().min(1).max(200),
+    address: z.string().max(300).optional(),
+    enabled: z.boolean(),
+  })
+  .nullable();
+
 export const updateProfileInfoSchema = z.object({
   displayName: z.string().max(50).nullable(),
   tagline: z.string().max(100).nullable(),
@@ -58,6 +67,8 @@ export const updateProfileInfoSchema = z.object({
   address,
   // Business accounts only; omitted (undefined) leaves the stored value alone.
   category: z.enum(BUSINESS_CATEGORIES).optional(),
+  // Business accounts only; omitted (undefined) leaves the stored value alone.
+  googleReview: googleReviewSchema.optional(),
 });
 
 // Storage uploads stay client-side (browser → Supabase directly); the resulting
@@ -121,15 +132,6 @@ export const updateBrandSchema = z.object({
   brandValues: z.array(z.string()),
   brandDescription: z.string().max(500).nullable(),
 });
-
-export const googleReviewSchema = z
-  .object({
-    place_id: z.string().min(1).max(300),
-    name: z.string().min(1).max(200),
-    address: z.string().max(300).optional(),
-    enabled: z.boolean(),
-  })
-  .nullable();
 
 export const followListSchema = z.object({
   profileId: z.uuid(),

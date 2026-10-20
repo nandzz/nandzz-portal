@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { ProfileAddress } from "@/lib/types";
+import type { GoogleReviewListing, ProfileAddress } from "@/lib/types";
 import { updateProfileInfoSchema } from "../schemas";
 import { revalidatePublicProfile } from "../revalidate";
 
@@ -25,10 +25,11 @@ export async function updateProfileInfo(input: {
   socialLinks: Record<string, string | undefined>;
   address: ProfileAddress | null;
   category?: string;
+  googleReview?: GoogleReviewListing | null;
 }): Promise<UpdateProfileInfoResult> {
   const parsed = updateProfileInfoSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
-  const { displayName, tagline, bio, websiteUrl, socialLinks, address, category } =
+  const { displayName, tagline, bio, websiteUrl, socialLinks, address, category, googleReview } =
     parsed.data;
 
   const supabase = await createClient();
@@ -47,6 +48,7 @@ export async function updateProfileInfo(input: {
       social_links: socialLinks,
       address,
       ...(category ? { category } : {}),
+      ...(googleReview !== undefined ? { google_review: googleReview } : {}),
     })
     .eq("id", user.id)
     .select("username")

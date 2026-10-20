@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Palette, X } from "lucide-react";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { PageShell } from "@/components/layout/PageShell";
-import { GoogleReviewCard } from "@/features/profile/components/GoogleReviewCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Profile } from "@/lib/types";
 
@@ -403,10 +402,6 @@ export default function BrandPage() {
           </form>
         </CardContent>
       </Card>
-
-      {profile.account_type === "business" && (
-        <GoogleReviewCard key={profile.google_review?.place_id ?? "none"} initial={profile.google_review ?? null} />
-      )}
     </PageShell>
   );
 }
