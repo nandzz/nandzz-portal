@@ -20,6 +20,16 @@ export type ProfileAddress = {
   lng?: number;
 };
 
+// Google business listing behind the public "Leave a Google review" button.
+// `place_id` must be an establishment (picked via an establishment-only Places
+// search), so the write-review deep link always lands on a reviewable page.
+export type GoogleReviewListing = {
+  place_id: string;
+  name: string;
+  address?: string;
+  enabled: boolean;
+};
+
 // Owner-chosen look for the booking CTA on the public profile. Any missing
 // field falls back to the default (soft emerald pill, regular size).
 export type BookingButtonStyle = {
@@ -73,6 +83,7 @@ export type Profile = {
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;
+  google_review?: GoogleReviewListing | null;
   /** Business category slug (see features/profile/domain/business-category.ts); null for personal / legacy businesses. */
   category: string | null;
   created_at: string;

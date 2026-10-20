@@ -617,6 +617,7 @@ export type Translations = {
   };
   profile: {
     addressOpenMaps: string;
+    leaveGoogleReview: string;
     addressCopy: string;
     addressCopied: string;
     addressShare: string;
@@ -1485,6 +1486,15 @@ export type Translations = {
     colorAriaLabel: string;
     colorInvalidError: string;
     savedSuccess: string;
+    googleReviewTitle: string;
+    googleReviewDesc: string;
+    googleReviewSearchLabel: string;
+    googleReviewSearchPlaceholder: string;
+    googleReviewNoResults: string;
+    googleReviewEnabled: string;
+    googleReviewTest: string;
+    googleReviewRemove: string;
+    googleReviewUnavailable: string;
   };
 
   meta: {
@@ -2142,6 +2152,7 @@ const en: Translations = {
   },
   profile: {
     addressOpenMaps: "Open in Google Maps",
+    leaveGoogleReview: "Leave a Google review",
     addressCopy: "Copy address",
     addressCopied: "Address copied",
     addressShare: "Share address",
@@ -3010,6 +3021,15 @@ const en: Translations = {
     colorAriaLabel: "{color} color",
     colorInvalidError: "{color} color must be a valid hex color",
     savedSuccess: "Brand saved successfully",
+    googleReviewTitle: "Google reviews",
+    googleReviewDesc: "Connect your Google business listing to show a “Leave a Google review” button on your profile.",
+    googleReviewSearchLabel: "Find your business on Google",
+    googleReviewSearchPlaceholder: "Search your business name",
+    googleReviewNoResults: "No businesses found. Try adding the city.",
+    googleReviewEnabled: "Show the review button on my profile",
+    googleReviewTest: "Test review link",
+    googleReviewRemove: "Disconnect listing",
+    googleReviewUnavailable: "Google search is not available right now.",
   },
 
   meta: {
@@ -3667,6 +3687,7 @@ const pt: Translations = {
   },
   profile: {
     addressOpenMaps: "Abrir no Google Maps",
+    leaveGoogleReview: "Avaliar no Google",
     addressCopy: "Copiar endereço",
     addressCopied: "Endereço copiado",
     addressShare: "Compartilhar endereço",
@@ -4535,6 +4556,15 @@ const pt: Translations = {
     colorAriaLabel: "Cor {color}",
     colorInvalidError: "A cor {color} deve ser uma cor hexadecimal válida",
     savedSuccess: "Marca salva com sucesso",
+    googleReviewTitle: "Avaliações do Google",
+    googleReviewDesc: "Conecte seu perfil de empresa no Google para mostrar um botão “Avaliar no Google” no seu perfil.",
+    googleReviewSearchLabel: "Encontre sua empresa no Google",
+    googleReviewSearchPlaceholder: "Pesquise o nome da sua empresa",
+    googleReviewNoResults: "Nenhuma empresa encontrada. Tente adicionar a cidade.",
+    googleReviewEnabled: "Mostrar o botão de avaliação no meu perfil",
+    googleReviewTest: "Testar link de avaliação",
+    googleReviewRemove: "Desconectar perfil",
+    googleReviewUnavailable: "A busca do Google não está disponível no momento.",
   },
 
   meta: {
@@ -5192,6 +5222,7 @@ const fr: Translations = {
   },
   profile: {
     addressOpenMaps: "Ouvrir dans Google Maps",
+    leaveGoogleReview: "Laisser un avis Google",
     addressCopy: "Copier l'adresse",
     addressCopied: "Adresse copiée",
     addressShare: "Partager l'adresse",
@@ -6060,6 +6091,15 @@ const fr: Translations = {
     colorAriaLabel: "Couleur {color}",
     colorInvalidError: "La couleur {color} doit être une couleur hexadécimale valide",
     savedSuccess: "Marque enregistrée avec succès",
+    googleReviewTitle: "Avis Google",
+    googleReviewDesc: "Associez votre fiche d’établissement Google pour afficher un bouton « Laisser un avis Google » sur votre profil.",
+    googleReviewSearchLabel: "Trouvez votre établissement sur Google",
+    googleReviewSearchPlaceholder: "Recherchez le nom de votre établissement",
+    googleReviewNoResults: "Aucun établissement trouvé. Essayez d’ajouter la ville.",
+    googleReviewEnabled: "Afficher le bouton d’avis sur mon profil",
+    googleReviewTest: "Tester le lien d’avis",
+    googleReviewRemove: "Dissocier la fiche",
+    googleReviewUnavailable: "La recherche Google n’est pas disponible pour le moment.",
   },
 
   meta: {
@@ -6717,6 +6757,7 @@ const es: Translations = {
   },
   profile: {
     addressOpenMaps: "Abrir en Google Maps",
+    leaveGoogleReview: "Dejar una reseña en Google",
     addressCopy: "Copiar dirección",
     addressCopied: "Dirección copiada",
     addressShare: "Compartir dirección",
@@ -7585,6 +7626,15 @@ const es: Translations = {
     colorAriaLabel: "Color {color}",
     colorInvalidError: "El color {color} debe ser un color hexadecimal válido",
     savedSuccess: "Marca guardada con éxito",
+    googleReviewTitle: "Reseñas de Google",
+    googleReviewDesc: "Conecta tu ficha de empresa de Google para mostrar un botón “Dejar una reseña en Google” en tu perfil.",
+    googleReviewSearchLabel: "Encuentra tu negocio en Google",
+    googleReviewSearchPlaceholder: "Busca el nombre de tu negocio",
+    googleReviewNoResults: "No se encontraron negocios. Prueba a añadir la ciudad.",
+    googleReviewEnabled: "Mostrar el botón de reseña en mi perfil",
+    googleReviewTest: "Probar enlace de reseña",
+    googleReviewRemove: "Desconectar ficha",
+    googleReviewUnavailable: "La búsqueda de Google no está disponible ahora.",
   },
 
   meta: {
@@ -8242,6 +8292,7 @@ const ja: Translations = {
   },
   profile: {
     addressOpenMaps: "Google マップで開く",
+    leaveGoogleReview: "Google でクチコミを書く",
     addressCopy: "住所をコピー",
     addressCopied: "住所をコピーしました",
     addressShare: "住所を共有",
@@ -9110,6 +9161,15 @@ const ja: Translations = {
     colorAriaLabel: "{color}カラー",
     colorInvalidError: "{color}カラーは有効な16進数カラーである必要があります",
     savedSuccess: "ブランドを保存しました",
+    googleReviewTitle: "Google クチコミ",
+    googleReviewDesc: "Google ビジネスプロフィールを連携すると、プロフィールに「Google でクチコミを書く」ボタンが表示されます。",
+    googleReviewSearchLabel: "Google でビジネスを検索",
+    googleReviewSearchPlaceholder: "ビジネス名を入力",
+    googleReviewNoResults: "ビジネスが見つかりません。市区町村名を追加してみてください。",
+    googleReviewEnabled: "プロフィールにクチコミボタンを表示",
+    googleReviewTest: "クチコミリンクをテスト",
+    googleReviewRemove: "連携を解除",
+    googleReviewUnavailable: "現在 Google 検索は利用できません。",
   },
 
   meta: {
@@ -9767,6 +9827,7 @@ const de: Translations = {
   },
   profile: {
     addressOpenMaps: "In Google Maps öffnen",
+    leaveGoogleReview: "Bei Google bewerten",
     addressCopy: "Adresse kopieren",
     addressCopied: "Adresse kopiert",
     addressShare: "Adresse teilen",
@@ -10635,6 +10696,15 @@ const de: Translations = {
     colorAriaLabel: "Farbe {color}",
     colorInvalidError: "Die Farbe {color} muss ein gültiger Hex-Farbwert sein",
     savedSuccess: "Marke erfolgreich gespeichert",
+    googleReviewTitle: "Google-Bewertungen",
+    googleReviewDesc: "Verknüpfe dein Google-Unternehmensprofil, um auf deinem Profil einen „Bei Google bewerten“-Button anzuzeigen.",
+    googleReviewSearchLabel: "Finde dein Unternehmen bei Google",
+    googleReviewSearchPlaceholder: "Suche nach deinem Unternehmensnamen",
+    googleReviewNoResults: "Keine Unternehmen gefunden. Versuche, die Stadt hinzuzufügen.",
+    googleReviewEnabled: "Bewertungs-Button auf meinem Profil anzeigen",
+    googleReviewTest: "Bewertungslink testen",
+    googleReviewRemove: "Verknüpfung entfernen",
+    googleReviewUnavailable: "Die Google-Suche ist gerade nicht verfügbar.",
   },
 
   meta: {
@@ -11292,6 +11362,7 @@ const it: Translations = {
   },
   profile: {
     addressOpenMaps: "Apri in Google Maps",
+    leaveGoogleReview: "Lascia una recensione su Google",
     addressCopy: "Copia indirizzo",
     addressCopied: "Indirizzo copiato",
     addressShare: "Condividi indirizzo",
@@ -12160,6 +12231,15 @@ const it: Translations = {
     colorAriaLabel: "Colore {color}",
     colorInvalidError: "Il colore {color} deve essere un colore esadecimale valido",
     savedSuccess: "Brand salvato con successo",
+    googleReviewTitle: "Recensioni Google",
+    googleReviewDesc: "Collega la tua scheda dell’attività su Google per mostrare il pulsante “Lascia una recensione su Google” sul tuo profilo.",
+    googleReviewSearchLabel: "Trova la tua attività su Google",
+    googleReviewSearchPlaceholder: "Cerca il nome della tua attività",
+    googleReviewNoResults: "Nessuna attività trovata. Prova ad aggiungere la città.",
+    googleReviewEnabled: "Mostra il pulsante recensione sul mio profilo",
+    googleReviewTest: "Prova il link alla recensione",
+    googleReviewRemove: "Scollega la scheda",
+    googleReviewUnavailable: "La ricerca Google non è disponibile al momento.",
   },
 
   meta: {

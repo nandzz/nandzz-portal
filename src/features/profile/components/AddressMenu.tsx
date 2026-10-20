@@ -95,7 +95,7 @@ export function AddressMenu({ address, shareTitle, style }: AddressMenuProps) {
       <DropdownMenuTrigger
         style={style}
         title={address.formatted}
-        className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/50 bg-background px-3 py-1.5 text-sm text-muted-foreground transition-[color,box-shadow,transform] duration-150 ease-out hover:text-violet-600 hover:shadow-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 data-[popup-open]:text-violet-600 dark:hover:text-violet-400 dark:data-[popup-open]:text-violet-400"
+        className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/50 bg-background px-3 py-1.5 text-sm text-muted-foreground transition-[color,box-shadow,transform] duration-150 ease-out hover:text-violet-600 hover:shadow-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 data-[popup-open]:text-violet-600 dark:hover:text-violet-400 dark:data-[popup-open]:text-violet-400"
       >
         <MapPin className="h-4 w-4 shrink-0" />
         <span className="truncate">{shortLabel(address.formatted)}</span>

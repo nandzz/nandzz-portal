@@ -122,6 +122,15 @@ export const updateBrandSchema = z.object({
   brandDescription: z.string().max(500).nullable(),
 });
 
+export const googleReviewSchema = z
+  .object({
+    place_id: z.string().min(1).max(300),
+    name: z.string().min(1).max(200),
+    address: z.string().max(300).optional(),
+    enabled: z.boolean(),
+  })
+  .nullable();
+
 export const followListSchema = z.object({
   profileId: z.uuid(),
   type: z.enum(["followers", "following"]),

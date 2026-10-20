@@ -8,6 +8,7 @@ import { SocialLinkButtons, buildSocialLinks, resolveSocialLinksStyle } from "./
 import { FollowButton } from "@/features/social";
 import { FollowersDialog } from "./FollowersDialog";
 import { AddressMenu } from "./AddressMenu";
+import { GoogleReviewButton } from "./GoogleReviewButton";
 import { WidgetStrip } from "./WidgetStrip";
 import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { uploadAvatar } from "../storage";
@@ -45,6 +46,8 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   const textColor = live ? live.textColor : textColorProp;
   const socialLinksStyle = live ? live.socialLinksStyle : socialLinksStyleProp;
   const bookingButtonStyle = live ? live.bookingButtonStyle : profile.booking_button_style;
+  const showGoogleReview =
+    profile.account_type === "business" && !!profile.google_review?.place_id && profile.google_review.enabled;
 
   // When the owner tints the buttons, override the surface + a readable text
   // color inline (inline wins over the theme `bg-background` / hover classes).
@@ -209,12 +212,19 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       )}
       {bookingPlacement === "description" && widgetStrip("mt-4")}
 
-      {profile.address?.formatted && (
-        <AddressMenu
-          address={profile.address}
-          shareTitle={profile.display_name || profile.username}
-          style={buttonStyle}
-        />
+      {(profile.address?.formatted || showGoogleReview) && (
+        <div className="mt-3 flex max-w-full flex-wrap items-center justify-center gap-2">
+          {profile.address?.formatted && (
+            <AddressMenu
+              address={profile.address}
+              shareTitle={profile.display_name || profile.username}
+              style={buttonStyle}
+            />
+          )}
+          {showGoogleReview && profile.google_review && (
+            <GoogleReviewButton listing={profile.google_review} style={buttonStyle} />
+          )}
+        </div>
       )}
 
       <div className="mt-4 flex items-center gap-5">

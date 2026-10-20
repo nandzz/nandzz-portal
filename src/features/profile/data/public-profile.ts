@@ -29,6 +29,7 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "website_url",
   "social_links",
   "address",
+  "google_review",
   "created_at",
   "followers_count",
   "following_count",
