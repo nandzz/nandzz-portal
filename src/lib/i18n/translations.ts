@@ -75,7 +75,6 @@ export type Translations = {
     heroLine1: string;
     heroLine2: string;
     heroDescription: string;
-    heroNote: string;
     getStarted: string;
     howItWorks: string;
     mockToastTitle: string;
@@ -1582,7 +1581,6 @@ const en: Translations = {
     heroLine1: "Show your work.",
     heroLine2: "Get booked online.",
     heroDescription: "Nandzz is for professionals and businesses that work by appointment. Show your work, present your services and let clients book you online, all on one page with your brand.",
-    heroNote: "Free to start. No website needed.",
     getStarted: "Create your page",
     howItWorks: "See how it works",
     mockToastTitle: "New booking",
@@ -3108,7 +3106,6 @@ const pt: Translations = {
     heroLine1: "Mostre seu trabalho.",
     heroLine2: "Receba agendamentos online.",
     heroDescription: "A Nandzz é feita para profissionais e negócios que atendem com hora marcada. Mostre seu trabalho, apresente seus serviços e deixe os clientes agendarem online, tudo numa única página com a sua marca.",
-    heroNote: "Comece grátis. Sem precisar de site.",
     getStarted: "Criar minha página",
     howItWorks: "Veja como funciona",
     mockToastTitle: "Novo agendamento",
@@ -4634,7 +4631,6 @@ const fr: Translations = {
     heroLine1: "Montrez votre travail.",
     heroLine2: "Soyez réservé en ligne.",
     heroDescription: "Nandzz est conçu pour les professionnels et les entreprises qui travaillent sur rendez-vous. Montrez votre travail, présentez vos services et laissez vos clients réserver en ligne, le tout sur une seule page à votre image.",
-    heroNote: "Gratuit pour commencer. Aucun site web nécessaire.",
     getStarted: "Créer ma page",
     howItWorks: "Voir comment ça marche",
     mockToastTitle: "Nouvelle réservation",
@@ -6160,7 +6156,6 @@ const es: Translations = {
     heroLine1: "Muestra tu trabajo.",
     heroLine2: "Recibe reservas online.",
     heroDescription: "Nandzz está pensado para profesionales y negocios que trabajan con cita previa. Muestra tu trabajo, presenta tus servicios y deja que tus clientes reserven online, todo en una sola página con tu marca.",
-    heroNote: "Empieza gratis. Sin necesidad de web.",
     getStarted: "Crear mi página",
     howItWorks: "Ver cómo funciona",
     mockToastTitle: "Nueva reserva",
@@ -7686,7 +7681,6 @@ const ja: Translations = {
     heroLine1: "あなたの仕事を見せる。",
     heroLine2: "オンラインで予約される。",
     heroDescription: "Nandzzは、予約制でサービスを提供するプロやお店のためのサービスです。作品を見せ、メニューを紹介し、お客様にオンラインで直接予約してもらう。すべてを、あなたのブランドの1ページで。",
-    heroNote: "無料で始められます。Webサイトは不要です。",
     getStarted: "ページを作成",
     howItWorks: "使い方を見る",
     mockToastTitle: "新しい予約",
@@ -9212,7 +9206,6 @@ const de: Translations = {
     heroLine1: "Zeig deine Arbeit.",
     heroLine2: "Lass dich online buchen.",
     heroDescription: "Nandzz ist für Profis und Betriebe, die mit Terminen arbeiten. Zeig deine Arbeit, stell deine Leistungen vor und lass Kunden direkt online buchen, alles auf einer Seite mit deiner Marke.",
-    heroNote: "Kostenlos starten. Keine Website nötig.",
     getStarted: "Seite erstellen",
     howItWorks: "So funktioniert's",
     mockToastTitle: "Neue Buchung",
@@ -10738,7 +10731,6 @@ const it: Translations = {
     heroLine1: "Mostra il tuo lavoro.",
     heroLine2: "Fatti prenotare online.",
     heroDescription: "Nandzz è pensato per professionisti e attività che offrono servizi su prenotazione. Mostra il tuo lavoro, presenta i tuoi servizi e lascia che i clienti prenotino direttamente online, tutto in un'unica pagina con il tuo brand.",
-    heroNote: "Inizi gratis. Nessun sito web necessario.",
     getStarted: "Crea la mia pagina",
     howItWorks: "Scopri come funziona",
     mockToastTitle: "Nuova prenotazione",

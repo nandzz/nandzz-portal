@@ -60,7 +60,6 @@ export function HomeClient() {
                 {h.howItWorks}
               </Link>
             </div>
-            <p className="mt-5 text-sm text-[color-mix(in_oklab,var(--clay-ink)_55%,transparent)]">{h.heroNote}</p>
           </div>
 
           {/* Floating layered mockup */}
