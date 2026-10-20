@@ -16,6 +16,19 @@ const SLOTS = ["9:00", "9:45", "10:30", "11:15", "12:00", "12:45"];
 const GALLERY = [1, 2, 3, 4, 5, 6].map((n) => `/home/gallery-${n}.webp`);
 const BRAND_SWATCHES = ["#7c3aed", "#1d1a26", "#f4c7d8", "#e9e4f7"];
 
+// Renders "*word*" segments of a translated line in the brand violet.
+function Highlighted({ text }: { text: string }) {
+  return text.split(/\*([^*]+)\*/).map((part, i) =>
+    i % 2 ? (
+      <span key={i} className="text-violet-600 dark:text-violet-400">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 export function HomeClient() {
   const { t, locale } = useLanguage();
   const h = t.home;
@@ -39,7 +52,7 @@ export function HomeClient() {
             <h1 className="text-[clamp(2.6rem,5.6vw,4.4rem)] font-bold leading-[1.02] tracking-[-0.035em]">
               {h.heroLine1}
               <br />
-              {h.heroLine2}
+              <Highlighted text={h.heroLine2} />
             </h1>
             <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_68%,transparent)]">
               {h.heroDescription}
