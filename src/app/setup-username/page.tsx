@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { claimSignupProfile, mapAuthError } from "@/features/auth";
+import { clearPendingUsername, readPendingUsername } from "@/features/auth/lib/pending-username";
 import { SignupLegalNotice } from "@/features/legal/components/SignupLegalNotice";
 import { safeNextPath } from "@/lib/utils";
 import { AUTH_RETURN_TO_KEY } from "@/lib/layout/appShell";
@@ -42,6 +43,13 @@ function SetupUsernameForm() {
   // booking host (widget, agent, bare profile), not just the widget route.
   // `bouncing` hides this page's form so it's never shown in that flow.
   const [bouncing, setBouncing] = useState(false);
+
+  // Pre-fill the name claimed in the profile "claim your page" sheet.
+  useEffect(() => {
+    const pending = readPendingUsername();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time seed from browser storage (unavailable during SSR)
+    if (pending) setUsername((u) => u || pending);
+  }, []);
   useEffect(() => {
     let returnTo: string | null = null;
     try {
@@ -103,6 +111,7 @@ function SetupUsernameForm() {
         // just-created profile + session and server-renders the profile cleanly.
         // A client-side transition here stalls on the fresh profile's RSC fetch
         // and never commits — the page just appears to "do nothing".
+        clearPendingUsername();
         window.location.assign(`/${trimmed}`);
       }
     } catch {

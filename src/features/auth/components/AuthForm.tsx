@@ -9,6 +9,7 @@ import {
   signInWithGoogle,
 } from "../auth";
 import { claimSignupProfile } from "../actions/claim-signup-profile";
+import { clearPendingUsername, readPendingUsername } from "../lib/pending-username";
 import { SignupLegalNotice } from "@/features/legal/components/SignupLegalNotice";
 import { mapAuthError } from "../error-messages";
 import { safeNextPath } from "@/lib/utils";
@@ -139,6 +140,18 @@ export function AuthForm({
   // `emailRedirectTo` → /auth/callback → the username setup step.
   const [confirmSent, setConfirmSent] = useState(false);
 
+  // A name claimed in the profile "claim your page" sheet: shown above the
+  // signup form, and pre-filled in the username step so finishing is one tap.
+  const [pendingUsername, setPendingUsername] = useState("");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of browser storage (unavailable during SSR)
+    setPendingUsername(readPendingUsername());
+  }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed the username step from the claimed name
+    if (mode === "setup" && pendingUsername) setUsername((u) => u || pendingUsername);
+  }, [mode, pendingUsername]);
+
   // Where Google returns after OAuth. Embedded callers override this to come
   // back to their own page; page mode keeps the /auth/callback → next flow.
   const googleTarget = () =>
@@ -201,6 +214,7 @@ export function AuthForm({
         else setError(mapAuthError(result.message, t));
         return;
       }
+      clearPendingUsername();
       // A fresh signup lands on the new user's own profile page; embedded callers
       // (booking) ignore the destination and continue in place via onSuccess.
       finishSuccess(
@@ -361,6 +375,12 @@ export function AuthForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Signup collects only email + password here; the username is chosen in
             the following "setup" step (shared with Google signups). */}
+        {mode === "signup" && pendingUsername && (
+          <p className="rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+            {t.claimPage.claiming}{" "}
+            <span className="font-semibold">nandzz.com/{pendingUsername}</span>
+          </p>
+        )}
         <div className="space-y-2">
           <Label htmlFor="email">{t.auth.email}</Label>
           <Input

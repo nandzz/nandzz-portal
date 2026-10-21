@@ -358,6 +358,22 @@ export type Translations = {
     desc: string;
     cta: string;
   };
+  claimPage: {
+    titleLead: string;
+    titleAccent: string;
+    desc: string;
+    placeholder: string;
+    checking: string;
+    available: string;
+    taken: string;
+    invalid: string;
+    cta: string;
+    haveAccount: string;
+    login: string;
+    learnMore: string;
+    close: string;
+    claiming: string;
+  };
   setup: {
     title: string;
     desc: string;
@@ -1882,6 +1898,22 @@ const en: Translations = {
     title: "Page not found",
     desc: "The page you're looking for doesn't exist or may have been moved.",
     cta: "Browse Explore",
+  },
+  claimPage: {
+    titleLead: "Your own page,",
+    titleAccent: "just like this one.",
+    desc: "One link for your bookings, content and links. Share it on Instagram, TikTok, WhatsApp and more.",
+    placeholder: "yourname",
+    checking: "Checking…",
+    available: "Available",
+    taken: "Already taken",
+    invalid: "3–30 characters: letters, numbers, - and _",
+    cta: "Claim your page",
+    haveAccount: "Already have an account?",
+    login: "Log in",
+    learnMore: "Learn more about Nandzz",
+    close: "Close",
+    claiming: "Claiming",
   },
   setup: {
     title: "One last step",
@@ -3408,6 +3440,22 @@ const pt: Translations = {
     desc: "A página que você procura não existe ou pode ter sido movida.",
     cta: "Explorar",
   },
+  claimPage: {
+    titleLead: "Sua própria página,",
+    titleAccent: "igual a esta.",
+    desc: "Um link para suas reservas, conteúdos e links. Compartilhe no Instagram, TikTok, WhatsApp e mais.",
+    placeholder: "seunome",
+    checking: "Verificando…",
+    available: "Disponível",
+    taken: "Já está em uso",
+    invalid: "3–30 caracteres: letras, números, - e _",
+    cta: "Garanta sua página",
+    haveAccount: "Já tem uma conta?",
+    login: "Entrar",
+    learnMore: "Saiba mais sobre a Nandzz",
+    close: "Fechar",
+    claiming: "Garantindo",
+  },
   setup: {
     title: "Último passo",
     desc: "Escolha um nome de usuário para seu perfil",
@@ -4932,6 +4980,22 @@ const fr: Translations = {
     title: "Page introuvable",
     desc: "La page que vous recherchez n'existe pas ou a peut-être été déplacée.",
     cta: "Explorer",
+  },
+  claimPage: {
+    titleLead: "Votre propre page,",
+    titleAccent: "comme celle-ci.",
+    desc: "Un seul lien pour vos réservations, contenus et liens. Partagez-le sur Instagram, TikTok, WhatsApp et plus.",
+    placeholder: "votrenom",
+    checking: "Vérification…",
+    available: "Disponible",
+    taken: "Déjà pris",
+    invalid: "3 à 30 caractères : lettres, chiffres, - et _",
+    cta: "Réservez votre page",
+    haveAccount: "Vous avez déjà un compte ?",
+    login: "Se connecter",
+    learnMore: "En savoir plus sur Nandzz",
+    close: "Fermer",
+    claiming: "Vous réservez",
   },
   setup: {
     title: "Dernière étape",
@@ -6458,6 +6522,22 @@ const es: Translations = {
     desc: "La página que buscas no existe o puede haber sido movida.",
     cta: "Explorar",
   },
+  claimPage: {
+    titleLead: "Tu propia página,",
+    titleAccent: "igual que esta.",
+    desc: "Un enlace para tus reservas, contenidos y enlaces. Compártelo en Instagram, TikTok, WhatsApp y más.",
+    placeholder: "tunombre",
+    checking: "Comprobando…",
+    available: "Disponible",
+    taken: "Ya está en uso",
+    invalid: "3–30 caracteres: letras, números, - y _",
+    cta: "Consigue tu página",
+    haveAccount: "¿Ya tienes una cuenta?",
+    login: "Iniciar sesión",
+    learnMore: "Más información sobre Nandzz",
+    close: "Cerrar",
+    claiming: "Reservando",
+  },
   setup: {
     title: "Un último paso",
     desc: "Elige un nombre de usuario para tu perfil",
@@ -7982,6 +8062,22 @@ const ja: Translations = {
     title: "ページが見つかりません",
     desc: "お探しのページは存在しないか、移動された可能性があります。",
     cta: "探索する",
+  },
+  claimPage: {
+    titleLead: "あなただけのページを、",
+    titleAccent: "このページのように。",
+    desc: "予約・コンテンツ・リンクをひとつのリンクに。Instagram、TikTok、WhatsAppなどでシェアできます。",
+    placeholder: "yourname",
+    checking: "確認中…",
+    available: "利用できます",
+    taken: "すでに使われています",
+    invalid: "3〜30文字：英小文字・数字・- と _",
+    cta: "ページを作成する",
+    haveAccount: "アカウントをお持ちですか？",
+    login: "ログイン",
+    learnMore: "Nandzzについて",
+    close: "閉じる",
+    claiming: "取得するページ:",
   },
   setup: {
     title: "最後のステップ",
@@ -9508,6 +9604,22 @@ const de: Translations = {
     desc: "Die gesuchte Seite existiert nicht oder wurde möglicherweise verschoben.",
     cta: "Entdecken",
   },
+  claimPage: {
+    titleLead: "Deine eigene Seite,",
+    titleAccent: "genau wie diese.",
+    desc: "Ein Link für deine Buchungen, Inhalte und Links. Teile ihn auf Instagram, TikTok, WhatsApp und mehr.",
+    placeholder: "deinname",
+    checking: "Wird geprüft…",
+    available: "Verfügbar",
+    taken: "Bereits vergeben",
+    invalid: "3–30 Zeichen: Buchstaben, Zahlen, - und _",
+    cta: "Seite sichern",
+    haveAccount: "Schon ein Konto?",
+    login: "Anmelden",
+    learnMore: "Mehr über Nandzz",
+    close: "Schließen",
+    claiming: "Du sicherst dir",
+  },
   setup: {
     title: "Letzter Schritt",
     desc: "Wähle einen Benutzernamen für dein Profil",
@@ -11032,6 +11144,22 @@ const it: Translations = {
     title: "Pagina non trovata",
     desc: "La pagina che stai cercando non esiste o potrebbe essere stata spostata.",
     cta: "Esplora",
+  },
+  claimPage: {
+    titleLead: "La tua pagina,",
+    titleAccent: "proprio come questa.",
+    desc: "Un unico link per prenotazioni, contenuti e link. Condividilo su Instagram, TikTok, WhatsApp e altro.",
+    placeholder: "tuonome",
+    checking: "Verifica in corso…",
+    available: "Disponibile",
+    taken: "Già in uso",
+    invalid: "3–30 caratteri: lettere, numeri, - e _",
+    cta: "Crea la tua pagina",
+    haveAccount: "Hai già un account?",
+    login: "Accedi",
+    learnMore: "Scopri di più su Nandzz",
+    close: "Chiudi",
+    claiming: "Stai creando",
   },
   setup: {
     title: "Ultimo passo",
