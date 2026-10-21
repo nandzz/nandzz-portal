@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeColorSync } from "@/components/theme-color-sync";
 import { InAppLinkFix } from "@/components/in-app-link-fix";
+import { PostHogInit } from "@/components/posthog-init";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ChromeProvider } from "@/contexts/ChromeContext";
 import { AppChrome } from "@/components/layout/AppChrome";
@@ -167,6 +168,7 @@ export default async function RootLayout({
                 initialEntitlements={initialEntitlements}
                 initialFlags={initialFlags}
               >
+                <PostHogInit />
                 <AppChrome initialCollapsed={initialSidebarCollapsed}>{children}</AppChrome>
                 {needsTermsAcceptance && <TermsUpdateBanner />}
               </AuthProvider>
