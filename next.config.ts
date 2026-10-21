@@ -39,15 +39,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // PostHog reverse proxy (EU cloud): events go to same-origin /ingest so the
+  // PostHog reverse proxy (US cloud): events go to same-origin /ingest so the
   // CSP stays 'self' and ad blockers drop fewer requests. beforeFiles so the
   // [username] dynamic route never catches /ingest.
   skipTrailingSlashRedirect: true,
   async rewrites() {
     return {
       beforeFiles: [
-        { source: "/ingest/static/:path*", destination: "https://eu-assets.i.posthog.com/static/:path*" },
-        { source: "/ingest/:path*", destination: "https://eu.i.posthog.com/:path*" },
+        { source: "/ingest/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },
+        { source: "/ingest/:path*", destination: "https://us.i.posthog.com/:path*" },
       ],
     };
   },

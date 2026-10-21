@@ -18,7 +18,7 @@ export function initPostHog(): boolean {
   if (!KEY || typeof window === "undefined") return false;
   posthog.init(KEY, {
     api_host: "/ingest",
-    ui_host: "https://eu.posthog.com",
+    ui_host: "https://us.posthog.com",
     persistence: "memory",
     autocapture: false,
     capture_pageview: "history_change",
