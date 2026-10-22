@@ -144,6 +144,9 @@ export const BUSINESS_CATEGORIES = [
   "automotive", "retail", "other",
 ] as const;
 
+// Mirrors LINK_LAYOUTS in src/lib/gallery/layouts.ts (profiles.links_layout).
+export const LINKS_LAYOUTS = ["stack", "pills", "carousel", "grid", "justified", "featured"] as const;
+
 const SOCIAL_KEYS = ["instagram", "linkedin", "twitter", "github", "email", "youtube", "whatsapp"] as const;
 const BRAND_COLOR_KEYS = ["primary", "accent", "background"] as const;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -244,6 +247,14 @@ export const profileFieldProps = {
   show_contents: { type: "boolean", description: "Show the Publications section (default true)." },
   show_gallery: { type: "boolean", description: "Show the Gallery section (default true)." },
   show_links: { type: "boolean", description: "Show the Links section (default true)." },
+  links_layout: {
+    type: "string",
+    enum: LINKS_LAYOUTS,
+    description:
+      "How the Links section is displayed. 'stack' = full-width button rows, 'pills' = compact wrapping chips " +
+      "(both image-less, tinted by button_color — best when links have no preview image); 'carousel' (default), " +
+      "'grid', 'justified', 'featured' = image cards.",
+  },
 } as const;
 
 // Tools that take profileFieldProps advertise avatar_file to the ChatGPT runtime.
@@ -362,6 +373,13 @@ export function buildProfilePatch(a: Record<string, unknown>): Record<string, un
     size: ["md", "lg"],
     tone: ["default", "brand", "filled"],
   }, { layout: "icons", shape: "rounded", size: "md", tone: "default" }, false);
+
+  if (a.links_layout !== undefined) {
+    if (typeof a.links_layout !== "string" || !(LINKS_LAYOUTS as readonly string[]).includes(a.links_layout)) {
+      throw new Error(`links_layout must be one of: ${LINKS_LAYOUTS.join(", ")}.`);
+    }
+    patch.links_layout = a.links_layout;
+  }
 
   for (const k of ["show_contents", "show_gallery", "show_links"] as const) {
     if (a[k] === undefined) continue;

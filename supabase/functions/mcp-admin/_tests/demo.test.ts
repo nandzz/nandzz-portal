@@ -186,6 +186,7 @@ Deno.test("buildProfilePatch: address, page colors, styles, section flags", () =
     booking_button_style: { variant: "solid", color: "#C026D3" },
     social_links_style: { tone: "brand" },
     show_gallery: false,
+    links_layout: "stack",
   });
   assertEquals(p.address, { formatted: "Via Roma 1, Torino", lat: 45, lng: 7.6 });
   assertEquals(p.background_color, "#1a0b2e");
@@ -193,6 +194,8 @@ Deno.test("buildProfilePatch: address, page colors, styles, section flags", () =
   assertEquals(p.booking_button_style, { variant: "solid", shape: "pill", size: "md", color: "#c026d3" });
   assertEquals(p.social_links_style, { layout: "icons", shape: "rounded", size: "md", tone: "brand" });
   assertEquals(p.show_gallery, false);
+  assertEquals(p.links_layout, "stack");
+  assertThrows(() => buildProfilePatch({ links_layout: "masonry" }));
   assertThrows(() => buildProfilePatch({ address: { place_id: "x" } }));
   assertThrows(() => buildProfilePatch({ button_color: "#fff" }));
   assertThrows(() => buildProfilePatch({ booking_button_style: { variant: "neon" } }));

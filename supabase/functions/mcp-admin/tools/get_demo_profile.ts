@@ -17,7 +17,7 @@ export const getDemoProfileDef: ToolDefinition = {
 const PROFILE_COLS =
   "username, display_name, category, tagline, bio, website_url, social_links, address, avatar_url, background_url, " +
   "background_color, button_color, text_color, booking_button_style, social_links_style, brand_colors, " +
-  "brand_description, show_contents, show_gallery, show_links";
+  "brand_description, show_contents, show_gallery, show_links, links_layout";
 
 export const getDemoProfile: ToolHandler = async (args, ctx) => {
   const demo = await requireTarget(ctx, args.demo_profile_id);
