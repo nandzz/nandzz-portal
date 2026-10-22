@@ -1,6 +1,7 @@
 "use client";
 
 import { LinkChip } from "./LinkChip";
+import { LinkPill, LinkRow } from "./LinkRow";
 import type { Space, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProfileStyle } from "@/contexts/ProfileStyleContext";
@@ -8,7 +9,7 @@ import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
 import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
 import { useSerialSave } from "@/lib/useSerialSave";
-import { CARD_LAYOUTS, type SectionLayout } from "@/lib/gallery/layouts";
+import { LINK_LAYOUTS, type SectionLayout } from "@/lib/gallery/layouts";
 
 interface ProfileLinksProps {
   links: Space[];
@@ -20,7 +21,7 @@ interface ProfileLinksProps {
 
 /** The profile's Links section — a set of link "chips" (favicon + title + host)
  * the owner can arrange as a horizontal shelf, grid, justified rows, or with a
- * featured first chip. Distinct from the Publications section, which shows
+ * featured first chip — or, image-less, as full-width rows (stack) or pills. Distinct from the Publications section, which shows
  * space cards. Empty state is handled at the page level. */
 export function ProfileLinks({
   links,
@@ -33,6 +34,7 @@ export function ProfileLinks({
   // Live text color (owner Style picker previews instantly); prop outside a profile page.
   const liveStyle = useProfileStyle()?.style;
   const textColor = liveStyle ? liveStyle.textColor : profile.text_color;
+  const buttonColor = liveStyle ? liveStyle.buttonColor : profile.button_color;
   // Optimistic + strictly ordered saves (rapid picks can't land out of order
   // or be snapped back by an older save's refresh). The action revalidates the
   // public profile itself — no client revalidate fetch / router.refresh.
@@ -63,14 +65,14 @@ export function ProfileLinks({
           <SectionOwnerMenu
             sectionId="links"
             sectionName={t.profile.linksTitle}
-            layouts={CARD_LAYOUTS}
+            layouts={LINK_LAYOUTS}
             layout={layout}
             onLayoutChange={handleLayoutChange}
           />
         )}
       </div>
 
-      <LinksLayoutView layout={layout} links={links} />
+      <LinksLayoutView layout={layout} links={links} buttonColor={buttonColor} />
 
       {totalCount > links.length && (
         <SeeMoreLink label={t.profile.seeMore} href={`/${profile.username}/links`} />
@@ -81,7 +83,35 @@ export function ProfileLinks({
 
 // ── Layout renderers ─────────────────────────────────────────────────────────
 
-function LinksLayoutView({ layout, links }: { layout: SectionLayout; links: Space[] }) {
+function LinksLayoutView({
+  layout,
+  links,
+  buttonColor,
+}: {
+  layout: SectionLayout;
+  links: Space[];
+  buttonColor: string | null | undefined;
+}) {
+  if (layout === "stack") {
+    return (
+      <div className="flex flex-col gap-2.5 pb-6">
+        {links.map((space) => (
+          <LinkRow key={space.id} space={space} buttonColor={buttonColor} />
+        ))}
+      </div>
+    );
+  }
+
+  if (layout === "pills") {
+    return (
+      <div className="flex flex-wrap gap-2 pb-6">
+        {links.map((space) => (
+          <LinkPill key={space.id} space={space} buttonColor={buttonColor} />
+        ))}
+      </div>
+    );
+  }
+
   if (layout === "grid") {
     return (
       <div className="grid grid-cols-2 gap-4 pb-6 sm:grid-cols-3">

@@ -5,12 +5,21 @@ import {
   GalleryHorizontal,
   GalleryHorizontalEnd,
   GalleryThumbnails,
+  Rows3,
+  Tags,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import type { Translations } from "@/lib/i18n/translations";
 
 /** Every arrangement a profile section can be displayed in. */
-export type SectionLayout = "carousel" | "grid" | "masonry" | "justified" | "featured";
+export type SectionLayout =
+  | "carousel"
+  | "grid"
+  | "masonry"
+  | "justified"
+  | "featured"
+  | "stack"
+  | "pills";
 
 /** Back-compat alias — the image gallery was the first section to gain layouts. */
 export type GalleryLayout = SectionLayout;
@@ -28,12 +37,18 @@ export const GALLERY_LAYOUTS: SectionLayout[] = [
  * is image-only so it's excluded here. */
 export const CARD_LAYOUTS: SectionLayout[] = ["carousel", "grid", "justified", "featured"];
 
+/** Layouts offered for the Links section: the card layouts plus two image-less
+ * styles (full-width rows, wrapping pills) for links without a preview image. */
+export const LINK_LAYOUTS: SectionLayout[] = ["stack", "pills", ...CARD_LAYOUTS];
+
 export const SECTION_LAYOUT_ICONS: Record<SectionLayout, LucideIcon> = {
   carousel: GalleryHorizontalEnd,
   grid: LayoutGrid,
   masonry: GalleryThumbnails,
   justified: GalleryHorizontal,
   featured: LayoutDashboard,
+  stack: Rows3,
+  pills: Tags,
 };
 
 function isSectionLayout(
@@ -59,7 +74,7 @@ export function resolveContentsLayout(profile: Pick<Profile, "contents_layout">)
 
 /** Narrows a profile's stored `links_layout` (default carousel). */
 export function resolveLinksLayout(profile: Pick<Profile, "links_layout">): SectionLayout {
-  return isSectionLayout(profile.links_layout, CARD_LAYOUTS) ? profile.links_layout : "carousel";
+  return isSectionLayout(profile.links_layout, LINK_LAYOUTS) ? profile.links_layout : "carousel";
 }
 
 /** Resolves a layout's display label from the current locale's translations. */
@@ -70,6 +85,8 @@ export function getSectionLayoutLabel(t: Translations, id: SectionLayout): strin
     masonry: t.profile.layoutMasonry,
     justified: t.profile.layoutJustified,
     featured: t.profile.layoutFeatured,
+    stack: t.profile.layoutStack,
+    pills: t.profile.layoutPills,
   };
   return labels[id];
 }

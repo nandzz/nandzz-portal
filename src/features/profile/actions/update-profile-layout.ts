@@ -8,7 +8,7 @@ export type UpdateProfileLayoutResult =
   | { ok: true }
   | { ok: false; error: "UNAUTHENTICATED" | "INVALID_INPUT" | "FAILED"; message?: string };
 
-const layout = z.enum(["carousel", "grid", "masonry", "justified", "featured"]);
+const layout = z.enum(["carousel", "grid", "masonry", "justified", "featured", "stack", "pills"]);
 const sectionId = z.enum(["gallery", "publications", "links"]);
 
 // Only the owner-controlled presentation columns — never an arbitrary patch.

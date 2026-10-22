@@ -659,6 +659,8 @@ export type Translations = {
     layoutMasonry: string;
     layoutJustified: string;
     layoutFeatured: string;
+    layoutStack: string;
+    layoutPills: string;
     followersPageSubtitle: string;
     followingPageSubtitle: string;
     bookingPosition: string;
@@ -2200,6 +2202,8 @@ const en: Translations = {
     layoutMasonry: "Masonry",
     layoutJustified: "Justified",
     layoutFeatured: "Featured",
+    layoutStack: "Stack",
+    layoutPills: "Pills",
     followersPageSubtitle: "People who follow you.",
     followingPageSubtitle: "People you follow.",
     bookingPosition: "Position",
@@ -3741,6 +3745,8 @@ const pt: Translations = {
     layoutMasonry: "Mosaico",
     layoutJustified: "Justificado",
     layoutFeatured: "Destaque",
+    layoutStack: "Lista",
+    layoutPills: "Etiquetas",
     followersPageSubtitle: "Pessoas que seguem você.",
     followingPageSubtitle: "Pessoas que você segue.",
     bookingPosition: "Posição",
@@ -5282,6 +5288,8 @@ const fr: Translations = {
     layoutMasonry: "Mosaïque",
     layoutJustified: "Justifié",
     layoutFeatured: "À la une",
+    layoutStack: "Liste",
+    layoutPills: "Pastilles",
     followersPageSubtitle: "Les personnes qui vous suivent.",
     followingPageSubtitle: "Les personnes que vous suivez.",
     bookingPosition: "Position",
@@ -6823,6 +6831,8 @@ const es: Translations = {
     layoutMasonry: "Mosaico",
     layoutJustified: "Justificado",
     layoutFeatured: "Destacado",
+    layoutStack: "Lista",
+    layoutPills: "Etiquetas",
     followersPageSubtitle: "Personas que te siguen.",
     followingPageSubtitle: "Personas a las que sigues.",
     bookingPosition: "Posición",
@@ -8364,6 +8374,8 @@ const ja: Translations = {
     layoutMasonry: "モザイク",
     layoutJustified: "均等配置",
     layoutFeatured: "注目",
+    layoutStack: "リスト",
+    layoutPills: "ピル",
     followersPageSubtitle: "あなたをフォローしている人。",
     followingPageSubtitle: "あなたがフォローしている人。",
     bookingPosition: "位置",
@@ -9905,6 +9917,8 @@ const de: Translations = {
     layoutMasonry: "Mosaik",
     layoutJustified: "Bündig",
     layoutFeatured: "Hervorgehoben",
+    layoutStack: "Liste",
+    layoutPills: "Pillen",
     followersPageSubtitle: "Personen, die dir folgen.",
     followingPageSubtitle: "Personen, denen du folgst.",
     bookingPosition: "Position",
@@ -11446,6 +11460,8 @@ const it: Translations = {
     layoutMasonry: "Mosaico",
     layoutJustified: "Giustificato",
     layoutFeatured: "In evidenza",
+    layoutStack: "Elenco",
+    layoutPills: "Pillole",
     followersPageSubtitle: "Persone che ti seguono.",
     followingPageSubtitle: "Persone che segui.",
     bookingPosition: "Posizione",
