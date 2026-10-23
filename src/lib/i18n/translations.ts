@@ -457,6 +457,12 @@ export type Translations = {
     subtitleWithAi: string;
     subtitle: string;
     subscribedMsg: string;
+    welcomeTitle: string;
+    welcomeDesc: string;
+    welcomeTrialDesc: string;
+    welcomeActivating: string;
+    welcomeCta: string;
+    welcomeClose: string;
     paymentReceivedMsg: string;
     canceledMsg: string;
     compTitle: string;
@@ -2000,6 +2006,12 @@ const en: Translations = {
     subtitleWithAi: "Manage your plan and AI credits.",
     subtitle: "Manage your plan.",
     subscribedMsg: "You're subscribed. Your plan is now active.",
+    welcomeTitle: "Welcome to {plan}!",
+    welcomeDesc: "Your plan is active. Here's what you just unlocked:",
+    welcomeTrialDesc: "Your {days}-day free trial has started. You won't be charged until {date}.",
+    welcomeActivating: "Activating your plan…",
+    welcomeCta: "Set up bookings",
+    welcomeClose: "Explore later",
     paymentReceivedMsg: "Payment received. Your credits have been added.",
     canceledMsg: "Checkout canceled. Nothing was charged.",
     compTitle: "You have complimentary Pro access.",
@@ -3543,6 +3555,12 @@ const pt: Translations = {
     subtitleWithAi: "Gerencie seu plano e créditos de IA.",
     subtitle: "Gerencie seu plano.",
     subscribedMsg: "Você assinou. Seu plano está ativo agora.",
+    welcomeTitle: "Bem-vindo ao {plan}!",
+    welcomeDesc: "Seu plano está ativo. Veja o que você acabou de desbloquear:",
+    welcomeTrialDesc: "Seu teste grátis de {days} dias começou. Você só será cobrado em {date}.",
+    welcomeActivating: "Ativando seu plano…",
+    welcomeCta: "Configurar reservas",
+    welcomeClose: "Explorar depois",
     paymentReceivedMsg: "Pagamento recebido. Seus créditos foram adicionados.",
     canceledMsg: "Checkout cancelado. Nada foi cobrado.",
     compTitle: "Você tem acesso Pro de cortesia.",
@@ -5086,6 +5104,12 @@ const fr: Translations = {
     subtitleWithAi: "Gérez votre plan et vos crédits IA.",
     subtitle: "Gérez votre plan.",
     subscribedMsg: "Vous êtes abonné. Votre plan est maintenant actif.",
+    welcomeTitle: "Bienvenue dans {plan} !",
+    welcomeDesc: "Votre plan est actif. Voici ce que vous venez de débloquer :",
+    welcomeTrialDesc: "Votre essai gratuit de {days} jours a commencé. Aucun prélèvement avant le {date}.",
+    welcomeActivating: "Activation de votre plan…",
+    welcomeCta: "Configurer les réservations",
+    welcomeClose: "Explorer plus tard",
     paymentReceivedMsg: "Paiement reçu. Vos crédits ont été ajoutés.",
     canceledMsg: "Paiement annulé. Rien n'a été débité.",
     compTitle: "Vous bénéficiez d'un accès Pro offert.",
@@ -6629,6 +6653,12 @@ const es: Translations = {
     subtitleWithAi: "Gestiona tu plan y créditos de IA.",
     subtitle: "Gestiona tu plan.",
     subscribedMsg: "Te has suscrito. Tu plan ya está activo.",
+    welcomeTitle: "¡Bienvenido a {plan}!",
+    welcomeDesc: "Tu plan está activo. Esto es lo que acabas de desbloquear:",
+    welcomeTrialDesc: "Tu prueba gratuita de {days} días ha comenzado. No se te cobrará hasta el {date}.",
+    welcomeActivating: "Activando tu plan…",
+    welcomeCta: "Configurar reservas",
+    welcomeClose: "Explorar más tarde",
     paymentReceivedMsg: "Pago recibido. Tus créditos se han añadido.",
     canceledMsg: "Pago cancelado. No se ha cobrado nada.",
     compTitle: "Tienes acceso Pro de cortesía.",
@@ -8172,6 +8202,12 @@ const ja: Translations = {
     subtitleWithAi: "プランとAIクレジットを管理します。",
     subtitle: "プランを管理します。",
     subscribedMsg: "ご登録ありがとうございます。プランが有効になりました。",
+    welcomeTitle: "{plan}へようこそ！",
+    welcomeDesc: "プランが有効になりました。利用できるようになった機能はこちら：",
+    welcomeTrialDesc: "{days}日間の無料トライアルが始まりました。{date}まで請求は発生しません。",
+    welcomeActivating: "プランを有効化しています…",
+    welcomeCta: "予約を設定する",
+    welcomeClose: "あとで見る",
     paymentReceivedMsg: "お支払いを受け付けました。クレジットが追加されました。",
     canceledMsg: "チェックアウトがキャンセルされました。請求は発生していません。",
     compTitle: "無料のPro特典をご利用いただけます。",
@@ -9715,6 +9751,12 @@ const de: Translations = {
     subtitleWithAi: "Verwalte deinen Plan und deine KI-Credits.",
     subtitle: "Verwalte deinen Plan.",
     subscribedMsg: "Du bist abonniert. Dein Plan ist jetzt aktiv.",
+    welcomeTitle: "Willkommen bei {plan}!",
+    welcomeDesc: "Dein Plan ist aktiv. Das hast du gerade freigeschaltet:",
+    welcomeTrialDesc: "Deine {days}-tägige Gratis-Testphase hat begonnen. Abgebucht wird erst am {date}.",
+    welcomeActivating: "Dein Plan wird aktiviert…",
+    welcomeCta: "Buchungen einrichten",
+    welcomeClose: "Später ansehen",
     paymentReceivedMsg: "Zahlung erhalten. Deine Credits wurden hinzugefügt.",
     canceledMsg: "Checkout abgebrochen. Es wurde nichts berechnet.",
     compTitle: "Du hast kostenlosen Pro-Zugang.",
@@ -11258,6 +11300,12 @@ const it: Translations = {
     subtitleWithAi: "Gestisci il tuo piano e i crediti IA.",
     subtitle: "Gestisci il tuo piano.",
     subscribedMsg: "Ti sei abbonato. Il tuo piano è ora attivo.",
+    welcomeTitle: "Benvenuto in {plan}!",
+    welcomeDesc: "Il tuo piano è attivo. Ecco cosa hai appena sbloccato:",
+    welcomeTrialDesc: "La tua prova gratuita di {days} giorni è iniziata. Non ti verrà addebitato nulla fino al {date}.",
+    welcomeActivating: "Attivazione del piano in corso…",
+    welcomeCta: "Configura le prenotazioni",
+    welcomeClose: "Esplora più tardi",
     paymentReceivedMsg: "Pagamento ricevuto. I tuoi crediti sono stati aggiunti.",
     canceledMsg: "Checkout annullato. Non è stato addebitato nulla.",
     compTitle: "Hai accesso Pro in omaggio.",

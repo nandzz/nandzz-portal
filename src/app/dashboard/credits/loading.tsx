@@ -4,7 +4,7 @@ import { PageShell } from "@/components/layout/PageShell";
 export default function SubscriptionLoading() {
   return (
     <PageShell width="content">
-      {/* Header — mirrors dashboard/credits/page.tsx. */}
+      {/* Header — mirrors dashboard/credits/SubscriptionView.tsx. */}
       <div className="mb-10 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
           <Sparkles className="h-5 w-5 text-violet-600 dark:text-violet-400" />

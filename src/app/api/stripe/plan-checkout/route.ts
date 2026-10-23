@@ -127,7 +127,7 @@ async function createSession({
     mode: "subscription",
     customer: customerId,
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${siteUrl}/dashboard/credits?subscribed=1`,
+    success_url: `${siteUrl}/dashboard/subscribed?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl}/dashboard/credits?canceled=1`,
     allow_promotion_codes: true,
     ...(await checkoutLegalParams("subscription", siteUrl)),
