@@ -3,21 +3,49 @@
 import type { ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import { Check } from "lucide-react";
+import { useReduceMotion } from "./phone";
 
-export type SlidePos = -1 | 0 | 1; // before / current / after the active slide
+export type SlidePos = -1 | 0 | 1; // parked left / shown / parked right
+
+export const SLIDE_S = 0.75;
+const slideTransition = { duration: SLIDE_S, ease: [0.32, 0.72, 0, 1] } as const;
 
 // Text and phone of a slide move as one block: both sides park a full viewport
 // away and glide in on the same curve, so they read as a single carousel slide.
+// `custom` is the side a slide must jump to before entering (0 = it's already
+// parked on the side it enters from), so a forward move always enters from the
+// right, even when wrapping from the last slide to the first.
 export const slideMove: Variants = {
-  "-1": { transform: "translateX(-100vw)", opacity: 0, transition: { duration: 0.75, ease: [0.32, 0.72, 0, 1] } },
-  "0": { transform: "translateX(0vw)", opacity: 1, transition: { duration: 0.75, ease: [0.32, 0.72, 0, 1] } },
-  "1": { transform: "translateX(100vw)", opacity: 0, transition: { duration: 0.75, ease: [0.32, 0.72, 0, 1] } },
+  "-1": { transform: "translateX(-100vw)", opacity: 0, transition: slideTransition },
+  "0": (from: SlidePos = 0) =>
+    from
+      ? { transform: [`translateX(${from * 100}vw)`, "translateX(0vw)"], opacity: [0, 1], transition: slideTransition }
+      : { transform: "translateX(0vw)", opacity: 1, transition: slideTransition },
+  "1": { transform: "translateX(100vw)", opacity: 0, transition: slideTransition },
+};
+
+// Reduced motion: slides cross-fade in place.
+export const slideFade: Variants = {
+  "-1": { opacity: 0, transition: { duration: 0.3 } },
+  "0": { opacity: 1, transition: { duration: 0.3 } },
+  "1": { opacity: 0, transition: { duration: 0.3 } },
 };
 
 // Every slide's text lives in the same grid cell, so the column keeps the height
 // of the tallest one and the static buttons below never jump.
-export function Panel({ pos, label, children }: { pos: SlidePos; label: string; children: ReactNode }) {
+export function Panel({
+  pos,
+  from,
+  label,
+  children,
+}: {
+  pos: SlidePos;
+  from: SlidePos;
+  label: string;
+  children: ReactNode;
+}) {
   const active = pos === 0;
+  const reduce = useReduceMotion();
   return (
     <motion.div
       role="group"
@@ -28,7 +56,8 @@ export function Panel({ pos, label, children }: { pos: SlidePos; label: string; 
       className={`[grid-area:stack] self-center ${active ? "" : "pointer-events-none"}`}
       initial={false}
       animate={String(pos)}
-      variants={slideMove}
+      custom={from}
+      variants={reduce ? slideFade : slideMove}
     >
       {children}
     </motion.div>
@@ -51,6 +80,8 @@ export function PanelHeading({ eyebrow, title }: { eyebrow: string; title: strin
 }
 
 // The guide list: follows the phone step by step, and picking an item jumps to it.
+// An invisible copy with the longest line open sizes it, so the list keeps one
+// height whichever step is open (and the phone below it doesn't bob on mobile).
 export function StepList({
   items,
   step,
@@ -60,22 +91,42 @@ export function StepList({
   step: number;
   onPick: (i: number) => void;
 }) {
+  const longest = items.reduce((m, item, i) => (item.desc.length > items[m].desc.length ? i : m), 0);
   return (
-    <ol className="mt-7 space-y-0.5">
+    <div className="mt-7 grid [grid-template-areas:'list']">
+      <StepItems items={items} step={step} onPick={onPick} />
+      <div aria-hidden inert className="invisible [grid-area:list]">
+        <StepItems items={items} step={longest} />
+      </div>
+    </div>
+  );
+}
+
+function StepItems({
+  items,
+  step,
+  onPick,
+}: {
+  items: { label: string; desc: string }[];
+  step: number;
+  onPick?: (i: number) => void;
+}) {
+  return (
+    <ol className="space-y-0.5 self-start [grid-area:list]">
       {items.map((item, i) => {
         const current = i === step;
         return (
           <li key={item.label}>
             <button
               type="button"
-              onClick={() => onPick(i)}
+              onClick={() => onPick?.(i)}
               aria-current={current ? "step" : undefined}
-              className={`group flex w-full items-start gap-3.5 rounded-2xl px-3 py-2.5 text-left transition-[opacity,background-color] duration-300 ${
+              className={`group flex w-full items-start gap-3.5 rounded-2xl px-3 py-2.5 text-left transition-[opacity,background-color,box-shadow] duration-300 ${
                 current ? "clay" : "opacity-55 [@media(hover:hover)]:hover:opacity-85"
               }`}
             >
               <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums transition-colors duration-300 ${
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums transition-[background-color,color,box-shadow] duration-300 ${
                   current ? "clay-violet" : "clay-well"
                 }`}
               >

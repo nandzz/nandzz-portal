@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ComponentType, type CSSProperties, type ReactNode, type Ref } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowUpRight,
   Ban,
@@ -24,8 +24,9 @@ import {
 import { InstagramIcon, YoutubeIcon } from "@/features/profile/components/BrandIcons";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { ShowcaseCopy } from "./content";
-import { Photo, type PhotoId } from "./Photo";
-import { EASE_OUT, TapRing, StatusBar } from "./phone";
+import { GALLERY_SIZES, Photo, type PhotoId } from "./Photo";
+import { EASE_OUT, TAP_LAND, TapRing, StatusBar, still, useReduceMotion } from "./phone";
+import { SLIDES } from "./slides";
 
 // Every screen mirrors a real Nandzz surface — keep them truthful:
 //   profile  → src/app/[username]/(profile)/page.tsx + ProfileHeader (header
@@ -105,10 +106,9 @@ function ScreenRoot({
   overlay?: ReactNode;
 }) {
   return (
-    <div
-      className="absolute inset-0 bg-(--s-bg) text-(--s-text) transition-[background-color,color] duration-500"
-      style={vars as CSSProperties}
-    >
+    // `showcase-vars` eases the palette vars themselves, so every color built
+    // on them (text, muted text, the top tint) changes in step.
+    <div className="showcase-vars absolute inset-0 bg-(--s-bg) text-(--s-text)" style={vars as CSSProperties}>
       <StatusBar />
       <div
         ref={rootRef}
@@ -117,7 +117,7 @@ function ScreenRoot({
       >
         <div
           aria-hidden
-          className="absolute inset-x-0 top-0 h-[130px] bg-[linear-gradient(180deg,var(--s-cover),transparent)] transition-[background-image] duration-500"
+          className="absolute inset-x-0 top-0 h-[130px] bg-[linear-gradient(180deg,var(--s-cover),transparent)]"
         />
         {children}
       </div>
@@ -141,8 +141,7 @@ const SOCIALS: Record<SocialKey, { Icon: ComponentType<{ className?: string }>; 
   whatsapp: { Icon: WhatsAppIcon, label: "WhatsApp" },
 };
 
-const SURFACE =
-  "border border-(--s-text)/10 bg-(--s-btn) text-(--s-btn-text) transition-[background-color,color,border-color] duration-500";
+const SURFACE = "border border-(--s-text)/10 bg-(--s-btn) text-(--s-btn-text)";
 
 function SocialRow({ keys, layout, anchor }: { keys: SocialKey[]; layout: SocialLayout; anchor?: string }) {
   const ordered = SOCIAL_ORDER.filter((k) => keys.includes(k));
@@ -313,12 +312,20 @@ function SectionTitle({ title, count, anchor }: { title: string; count: number; 
   );
 }
 
-// Gallery "grid" layout (the default): 3 square columns.
-function GalleryGrid({ photos, hue }: { photos: PhotoId[]; hue: number }) {
+// Gallery "grid" layout (the default): 3 square columns. `eager` for the first
+// slide's photos, which are on screen at load.
+function GalleryGrid({ photos, hue, eager }: { photos: PhotoId[]; hue: number; eager?: boolean }) {
   return (
     <div className="grid grid-cols-3 gap-1 px-4">
       {photos.map((id, i) => (
-        <Photo key={id} id={id} hue={hue + i * 18} sizes="120px" className="aspect-square rounded-md" />
+        <Photo
+          key={id}
+          id={id}
+          hue={hue + i * 18}
+          sizes={eager ? GALLERY_SIZES : "120px"}
+          eager={eager}
+          className="aspect-square rounded-md"
+        />
       ))}
     </div>
   );
@@ -379,14 +386,14 @@ function LinkPills({ labels }: { labels: readonly string[] }) {
 
 /* ───────────────────────── Shared step timing ───────────────────────── */
 
-// Flips true a beat after a step starts: the moment the "finger" taps.
-function useTapped(step: number, delay = 650) {
-  const reduce = useReducedMotion();
+// Flips true when the step's tap (a TapRing with delay `tap`, in seconds) lands.
+function useTapped(step: number, tap: number) {
+  const reduce = useReduceMotion();
   const [tapped, setTapped] = useState<number | null>(null);
   useEffect(() => {
-    const t = setTimeout(() => setTapped(step), reduce ? 0 : delay);
+    const t = setTimeout(() => setTapped(step), reduce ? 0 : (tap + TAP_LAND) * 1000);
     return () => clearTimeout(t);
-  }, [step, delay, reduce]);
+  }, [step, tap, reduce]);
   return tapped === step;
 }
 
@@ -406,6 +413,7 @@ export function HeroScreen({ scrollY, rootRef, mock }: ScreenProps) {
       <GalleryGrid
         photos={["velora-gallery-1", "velora-gallery-2", "velora-gallery-3", "velora-gallery-4", "velora-gallery-5", "velora-gallery-6"]}
         hue={30}
+        eager
       />
     </ScreenRoot>
   );
@@ -486,6 +494,11 @@ const SERVICE_META = [
 ];
 const euro = (n: number) => `€${n.toFixed(2)}`;
 
+// Each step's last tap (Continue, a time slot, Confirm) lands just before the
+// carousel moves to the next step, so the flow reacts right after the tap.
+const BOOKING_STEP_S = SLIDES.find((s) => s.kind === "booking")!.stepMs / 1000;
+const ADVANCE_TAP = BOOKING_STEP_S - TAP_LAND - 0.35;
+
 function Option({ on, children, className = "" }: { on: boolean; children: ReactNode; className?: string }) {
   return (
     <div
@@ -544,10 +557,12 @@ const ICON_BADGE =
   "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--s-accent)_15%,var(--s-bg))] text-(--s-accent)";
 
 export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenProps & { locale: string }) {
+  const reduce = useReduceMotion();
   // Step 0 first taps "Book now" on the profile; the booking page then pushes in.
   const [pushIn] = useState(step === 0);
-  const tap = step === 0 && pushIn ? 1.4 : 0.55;
-  const tapped = useTapped(step, tap * 1000 + 100);
+  // Picking a time goes straight on, so on that step the pick is the advancing tap.
+  const tap = step === 0 && pushIn ? 1.25 : step === 2 ? ADVANCE_TAP : 0.55;
+  const tapped = useTapped(step, tap);
 
   const dayFmt = new Intl.DateTimeFormat(locale, { weekday: "short", month: "short", day: "numeric" });
   const timeFmt = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" });
@@ -599,7 +614,7 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
       <motion.div
         className="space-y-2 pt-1"
         initial={false}
-        animate={{ opacity: tapped ? 1 : 0, transform: tapped ? "translateY(0px)" : "translateY(6px)" }}
+        animate={still({ opacity: tapped ? 1 : 0, transform: tapped ? "translateY(0px)" : "translateY(6px)" }, reduce)}
         transition={{ duration: 0.3, ease: EASE_OUT }}
       >
         <div className="flex items-center justify-between rounded-[10px] border border-(--s-accent)/40 bg-[color-mix(in_srgb,var(--s-accent)_7%,var(--s-bg))] px-3 py-2 text-[10.5px]">
@@ -612,7 +627,7 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
             <span className="font-semibold tabular-nums">{euro(svc.price)}</span>
           </span>
         </div>
-        <PrimaryButton tap={tap + 0.6}>
+        <PrimaryButton tap={ADVANCE_TAP}>
           {mock.continue}
           <ChevronRight className="h-3.5 w-3.5" />
         </PrimaryButton>
@@ -639,7 +654,7 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
           </Option>
         ))}
       </div>
-      <PrimaryButton tap={tap + 0.75}>
+      <PrimaryButton tap={ADVANCE_TAP}>
         {mock.continue}
         <ChevronRight className="h-3.5 w-3.5" />
       </PrimaryButton>
@@ -764,15 +779,15 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
         </span>
         {mock.whatsapp}
       </div>
-      <PrimaryButton tap={tap + 0.75}>{mock.confirm}</PrimaryButton>
+      <PrimaryButton tap={ADVANCE_TAP}>{mock.confirm}</PrimaryButton>
     </div>,
 
     // Done
     <div key="done" className="flex flex-col items-center pt-8 text-center">
       <motion.span
         className="flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--s-accent)_15%,var(--s-bg))] text-(--s-accent)"
-        initial={{ opacity: 0, transform: "scale(0.8)" }}
-        animate={{ opacity: 1, transform: "scale(1)" }}
+        initial={still({ opacity: 0, transform: "scale(0.8)" }, reduce)}
+        animate={still({ opacity: 1, transform: "scale(1)" }, reduce)}
         transition={{ type: "spring", duration: 0.5, bounce: 0.3, delay: 0.15 }}
       >
         <Check className="h-6 w-6" strokeWidth={2.5} />
@@ -789,8 +804,8 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
     <motion.div
       className="absolute inset-0 z-10 bg-(--s-bg) shadow-[-12px_0_30px_-14px_rgb(0_0_0_/_0.35)]"
       style={{ "--s-accent": EMERALD } as CSSProperties}
-      initial={pushIn ? { transform: "translateX(100%)" } : false}
-      animate={{ transform: "translateX(0%)" }}
+      initial={pushIn ? (reduce ? { opacity: 0 } : { transform: "translateX(100%)" }) : false}
+      animate={reduce ? { opacity: 1 } : { transform: "translateX(0%)" }}
       transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1], delay: 0.65 }}
     >
       <div
@@ -815,9 +830,9 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
           <motion.div
             key={step}
             className="absolute inset-0 p-3"
-            initial={{ opacity: 0, transform: "translateX(24px)" }}
-            animate={{ opacity: 1, transform: "translateX(0px)" }}
-            exit={{ opacity: 0, transform: "translateX(-18px)" }}
+            initial={still({ opacity: 0, transform: "translateX(24px)" }, reduce)}
+            animate={still({ opacity: 1, transform: "translateX(0px)" }, reduce)}
+            exit={still({ opacity: 0, transform: "translateX(-18px)" }, reduce)}
             transition={{ duration: 0.35, ease: EASE_OUT }}
           >
             {panels[step]}
@@ -866,7 +881,8 @@ function ColorGroup({
   tapIndex: number;
   defaultLabel: string;
 }) {
-  const swatch = "relative flex h-[25px] w-[25px] items-center justify-center rounded-full border transition-shadow duration-300";
+  const swatch =
+    "relative flex h-[25px] w-[25px] items-center justify-center rounded-full border transition-[border-color,box-shadow] duration-300";
   const on = "border-violet-500 ring-2 ring-violet-500/40";
   return (
     <div>
@@ -977,8 +993,9 @@ function LayoutGrid({ label, options, hints, selected, tap }: { label: string; o
 }
 
 export function StyleScreen({ step, scrollY, rootRef, mock }: ScreenProps) {
+  const reduce = useReduceMotion();
   const tap = step === 0 ? 1.15 : 0.55; // step 0 waits for the sheet to land
-  const tapped = useTapped(step, tap * 1000 + 100);
+  const tapped = useTapped(step, tap);
   const level = step + (tapped ? 1 : 0); // how many of the 4 changes are applied
   // The booking color was already set to the "Pink" preset; this tour changes its look.
   const vars: ScreenVars = {
@@ -1023,9 +1040,9 @@ export function StyleScreen({ step, scrollY, rootRef, mock }: ScreenProps) {
   // behind previews every change live.
   const sheet = (
     <motion.div
-      className="absolute inset-x-0 bottom-0 z-10 rounded-t-[22px] border-t border-(--s-text)/10 bg-(--s-bg)/95 pb-4 shadow-[0_-10px_30px_-12px_rgb(0_0_0_/_0.3)] backdrop-blur-md transition-[background-color] duration-500"
-      initial={{ transform: "translateY(100%)" }}
-      animate={{ transform: "translateY(0%)" }}
+      className="absolute inset-x-0 bottom-0 z-10 rounded-t-[22px] border-t border-(--s-text)/10 bg-(--s-bg)/95 pb-4 shadow-[0_-10px_30px_-12px_rgb(0_0_0_/_0.3)] backdrop-blur-md"
+      initial={reduce ? { opacity: 0 } : { transform: "translateY(100%)" }}
+      animate={reduce ? { opacity: 1 } : { transform: "translateY(0%)" }}
       transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1], delay: 0.25 }}
     >
       <span className="mx-auto mt-2 mb-1 block h-1 w-9 rounded-full bg-(--s-muted)/30" />
@@ -1058,8 +1075,8 @@ export function StyleScreen({ step, scrollY, rootRef, mock }: ScreenProps) {
           <motion.div
             key={step}
             className="absolute inset-0 px-4 pt-3"
-            initial={{ opacity: 0, transform: "translateY(6px)" }}
-            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            initial={still({ opacity: 0, transform: "translateY(6px)" }, reduce)}
+            animate={still({ opacity: 1, transform: "translateY(0px)" }, reduce)}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: EASE_OUT }}
           >

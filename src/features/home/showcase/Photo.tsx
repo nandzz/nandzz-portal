@@ -41,16 +41,22 @@ export const PHOTOS = {
 
 export type PhotoId = keyof typeof PHOTOS;
 
+// `sizes` shared by every render of the /home/gallery-* photos (hero phone and
+// the features section), so the browser picks one candidate and fetches it once.
+export const GALLERY_SIZES = "(min-width: 1024px) 180px, 30vw";
+
 export function Photo({
   id,
   hue = 290,
   sizes = "96px",
+  eager,
   className = "",
   style,
 }: {
   id: PhotoId;
   hue?: number; // placeholder tint, so neighbouring placeholders read as different pictures
   sizes?: string;
+  eager?: boolean; // above the fold at load: don't lazy-load
   className?: string;
   style?: CSSProperties;
 }) {
@@ -58,7 +64,7 @@ export function Photo({
   return (
     <span className={`relative block overflow-hidden ${className}`} style={style}>
       {src ? (
-        <Image src={src} alt="" fill sizes={sizes} className="object-cover" />
+        <Image src={src} alt="" fill sizes={sizes} loading={eager ? "eager" : undefined} className="object-cover" />
       ) : (
         <span
           className="showcase-placeholder absolute inset-0 flex items-center justify-center"

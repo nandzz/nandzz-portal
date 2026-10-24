@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -11,12 +10,12 @@ import {
   type PointerEvent,
 } from "react";
 import Link from "next/link";
-import { AnimatePresence, MotionConfig, motion, useMotionValue, useReducedMotion, useTransform, type PanInfo } from "motion/react";
+import { AnimatePresence, MotionConfig, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
 import { ArrowRight, BellRing, CalendarCheck, ChevronLeft, ChevronRight, Link2, Mail, Pause, Play } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { SHOWCASE_COPY, toShowcaseLocale, type ShowcaseCopy } from "./content";
-import { Chips, Panel, PanelHeading, PanelText, StepList, slideMove, type SlidePos } from "./panels";
-import { Callout, EASE_OUT, PhoneFrame, type Anchor } from "./phone";
+import { Chips, Panel, PanelHeading, PanelText, SLIDE_S, StepList, slideFade, slideMove, type SlidePos } from "./panels";
+import { Callout, EASE_OUT, PhoneFrame, still, useReduceMotion, type Anchor } from "./phone";
 import {
   AnatomyScreen,
   BookingScreen,
@@ -47,6 +46,7 @@ const pop = {
   animate: { opacity: 1, transform: "translateY(0px) scale(1)" },
   exit: { opacity: 0, transform: "translateY(6px) scale(0.97)", transition: { duration: 0.2 } },
 };
+const popFade = { initial: still(pop.initial, true), animate: still(pop.animate, true), exit: still(pop.exit, true) };
 
 const muted = "text-[color-mix(in_oklab,var(--clay-ink)_60%,transparent)]";
 
@@ -69,6 +69,7 @@ function offsetWithin(el: HTMLElement, root: HTMLElement) {
 function PhoneStage({
   i,
   pos,
+  from,
   step,
   visit,
   copy,
@@ -77,6 +78,7 @@ function PhoneStage({
 }: {
   i: number;
   pos: SlidePos;
+  from: SlidePos;
   step: number;
   visit: number;
   copy: ShowcaseCopy;
@@ -85,6 +87,8 @@ function PhoneStage({
 }) {
   const slide = SLIDES[i];
   const active = pos === 0;
+  const reduce = useReduceMotion();
+  const cardFx = reduce ? popFade : pop;
   const anchorIds = ANCHORS[slide.kind];
   const rootRef = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState<{ anchors: Record<string, Anchor>; height: number } | null>(null);
@@ -144,13 +148,10 @@ function PhoneStage({
       data-annotated={slide.annotated || undefined}
       initial={false}
       animate={String(pos)}
-      variants={slideMove}
+      custom={from}
+      variants={reduce ? slideFade : slideMove}
       inert={!active}
     >
-      <div
-        className="pointer-events-none absolute -inset-16 rounded-full blur-3xl"
-        style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
-      />
       <div className="showcase-phone relative">
         <PhoneFrame>{screen}</PhoneFrame>
 
@@ -163,11 +164,21 @@ function PhoneStage({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, transition: { delay: 0.6, duration: 0.3 } }}
             >
-              {anchorIds.slice(0, step + 1).map((id, n) =>
-                measured.anchors[id] ? (
-                  <Callout key={id} anchor={measured.anchors[id]} scrollY={scrollY} label={calloutLabels[n].label} active={n === step} />
-                ) : null,
-              )}
+              <AnimatePresence>
+                {anchorIds.slice(0, step + 1).map((id, n) =>
+                  measured.anchors[id] ? (
+                    <motion.div key={id} className="absolute inset-0" exit={{ opacity: 0, transition: { duration: 0.2 } }}>
+                      <Callout
+                        anchor={measured.anchors[id]}
+                        scrollY={scrollY}
+                        label={calloutLabels[n].label}
+                        active={n === step}
+                        delay={n === step && n > 0 && !reduce ? 0.7 : 0}
+                      />
+                    </motion.div>
+                  ) : null,
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
@@ -175,7 +186,7 @@ function PhoneStage({
             {slide.kind === "hero" && active && (
               <motion.div key="hero-cards" className="absolute inset-0" exit={{ opacity: 0, transition: { duration: 0.2 } }}>
                 <motion.div
-                  {...pop}
+                  {...cardFx}
                   transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.45 }}
                   className="clay absolute top-[7%] -left-6 flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-24"
                 >
@@ -188,7 +199,7 @@ function PhoneStage({
                   </span>
                 </motion.div>
                 <motion.div
-                  {...pop}
+                  {...cardFx}
                   transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.65 }}
                   className="clay absolute -right-6 bottom-[10%] flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2 sm:-right-20"
                 >
@@ -211,7 +222,7 @@ function PhoneStage({
                   return (
                     <motion.div
                       key={toast.label}
-                      {...pop}
+                      {...cardFx}
                       transition={{ duration: 0.45, ease: EASE_OUT, delay: 0.5 + n * 0.25 }}
                       className={`clay absolute z-10 flex items-center gap-2.5 rounded-2xl py-2 pr-3.5 pl-2 ${place}`}
                     >
@@ -238,41 +249,80 @@ function PhoneStage({
 
 /* ───────────────────────── The carousel ───────────────────────── */
 
+type Track = {
+  index: number;
+  step: number;
+  pos: SlidePos[]; // where each slide sits or is heading
+  from: SlidePos; // side the current slide jumped to before entering (0 = none)
+  held: number[]; // the step each slide keeps showing while it's away
+  visits: number[];
+};
+
+const START: Track = {
+  index: 0,
+  step: 0,
+  pos: SLIDES.map((_, n) => (n === 0 ? 0 : 1)),
+  from: 0,
+  held: SLIDES.map((s) => s.steps - 1),
+  visits: SLIDES.map(() => 0),
+};
+
 export function HeroShowcase() {
   const { t, locale } = useLanguage();
   const h = t.home;
   const copy = SHOWCASE_COPY[toShowcaseLocale(locale)];
-  const reduce = useReducedMotion();
+  const reduce = useReduceMotion();
 
   /* ── Playback ── */
-  const [index, setIndex] = useState(0);
-  const [step, setStep] = useState(0);
-  const [visits, setVisits] = useState(() => SLIDES.map(() => 0));
+  const [track, setTrack] = useState(START);
+  const { index, step } = track;
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [offscreen, setOffscreen] = useState(false);
   const [userPaused, setUserPaused] = useState<boolean | null>(null);
-  const stopped = userPaused ?? !!reduce; // reduced motion: no autoplay until asked
+  const [announced, setAnnounced] = useState("");
+  const stopped = userPaused ?? reduce; // reduced motion: no autoplay until asked
   const paused = stopped || hovered || focused || offscreen;
 
   const elapsed = useRef(0);
+  // The slide that just left, so coming straight back resumes it instead of restarting.
+  const left = useRef<{ slide: number; elapsed: number; at: number } | null>(null);
   const progress = useMotionValue(0);
   const fill = useTransform(progress, (p) => `scaleX(${p})`);
 
-  const goTo = useCallback(
-    (target: number, atStep?: number) => {
-      const next = (target + SLIDES.length) % SLIDES.length;
-      const slide = SLIDES[next];
-      // Reduced motion lands on the last step, so every callout is already shown.
-      const s = atStep ?? (reduce ? slide.steps - 1 : 0);
-      elapsed.current = s * slide.stepMs;
-      progress.set(elapsed.current / slideDuration(slide));
-      if (next !== index) setVisits((v) => v.map((n, k) => (k === next ? n + 1 : n)));
-      setIndex(next);
-      setStep(s);
-    },
-    [index, progress, reduce],
-  );
+  const names = copy.controls.names;
+  const slideOf = (n: number) =>
+    copy.controls.slideOf.replace("{n}", String(n + 1)).replace("{total}", String(SLIDES.length));
+  const label = (n: number) => `${names[n]}, ${slideOf(n)}`;
+
+  // `dir` is the way the carousel moves: 1 = forward (enters from the right).
+  // `user` marks a change the visitor asked for, which screen readers announce.
+  const goTo = (target: number, dir: 1 | -1, user = false) => {
+    const next = (target + SLIDES.length) % SLIDES.length;
+    if (next === index) return;
+    const slide = SLIDES[next];
+    const now = performance.now();
+    const back = left.current?.slide === next && now - left.current.at < SLIDE_S * 1000;
+    const resumeAt = back ? left.current!.elapsed : null;
+    left.current = { slide: index, elapsed: elapsed.current, at: now };
+    // Reduced motion lands on the last step, so every callout is already shown.
+    const s = back ? track.held[next] : reduce ? slide.steps - 1 : 0;
+    elapsed.current = resumeAt ?? s * slide.stepMs;
+    progress.set(elapsed.current / slideDuration(slide));
+    setTrack({
+      index: next,
+      step: s,
+      pos: track.pos.map((p, n) => (n === next ? 0 : n === index ? (-dir as SlidePos) : p)),
+      from: track.pos[next] === dir ? 0 : dir,
+      held: track.held.map((held, n) => (n === index ? step : held)),
+      visits: back ? track.visits : track.visits.map((v, n) => (n === next ? v + 1 : v)),
+    });
+    if (user) setAnnounced(label(next));
+  };
+  const goToRef = useRef(goTo);
+  useLayoutEffect(() => {
+    goToRef.current = goTo;
+  });
 
   useEffect(() => {
     if (paused) return;
@@ -284,16 +334,17 @@ export function HeroShowcase() {
       elapsed.current += Math.min(now - last, 64);
       last = now;
       if (elapsed.current >= total) {
-        goTo(index + 1);
+        goToRef.current(index + 1, 1);
         return;
       }
       progress.set(elapsed.current / total);
-      setStep(Math.min(slide.steps - 1, Math.floor(elapsed.current / slide.stepMs)));
+      const s = Math.min(slide.steps - 1, Math.floor(elapsed.current / slide.stepMs));
+      setTrack((t) => (t.step === s ? t : { ...t, step: s }));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused, index, goTo, progress]);
+  }, [paused, index, progress]);
 
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -306,7 +357,9 @@ export function HeroShowcase() {
 
   // Picking a guide item jumps there and holds, so it reads like a manual.
   const pickStep = (n: number) => {
-    goTo(index, n);
+    elapsed.current = n * SLIDES[index].stepMs;
+    progress.set(elapsed.current / slideDuration(SLIDES[index]));
+    setTrack((t) => ({ ...t, step: n }));
     setUserPaused(true);
   };
 
@@ -318,8 +371,8 @@ export function HeroShowcase() {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
   };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "ArrowRight") goTo(index + 1);
-    else if (e.key === "ArrowLeft") goTo(index - 1);
+    if (e.key === "ArrowRight") goTo(index + 1, 1, true);
+    else if (e.key === "ArrowLeft") goTo(index - 1, -1, true);
     else return;
     e.preventDefault();
   };
@@ -327,15 +380,13 @@ export function HeroShowcase() {
     if (e.pointerType === "mouse") return; // swipes are for touch; a mouse drag is text selection
     if (Math.abs(info.offset.x) < Math.abs(info.offset.y)) return; // vertical scroll, not a swipe
     if (Math.abs(info.offset.x) < 50 && Math.abs(info.velocity.x) < 400) return;
-    goTo(info.offset.x < 0 ? index + 1 : index - 1);
+    if (info.offset.x < 0) goTo(index + 1, 1, true);
+    else goTo(index - 1, -1, true);
   };
 
-  const names = copy.controls.names;
-  const slideOf = (n: number) =>
-    copy.controls.slideOf.replace("{n}", String(n + 1)).replace("{total}", String(SLIDES.length));
-  const posOf = (n: number): SlidePos => (n < index ? -1 : n > index ? 1 : 0);
-  const stepOf = (n: number) => (n === index ? step : SLIDES[n].steps - 1);
-  const label = (n: number) => `${names[n]}, ${slideOf(n)}`;
+  const posOf = (n: number) => track.pos[n];
+  const fromOf = (n: number): SlidePos => (n === index ? track.from : 0);
+  const stepOf = (n: number) => (n === index ? step : track.held[n]);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -349,34 +400,36 @@ export function HeroShowcase() {
           className="mx-auto grid max-w-7xl items-center gap-x-10 gap-y-12 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:pb-24"
           style={{ touchAction: "pan-y" }}
           onPanEnd={onPanEnd}
-          onPointerEnter={onPointerEnter}
-          onPointerLeave={onPointerLeave}
           onFocus={onFocus}
           onBlur={onBlur}
         >
           {/* ── Text: one panel per slide in a single grid cell; the buttons below stay put ── */}
           <div className="max-w-2xl">
+            <h1 className="sr-only">
+              {h.heroLine1} {h.heroLine2.replace(/\*/g, "")}
+            </h1>
             <div className="grid [grid-template-areas:'stack']">
-              <Panel pos={posOf(0)} label={label(0)}>
-                <h1 className="text-[clamp(2.6rem,5.6vw,4.4rem)] leading-[1.02] font-bold tracking-[-0.035em]">
+              <Panel pos={posOf(0)} from={fromOf(0)} label={label(0)}>
+                {/* The visible headline leaves with slide 1; the h1 for assistive tech and crawlers stays put (below). */}
+                <p aria-hidden className="text-[clamp(2.6rem,5.6vw,4.4rem)] leading-[1.02] font-bold tracking-[-0.035em]">
                   {h.heroLine1}
                   <br />
                   <Highlighted text={h.heroLine2} />
-                </h1>
+                </p>
                 <PanelText>{h.heroDescription}</PanelText>
               </Panel>
 
-              <Panel pos={posOf(1)} label={label(1)}>
+              <Panel pos={posOf(1)} from={fromOf(1)} label={label(1)}>
                 <PanelHeading eyebrow={copy.anatomy.eyebrow} title={copy.anatomy.title} />
                 <StepList items={copy.anatomy.items} step={index === 1 ? step : -1} onPick={pickStep} />
               </Panel>
 
-              <Panel pos={posOf(2)} label={label(2)}>
+              <Panel pos={posOf(2)} from={fromOf(2)} label={label(2)}>
                 <PanelHeading eyebrow={copy.content.eyebrow} title={copy.content.title} />
                 <StepList items={copy.content.items} step={index === 2 ? step : -1} onPick={pickStep} />
               </Panel>
 
-              <Panel pos={posOf(3)} label={label(3)}>
+              <Panel pos={posOf(3)} from={fromOf(3)} label={label(3)}>
                 <PanelHeading eyebrow={copy.booking.eyebrow} title={copy.booking.title} />
                 <StepList items={copy.booking.steps} step={index === 3 ? step : -1} onPick={pickStep} />
                 <div className="hidden sm:block">
@@ -384,17 +437,17 @@ export function HeroShowcase() {
                 </div>
               </Panel>
 
-              <Panel pos={posOf(4)} label={label(4)}>
+              <Panel pos={posOf(4)} from={fromOf(4)} label={label(4)}>
                 <PanelHeading eyebrow={copy.style.eyebrow} title={copy.style.title} />
                 <StepList items={copy.style.items} step={index === 4 ? step : -1} onPick={pickStep} />
               </Panel>
 
-              <Panel pos={posOf(5)} label={label(5)}>
+              <Panel pos={posOf(5)} from={fromOf(5)} label={label(5)}>
                 <PanelHeading eyebrow={copy.links.eyebrow} title={copy.links.title} />
                 <PanelText>{copy.links.desc}</PanelText>
               </Panel>
 
-              <Panel pos={posOf(6)} label={label(6)}>
+              <Panel pos={posOf(6)} from={fromOf(6)} label={label(6)}>
                 <PanelHeading eyebrow={copy.gallery.eyebrow} title={copy.gallery.title} />
                 <PanelText>{copy.gallery.desc}</PanelText>
               </Panel>
@@ -411,7 +464,7 @@ export function HeroShowcase() {
               </Link>
               <Link
                 href="#how"
-                className="clay inline-flex min-h-12 flex-auto items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
+                className="clay inline-flex min-h-12 flex-auto items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform [@media(hover:hover)]:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
               >
                 {h.howItWorks}
               </Link>
@@ -420,14 +473,26 @@ export function HeroShowcase() {
 
           {/* ── Phones: one per slide, moving in lockstep with their text ── */}
           <div className="flex flex-col items-center">
-            <div className="grid [grid-template-areas:'stack']" aria-hidden>
+            {/* Hovering the phone (not the whole hero) holds the slide */}
+            <div
+              className="relative grid [grid-template-areas:'stack']"
+              aria-hidden
+              onPointerEnter={onPointerEnter}
+              onPointerLeave={onPointerLeave}
+            >
+              {/* One soft glow behind the stack, instead of a blurred one per phone */}
+              <div
+                className="pointer-events-none absolute -inset-16 rounded-full"
+                style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
+              />
               {SLIDES.map((_, n) => (
                 <PhoneStage
                   key={n}
                   i={n}
                   pos={posOf(n)}
+                  from={fromOf(n)}
                   step={stepOf(n)}
-                  visit={visits[n]}
+                  visit={track.visits[n]}
                   copy={copy}
                   locale={locale}
                   heroCards={{ toastTitle: h.mockToastTitle, toastBody: h.mockToastBody, linkLabel: h.mockLinkLabel }}
@@ -439,7 +504,7 @@ export function HeroShowcase() {
             <div className="mt-8 flex items-center gap-2" role="group" aria-label={copy.controls.region} onKeyDown={onKeyDown}>
               <button
                 type="button"
-                onClick={() => goTo(index - 1)}
+                onClick={() => goTo(index - 1, -1, true)}
                 aria-label={copy.controls.prev}
                 className="clay hidden h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95 sm:flex"
               >
@@ -450,7 +515,7 @@ export function HeroShowcase() {
                   <button
                     key={n}
                     type="button"
-                    onClick={() => goTo(n)}
+                    onClick={() => goTo(n, n > index ? 1 : -1, true)}
                     aria-label={label(n)}
                     aria-current={n === index ? "true" : undefined}
                     className="flex-1 py-3"
@@ -466,7 +531,7 @@ export function HeroShowcase() {
               </div>
               <button
                 type="button"
-                onClick={() => goTo(index + 1)}
+                onClick={() => goTo(index + 1, 1, true)}
                 aria-label={copy.controls.next}
                 className="clay hidden h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95 sm:flex"
               >
@@ -481,8 +546,9 @@ export function HeroShowcase() {
                 {stopped ? <Play className="h-3.5 w-3.5" aria-hidden /> : <Pause className="h-3.5 w-3.5" aria-hidden />}
               </button>
             </div>
-            <p className="sr-only" aria-live={stopped ? "polite" : "off"}>
-              {label(index)}
+            {/* Only changes the visitor makes are announced; autoplay stays quiet */}
+            <p className="sr-only" aria-live="polite">
+              {announced}
             </p>
           </div>
         </motion.div>

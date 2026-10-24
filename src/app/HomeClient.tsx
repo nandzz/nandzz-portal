@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, Clock, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { HeroShowcase } from "@/features/home";
+import { GALLERY_SIZES, HeroShowcase } from "@/features/home";
 
 const SERVICE_META = [
   { minutes: 45, price: 30 },
@@ -56,7 +56,7 @@ export function HomeClient() {
                   key={src}
                   className={`relative aspect-[5/4] overflow-hidden rounded-xl sm:rounded-2xl ${i === 1 ? "-translate-y-1.5 shadow-lg shadow-violet-900/15" : ""}`}
                 >
-                  <Image src={src} alt="" fill sizes="(min-width: 1024px) 180px, 30vw" className="object-cover" />
+                  <Image src={src} alt="" fill sizes={GALLERY_SIZES} className="object-cover" />
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Mail, Globe, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,11 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
   // onClosed calls onClose. The desktop dialog closes instantly, as before.
   const [open, setOpen] = useState(true);
   const dismiss = () => (sheet ? setOpen(false) : onClose());
+  // Rotating past the breakpoint mid-close swaps the sheet (and its onClosed)
+  // for the dialog, so finish the close here instead of reopening as a dialog.
+  useEffect(() => {
+    if (!open && !sheet) onClose();
+  }, [open, sheet, onClose]);
 
   const [displayName, setDisplayName] = useState(profile.display_name || "");
   const [tagline, setTagline] = useState(profile.tagline || "");
@@ -439,6 +444,7 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
       </Sheet>
     );
   }
+  if (!open) return null;
   return <CenteredDialog onRequestClose={requestClose}>{content}</CenteredDialog>;
 }
 
