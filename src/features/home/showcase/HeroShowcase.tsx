@@ -11,7 +11,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { AnimatePresence, MotionConfig, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
-import { ArrowRight, BellRing, CalendarCheck, ChevronLeft, ChevronRight, Link2, Mail, Pause, Play } from "lucide-react";
+import { ArrowRight, BellRing, CalendarCheck, ChevronLeft, ChevronRight, Link2, Mail } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { SHOWCASE_COPY, toShowcaseLocale, type ShowcaseCopy } from "./content";
 import { Chips, Panel, PanelHeading, PanelText, SLIDE_S, StepList, slideFade, slideMove, type SlidePos } from "./panels";
@@ -317,11 +317,17 @@ export function HeroShowcase() {
       held: track.held.map((held, n) => (n === index ? step : held)),
       visits: back ? track.visits : track.visits.map((v, n) => (n === next ? v + 1 : v)),
     });
-    if (user) setAnnounced(label(next));
+    // Autoplay runs until the visitor takes over: any navigation of theirs stops it for good.
+    if (user) {
+      setAnnounced(label(next));
+      setUserPaused(true);
+    }
   };
   const goToRef = useRef(goTo);
+  const moveRef = useRef((dir: 1 | -1) => goTo(index + dir, dir, true));
   useLayoutEffect(() => {
     goToRef.current = goTo;
+    moveRef.current = (dir) => goTo(index + dir, dir, true);
   });
 
   useEffect(() => {
@@ -353,6 +359,37 @@ export function HeroShowcase() {
     const io = new IntersectionObserver(([e]) => setOffscreen(!e.isIntersecting), { threshold: 0.2 });
     io.observe(el);
     return () => io.disconnect();
+  }, []);
+
+  // Trackpad: a horizontal two-finger swipe moves one slide. Native and
+  // non-passive so it can also keep the browser's swipe-back gesture out.
+  const swipeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = swipeRef.current;
+    if (!el) return;
+    let travel = 0;
+    let moved = false;
+    let idle = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical: the page scrolls
+      e.preventDefault();
+      // One gesture (momentum included) moves one slide; it ends after a short lull.
+      clearTimeout(idle);
+      idle = window.setTimeout(() => {
+        travel = 0;
+        moved = false;
+      }, 180);
+      if (moved) return;
+      travel += e.deltaX;
+      if (Math.abs(travel) < 50) return;
+      moved = true;
+      moveRef.current(travel > 0 ? 1 : -1);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      clearTimeout(idle);
+    };
   }, []);
 
   // Picking a guide item jumps there and holds, so it reads like a manual.
@@ -390,14 +427,16 @@ export function HeroShowcase() {
 
   return (
     <MotionConfig reducedMotion="user">
+      {/* From lg up the hero fills the viewport under the navbar (h-16 + border) and centers its content in it */}
       <section
         ref={sectionRef}
         aria-roledescription="carousel"
         aria-label={copy.controls.region}
-        className="relative overflow-hidden"
+        className="relative overflow-hidden overscroll-x-contain lg:flex lg:min-h-[calc(100svh-4rem-1px)] lg:items-center"
       >
         <motion.div
-          className="mx-auto grid max-w-7xl items-center gap-x-10 gap-y-12 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:pb-24"
+          ref={swipeRef}
+          className="mx-auto grid w-full max-w-7xl items-center gap-x-10 gap-y-12 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-y-6 lg:py-10"
           style={{ touchAction: "pan-y" }}
           onPanEnd={onPanEnd}
           onFocus={onFocus}
@@ -500,52 +539,55 @@ export function HeroShowcase() {
               ))}
             </div>
 
-            {/* ── Controls (static) ── */}
-            <div className="mt-8 flex items-center gap-2" role="group" aria-label={copy.controls.region} onKeyDown={onKeyDown}>
-              <button
-                type="button"
-                onClick={() => goTo(index - 1, -1, true)}
-                aria-label={copy.controls.prev}
-                className="clay hidden h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95 sm:flex"
-              >
-                <ChevronLeft className="h-4 w-4" aria-hidden />
-              </button>
-              <div className="flex w-[13.5rem] gap-1.5">
-                {SLIDES.map((_, n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => goTo(n, n > index ? 1 : -1, true)}
-                    aria-label={label(n)}
-                    aria-current={n === index ? "true" : undefined}
-                    className="flex-1 py-3"
+          </div>
+
+          {/* ── Controls: centered under both columns. Dots, with the current slide
+              as a pill that fills while autoplay runs (full once it's stopped) ── */}
+          <div
+            className="-mt-4 flex items-center justify-center gap-3 lg:col-span-2 lg:mt-0"
+            role="group"
+            aria-label={copy.controls.region}
+            onKeyDown={onKeyDown}
+          >
+            <button
+              type="button"
+              onClick={() => goTo(index - 1, -1, true)}
+              aria-label={copy.controls.prev}
+              className="clay hidden h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95 sm:flex"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden />
+            </button>
+            <div className="flex items-center">
+              {SLIDES.map((_, n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => goTo(n, n > index ? 1 : -1, true)}
+                  aria-label={label(n)}
+                  aria-current={n === index ? "true" : undefined}
+                  className="group flex h-9 items-center px-1.5"
+                >
+                  <span
+                    className={`clay-well block h-2 overflow-hidden rounded-full transition-[width] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                      n === index ? "w-9" : "w-2"
+                    }`}
                   >
-                    <span className="clay-well block h-1.5 overflow-hidden rounded-full">
-                      <motion.span
-                        className="block h-full origin-left rounded-full bg-violet-600 dark:bg-violet-400"
-                        style={{ transform: n === index ? fill : n < index ? "scaleX(1)" : "scaleX(0)" }}
-                      />
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => goTo(index + 1, 1, true)}
-                aria-label={copy.controls.next}
-                className="clay hidden h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95 sm:flex"
-              >
-                <ChevronRight className="h-4 w-4" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={() => setUserPaused(!stopped)}
-                aria-label={stopped ? copy.controls.play : copy.controls.pause}
-                className="clay flex h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95"
-              >
-                {stopped ? <Play className="h-3.5 w-3.5" aria-hidden /> : <Pause className="h-3.5 w-3.5" aria-hidden />}
-              </button>
+                    <motion.span
+                      className="block h-full origin-left rounded-full bg-violet-600 dark:bg-violet-400"
+                      style={{ transform: n !== index ? "scaleX(0)" : stopped ? "scaleX(1)" : fill }}
+                    />
+                  </span>
+                </button>
+              ))}
             </div>
+            <button
+              type="button"
+              onClick={() => goTo(index + 1, 1, true)}
+              aria-label={copy.controls.next}
+              className="clay hidden h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95 sm:flex"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </button>
             {/* Only changes the visitor makes are announced; autoplay stays quiet */}
             <p className="sr-only" aria-live="polite">
               {announced}

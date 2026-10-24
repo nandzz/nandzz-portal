@@ -22,8 +22,6 @@ export type ShowcaseCopy = {
   controls: {
     region: string;
     slideOf: string; // "{n}" and "{total}" are replaced
-    pause: string;
-    play: string;
     prev: string;
     next: string;
     names: string[]; // one per slide, in order
@@ -109,8 +107,6 @@ const en: ShowcaseCopy = {
   controls: {
     region: "Example Nandzz pages",
     slideOf: "{n} of {total}",
-    pause: "Pause",
-    play: "Play",
     prev: "Previous",
     next: "Next",
     names: ["Intro", "Your page", "Content", "Booking", "Style", "Links first", "Gallery first"],
@@ -243,8 +239,6 @@ const it: ShowcaseCopy = {
   controls: {
     region: "Esempi di pagine Nandzz",
     slideOf: "{n} di {total}",
-    pause: "Pausa",
-    play: "Riproduci",
     prev: "Precedente",
     next: "Successivo",
     names: ["Intro", "La tua pagina", "Contenuti", "Prenotazione", "Stile", "Prima i link", "Prima la galleria"],
