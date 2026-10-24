@@ -360,7 +360,10 @@ export function HeroShowcase() {
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
-      elapsed.current += Math.min(now - last, 64);
+      // A frame's timestamp is when the frame began, which can be just before
+      // `last` was read (the effect starts mid-frame): never count time backwards,
+      // or the step goes to -1. Capped too, so a stalled tab doesn't skip ahead.
+      elapsed.current += Math.max(0, Math.min(now - last, 64));
       last = now;
       if (elapsed.current >= total) {
         goToRef.current(index + 1, 1);
