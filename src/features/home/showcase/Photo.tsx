@@ -18,7 +18,7 @@ export const PHOTOS = {
   "barber-gallery-1": showcase("barber-gallery-1"),
   "barber-gallery-2": showcase("barber-gallery-2"),
   "barber-gallery-3": "/home/gallery-2.webp", // barber at work, shared with the features section
-  "ink-avatar": null,
+  "ink-avatar": showcase("ink-logo"),
   "ink-publication-1": showcase("ink-publication-1"),
   "ink-publication-2": showcase("ink-publication-2"),
   "physio-avatar": null,
