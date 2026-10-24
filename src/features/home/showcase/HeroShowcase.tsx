@@ -368,7 +368,9 @@ export function HeroShowcase() {
       }
       progress.set(elapsed.current / total);
       const s = Math.min(slide.steps - 1, Math.floor(elapsed.current / slide.stepMs));
-      setTrack((t) => (t.step === s ? t : { ...t, step: s }));
+      // A frame can land after a click already moved to another slide: its step
+      // belongs to this one, so drop it.
+      setTrack((t) => (t.index !== index || t.step === s ? t : { ...t, step: s }));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
