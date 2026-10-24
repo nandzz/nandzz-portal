@@ -376,10 +376,23 @@ export function AuthForm({
         {/* Signup collects only email + password here; the username is chosen in
             the following "setup" step (shared with Google signups). */}
         {mode === "signup" && pendingUsername && (
-          <p className="rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
-            {t.claimPage.claiming}{" "}
-            <span className="font-semibold">nandzz.com/{pendingUsername}</span>
-          </p>
+          <div className="flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+            <p className="min-w-0 flex-1 truncate">
+              {t.claimPage.claiming}{" "}
+              <span className="font-semibold">nandzz.com/{pendingUsername}</span>
+            </p>
+            {/* Dropping the claimed name: the username step then starts empty. */}
+            <button
+              type="button"
+              onClick={() => {
+                clearPendingUsername();
+                setPendingUsername("");
+              }}
+              className="shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {t.claimPage.change}
+            </button>
+          </div>
         )}
         <div className="space-y-2">
           <Label htmlFor="email">{t.auth.email}</Label>

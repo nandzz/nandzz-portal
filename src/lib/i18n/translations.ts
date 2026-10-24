@@ -372,6 +372,7 @@ export type Translations = {
     learnMore: string;
     close: string;
     claiming: string;
+    change: string;
   };
   setup: {
     title: string;
@@ -1920,6 +1921,7 @@ const en: Translations = {
     learnMore: "Learn more about Nandzz",
     close: "Close",
     claiming: "Claiming",
+    change: "Change",
   },
   setup: {
     title: "One last step",
@@ -3468,6 +3470,7 @@ const pt: Translations = {
     learnMore: "Saiba mais sobre a Nandzz",
     close: "Fechar",
     claiming: "Garantindo",
+    change: "Alterar",
   },
   setup: {
     title: "Último passo",
@@ -5016,6 +5019,7 @@ const fr: Translations = {
     learnMore: "En savoir plus sur Nandzz",
     close: "Fermer",
     claiming: "Vous réservez",
+    change: "Modifier",
   },
   setup: {
     title: "Dernière étape",
@@ -6564,6 +6568,7 @@ const es: Translations = {
     learnMore: "Más información sobre Nandzz",
     close: "Cerrar",
     claiming: "Reservando",
+    change: "Cambiar",
   },
   setup: {
     title: "Un último paso",
@@ -8112,6 +8117,7 @@ const ja: Translations = {
     learnMore: "Nandzzについて",
     close: "閉じる",
     claiming: "取得するページ:",
+    change: "変更",
   },
   setup: {
     title: "最後のステップ",
@@ -9660,6 +9666,7 @@ const de: Translations = {
     learnMore: "Mehr über Nandzz",
     close: "Schließen",
     claiming: "Du sicherst dir",
+    change: "Ändern",
   },
   setup: {
     title: "Letzter Schritt",
@@ -11208,6 +11215,7 @@ const it: Translations = {
     learnMore: "Scopri di più su Nandzz",
     close: "Chiudi",
     claiming: "Stai creando",
+    change: "Cambia",
   },
   setup: {
     title: "Ultimo passo",
