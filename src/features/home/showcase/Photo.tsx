@@ -7,7 +7,7 @@ import { ImageIcon } from "lucide-react";
 const showcase = (id: string) => `/home/showcase/${id}.webp`;
 
 export const PHOTOS = {
-  "velora-avatar": showcase("velora-avatar"),
+  "velora-avatar": showcase("velora-logo"),
   "velora-gallery-1": showcase("velora-gallery-1"),
   "velora-gallery-2": showcase("velora-gallery-2"),
   "velora-gallery-3": showcase("velora-gallery-3"),
