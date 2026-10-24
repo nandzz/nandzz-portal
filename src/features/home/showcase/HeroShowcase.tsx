@@ -487,7 +487,7 @@ export function HeroShowcase() {
       >
         <motion.div
           ref={swipeRef}
-          className="mx-auto grid w-full max-w-7xl items-center gap-x-10 gap-y-8 px-4 pt-8 pb-16 sm:pt-12 lg:grid-cols-[1.05fr_1fr] lg:gap-y-6 lg:py-10"
+          className="mx-auto grid w-full max-w-7xl items-center gap-x-10 gap-y-8 px-4 pt-8 pb-12 sm:pt-12 sm:pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-y-6 lg:py-10"
           style={{ touchAction: "pan-y" }}
           onPanEnd={onPanEnd}
           onFocus={onFocus}
