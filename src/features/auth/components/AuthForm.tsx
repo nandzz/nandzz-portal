@@ -152,6 +152,18 @@ export function AuthForm({
     if (mode === "setup" && pendingUsername) setUsername((u) => u || pendingUsername);
   }, [mode, pendingUsername]);
 
+  // Coming back from the Google consent screen without signing in restores this
+  // page from the back-forward cache exactly as it was left — mid-redirect,
+  // with `loading` still true — so the buttons would spin forever. Reset on a
+  // bfcache restore (`persisted`); a normal load starts idle anyway.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setLoading(false);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
   // Where Google returns after OAuth. Embedded callers override this to come
   // back to their own page; page mode keeps the /auth/callback → next flow.
   const googleTarget = () =>
