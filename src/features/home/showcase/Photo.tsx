@@ -21,7 +21,7 @@ export const PHOTOS = {
   "ink-avatar": showcase("ink-logo"),
   "ink-publication-1": showcase("ink-publication-1"),
   "ink-publication-2": showcase("ink-publication-2"),
-  "physio-avatar": null,
+  "physio-avatar": showcase("physio-logo"),
   "physio-staff-1": showcase("physio-staff-1"),
   "physio-staff-2": showcase("physio-staff-2"),
   "bloom-avatar": null,
