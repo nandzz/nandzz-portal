@@ -31,6 +31,16 @@ export function isBareAuthRoute(pathname: string): boolean {
   return BARE_AUTH_ROUTE_RE.test(pathname);
 }
 
+// Sign-in surfaces (login/signup, forgot + reset password). Visitors here only
+// need the form, so the full Navbar, footer and tab bar give way to a
+// logo-only top bar (AuthTopBar) — Log in / Sign up links would just point at
+// the page they're already on.
+const AUTH_ROUTE_RE = /^\/(?:login|forgot-password|auth\/reset-password)(?:\/|$)/;
+
+export function isAuthRoute(pathname: string): boolean {
+  return AUTH_ROUTE_RE.test(pathname);
+}
+
 // Sidebar collapse preference. A cookie (not localStorage) so the root layout
 // renders the saved state on first paint — reading it after mount made the
 // sidebar open then snap shut on every hard load.

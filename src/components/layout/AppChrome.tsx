@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Navbar, Sidebar, MobileTabBar, ProfileVisitorCta } from "@/features/analytics";
 import { useAuth } from "@/features/auth/AuthContext";
 import { ConditionalFooter } from "./ConditionalFooter";
-import { SIDEBAR_COLLAPSED_COOKIE, isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
+import { AuthTopBar } from "./AuthTopBar";
+import { SIDEBAR_COLLAPSED_COOKIE, isAuthRoute, isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
 import { cn } from "@/lib/utils";
 import { useChrome } from "@/contexts/ChromeContext";
 
@@ -42,6 +43,8 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
   // Post-signup onboarding (choose-a-username): the visitor is authenticated but
   // mid-setup, so no sidebar/navbar/footer/tab bar — just the centered card.
   const onBareAuthPage = isBareAuthRoute(pathname);
+  // Login / password pages: only a logo top bar, no other chrome.
+  const onAuthPage = isAuthRoute(pathname);
   // Owner previewing their own profile as a visitor sees it: no chrome at all
   // (not even the visitor CTA pill). Cleared whenever they leave the profile.
   const previewing = profilePreview && onProfilePage;
@@ -85,7 +88,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
 
   // When signed in, the sidebar is the app chrome everywhere except the
   // immersive space viewer (which keeps its own chrome-hide gesture).
-  const showSidebar = !!userId && !isImmersiveRoute(pathname) && !onBareAuthPage && !previewing;
+  const showSidebar = !!userId && !isImmersiveRoute(pathname) && !onBareAuthPage && !onAuthPage && !previewing;
 
   // A logged-out visitor on someone's profile: suppress ALL Nandzz chrome (top
   // Navbar + footer) so the page reads as the owner's own branded page
@@ -109,7 +112,9 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
           immersive space pages never show it — they render their own chrome —
           and neither does a logged-out visitor on a profile (clean branded
           page; the floating CTA pill is their only Nandzz affordance). */}
-      {!onWidgetPage && !onImmersivePage && !onBareAuthPage && !isVisitorProfile && !previewing && (
+      {onAuthPage && <AuthTopBar />}
+
+      {!onWidgetPage && !onImmersivePage && !onBareAuthPage && !onAuthPage && !isVisitorProfile && !previewing && (
         <div className={cn(showSidebar && "md:hidden")}>
           <Navbar />
         </div>
@@ -124,7 +129,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
           // at md+; widget/onboarding own their viewport (none).
           isVisitorProfile
             ? "pb-24"
-            : onWidgetPage || onBareAuthPage || previewing || isVisitorImmersive || isVisitorHome
+            : onWidgetPage || onBareAuthPage || onAuthPage || previewing || isVisitorImmersive || isVisitorHome
               ? "pb-0"
               : "pb-16 md:pb-0",
           // No Navbar to absorb the status-bar inset (viewport-fit=cover):
@@ -137,12 +142,12 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
         {children}
       </main>
 
-      {!showSidebar && !onWidgetPage && !onBareAuthPage && !isVisitorProfile && !previewing && <ConditionalFooter tabBar={!isVisitorHome} />}
+      {!showSidebar && !onWidgetPage && !onBareAuthPage && !onAuthPage && !isVisitorProfile && !previewing && <ConditionalFooter tabBar={!isVisitorHome} />}
 
       {/* Hidden for logged-out visitors on the home page, a profile page or
           in the space viewer, on the widget page (which owns its whole viewport), and during
           post-signup onboarding. */}
-      {!isVisitorProfile && !isVisitorImmersive && !isVisitorHome && !onWidgetPage && !onBareAuthPage && !previewing && <MobileTabBar />}
+      {!isVisitorProfile && !isVisitorImmersive && !isVisitorHome && !onWidgetPage && !onBareAuthPage && !onAuthPage && !previewing && <MobileTabBar />}
 
       {/* The lone Nandzz affordance on a clean, logged-out profile page:
           a floating "Sign in / Create your page" pill. */}

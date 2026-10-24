@@ -24,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Sparkles, MailCheck } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 function GoogleIcon() {
@@ -518,9 +518,8 @@ export function AuthForm({
   return (
     <Card className="w-full max-w-md shadow-xl shadow-black/5 dark:shadow-black/20 border-border/60">
       <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
-          <Sparkles className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- static brand mark */}
+        <img src="/logo.svg" alt="" aria-hidden className="mx-auto mb-4 h-12 w-12" />
         <CardTitle className="text-2xl font-bold">{title}</CardTitle>
         <CardDescription className="text-base">{description}</CardDescription>
       </CardHeader>

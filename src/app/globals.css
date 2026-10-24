@@ -301,8 +301,23 @@ body[data-profile-preview] [data-profile-root] {
 
 /* Home page "soft clay" surfaces. Scoped to `.home-clay` so the rest of the
    app keeps its flat look. Violet stays the brand accent (violet-600). */
-.home-clay {
+/* The home's page color. Global (not scoped to .home-clay) so surfaces
+   outside it — the home Navbar, the auth pages — paint the same color and read
+   as one continuous page instead of a separate band. */
+:root {
   --clay-base: #eceaf2;
+}
+.dark {
+  --clay-base: #14121a;
+}
+[data-clay-base] {
+  background: var(--clay-base);
+}
+[data-clay-base][data-scrolled] {
+  background: color-mix(in oklab, var(--clay-base) 78%, transparent);
+}
+
+.home-clay {
   --clay-surface: #f7f6fa;
   --clay-ink: #1d1a26;
   --clay-violet: #7c3aed;
@@ -319,7 +334,6 @@ body[data-profile-preview] [data-profile-root] {
   color: var(--clay-ink);
 }
 .dark .home-clay {
-  --clay-base: #14121a;
   --clay-surface: #1e1b26;
   --clay-ink: #ecebf2;
   --clay-glow: rgb(124 58 237 / 0.3);

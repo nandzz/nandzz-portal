@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ import { useChrome } from "@/contexts/ChromeContext";
 import { cn } from "@/lib/utils";
 import { BecomeBusinessDialog } from "@/features/profile";
 import { useAuth } from "@/features/auth/AuthContext";
+import { Wordmark } from "@/components/layout/Wordmark";
 
 export function Navbar() {
   const { resolvedTheme: theme, setTheme } = useTheme();
@@ -30,6 +32,19 @@ export function Navbar() {
   const { isHidden } = useChrome();
   const { userId, profile, entitlements, flags } = useAuth();
   const [switchOpen, setSwitchOpen] = useState(false);
+  // The bar blends into the page (same color, no border) until the content
+  // scrolls under it; then it turns translucent with a hairline.
+  const [scrolled, setScrolled] = useState(false);
+  // On the home page the bar paints the home's clay base instead of the app
+  // background, so it doesn't read as a separate darker band.
+  const onHome = usePathname() === "/";
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Business account gates the Business sections; default (personal) until the
   // profile resolves so business-only chrome never flashes.
@@ -49,20 +64,22 @@ export function Navbar() {
   return (
     <nav
       data-app-bar
+      data-clay-base={onHome || undefined}
+      data-scrolled={scrolled || undefined}
       aria-hidden={isHidden || undefined}
       className={cn(
-        "sticky top-0 z-50 pt-[env(safe-area-inset-top)] border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60",
-        "transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform",
+        "sticky top-0 z-50 pt-[env(safe-area-inset-top)] border-b",
+        scrolled
+          ? "border-border/60 backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60"
+          : "border-transparent bg-background",
+        "transition-[transform,background-color,border-color] duration-300 ease-out motion-reduce:transition-none will-change-transform",
         isHidden && "max-md:-translate-y-full max-md:pointer-events-none"
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-0 group">
-            <span className="text-xl font-bold tracking-tight">nand</span>
-            <span data-brand-accent className="text-xl font-bold tracking-tight text-violet-600 transition-colors group-hover:text-violet-500">zz</span>
-          </Link>
+          <Wordmark />
 
           {/* Nav links - desktop */}
           <div className="hidden items-center gap-1 md:flex">
@@ -115,12 +132,12 @@ export function Navbar() {
           ) : (
             <div className="hidden md:flex items-center gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="rounded-full px-4">
                   {t.nav.login}
                 </Button>
               </Link>
               <Link href="/login?tab=signup">
-                <Button size="sm">
+                <Button size="sm" className="rounded-full px-4">
                   {t.nav.signup}
                 </Button>
               </Link>
