@@ -24,7 +24,7 @@ export const PHOTOS = {
   "physio-avatar": showcase("physio-logo"),
   "physio-staff-1": showcase("physio-staff-1"),
   "physio-staff-2": showcase("physio-staff-2"),
-  "bloom-avatar": null,
+  "bloom-avatar": showcase("bloom-logo"),
   "bloom-gallery-1": showcase("bloom-gallery-1"),
   "bloom-gallery-2": showcase("bloom-gallery-2"),
   "bloom-gallery-3": showcase("bloom-gallery-3"),
