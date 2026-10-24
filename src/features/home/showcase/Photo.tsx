@@ -14,7 +14,7 @@ export const PHOTOS = {
   "velora-gallery-4": showcase("velora-gallery-4"),
   "velora-gallery-5": showcase("velora-gallery-5"),
   "velora-gallery-6": "/home/gallery-1.webp", // blow-dry, shared with the features section
-  "barber-avatar": null,
+  "barber-avatar": showcase("barber-logo"),
   "barber-gallery-1": showcase("barber-gallery-1"),
   "barber-gallery-2": showcase("barber-gallery-2"),
   "barber-gallery-3": "/home/gallery-2.webp", // barber at work, shared with the features section
@@ -28,7 +28,7 @@ export const PHOTOS = {
   "bloom-gallery-1": showcase("bloom-gallery-1"),
   "bloom-gallery-2": showcase("bloom-gallery-2"),
   "bloom-gallery-3": showcase("bloom-gallery-3"),
-  "yoga-avatar": null,
+  "yoga-avatar": showcase("yoga-logo"),
   "rosa-avatar": showcase("rosa-avatar"),
   "rosa-gallery-1": showcase("rosa-gallery-1"),
   "rosa-gallery-2": showcase("rosa-gallery-2"),
