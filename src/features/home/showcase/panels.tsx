@@ -24,11 +24,14 @@ export const slideMove: Variants = {
   "1": { transform: "translateX(100vw)", opacity: 0, transition: slideTransition },
 };
 
-// Reduced motion: slides cross-fade in place.
+// Reduced motion: slides cross-fade in place. The transform snaps back to 0:
+// the server renders slideMove (reduced motion is only known after hydration),
+// which parks every other slide a viewport away.
+const fadeTransition = { opacity: { duration: 0.3 }, transform: { duration: 0 } };
 export const slideFade: Variants = {
-  "-1": { opacity: 0, transition: { duration: 0.3 } },
-  "0": { opacity: 1, transition: { duration: 0.3 } },
-  "1": { opacity: 0, transition: { duration: 0.3 } },
+  "-1": { opacity: 0, transform: "translateX(0vw)", transition: fadeTransition },
+  "0": { opacity: 1, transform: "translateX(0vw)", transition: fadeTransition },
+  "1": { opacity: 0, transform: "translateX(0vw)", transition: fadeTransition },
 };
 
 // Every slide's text lives in the same grid cell, so the column keeps the height

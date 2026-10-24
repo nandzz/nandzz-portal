@@ -448,9 +448,10 @@ export function HeroShowcase() {
 
   // Side by side at every width: on mobile each grows from its label width (long
   // locales may wrap), natural width from sm up. Under the text from lg up, under
-  // the carousel below it.
+  // the carousel below it. `className` carries the display (`flex` / `hidden`),
+  // so the two never sit on one element unordered.
   const ctas = (className: string) => (
-    <div className={`flex items-stretch gap-2.5 sm:flex-wrap sm:items-center sm:gap-3 ${className}`}>
+    <div className={`items-stretch gap-2.5 sm:flex-wrap sm:items-center sm:gap-3 ${className}`}>
       <Link
         href="/login?tab=signup"
         className="clay-violet inline-flex min-h-12 flex-auto items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-semibold leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-7 sm:py-0 sm:text-[15px]"
@@ -652,7 +653,7 @@ export function HeroShowcase() {
             </p>
           </div>
 
-          {ctas("lg:hidden")}
+          {ctas("flex lg:hidden")}
         </motion.div>
       </section>
     </MotionConfig>
