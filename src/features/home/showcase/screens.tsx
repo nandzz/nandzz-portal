@@ -24,7 +24,7 @@ import {
 import { InstagramIcon, YoutubeIcon } from "@/features/profile/components/BrandIcons";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { ShowcaseCopy } from "./content";
-import { GALLERY_SIZES, Photo, type PhotoId } from "./Photo";
+import { GALLERY_SIZES, PHOTOS, Photo, type PhotoId } from "./Photo";
 import { EASE_OUT, TAP_LAND, TapRing, StatusBar, still, useReduceMotion } from "./phone";
 import { SLIDES } from "./slides";
 
@@ -262,7 +262,7 @@ function ProfileTop({
   return (
     <div className="relative flex flex-col items-center pt-[50px] text-center">
       <div data-anchor="profile" className="flex w-fit flex-col items-center">
-        <Photo id={b.avatar} hue={b.hue} className="h-[66px] w-[66px] rounded-full ring-[3px] ring-(--s-bg) shadow-lg" />
+        <Photo id={b.avatar} hue={b.hue} sizes="66px" className="h-[66px] w-[66px] rounded-full ring-[3px] ring-(--s-bg) shadow-lg" />
         <p className="mt-2.5 text-[15px] leading-tight font-bold tracking-tight">{b.name}</p>
         <p className="text-[10px] text-(--s-muted)">@{b.handle}</p>
       </div>
@@ -313,7 +313,8 @@ function SectionTitle({ title, count, anchor }: { title: string; count: number; 
 }
 
 // Gallery "grid" layout (the default): 3 square columns. `eager` for the first
-// slide's photos, which are on screen at load.
+// slide's photos, which are on screen at load. Tiles reusing a features-section
+// file (/home/gallery-*) take its `sizes`, so the browser fetches it once.
 function GalleryGrid({ photos, hue, eager }: { photos: PhotoId[]; hue: number; eager?: boolean }) {
   return (
     <div className="grid grid-cols-3 gap-1 px-4">
@@ -322,7 +323,7 @@ function GalleryGrid({ photos, hue, eager }: { photos: PhotoId[]; hue: number; e
           key={id}
           id={id}
           hue={hue + i * 18}
-          sizes={eager ? GALLERY_SIZES : "120px"}
+          sizes={PHOTOS[id]?.startsWith("/home/gallery-") ? GALLERY_SIZES : "120px"}
           eager={eager}
           className="aspect-square rounded-md"
         />
@@ -441,7 +442,7 @@ export function AnatomyScreen({ scrollY, rootRef, mock }: ScreenProps) {
       />
       <SectionTitle title={mock.gallery} count={24} anchor="gallery" />
       <GalleryGrid
-        photos={["barber-gallery-1", "barber-gallery-2", "barber-gallery-3", "barber-gallery-4", "barber-gallery-5", "barber-gallery-6"]}
+        photos={["barber-gallery-1", "barber-gallery-2", "barber-gallery-3"]}
         hue={210}
       />
     </ScreenRoot>
@@ -648,7 +649,7 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
         </Option>
         {staff.map((p, i) => (
           <Option key={p.name} on={i === 0 && tapped} className="flex items-center gap-2 px-2 py-1.5">
-            <Photo id={p.photo} hue={p.hue} className="h-6 w-6 shrink-0 rounded-full" />
+            <Photo id={p.photo} hue={p.hue} sizes="24px" className="h-6 w-6 shrink-0 rounded-full" />
             <span className="text-[10.5px] font-medium">{p.name}</span>
             {i === 0 && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
           </Option>
@@ -741,7 +742,7 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
           meta={slotTime(PICKED_SLOT)}
         />
         <SummaryRow
-          icon={<Photo id="physio-staff-1" hue={200} className="h-6 w-6 shrink-0 rounded-full" />}
+          icon={<Photo id="physio-staff-1" hue={200} sizes="24px" className="h-6 w-6 shrink-0 rounded-full" />}
           label={mock.summarySpecialist}
           value="Giulia"
         />
@@ -822,7 +823,7 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
         </span>
       </div>
       <div className="relative -mt-2 flex flex-col items-center">
-        <Photo id="physio-avatar" hue={170} className="h-11 w-11 rounded-full shadow-md ring-2 ring-(--s-bg)" />
+        <Photo id="physio-avatar" hue={170} sizes="44px" className="h-11 w-11 rounded-full shadow-md ring-2 ring-(--s-bg)" />
         <p className="mt-1.5 text-[14px] font-bold tracking-tight">Forma Physio</p>
       </div>
       <div className="absolute inset-x-3 top-[150px] bottom-3 overflow-hidden rounded-2xl border border-(--s-text)/12 bg-(--s-bg) shadow-sm">
@@ -1135,8 +1136,8 @@ export function GalleryScreen({ scrollY, rootRef, mock }: ScreenProps) {
       />
       <SectionTitle title={mock.gallery} count={48} />
       <GalleryMasonry
-        photos={["rosa-gallery-1", "rosa-gallery-2", "rosa-gallery-3", "rosa-gallery-4", "rosa-gallery-5", "rosa-gallery-6"]}
-        ratios={[0.8, 1.25, 0.75, 1, 0.8, 1.3]}
+        photos={["rosa-gallery-1", "rosa-gallery-2", "rosa-gallery-3"]}
+        ratios={[0.8, 1.25, 4 / 3]}
         hue={15}
       />
     </ScreenRoot>

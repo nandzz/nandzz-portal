@@ -2,47 +2,43 @@ import type { CSSProperties } from "react";
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
 
-// Every picture in the showcase goes through this map. `null` renders a tinted
-// placeholder; drop a file in /public/home/showcase/ and set its path to swap it in.
+// Every picture in the showcase goes through this map: a path under /public, or
+// `null` for a tinted placeholder.
+const showcase = (id: string) => `/home/showcase/${id}.webp`;
+
 export const PHOTOS = {
-  "velora-avatar": null,
-  "velora-gallery-1": "/home/gallery-1.webp",
-  "velora-gallery-2": "/home/gallery-2.webp",
-  "velora-gallery-3": "/home/gallery-3.webp",
-  "velora-gallery-4": "/home/gallery-4.webp",
-  "velora-gallery-5": "/home/gallery-5.webp",
-  "velora-gallery-6": "/home/gallery-6.webp",
+  "velora-avatar": showcase("velora-avatar"),
+  "velora-gallery-1": showcase("velora-gallery-1"),
+  "velora-gallery-2": showcase("velora-gallery-2"),
+  "velora-gallery-3": showcase("velora-gallery-3"),
+  "velora-gallery-4": showcase("velora-gallery-4"),
+  "velora-gallery-5": showcase("velora-gallery-5"),
+  "velora-gallery-6": "/home/gallery-1.webp", // blow-dry, shared with the features section
   "barber-avatar": null,
-  "barber-gallery-1": null,
-  "barber-gallery-2": null,
-  "barber-gallery-3": null,
-  "barber-gallery-4": null,
-  "barber-gallery-5": null,
-  "barber-gallery-6": null,
+  "barber-gallery-1": showcase("barber-gallery-1"),
+  "barber-gallery-2": showcase("barber-gallery-2"),
+  "barber-gallery-3": "/home/gallery-2.webp", // barber at work, shared with the features section
   "ink-avatar": null,
-  "ink-publication-1": null,
-  "ink-publication-2": null,
+  "ink-publication-1": showcase("ink-publication-1"),
+  "ink-publication-2": showcase("ink-publication-2"),
   "physio-avatar": null,
-  "physio-staff-1": null,
-  "physio-staff-2": null,
+  "physio-staff-1": showcase("physio-staff-1"),
+  "physio-staff-2": showcase("physio-staff-2"),
   "bloom-avatar": null,
-  "bloom-gallery-1": null,
-  "bloom-gallery-2": null,
-  "bloom-gallery-3": null,
+  "bloom-gallery-1": showcase("bloom-gallery-1"),
+  "bloom-gallery-2": showcase("bloom-gallery-2"),
+  "bloom-gallery-3": showcase("bloom-gallery-3"),
   "yoga-avatar": null,
-  "rosa-avatar": null,
-  "rosa-gallery-1": null,
-  "rosa-gallery-2": null,
-  "rosa-gallery-3": null,
-  "rosa-gallery-4": null,
-  "rosa-gallery-5": null,
-  "rosa-gallery-6": null,
+  "rosa-avatar": showcase("rosa-avatar"),
+  "rosa-gallery-1": showcase("rosa-gallery-1"),
+  "rosa-gallery-2": showcase("rosa-gallery-2"),
+  "rosa-gallery-3": showcase("rosa-gallery-3"),
 } satisfies Record<string, string | null>;
 
 export type PhotoId = keyof typeof PHOTOS;
 
-// `sizes` shared by every render of the /home/gallery-* photos (hero phone and
-// the features section), so the browser picks one candidate and fetches it once.
+// `sizes` for the features section's /home/gallery-* photos. Showcase tiles that
+// reuse one of those files pass the same value, so it is fetched once.
 export const GALLERY_SIZES = "(min-width: 1024px) 180px, 30vw";
 
 export function Photo({
