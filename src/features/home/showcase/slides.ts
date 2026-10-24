@@ -12,7 +12,7 @@ export const SLIDES: Slide[] = [
   { kind: "hero", steps: 1, stepMs: 6500 },
   { kind: "anatomy", steps: 4, stepMs: 2400, annotated: true },
   { kind: "content", steps: 4, stepMs: 2400, annotated: true },
-  { kind: "booking", steps: 5, stepMs: 2300 },
+  { kind: "booking", steps: 5, stepMs: 2600 },
   { kind: "style", steps: 4, stepMs: 2400 },
   { kind: "links", steps: 1, stepMs: 5500 },
   { kind: "gallery", steps: 1, stepMs: 5500 },
@@ -26,7 +26,7 @@ export function slideDuration(slide: Slide) {
 
 // Callout anchors per annotated slide, one per step (matches `data-anchor`).
 export const ANCHORS: Partial<Record<SlideKind, string[]>> = {
-  anatomy: ["profile", "book", "services", "gallery"],
+  anatomy: ["profile", "book", "address", "gallery"],
   content: ["socials", "publications", "links", "follow"],
 };
 

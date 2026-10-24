@@ -3,20 +3,21 @@
 import type { ReactNode } from "react";
 import { motion, type Variants } from "motion/react";
 import { Check } from "lucide-react";
-import { EASE_OUT } from "./phone";
+
+export type SlidePos = -1 | 0 | 1; // before / current / after the active slide
+
+// Text and phone of a slide move as one block: both sides park a full viewport
+// away and glide in on the same curve, so they read as a single carousel slide.
+export const slideMove: Variants = {
+  "-1": { transform: "translateX(-100vw)", opacity: 0, transition: { duration: 0.75, ease: [0.32, 0.72, 0, 1] } },
+  "0": { transform: "translateX(0vw)", opacity: 1, transition: { duration: 0.75, ease: [0.32, 0.72, 0, 1] } },
+  "1": { transform: "translateX(100vw)", opacity: 0, transition: { duration: 0.75, ease: [0.32, 0.72, 0, 1] } },
+};
 
 // Every slide's text lives in the same grid cell, so the column keeps the height
-// of the tallest one and nothing below it jumps when slides change.
-const panel: Variants = {
-  in: { transition: { staggerChildren: 0.05, delayChildren: 0.12 } },
-  out: {},
-};
-export const rise: Variants = {
-  in: { opacity: 1, transform: "translateY(0px)", transition: { duration: 0.45, ease: EASE_OUT } },
-  out: { opacity: 0, transform: "translateY(10px)", transition: { duration: 0.2, ease: EASE_OUT } },
-};
-
-export function Panel({ active, label, children }: { active: boolean; label: string; children: ReactNode }) {
+// of the tallest one and the static buttons below never jump.
+export function Panel({ pos, label, children }: { pos: SlidePos; label: string; children: ReactNode }) {
+  const active = pos === 0;
   return (
     <motion.div
       role="group"
@@ -26,8 +27,8 @@ export function Panel({ active, label, children }: { active: boolean; label: str
       inert={!active}
       className={`[grid-area:stack] self-center ${active ? "" : "pointer-events-none"}`}
       initial={false}
-      animate={active ? "in" : "out"}
-      variants={panel}
+      animate={String(pos)}
+      variants={slideMove}
     >
       {children}
     </motion.div>
@@ -39,15 +40,12 @@ const muted = "text-[color-mix(in_oklab,var(--clay-ink)_64%,transparent)]";
 export function PanelHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <>
-      <motion.p variants={rise} className="text-sm font-semibold text-violet-600 dark:text-violet-400">
-        {eyebrow}
-      </motion.p>
-      <motion.h2
-        variants={rise}
+      <p className="text-sm font-semibold text-violet-600 dark:text-violet-400">{eyebrow}</p>
+      <h2
         className="mt-3 text-[clamp(2rem,4.2vw,3.25rem)] leading-[1.05] font-bold tracking-[-0.03em] text-balance"
       >
         {title}
-      </motion.h2>
+      </h2>
     </>
   );
 }
@@ -63,7 +61,7 @@ export function StepList({
   onPick: (i: number) => void;
 }) {
   return (
-    <motion.ol variants={rise} className="mt-7 space-y-0.5">
+    <ol className="mt-7 space-y-0.5">
       {items.map((item, i) => {
         const current = i === step;
         return (
@@ -98,21 +96,21 @@ export function StepList({
           </li>
         );
       })}
-    </motion.ol>
+    </ol>
   );
 }
 
 export function PanelText({ children }: { children: ReactNode }) {
   return (
-    <motion.p variants={rise} className={`mt-5 max-w-[32rem] text-lg leading-relaxed ${muted}`}>
+    <p className={`mt-5 max-w-[32rem] text-lg leading-relaxed ${muted}`}>
       {children}
-    </motion.p>
+    </p>
   );
 }
 
 export function Chips({ title, items }: { title: string; items: string[] }) {
   return (
-    <motion.div variants={rise} className="mt-6">
+    <div className="mt-6">
       <p className="text-sm font-semibold">{title}</p>
       <div className="mt-2.5 flex flex-wrap gap-2">
         {items.map((label) => (
@@ -122,6 +120,6 @@ export function Chips({ title, items }: { title: string; items: string[] }) {
           </span>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }

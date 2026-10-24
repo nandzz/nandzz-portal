@@ -6,12 +6,12 @@ import { ImageIcon } from "lucide-react";
 // placeholder; drop a file in /public/home/showcase/ and set its path to swap it in.
 export const PHOTOS = {
   "velora-avatar": null,
-  "velora-service-1": null,
-  "velora-service-2": null,
-  "velora-service-3": null,
   "velora-gallery-1": "/home/gallery-1.webp",
   "velora-gallery-2": "/home/gallery-2.webp",
   "velora-gallery-3": "/home/gallery-3.webp",
+  "velora-gallery-4": "/home/gallery-4.webp",
+  "velora-gallery-5": "/home/gallery-5.webp",
+  "velora-gallery-6": "/home/gallery-6.webp",
   "barber-avatar": null,
   "barber-gallery-1": null,
   "barber-gallery-2": null,
@@ -46,15 +46,17 @@ export function Photo({
   hue = 290,
   sizes = "96px",
   className = "",
+  style,
 }: {
   id: PhotoId;
   hue?: number; // placeholder tint, so neighbouring placeholders read as different pictures
   sizes?: string;
   className?: string;
+  style?: CSSProperties;
 }) {
   const src: string | null = PHOTOS[id];
   return (
-    <span className={`relative block overflow-hidden ${className}`}>
+    <span className={`relative block overflow-hidden ${className}`} style={style}>
       {src ? (
         <Image src={src} alt="" fill sizes={sizes} className="object-cover" />
       ) : (

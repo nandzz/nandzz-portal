@@ -17,6 +17,7 @@ import {
   type ResolvedSocialLinksStyle,
   type SocialLink,
 } from "./SocialLinkButtons";
+import { Sheet, useSheetLayout } from "@/components/ui/sheet";
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -367,10 +368,13 @@ export function ProfileStylePicker({
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("page");
   const rootRef = useRef<HTMLDivElement>(null);
+  // Phones get a bottom sheet (Base UI handles its dismissal); larger screens
+  // keep the anchored popover.
+  const sheet = useSheetLayout();
 
   // Close on outside click / Escape so the panel behaves like a popover.
   useEffect(() => {
-    if (!open) return;
+    if (!open || sheet) return;
     // pointerdown (not mousedown): iOS Safari sends no mouse events for taps on
     // non-clickable areas, so tapping the page wouldn't close the panel.
     const onDown = (e: PointerEvent) => {
@@ -383,7 +387,7 @@ export function ProfileStylePicker({
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, sheet]);
 
   const isCustomized =
     backgroundColor !== null ||
@@ -410,6 +414,246 @@ export function ProfileStylePicker({
   const hasLinks = social.links.length > 0;
   const previewLinks = hasLinks ? social.links : SAMPLE_LINKS;
 
+  // Shared by the desktop popover and the mobile sheet.
+  const panel = (
+    <>
+      {/* Header (tighter on top in the sheet, under its grab handle) */}
+      <div className="flex items-center justify-between px-4 pt-1.5 pb-2.5 sm:pt-3.5">
+        <p className="text-sm font-semibold text-foreground">Style</p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={!isCustomized}
+            title="Reset all to default"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close"
+            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="px-4 pb-3">
+        <div role="tablist" className="flex rounded-lg bg-muted/60 p-0.5">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              type="button"
+              aria-selected={activeTab === t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                activeTab === t.id
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="scrollbar-hide flex-1 space-y-5 overflow-y-auto border-t border-border/50 px-4 py-4">
+        {activeTab === "page" && (
+          <>
+            <ColorGroup
+              label="Background"
+              value={backgroundColor}
+              presets={BG_PRESETS}
+              onChange={onBackgroundChange}
+            />
+            <ColorGroup
+              label="Text"
+              value={textColor}
+              presets={TEXT_PRESETS}
+              onChange={onTextChange}
+            />
+          </>
+        )}
+
+        {activeTab === "buttons" && (
+          <>
+            {/* Live preview on the page's own background */}
+            <div
+              className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-4"
+              style={backgroundColor ? { backgroundColor } : undefined}
+            >
+              <SocialLinkButtons
+                preview
+                links={previewLinks}
+                style={socialStyle}
+                buttonColor={buttonColor}
+              />
+              {!hasLinks && (
+                <p className="text-[10px] text-muted-foreground">
+                  Sample links. Add yours in Edit.
+                </p>
+              )}
+            </div>
+
+            <section>
+              <p className="mb-2 text-xs font-medium text-foreground">Layout</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {LAYOUT_OPTIONS.map((o) => {
+                  const active = socialStyle.layout === o.value;
+                  return (
+                    <button
+                      type="button"
+                      key={o.value}
+                      onClick={() =>
+                        patchSocial(
+                          // Filled tiles need a surface; minimal falls back to brand glyphs.
+                          o.value === "minimal" && socialStyle.tone === "filled"
+                            ? { layout: o.value, tone: "brand" }
+                            : { layout: o.value },
+                        )
+                      }
+                      aria-pressed={active}
+                      className={`flex flex-col items-center gap-2 rounded-xl border px-2 pt-3 pb-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                        active
+                          ? "border-violet-500 bg-violet-500/10 text-foreground"
+                          : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                      }`}
+                    >
+                      <span className="flex h-8 items-center justify-center">{o.visual}</span>
+                      <span className="text-center leading-tight">
+                        <span className="block text-[11px] font-medium">{o.label}</span>
+                        <span className="block text-[10px] opacity-70">{o.hint}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {socialStyle.layout !== "minimal" && (
+              <OptionRow
+                label="Shape"
+                value={socialStyle.shape}
+                onChange={(shape) => patchSocial({ shape })}
+                options={[
+                  { value: "pill", label: "Round", visual: SHAPE_VISUAL.pill },
+                  { value: "rounded", label: "Soft", visual: SHAPE_VISUAL.rounded },
+                  { value: "square", label: "Square", visual: SHAPE_VISUAL.square },
+                ]}
+              />
+            )}
+            <OptionRow
+              label="Size"
+              value={socialStyle.size}
+              onChange={(size) => patchSocial({ size })}
+              options={[
+                { value: "md", label: "Regular" },
+                { value: "lg", label: "Large" },
+              ]}
+            />
+            <OptionRow
+              label="Colors"
+              value={socialStyle.tone}
+              onChange={(tone) => patchSocial({ tone })}
+              options={[
+                { value: "default" as const, label: "Neutral", visual: TONE_VISUAL.default },
+                { value: "brand" as const, label: "Brand", visual: TONE_VISUAL.brand },
+                ...(socialStyle.layout !== "minimal"
+                  ? [{ value: "filled" as const, label: "Filled", visual: TONE_VISUAL.filled }]
+                  : []),
+              ]}
+            />
+            <div className="space-y-1.5">
+              <ColorGroup
+                label="Button color"
+                value={buttonColor}
+                presets={BTN_PRESETS}
+                onChange={onButtonChange}
+              />
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
+                {socialStyle.tone === "filled"
+                  ? "Filled links use brand colors, which also tint the address pill."
+                  : socialStyle.layout === "minimal"
+                    ? "Tints the icons and the address pill."
+                    : "Tints the link buttons and the address pill."}
+              </p>
+            </div>
+          </>
+        )}
+
+        {activeTab === "booking" && booking && (
+          <>
+            {/* Live preview on the page's own background */}
+            <div
+              className="flex min-h-20 items-center justify-center rounded-xl border border-border/50 bg-muted/30 p-4"
+              style={backgroundColor ? { backgroundColor } : undefined}
+            >
+              <span className={bookingPreview.className} style={bookingPreview.style}>
+                <CalendarDays className={bookingPreview.iconClass} />
+                {booking.label}
+              </span>
+            </div>
+
+            <OptionRow
+              label="Style"
+              value={bookingStyle.variant}
+              onChange={(variant) => patchBooking({ variant })}
+              options={[
+                { value: "soft", label: "Soft", visual: VARIANT_VISUAL.soft },
+                { value: "solid", label: "Solid", visual: VARIANT_VISUAL.solid },
+                { value: "outline", label: "Outline", visual: VARIANT_VISUAL.outline },
+                { value: "glass", label: "Glass", visual: VARIANT_VISUAL.glass },
+              ]}
+            />
+            <OptionRow
+              label="Shape"
+              value={bookingStyle.shape}
+              onChange={(shape) => patchBooking({ shape })}
+              options={[
+                { value: "pill", label: "Pill", visual: SHAPE_VISUAL.pill },
+                { value: "rounded", label: "Rounded", visual: SHAPE_VISUAL.rounded },
+                { value: "square", label: "Square", visual: SHAPE_VISUAL.square },
+              ]}
+            />
+            <OptionRow
+              label="Size"
+              value={bookingStyle.size}
+              onChange={(size) => patchBooking({ size })}
+              options={[
+                { value: "md", label: "Regular" },
+                { value: "lg", label: "Large" },
+              ]}
+            />
+            <OptionRow
+              label={t.profile.bookingPosition}
+              value={bookingStyle.placement}
+              onChange={(placement) => patchBooking({ placement })}
+              options={[
+                { value: "username", label: t.profile.bookingPositionUsername },
+                { value: "description", label: t.profile.bookingPositionDescription },
+                { value: "social", label: t.profile.bookingPositionSocial },
+              ]}
+            />
+            <ColorGroup
+              label="Color"
+              value={bookingStyle.color}
+              presets={BOOKING_PRESETS}
+              onChange={(color) => patchBooking({ color })}
+            />
+          </>
+        )}
+      </div>
+    </>
+  );
+
   return (
     // Not `relative`: the panel anchors to the owner-controls column (the
     // nearest positioned ancestor), so it lines up with the right edge of the
@@ -425,243 +669,18 @@ export function ProfileStylePicker({
         Style
       </button>
 
-      {open && (
+      {open && !sheet && (
         <div role="dialog" aria-label="Style" className="absolute top-full right-0 z-40 mt-2 flex max-h-[75dvh] w-[19rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/95 shadow-xl backdrop-blur-md">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5">
-            <p className="text-sm font-semibold text-foreground">Style</p>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={onReset}
-                disabled={!isCustomized}
-                title="Reset all to default"
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Reset
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="px-4 pb-3">
-            <div role="tablist" className="flex rounded-lg bg-muted/60 p-0.5">
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  role="tab"
-                  type="button"
-                  aria-selected={activeTab === t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                    activeTab === t.id
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="scrollbar-hide flex-1 space-y-5 overflow-y-auto border-t border-border/50 px-4 py-4">
-            {activeTab === "page" && (
-              <>
-                <ColorGroup
-                  label="Background"
-                  value={backgroundColor}
-                  presets={BG_PRESETS}
-                  onChange={onBackgroundChange}
-                />
-                <ColorGroup
-                  label="Text"
-                  value={textColor}
-                  presets={TEXT_PRESETS}
-                  onChange={onTextChange}
-                />
-              </>
-            )}
-
-            {activeTab === "buttons" && (
-              <>
-                {/* Live preview on the page's own background */}
-                <div
-                  className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-4"
-                  style={backgroundColor ? { backgroundColor } : undefined}
-                >
-                  <SocialLinkButtons
-                    preview
-                    links={previewLinks}
-                    style={socialStyle}
-                    buttonColor={buttonColor}
-                  />
-                  {!hasLinks && (
-                    <p className="text-[10px] text-muted-foreground">
-                      Sample links. Add yours in Edit.
-                    </p>
-                  )}
-                </div>
-
-                <section>
-                  <p className="mb-2 text-xs font-medium text-foreground">Layout</p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {LAYOUT_OPTIONS.map((o) => {
-                      const active = socialStyle.layout === o.value;
-                      return (
-                        <button
-                          type="button"
-                          key={o.value}
-                          onClick={() =>
-                            patchSocial(
-                              // Filled tiles need a surface; minimal falls back to brand glyphs.
-                              o.value === "minimal" && socialStyle.tone === "filled"
-                                ? { layout: o.value, tone: "brand" }
-                                : { layout: o.value },
-                            )
-                          }
-                          aria-pressed={active}
-                          className={`flex flex-col items-center gap-2 rounded-xl border px-2 pt-3 pb-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
-                            active
-                              ? "border-violet-500 bg-violet-500/10 text-foreground"
-                              : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
-                          }`}
-                        >
-                          <span className="flex h-8 items-center justify-center">{o.visual}</span>
-                          <span className="text-center leading-tight">
-                            <span className="block text-[11px] font-medium">{o.label}</span>
-                            <span className="block text-[10px] opacity-70">{o.hint}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-
-                {socialStyle.layout !== "minimal" && (
-                  <OptionRow
-                    label="Shape"
-                    value={socialStyle.shape}
-                    onChange={(shape) => patchSocial({ shape })}
-                    options={[
-                      { value: "pill", label: "Round", visual: SHAPE_VISUAL.pill },
-                      { value: "rounded", label: "Soft", visual: SHAPE_VISUAL.rounded },
-                      { value: "square", label: "Square", visual: SHAPE_VISUAL.square },
-                    ]}
-                  />
-                )}
-                <OptionRow
-                  label="Size"
-                  value={socialStyle.size}
-                  onChange={(size) => patchSocial({ size })}
-                  options={[
-                    { value: "md", label: "Regular" },
-                    { value: "lg", label: "Large" },
-                  ]}
-                />
-                <OptionRow
-                  label="Colors"
-                  value={socialStyle.tone}
-                  onChange={(tone) => patchSocial({ tone })}
-                  options={[
-                    { value: "default" as const, label: "Neutral", visual: TONE_VISUAL.default },
-                    { value: "brand" as const, label: "Brand", visual: TONE_VISUAL.brand },
-                    ...(socialStyle.layout !== "minimal"
-                      ? [{ value: "filled" as const, label: "Filled", visual: TONE_VISUAL.filled }]
-                      : []),
-                  ]}
-                />
-                <div className="space-y-1.5">
-                  <ColorGroup
-                    label="Button color"
-                    value={buttonColor}
-                    presets={BTN_PRESETS}
-                    onChange={onButtonChange}
-                  />
-                  <p className="text-[10px] leading-relaxed text-muted-foreground">
-                    {socialStyle.tone === "filled"
-                      ? "Filled links use brand colors, which also tint the address pill."
-                      : socialStyle.layout === "minimal"
-                        ? "Tints the icons and the address pill."
-                        : "Tints the link buttons and the address pill."}
-                  </p>
-                </div>
-              </>
-            )}
-
-            {activeTab === "booking" && booking && (
-              <>
-                {/* Live preview on the page's own background */}
-                <div
-                  className="flex min-h-20 items-center justify-center rounded-xl border border-border/50 bg-muted/30 p-4"
-                  style={backgroundColor ? { backgroundColor } : undefined}
-                >
-                  <span className={bookingPreview.className} style={bookingPreview.style}>
-                    <CalendarDays className={bookingPreview.iconClass} />
-                    {booking.label}
-                  </span>
-                </div>
-
-                <OptionRow
-                  label="Style"
-                  value={bookingStyle.variant}
-                  onChange={(variant) => patchBooking({ variant })}
-                  options={[
-                    { value: "soft", label: "Soft", visual: VARIANT_VISUAL.soft },
-                    { value: "solid", label: "Solid", visual: VARIANT_VISUAL.solid },
-                    { value: "outline", label: "Outline", visual: VARIANT_VISUAL.outline },
-                    { value: "glass", label: "Glass", visual: VARIANT_VISUAL.glass },
-                  ]}
-                />
-                <OptionRow
-                  label="Shape"
-                  value={bookingStyle.shape}
-                  onChange={(shape) => patchBooking({ shape })}
-                  options={[
-                    { value: "pill", label: "Pill", visual: SHAPE_VISUAL.pill },
-                    { value: "rounded", label: "Rounded", visual: SHAPE_VISUAL.rounded },
-                    { value: "square", label: "Square", visual: SHAPE_VISUAL.square },
-                  ]}
-                />
-                <OptionRow
-                  label="Size"
-                  value={bookingStyle.size}
-                  onChange={(size) => patchBooking({ size })}
-                  options={[
-                    { value: "md", label: "Regular" },
-                    { value: "lg", label: "Large" },
-                  ]}
-                />
-                <OptionRow
-                  label={t.profile.bookingPosition}
-                  value={bookingStyle.placement}
-                  onChange={(placement) => patchBooking({ placement })}
-                  options={[
-                    { value: "username", label: t.profile.bookingPositionUsername },
-                    { value: "description", label: t.profile.bookingPositionDescription },
-                    { value: "social", label: t.profile.bookingPositionSocial },
-                  ]}
-                />
-                <ColorGroup
-                  label="Color"
-                  value={bookingStyle.color}
-                  presets={BOOKING_PRESETS}
-                  onChange={(color) => patchBooking({ color })}
-                />
-              </>
-            )}
-          </div>
+          {panel}
         </div>
+      )}
+
+      {/* Fixed height (no jump between tabs) that leaves the top of the
+          profile in view, and no dim, so color changes stay visible live. */}
+      {sheet && (
+        <Sheet open={open} onOpenChange={setOpen} backdrop="clear" aria-label="Style" className="h-[55dvh]">
+          {panel}
+        </Sheet>
       )}
     </div>
   );

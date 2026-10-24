@@ -32,7 +32,7 @@ export function HomeClient() {
   return (
     <div className="home-clay">
       {/* Hero: the copy + an auto-playing tour of example pages */}
-      <HeroShowcase services={services} />
+      <HeroShowcase />
 
       {/* What's on the page: work, services, booking, brand */}
       <section className="mx-auto max-w-7xl px-4 pb-24">

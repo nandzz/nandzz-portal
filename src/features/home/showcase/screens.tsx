@@ -3,21 +3,38 @@
 import { useEffect, useState, type ComponentType, type CSSProperties, type ReactNode, type Ref } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
+  ArrowUpRight,
+  Ban,
   CalendarDays,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
-  FileText,
   Globe,
   Mail,
   MapPin,
-  MessageCircle,
+  RotateCcw,
+  Share2,
+  Sparkles,
+  Tag,
+  UserPlus,
+  X,
 } from "lucide-react";
 import { InstagramIcon, YoutubeIcon } from "@/features/profile/components/BrandIcons";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { ShowcaseCopy } from "./content";
 import { Photo, type PhotoId } from "./Photo";
-import { EASE_OUT, StatusBar, TapRing } from "./phone";
+import { EASE_OUT, TapRing, StatusBar } from "./phone";
+
+// Every screen mirrors a real Nandzz surface — keep them truthful:
+//   profile  → src/app/[username]/(profile)/page.tsx + ProfileHeader (header
+//              order: avatar · name · @handle · [book] · bio · [book] · address ·
+//              followers · social links · [book]), then Gallery / Publications /
+//              Links sections. There is NO services list on the public profile.
+//   booking  → Book now opens /[username]/booking (CalendarBookingFlow):
+//              service (multi) → specialist → date & time → details → done.
+//   style    → ProfileStylePicker (Page / Buttons / Booking tabs).
 
 type Mock = ShowcaseCopy["mock"];
 type ScreenVars = Partial<
@@ -33,17 +50,18 @@ export type ScreenProps = {
 
 /* ───────────────────────── Themes ───────────────────────── */
 
-// Pages with an owner-picked background lock their own palette, like the real
-// profile does; the rest follow the site theme through `.showcase-screen` vars.
+// A custom page color locks the profile to light/dark by its luminance (like
+// ProfileStyleRoot) and drops the default violet glow (`--s-cover`), so these
+// palettes set every var. The rest follow the site theme via `.showcase-screen`.
 const SAGE: ScreenVars = {
   "--s-bg": "#e8eee4",
   "--s-surface": "#dce5d6",
-  "--s-text": "#22301f",
+  "--s-text": "#22301f", // owner text color (Style → Page → Text)
   "--s-muted": "rgb(34 48 31 / 0.62)",
   "--s-btn": "#ffffff",
   "--s-btn-text": "#22301f",
-  "--s-accent": "#3f6b4a",
-  "--s-cover": "rgb(63 107 74 / 0.2)",
+  "--s-accent": "#16a34a",
+  "--s-cover": "transparent",
 };
 const NOIR: ScreenVars = {
   "--s-bg": "#121014",
@@ -52,17 +70,24 @@ const NOIR: ScreenVars = {
   "--s-muted": "rgb(243 238 233 / 0.6)",
   "--s-btn": "rgb(255 255 255 / 0.08)",
   "--s-btn-text": "#f3eee9",
-  "--s-accent": "#d9a38b",
-  "--s-cover": "rgb(217 163 139 / 0.24)",
+  "--s-accent": "#f59e0b",
+  "--s-cover": "transparent",
 };
+// Style picker presets (ProfileStylePicker BG_PRESETS / BTN_PRESETS / BOOKING_PRESETS).
+const BG_PRESETS = ["#ffffff", "#faf5ff", "#fdf2f8", "#fff1f2", "#fffbeb", "#f0fdf4", "#ecfeff", "#eff6ff", "#faf9f6", "#f5f5f4", "#1e1b2e", "#0f172a"];
+const BTN_PRESETS = ["#ffffff", "#111827", "#7c3aed", "#2563eb", "#0891b2", "#16a34a", "#e11d48", "#ea580c", "#f59e0b", "#334155", "#f1f5f9", "#fce7f3"];
+const PINK_BG = 2; // "Pink" #fdf2f8
+const ROSE_BTN = 6; // "Rose" #e11d48
 const BLUSH: ScreenVars = {
-  "--s-bg": "#f7e4e8",
-  "--s-surface": "#f0d3da",
-  "--s-text": "#3b1f2b",
-  "--s-muted": "rgb(59 31 43 / 0.62)",
-  "--s-accent": "#b4466a",
-  "--s-cover": "rgb(180 70 106 / 0.18)",
+  "--s-bg": BG_PRESETS[PINK_BG],
+  "--s-surface": "#f9e3ee",
+  "--s-text": "#1d1a26", // light lock, default text color
+  "--s-muted": "rgb(29 26 38 / 0.58)",
+  "--s-btn": "#ffffff",
+  "--s-btn-text": "#1d1a26",
+  "--s-cover": "transparent",
 };
+const EMERALD = "#059669"; // booking flow accent (emerald-600), independent of the profile style
 
 /* ───────────────────────── Building blocks ───────────────────────── */
 
@@ -101,30 +126,36 @@ function ScreenRoot({
   );
 }
 
-type SocialKey = "web" | "instagram" | "whatsapp" | "youtube" | "email";
+type SocialKey = "website" | "instagram" | "email" | "youtube" | "whatsapp";
 type SocialLayout = "icons" | "chips" | "stack" | "minimal";
-type BookingVariant = "soft" | "solid" | "outline" | "glass";
+type BookingVariant = "default" | "soft" | "solid" | "outline" | "glass";
+type BookingPlacement = "username" | "description" | "social";
 
+// Same order and labels as buildSocialLinks() — the owner can't reorder them.
+const SOCIAL_ORDER: SocialKey[] = ["website", "instagram", "email", "youtube", "whatsapp"];
 const SOCIALS: Record<SocialKey, { Icon: ComponentType<{ className?: string }>; label: string }> = {
-  web: { Icon: Globe, label: "Web" },
+  website: { Icon: Globe, label: "Website" },
   instagram: { Icon: InstagramIcon, label: "Instagram" },
-  whatsapp: { Icon: MessageCircle, label: "WhatsApp" },
-  youtube: { Icon: YoutubeIcon, label: "YouTube" },
   email: { Icon: Mail, label: "Email" },
+  youtube: { Icon: YoutubeIcon, label: "YouTube" },
+  whatsapp: { Icon: WhatsAppIcon, label: "WhatsApp" },
 };
 
+const SURFACE =
+  "border border-(--s-text)/10 bg-(--s-btn) text-(--s-btn-text) transition-[background-color,color,border-color] duration-500";
+
 function SocialRow({ keys, layout, anchor }: { keys: SocialKey[]; layout: SocialLayout; anchor?: string }) {
-  const surface = "bg-(--s-btn) text-(--s-btn-text) transition-[background-color,color] duration-500";
+  const ordered = SOCIAL_ORDER.filter((k) => keys.includes(k));
   if (layout === "stack") {
     return (
-      <div data-anchor={anchor} className="mt-3.5 w-full space-y-1.5 px-5">
-        {keys.map((k) => {
+      <div data-anchor={anchor} className="mt-4 flex w-full flex-col gap-1.5 px-5">
+        {ordered.map((k) => {
           const { Icon, label } = SOCIALS[k];
           return (
-            <span key={k} className={`flex h-9 items-center gap-2.5 rounded-xl px-3 text-[11px] font-semibold ${surface}`}>
-              <Icon className="h-3.5 w-3.5" />
+            <span key={k} className={`relative flex h-9 items-center justify-center rounded-[9px] text-[11px] font-medium ${SURFACE}`}>
+              <Icon className="absolute left-3 h-3.5 w-3.5" />
               {label}
-              <ChevronRight className="ml-auto h-3 w-3 opacity-50" />
+              <ArrowUpRight className="absolute right-3 h-3 w-3 opacity-40" />
             </span>
           );
         })}
@@ -132,24 +163,25 @@ function SocialRow({ keys, layout, anchor }: { keys: SocialKey[]; layout: Social
     );
   }
   return (
-    <div data-anchor={anchor} className="mt-3 flex w-fit flex-wrap justify-center gap-1.5">
-      {keys.map((k) => {
+    <div
+      data-anchor={anchor}
+      className={`mt-3.5 flex w-fit flex-wrap justify-center ${layout === "minimal" ? "gap-3.5" : "gap-1.5"}`}
+    >
+      {ordered.map((k) => {
         const { Icon, label } = SOCIALS[k];
+        if (layout === "minimal") {
+          return <Icon key={k} className="h-4 w-4 text-(--s-muted)" />;
+        }
         if (layout === "chips") {
           return (
-            <span key={k} className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-semibold ${surface}`}>
+            <span key={k} className={`flex h-[30px] items-center gap-1.5 rounded-[8px] px-2.5 text-[10.5px] font-medium ${SURFACE}`}>
               <Icon className="h-3 w-3" />
               {label}
             </span>
           );
         }
         return (
-          <span
-            key={k}
-            className={`flex h-[30px] w-[30px] items-center justify-center rounded-full ${
-              layout === "minimal" ? "text-(--s-text)" : surface
-            }`}
-          >
+          <span key={k} className={`flex h-[30px] w-[30px] items-center justify-center rounded-[8px] ${SURFACE}`}>
             <Icon className="h-3.5 w-3.5" />
           </span>
         );
@@ -158,22 +190,39 @@ function SocialRow({ keys, layout, anchor }: { keys: SocialKey[]; layout: Social
   );
 }
 
+// bookingButtonPresentation(): untouched default = soft emerald; any other look
+// uses the owner's booking color (here `--s-accent`).
 const BOOKING_VARIANTS: Record<BookingVariant, string> = {
-  soft: "bg-[color-mix(in_oklab,var(--s-accent)_16%,transparent)] text-(--s-accent)",
-  solid: "bg-(--s-accent) text-white shadow-[0_8px_18px_-8px_var(--s-accent)]",
-  outline: "border-[1.5px] border-(--s-accent) text-(--s-accent)",
-  glass: "border border-white/20 bg-white/10 text-(--s-text) backdrop-blur-md",
+  default:
+    "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300",
+  soft: "border border-[color-mix(in_srgb,var(--s-accent)_40%,transparent)] bg-[color-mix(in_srgb,var(--s-accent)_14%,transparent)] text-(--s-accent)",
+  solid: "border border-transparent bg-(--s-accent) text-white",
+  outline: "border-2 border-(--s-accent) text-(--s-accent)",
+  glass: "border border-white/20 bg-[color-mix(in_srgb,var(--s-bg)_40%,transparent)] text-(--s-accent) backdrop-blur-md",
 };
 
-function BookButton({ label, variant, anchor }: { label: string; variant: BookingVariant; anchor?: string }) {
+function BookButton({
+  label,
+  variant,
+  anchor,
+  tap,
+  className = "mt-3",
+}: {
+  label: string;
+  variant: BookingVariant;
+  anchor?: string;
+  tap?: number; // TapRing delay, when the finger taps it
+  className?: string;
+}) {
   return (
-    <div className="mt-3.5 w-full px-5">
+    <div className={`flex w-full justify-center ${className}`}>
       <span
         data-anchor={anchor}
-        className={`flex h-10 w-full items-center justify-center gap-2 rounded-full text-[12px] font-semibold transition-[background-color,color,border-color,box-shadow] duration-500 ${BOOKING_VARIANTS[variant]}`}
+        className={`relative inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[11.5px] font-medium transition-[background-color,color,border-color] duration-500 ${BOOKING_VARIANTS[variant]}`}
       >
         <CalendarDays className="h-3.5 w-3.5" />
         {label}
+        {tap !== undefined && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
       </span>
     </div>
   );
@@ -185,8 +234,8 @@ type Business = {
   avatar: PhotoId;
   hue: number;
   bio?: string;
-  address?: string;
-  stats?: [string, string];
+  address?: string; // AddressMenu shows the city only
+  stats: [string, string];
 };
 
 function ProfileTop({
@@ -196,103 +245,133 @@ function ProfileTop({
   socials,
   socialLayout,
   booking,
+  placement = "username",
+  tapBook,
 }: {
   b: Business;
   mock: Mock;
-  follow?: boolean;
+  follow?: boolean; // Follow shows to signed-in visitors only
   socials: SocialKey[];
   socialLayout: SocialLayout;
   booking: BookingVariant;
+  placement?: BookingPlacement;
+  tapBook?: number;
 }) {
+  const book = (className: string) => (
+    <BookButton label={mock.bookNow} variant={booking} anchor="book" tap={tapBook} className={className} />
+  );
   return (
     <div className="relative flex flex-col items-center pt-[50px] text-center">
       <div data-anchor="profile" className="flex w-fit flex-col items-center">
         <Photo id={b.avatar} hue={b.hue} className="h-[66px] w-[66px] rounded-full ring-[3px] ring-(--s-bg) shadow-lg" />
-        <p className="mt-2 text-[15px] leading-tight font-bold tracking-tight">{b.name}</p>
+        <p className="mt-2.5 text-[15px] leading-tight font-bold tracking-tight">{b.name}</p>
         <p className="text-[10px] text-(--s-muted)">@{b.handle}</p>
       </div>
-      {b.bio && <p className="mt-1.5 px-7 text-[10.5px] leading-snug text-(--s-muted)">{b.bio}</p>}
+      {placement === "username" && book("mt-2.5")}
+      {b.bio && <p className="mt-2 px-7 text-[10.5px] leading-snug text-(--s-muted)">{b.bio}</p>}
+      {placement === "description" && book("mt-2.5")}
       {b.address && (
-        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-(--s-btn) px-2.5 py-1 text-[9.5px] font-medium text-(--s-btn-text)">
-          <MapPin className="h-2.5 w-2.5" />
+        <span
+          data-anchor="address"
+          className={`mt-2.5 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] ${SURFACE}`}
+        >
+          <MapPin className="h-3 w-3" />
           {b.address}
         </span>
       )}
-      {(b.stats || follow) && (
-        <div className="mt-2.5 flex items-center gap-3.5 text-[10px]">
-          {b.stats && (
-            <>
-              <span>
-                <b className="font-semibold">{b.stats[0]}</b> <span className="text-(--s-muted)">{mock.followers}</span>
-              </span>
-              <span>
-                <b className="font-semibold">{b.stats[1]}</b> <span className="text-(--s-muted)">{mock.following}</span>
-              </span>
-            </>
-          )}
-          {follow && (
-            <span
-              data-anchor="follow"
-              className="rounded-full bg-(--s-text) px-3 py-1 text-[10px] font-semibold text-(--s-bg)"
-            >
-              {mock.follow}
-            </span>
-          )}
-        </div>
-      )}
+      <div className="mt-3 flex items-center gap-3.5 text-[10px]">
+        <span>
+          <b className="font-semibold">{b.stats[0]}</b> <span className="text-(--s-muted)">{mock.followers}</span>
+        </span>
+        <span>
+          <b className="font-semibold">{b.stats[1]}</b> <span className="text-(--s-muted)">{mock.following}</span>
+        </span>
+        {follow && (
+          <span
+            data-anchor="follow"
+            className="inline-flex items-center gap-1 rounded-full bg-(--s-text) px-2.5 py-1 text-[10px] font-semibold text-(--s-bg)"
+          >
+            <UserPlus className="h-3 w-3" />
+            {mock.follow}
+          </span>
+        )}
+      </div>
       <SocialRow keys={socials} layout={socialLayout} anchor="socials" />
-      <BookButton label={mock.bookNow} variant={booking} anchor="book" />
+      {placement === "social" && book("mt-3.5")}
     </div>
   );
 }
 
-function SectionTitle({ title, count, anchor }: { title: string; count?: number; anchor?: string }) {
+function SectionTitle({ title, count, anchor }: { title: string; count: number; anchor?: string }) {
   return (
-    <p className="mt-5 mb-2 px-5 text-[12px] font-semibold">
+    <p className="mt-6 mb-2 px-4 text-[12.5px] font-semibold">
       <span data-anchor={anchor} className="inline-block">
         {title}
-        {count !== undefined && <span className="ml-1 font-normal text-(--s-muted)">{count}</span>}
+        <span className="ml-1 text-[10.5px] font-normal text-(--s-muted) tabular-nums">{count}</span>
       </span>
     </p>
   );
 }
 
-type Service = { name: string; minutes: number; price: number; photo?: PhotoId };
-
-const euro = (n: number) => `€${n.toFixed(2)}`;
-
-function ServiceList({ services, hue }: { services: Service[]; hue: number }) {
+// Gallery "grid" layout (the default): 3 square columns.
+function GalleryGrid({ photos, hue }: { photos: PhotoId[]; hue: number }) {
   return (
-    <div className="space-y-1.5 px-4">
-      {services.map((s, i) => (
-        <div key={s.name} className="flex items-center gap-2.5 rounded-2xl bg-(--s-surface) p-2 pr-2.5">
-          {s.photo && <Photo id={s.photo} hue={hue + i * 24} className="h-9 w-9 shrink-0 rounded-xl" />}
-          <span className={`min-w-0 flex-1 ${s.photo ? "" : "pl-1"}`}>
-            <span className="block truncate text-[11.5px] font-semibold">{s.name}</span>
-            <span className="flex items-center gap-1 text-[9.5px] text-(--s-muted)">
-              <Clock className="h-2.5 w-2.5" />
-              {s.minutes} min
-            </span>
+    <div className="grid grid-cols-3 gap-1 px-4">
+      {photos.map((id, i) => (
+        <Photo key={id} id={id} hue={hue + i * 18} sizes="120px" className="aspect-square rounded-md" />
+      ))}
+    </div>
+  );
+}
+
+// Gallery "masonry" layout: 2 columns, natural aspect ratios.
+function GalleryMasonry({ photos, ratios, hue }: { photos: PhotoId[]; ratios: number[]; hue: number }) {
+  return (
+    <div className="columns-2 gap-1.5 px-4 [&>*]:mb-1.5">
+      {photos.map((id, i) => (
+        <Photo
+          key={id}
+          id={id}
+          hue={hue + i * 18}
+          sizes="140px"
+          className="break-inside-avoid rounded-md"
+          style={{ aspectRatio: ratios[i] ?? 0.8 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Publications "grid" layout: compact SpaceCards (square preview, title over a gradient).
+function PublicationCards({ items }: { items: { id: PhotoId; title: string; hue: number }[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 px-4">
+      {items.map((p) => (
+        <div key={p.id} className="relative overflow-hidden rounded-xl border border-(--s-text)/10">
+          <Photo id={p.id} hue={p.hue} sizes="130px" className="aspect-square" />
+          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2 pt-7 pb-1.5 text-left">
+            <span className="block truncate text-[10.5px] font-semibold text-white">{p.title}</span>
           </span>
-          <span className="text-[11px] font-semibold tabular-nums">{euro(s.price)}</span>
-          <ChevronRight className="h-3 w-3 text-(--s-muted)" />
         </div>
       ))}
     </div>
   );
 }
 
-function GalleryGrid({ photos, hue, cols = 3 }: { photos: PhotoId[]; hue: number; cols?: 2 | 3 }) {
+// Links "pills" layout: favicon + title chips that wrap.
+function LinkPills({ labels }: { labels: readonly string[] }) {
   return (
-    <div className={`grid gap-1 px-4 ${cols === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
-      {photos.map((id, i) => (
-        <Photo
-          key={id}
-          id={id}
-          hue={hue + i * 18}
-          sizes="120px"
-          className={`rounded-lg ${cols === 2 ? "aspect-[4/5]" : "aspect-square"}`}
-        />
+    <div className="flex flex-wrap gap-1.5 px-4">
+      {labels.map((label) => (
+        <span
+          key={label}
+          className={`inline-flex h-[30px] max-w-full items-center gap-1.5 rounded-full pr-3 pl-1 text-[10.5px] font-medium ${SURFACE}`}
+        >
+          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/5">
+            <Globe className="h-3 w-3 text-neutral-500" />
+          </span>
+          <span className="truncate">{label}</span>
+        </span>
       ))}
     </div>
   );
@@ -313,26 +392,21 @@ function useTapped(step: number, delay = 650) {
 
 /* ───────────────────────── 1 · Hero (Velora) ───────────────────────── */
 
-export function HeroScreen({
-  scrollY,
-  rootRef,
-  mock,
-  services,
-}: ScreenProps & { services: { name: string; minutes: number; price: number }[] }) {
-  const photos: PhotoId[] = ["velora-service-1", "velora-service-2", "velora-service-3"];
+export function HeroScreen({ scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
-        b={{ name: "Velora Studio", handle: "velorastudio", avatar: "velora-avatar", hue: 40, stats: ["12.8k", "8.4k"] }}
+        b={{ name: "Velora Studio", handle: "velorastudio", avatar: "velora-avatar", hue: 40, address: "Milano", stats: ["12.8k", "840"] }}
         mock={mock}
-        socials={["web", "instagram", "email", "whatsapp"]}
+        socials={["website", "instagram", "email", "whatsapp"]}
         socialLayout="icons"
         booking="solid"
       />
-      <SectionTitle title={mock.chooseService} />
-      <ServiceList services={services.map((s, i) => ({ ...s, photo: photos[i] }))} hue={30} />
-      <SectionTitle title={mock.gallery} count={10} />
-      <GalleryGrid photos={["velora-gallery-1", "velora-gallery-2", "velora-gallery-3"]} hue={30} />
+      <SectionTitle title={mock.gallery} count={24} />
+      <GalleryGrid
+        photos={["velora-gallery-1", "velora-gallery-2", "velora-gallery-3", "velora-gallery-4", "velora-gallery-5", "velora-gallery-6"]}
+        hue={30}
+      />
     </ScreenRoot>
   );
 }
@@ -340,11 +414,6 @@ export function HeroScreen({
 /* ───────────────────────── 2 · Anatomy (barber) ───────────────────────── */
 
 export function AnatomyScreen({ scrollY, rootRef, mock }: ScreenProps) {
-  const meta = [
-    { minutes: 30, price: 22 },
-    { minutes: 20, price: 15 },
-    { minutes: 45, price: 32 },
-  ];
   return (
     <ScreenRoot scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
@@ -354,16 +423,14 @@ export function AnatomyScreen({ scrollY, rootRef, mock }: ScreenProps) {
           avatar: "barber-avatar",
           hue: 220,
           bio: mock.barberBio,
-          address: "Via Tortona 12, Milano",
+          address: "Milano",
           stats: ["3.2k", "410"],
         }}
         mock={mock}
-        socials={["instagram", "whatsapp", "email"]}
+        socials={["instagram", "email", "whatsapp"]}
         socialLayout="icons"
-        booking="soft"
+        booking="default"
       />
-      <SectionTitle title={mock.services} anchor="services" />
-      <ServiceList services={mock.barberServices.map((name, i) => ({ name, ...meta[i] }))} hue={220} />
       <SectionTitle title={mock.gallery} count={24} anchor="gallery" />
       <GalleryGrid
         photos={["barber-gallery-1", "barber-gallery-2", "barber-gallery-3", "barber-gallery-4", "barber-gallery-5", "barber-gallery-6"]}
@@ -382,50 +449,50 @@ export function ContentScreen({ scrollY, rootRef, mock }: ScreenProps) {
         b={{ name: "Ink & Pine", handle: "inkandpine", avatar: "ink-avatar", hue: 150, bio: mock.inkBio, stats: ["5.1k", "260"] }}
         mock={mock}
         follow
-        socials={["instagram", "whatsapp", "email"]}
+        socials={["instagram", "email", "whatsapp"]}
         socialLayout="chips"
         booking="outline"
       />
       <SectionTitle title={mock.publications} count={2} anchor="publications" />
-      <div className="grid grid-cols-2 gap-2 px-4">
-        {(["ink-publication-1", "ink-publication-2"] as const).map((id, i) => (
-          <div key={id} className="rounded-2xl bg-(--s-surface) p-1.5">
-            <Photo id={id} hue={150 + i * 40} className="aspect-[4/3] rounded-xl" />
-            <p className="mt-1.5 flex items-center gap-1 px-1 pb-0.5 text-[10px] font-semibold">
-              <FileText className="h-3 w-3 shrink-0 text-(--s-muted)" />
-              <span className="truncate">{mock.inkPublications[i]}</span>
-            </p>
-          </div>
-        ))}
-      </div>
+      <PublicationCards
+        items={[
+          { id: "ink-publication-1", title: mock.inkPublications[0], hue: 150 },
+          { id: "ink-publication-2", title: mock.inkPublications[1], hue: 190 },
+        ]}
+      />
       <SectionTitle title={mock.links} count={3} anchor="links" />
-      <div className="flex flex-wrap gap-1.5 px-4">
-        {mock.inkLinks.map((label) => (
-          <span
-            key={label}
-            className="flex items-center gap-1.5 rounded-full bg-(--s-btn) py-1.5 pr-3 pl-1.5 text-[10px] font-medium text-(--s-btn-text)"
-          >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-(--s-surface)">
-              <Globe className="h-2.5 w-2.5" />
-            </span>
-            {label}
-          </span>
-        ))}
-      </div>
+      <LinkPills labels={mock.inkLinks} />
     </ScreenRoot>
   );
 }
 
-/* ───────────────────────── 4 · Booking funnel (physio) ───────────────────────── */
+/* ───────────────────────── 4 · Booking page (physio) ───────────────────────── */
 
-const SLOTS = ["9:00", "9:45", "10:30", "11:15", "12:00", "14:30", "15:15", "16:00", "17:30"];
-const DAYS = [16, 17, 18, 19, 20, 21, 22]; // Mon → Sun of a fixed week; only the weekday labels matter
+// A fixed month (Nov 2026, starts on a Sunday): the 16th is "today" and fully
+// booked, so the 17th is the first open day and is auto-selected, like the real
+// flow. Weekends are closed.
+const YEAR = 2026;
+const MONTH = 10;
+const TODAY = 16;
+const OPEN_DAYS = new Set([17, 18, 19, 20, 23, 24, 25, 26, 27, 30]);
+const PICKED_DAY = 17;
+const SLOT_TIMES: [number, number][] = [[9, 0], [9, 45], [10, 30], [11, 15], [12, 0], [14, 30]];
+const PICKED_SLOT = 2; // 10:30
 
-function Selectable({ on, children, className = "" }: { on: boolean; children: ReactNode; className?: string }) {
+const SERVICE_META = [
+  { minutes: 50, price: 60 },
+  { minutes: 45, price: 55 },
+  { minutes: 30, price: 35 },
+];
+const euro = (n: number) => `€${n.toFixed(2)}`;
+
+function Option({ on, children, className = "" }: { on: boolean; children: ReactNode; className?: string }) {
   return (
     <div
-      className={`relative transition-[background-color,box-shadow,color] duration-300 ${
-        on ? "bg-[color-mix(in_oklab,var(--s-accent)_14%,var(--s-surface))] shadow-[inset_0_0_0_1.5px_var(--s-accent)]" : "bg-(--s-surface)"
+      className={`relative rounded-[10px] border transition-[background-color,border-color] duration-300 ${
+        on
+          ? "border-(--s-accent) bg-[color-mix(in_srgb,var(--s-accent)_9%,var(--s-bg))]"
+          : "border-(--s-text)/12 bg-(--s-bg)"
       } ${className}`}
     >
       {children}
@@ -433,180 +500,347 @@ function Selectable({ on, children, className = "" }: { on: boolean; children: R
   );
 }
 
+function PrimaryButton({ children, tap }: { children: ReactNode; tap?: number }) {
+  return (
+    <span className="relative flex h-9 items-center justify-center gap-1.5 rounded-[8px] bg-(--s-accent) text-[11.5px] font-semibold text-white">
+      {children}
+      {tap !== undefined && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+    </span>
+  );
+}
+
+function BackLink({ label }: { label: string }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[9.5px] text-(--s-muted)">
+      <ChevronLeft className="h-3 w-3" />
+      {label}
+    </span>
+  );
+}
+
+function Heading({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div>
+      <p className="text-[12px] font-semibold">{title}</p>
+      {hint && <p className="mt-0.5 text-[9.5px] leading-snug text-(--s-muted)">{hint}</p>}
+    </div>
+  );
+}
+
+function SummaryRow({ icon, label, value, meta }: { icon: ReactNode; label: string; value: string; meta?: string }) {
+  return (
+    <div className="flex items-center gap-2 px-2.5 py-1">
+      {icon}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[7.5px] font-medium tracking-wide text-(--s-muted) uppercase">{label}</span>
+        <span className="block truncate text-[10px] font-medium">{value}</span>
+      </span>
+      {meta && <span className="shrink-0 text-[9px] text-(--s-muted)">{meta}</span>}
+    </div>
+  );
+}
+
+const ICON_BADGE =
+  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--s-accent)_15%,var(--s-bg))] text-(--s-accent)";
+
 export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenProps & { locale: string }) {
-  const tap = step === 0 ? 1.15 : 0.55; // step 0 waits for the sheet to land
+  // Step 0 first taps "Book now" on the profile; the booking page then pushes in.
+  const [pushIn] = useState(step === 0);
+  const tap = step === 0 && pushIn ? 1.4 : 0.55;
   const tapped = useTapped(step, tap * 1000 + 100);
-  const weekday = new Intl.DateTimeFormat(locale, { weekday: "short" });
-  const services = mock.physioServices.map((name, i) => ({ name, ...[{ minutes: 50, price: 60 }, { minutes: 45, price: 55 }, { minutes: 30, price: 35 }][i] }));
+
+  const dayFmt = new Intl.DateTimeFormat(locale, { weekday: "short", month: "short", day: "numeric" });
+  const timeFmt = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" });
+  const monthFmt = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" });
+  const weekdayFmt = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" });
+  const weekdays = Array.from({ length: 7 }, (_, i) => weekdayFmt.format(new Date(Date.UTC(2024, 0, 1 + i))));
+  const firstPad = (new Date(YEAR, MONTH, 1).getDay() + 6) % 7; // Monday-first grid
+  const daysInMonth = new Date(YEAR, MONTH + 1, 0).getDate();
+  const pickedDate = new Date(YEAR, MONTH, PICKED_DAY);
+  const slotTime = (i: number) => timeFmt.format(new Date(YEAR, MONTH, PICKED_DAY, ...SLOT_TIMES[i]));
+
+  const services = mock.physioServices.map((name, i) => ({ name, ...SERVICE_META[i] }));
+  const svc = services[0];
   const staff = [
-    { name: mock.anyAvailable, photo: null },
-    { name: "Giulia", photo: "physio-staff-1" as const },
-    { name: "Marco", photo: "physio-staff-2" as const },
+    { name: "Giulia", photo: "physio-staff-1" as const, hue: 200 },
+    { name: "Marco", photo: "physio-staff-2" as const, hue: 250 },
   ];
-  const titles = [mock.chooseService, mock.chooseProfessional, mock.pickTime, mock.yourDetails, ""];
+  const email = "sara@email.com";
 
   const panels = [
-    // Service
-    <div key="svc" className="space-y-1.5">
-      {services.map((s, i) => (
-        <Selectable key={s.name} on={i === 0 && tapped} className="flex items-center gap-2.5 rounded-2xl p-2.5">
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[11.5px] font-semibold">{s.name}</span>
-            <span className="flex items-center gap-1 text-[9.5px] text-(--s-muted)">
-              <Clock className="h-2.5 w-2.5" />
-              {s.minutes} min
+    // Service: multi-select; the total + Continue appear once one is picked
+    <div key="svc" className="space-y-2">
+      <Heading title={mock.chooseService} hint={mock.selectServicesHint} />
+      {services.map((s, i) => {
+        const on = i === 0 && tapped;
+        return (
+          <Option key={s.name} on={on} className="flex items-center gap-2.5 px-2.5 py-2">
+            <span
+              className={`relative flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-300 ${
+                on ? "border-(--s-accent) bg-(--s-accent) text-white" : "border-(--s-text)/20"
+              }`}
+            >
+              {on && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+              {i === 0 && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
             </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center justify-between gap-2">
+                <span className="truncate text-[11px] font-medium">{s.name}</span>
+                <span className="text-[10px] text-(--s-muted) tabular-nums">{euro(s.price)}</span>
+              </span>
+              <span className="mt-0.5 flex items-center gap-1 text-[9px] text-(--s-muted)">
+                <Clock className="h-2.5 w-2.5" />
+                {s.minutes} min
+              </span>
+            </span>
+          </Option>
+        );
+      })}
+      <motion.div
+        className="space-y-2 pt-1"
+        initial={false}
+        animate={{ opacity: tapped ? 1 : 0, transform: tapped ? "translateY(0px)" : "translateY(6px)" }}
+        transition={{ duration: 0.3, ease: EASE_OUT }}
+      >
+        <div className="flex items-center justify-between rounded-[10px] border border-(--s-accent)/40 bg-[color-mix(in_srgb,var(--s-accent)_7%,var(--s-bg))] px-3 py-2 text-[10.5px]">
+          <span className="font-medium">{mock.total}</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 text-(--s-muted)">
+              <Clock className="h-2.5 w-2.5" />
+              {svc.minutes} min
+            </span>
+            <span className="font-semibold tabular-nums">{euro(svc.price)}</span>
           </span>
-          <span className="text-[11px] font-semibold tabular-nums">{euro(s.price)}</span>
-          <span
-            className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors duration-300 ${
-              i === 0 && tapped ? "border-(--s-accent) bg-(--s-accent) text-white" : "border-(--s-muted)/40"
-            }`}
-          >
-            {i === 0 && tapped && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
-          </span>
-          {i === 0 && <TapRing delay={tap} className="top-1/2 right-0.5 -translate-y-1/2" />}
-        </Selectable>
-      ))}
+        </div>
+        <PrimaryButton tap={tap + 0.6}>
+          {mock.continue}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </PrimaryButton>
+      </motion.div>
     </div>,
-    // Professional
-    <div key="staff" className="grid grid-cols-3 gap-1.5">
-      {staff.map((p, i) => (
-        <Selectable key={p.name} on={i === 1 && tapped} className="flex flex-col items-center gap-1.5 rounded-2xl px-1 py-3">
-          {p.photo ? (
-            <Photo id={p.photo} hue={180 + i * 50} className="h-10 w-10 rounded-full" />
-          ) : (
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-(--s-bg) text-[13px]">✦</span>
-          )}
-          <span className="text-center text-[9.5px] leading-tight font-semibold">{p.name}</span>
-          {i === 1 && <TapRing className="top-3 left-1/2 -translate-x-1/2" />}
-        </Selectable>
-      ))}
-    </div>,
-    // Date & time
-    <div key="time">
-      <div className="grid grid-cols-7 gap-1">
-        {DAYS.map((d, i) => (
-          <span
-            key={d}
-            className={`flex flex-col items-center rounded-xl py-1.5 ${i === 1 ? "bg-(--s-accent) text-white" : "bg-(--s-surface)"} ${
-              i > 4 ? "opacity-40" : ""
-            }`}
-          >
-            <span className="text-[8px] uppercase opacity-70">{weekday.format(new Date(2026, 10, d))}</span>
-            <span className="text-[11px] font-semibold tabular-nums">{d}</span>
+
+    // Specialist, per service ("Any available" is the default)
+    <div key="staff" className="space-y-2.5">
+      <BackLink label={mock.back} />
+      <Heading title={mock.chooseSpecialist} hint={mock.specialistHint} />
+      <div className="space-y-1.5 rounded-[10px] border border-(--s-text)/12 bg-(--s-surface)/50 p-2">
+        <p className="px-0.5 text-[8px] font-semibold tracking-wide text-(--s-muted) uppercase">{svc.name}</p>
+        <Option on={!tapped} className="flex items-center gap-2 px-2 py-1.5">
+          <span className={ICON_BADGE}>
+            <Sparkles className="h-3 w-3" />
           </span>
+          <span className="text-[10.5px] font-medium">{mock.anyAvailable}</span>
+        </Option>
+        {staff.map((p, i) => (
+          <Option key={p.name} on={i === 0 && tapped} className="flex items-center gap-2 px-2 py-1.5">
+            <Photo id={p.photo} hue={p.hue} className="h-6 w-6 shrink-0 rounded-full" />
+            <span className="text-[10.5px] font-medium">{p.name}</span>
+            {i === 0 && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+          </Option>
         ))}
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-1.5">
-        {SLOTS.map((s) => (
-          <Selectable key={s} on={s === "10:30" && tapped} className="rounded-xl py-2 text-center text-[11px] font-medium tabular-nums">
-            {s}
-            {s === "10:30" && <TapRing className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
-          </Selectable>
-        ))}
+      <PrimaryButton tap={tap + 0.75}>
+        {mock.continue}
+        <ChevronRight className="h-3.5 w-3.5" />
+      </PrimaryButton>
+    </div>,
+
+    // Date & time: month calendar + the day's slots; picking a time goes straight on
+    <div key="time" className="space-y-2.5">
+      <BackLink label={mock.back} />
+      <p className="truncate text-[12px] font-semibold">{mock.pickDateTime.replace("{service}", svc.name)}</p>
+      <div className="rounded-[12px] border border-(--s-text)/12 p-2">
+        <div className="mb-1 flex items-center justify-between px-0.5">
+          <ChevronLeft className="h-3 w-3 opacity-30" />
+          <span className="text-[10.5px] font-semibold capitalize">{monthFmt.format(new Date(YEAR, MONTH, 1))}</span>
+          <ChevronRight className="h-3 w-3 text-(--s-muted)" />
+        </div>
+        <div className="mb-0.5 grid grid-cols-7 text-center text-[7.5px] font-medium text-(--s-muted)">
+          {weekdays.map((d) => (
+            <span key={d}>{d}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-0.5">
+          {Array.from({ length: firstPad }, (_, i) => (
+            <span key={`pad-${i}`} />
+          ))}
+          {Array.from({ length: daysInMonth }, (_, i) => {
+            const d = i + 1;
+            const open = OPEN_DAYS.has(d);
+            const picked = d === PICKED_DAY;
+            return (
+              <span
+                key={d}
+                className={`relative flex h-[23px] items-center justify-center rounded-[6px] text-[9.5px] tabular-nums ${
+                  picked
+                    ? "bg-(--s-accent) font-semibold text-white"
+                    : open
+                      ? "font-medium"
+                      : "text-(--s-muted)/50"
+                } ${d === TODAY ? "ring-1 ring-(--s-accent)/40 ring-inset" : ""}`}
+              >
+                {d}
+                {open && !picked && <span className="absolute bottom-[2px] h-[3px] w-[3px] rounded-full bg-(--s-accent)" />}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <p className="mb-1.5 text-[9px] font-medium text-(--s-muted)">{dayFmt.format(pickedDate)}</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {SLOT_TIMES.map((_, i) => (
+            <Option key={i} on={i === PICKED_SLOT && tapped} className="py-1.5 text-center text-[10px] tabular-nums">
+              {slotTime(i)}
+              {i === PICKED_SLOT && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+            </Option>
+          ))}
+        </div>
       </div>
     </div>,
-    // Details
-    <div key="details" className="space-y-2">
+
+    // Details: guest sign-in prompt, summary, contact fields, reminder opt-in (unticked until chosen)
+    <div key="details" className="space-y-1.5">
+      <BackLink label={mock.back} />
+      <div className="flex items-center gap-2 rounded-[12px] bg-gradient-to-r from-emerald-500 to-teal-500 px-2.5 py-2 text-white shadow-sm">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
+          <Sparkles className="h-3 w-3" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] leading-tight font-bold">{mock.signInTitle}</span>
+          <span className="block truncate text-[8px] text-white/90">{mock.signInBody}</span>
+        </span>
+        <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[8px] font-semibold text-emerald-700">{mock.signInCta}</span>
+      </div>
+      <div className="divide-y divide-(--s-text)/10 overflow-hidden rounded-[10px] border border-(--s-text)/12 bg-(--s-surface)/50">
+        <SummaryRow
+          icon={<span className={ICON_BADGE}><Tag className="h-3 w-3" /></span>}
+          label={mock.summaryService}
+          value={svc.name}
+          meta={`${svc.minutes} min · ${euro(svc.price)}`}
+        />
+        <SummaryRow
+          icon={<span className={ICON_BADGE}><CalendarDays className="h-3 w-3" /></span>}
+          label={mock.summaryWhen}
+          value={dayFmt.format(pickedDate)}
+          meta={slotTime(PICKED_SLOT)}
+        />
+        <SummaryRow
+          icon={<Photo id="physio-staff-1" hue={200} className="h-6 w-6 shrink-0 rounded-full" />}
+          label={mock.summarySpecialist}
+          value="Giulia"
+        />
+      </div>
+      <p className="pt-0.5 text-[11px] font-semibold">{mock.yourDetails}</p>
       {[
         [mock.fullName, "Sara Bianchi"],
-        [mock.email, "sara@email.com"],
-      ].map(([label, value]) => (
-        <div key={label} className="rounded-xl bg-(--s-surface) px-3 py-2">
-          <span className="block text-[8.5px] text-(--s-muted)">{label}</span>
-          <span className="block text-[11px] font-medium">{value}</span>
-        </div>
+        [mock.emailOptional, email],
+      ].map(([placeholder, value]) => (
+        <span
+          key={placeholder}
+          aria-label={placeholder}
+          className="block rounded-[8px] border border-(--s-text)/12 px-2.5 py-1.5 text-[10px]"
+        >
+          {value}
+        </span>
       ))}
-      <div className="flex items-center gap-2 px-1 pt-1 text-[10.5px] font-medium">
-        <span className="flex h-4 w-4 items-center justify-center rounded-[5px] bg-(--s-accent) text-white">
-          <Check className="h-2.5 w-2.5" strokeWidth={3} />
+      <div className="flex gap-1.5">
+        <span className="flex shrink-0 items-center gap-1 rounded-[8px] border border-(--s-text)/12 px-2 text-[10px]">
+          🇮🇹 +39
+          <ChevronDown className="h-2.5 w-2.5 text-(--s-muted)" />
+        </span>
+        <span aria-label={mock.phone} className="block flex-1 rounded-[8px] border border-(--s-text)/12 px-2.5 py-1.5 text-[10px]">
+          333 123 4567
+        </span>
+      </div>
+      <div className="flex items-start gap-2 text-[9px] leading-snug text-(--s-muted)">
+        <span
+          className={`relative mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-colors duration-300 ${
+            tapped ? "border-(--s-accent) bg-(--s-accent) text-white" : "border-(--s-text)/25"
+          }`}
+        >
+          {tapped && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+          <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </span>
         {mock.whatsapp}
       </div>
+      <PrimaryButton tap={tap + 0.75}>{mock.confirm}</PrimaryButton>
     </div>,
-    // Confirmed
-    <div key="done" className="flex flex-col items-center pt-3 text-center">
+
+    // Done
+    <div key="done" className="flex flex-col items-center pt-8 text-center">
       <motion.span
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-(--s-accent) text-white shadow-[0_10px_24px_-10px_var(--s-accent)]"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--s-accent)_15%,var(--s-bg))] text-(--s-accent)"
         initial={{ opacity: 0, transform: "scale(0.8)" }}
         animate={{ opacity: 1, transform: "scale(1)" }}
         transition={{ type: "spring", duration: 0.5, bounce: 0.3, delay: 0.15 }}
       >
-        <Check className="h-7 w-7" strokeWidth={2.5} />
+        <Check className="h-6 w-6" strokeWidth={2.5} />
       </motion.span>
-      <p className="mt-3 text-[14px] font-bold">{mock.confirmed}</p>
-      <p className="mt-1 text-[10.5px] text-(--s-muted)">{mock.confirmedBody}</p>
-      <div className="mt-4 w-full space-y-1.5 rounded-2xl bg-(--s-surface) p-3 text-left text-[10.5px]">
-        <p className="font-semibold">{services[0].name}</p>
-        <p className="text-(--s-muted)">Giulia · {weekday.format(new Date(2026, 10, 17))} 17 · 10:30</p>
-      </div>
+      <p className="mt-3 text-[14px] font-semibold">{mock.booked}</p>
+      <p className="mt-1 text-[11px] font-medium">{mock.withName.replace("{name}", "Giulia")}</p>
+      <p className="mt-1.5 px-2 text-[10px] leading-snug text-(--s-muted)">{mock.confirmationSent.replace("{email}", email)}</p>
+      <p className="mt-3 text-[10.5px] font-medium text-(--s-accent)">{mock.manageBooking}</p>
     </div>,
   ];
 
-  const sheet = (
+  // /[username]/booking: back + share, the business, then the flow on a card.
+  const page = (
     <motion.div
-      className="absolute inset-x-0 bottom-0 z-10 flex h-[76%] flex-col rounded-t-[26px] bg-(--s-bg) px-4 pt-2 shadow-[0_-12px_30px_-12px_rgb(0_0_0_/_0.35)]"
-      initial={{ transform: "translateY(100%)" }}
-      animate={{ transform: "translateY(0%)" }}
-      transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1], delay: 0.25 }}
+      className="absolute inset-0 z-10 bg-(--s-bg) shadow-[-12px_0_30px_-14px_rgb(0_0_0_/_0.35)]"
+      style={{ "--s-accent": EMERALD } as CSSProperties}
+      initial={pushIn ? { transform: "translateX(100%)" } : false}
+      animate={{ transform: "translateX(0%)" }}
+      transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1], delay: 0.65 }}
     >
-      <span className="mx-auto h-1 w-9 rounded-full bg-(--s-muted)/30" />
-      <div className="mt-3 flex h-6 items-center gap-2">
-        <ChevronLeft className={`h-4 w-4 transition-opacity duration-300 ${step > 0 && step < 4 ? "opacity-70" : "opacity-0"}`} />
-        <p className="flex-1 truncate text-[13px] font-bold">{titles[step]}</p>
-        <span className="flex gap-1">
-          {titles.map((_, i) => (
-            <span
-              key={i}
-              className={`h-1.5 rounded-full transition-[width,background-color] duration-300 ${
-                i === step ? "w-4 bg-(--s-accent)" : i < step ? "w-1.5 bg-(--s-accent)/50" : "w-1.5 bg-(--s-muted)/25"
-              }`}
-            />
-          ))}
+      <div
+        aria-hidden
+        className="absolute top-0 left-1/2 h-36 w-56 -translate-x-1/2 rounded-full bg-emerald-300/30 blur-3xl dark:bg-emerald-600/20"
+      />
+      <div className="relative flex items-center justify-between px-3 pt-[46px]">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-(--s-text)/12 bg-(--s-bg)">
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </span>
+        <span className="inline-flex h-7 items-center gap-1 rounded-full border border-(--s-text)/12 bg-(--s-bg) px-2.5 text-[9.5px] font-medium">
+          <Share2 className="h-3 w-3" />
+          {mock.share}
         </span>
       </div>
-      <div className="relative mt-3 flex-1">
-        <AnimatePresence>
+      <div className="relative -mt-2 flex flex-col items-center">
+        <Photo id="physio-avatar" hue={170} className="h-11 w-11 rounded-full shadow-md ring-2 ring-(--s-bg)" />
+        <p className="mt-1.5 text-[14px] font-bold tracking-tight">Forma Physio</p>
+      </div>
+      <div className="absolute inset-x-3 top-[150px] bottom-3 overflow-hidden rounded-2xl border border-(--s-text)/12 bg-(--s-bg) shadow-sm">
+        <AnimatePresence initial={false}>
           <motion.div
             key={step}
-            className="absolute inset-0"
-            initial={{ opacity: 0, transform: "translateX(28px)" }}
+            className="absolute inset-0 p-3"
+            initial={{ opacity: 0, transform: "translateX(24px)" }}
             animate={{ opacity: 1, transform: "translateX(0px)" }}
-            exit={{ opacity: 0, transform: "translateX(-20px)" }}
+            exit={{ opacity: 0, transform: "translateX(-18px)" }}
             transition={{ duration: 0.35, ease: EASE_OUT }}
           >
             {panels[step]}
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className={`relative pb-5 transition-opacity duration-300 ${step === 4 ? "opacity-0" : ""}`}>
-        <span className="flex h-10 items-center justify-center rounded-full bg-(--s-accent) text-[12px] font-semibold text-white">
-          {step === 3 ? mock.confirm : mock.continue}
-        </span>
-        {step < 4 && <TapRing key={step} delay={tap + 0.9} className="top-0.5 left-1/2 -translate-x-1/2" />}
-      </div>
     </motion.div>
   );
 
   return (
     <ScreenRoot
-      vars={{ "--s-accent": "#0f8a7e", "--s-cover": "rgb(15 138 126 / 0.2)" }}
+      vars={{ "--s-accent": "#0891b2", "--s-cover": "rgb(8 145 178 / 0.18)" }}
       scrollY={scrollY}
       rootRef={rootRef}
-      overlay={
-        <>
-          <div className="absolute inset-0 z-[5] bg-black/35" aria-hidden />
-          {sheet}
-        </>
-      }
+      overlay={page}
     >
       <ProfileTop
-        b={{ name: "Forma Physio", handle: "formaphysio", avatar: "physio-avatar", hue: 170, bio: mock.physioBio }}
+        b={{ name: "Forma Physio", handle: "formaphysio", avatar: "physio-avatar", hue: 170, bio: mock.physioBio, address: "Bologna", stats: ["1.9k", "214"] }}
         mock={mock}
-        socials={["web", "instagram", "whatsapp"]}
+        socials={["website", "instagram", "whatsapp"]}
         socialLayout="icons"
         booking="solid"
+        tapBook={pushIn ? 0.15 : undefined}
       />
     </ScreenRoot>
   );
@@ -614,43 +848,130 @@ export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenPr
 
 /* ───────────────────────── 5 · Style picker (nails) ───────────────────────── */
 
-const BG_SWATCHES = ["default", "#ffffff", "#f7e4e8", "#fdf1dc", "#e3f0e6", "#1d1a26", "#2a1f3d"];
-const BTN_SWATCHES = ["default", "#e3a5b4", "#c9b8f0", "#a8d5c2", "#f2c58a", "#1d1a26"];
+const PICKER_ACTIVE = "border-violet-500 bg-violet-500/10 text-(--s-text)";
+const PICKER_IDLE = "border-(--s-text)/15 text-(--s-muted)";
 
-function Swatches({ colors, selected, tapIndex, tap }: { colors: string[]; selected: number; tapIndex: number; tap: number }) {
+function ColorGroup({
+  label,
+  presets,
+  selected,
+  tap,
+  tapIndex,
+  defaultLabel,
+}: {
+  label: string;
+  presets: string[];
+  selected: number | null; // preset index, null = default
+  tap: number;
+  tapIndex: number;
+  defaultLabel: string;
+}) {
+  const swatch = "relative flex h-[25px] w-[25px] items-center justify-center rounded-full border transition-shadow duration-300";
+  const on = "border-violet-500 ring-2 ring-violet-500/40";
   return (
-    <div className="mt-2 flex gap-2">
-      {colors.map((c, i) => (
-        <span
-          key={c}
-          className={`relative h-7 w-7 rounded-full ring-offset-2 ring-offset-(--s-bg) transition-shadow duration-300 ${
-            i === selected ? "ring-2 ring-(--s-text)" : "ring-1 ring-black/10"
-          }`}
-          style={{
-            background: c === "default" ? "linear-gradient(135deg, #ffffff 50%, #16141c 50%)" : c,
-          }}
-        >
-          {i === tapIndex && <TapRing delay={tap} className="-top-1 -left-1" />}
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[10.5px] font-medium">{label}</p>
+        <span className="w-[66px] rounded-[5px] border border-(--s-text)/15 px-1.5 py-0.5 text-right font-mono text-[8.5px] text-(--s-muted)">
+          {selected === null ? defaultLabel : presets[selected]}
         </span>
-      ))}
+      </div>
+      <div className="grid grid-cols-7 justify-items-center gap-y-1.5">
+        <span className={`${swatch} ${selected === null ? on : "border-(--s-text)/20"}`}>
+          <Ban className="h-3 w-3 text-(--s-muted)" />
+        </span>
+        {presets.map((c, i) => (
+          <span key={c} className={`${swatch} ${i === selected ? on : "border-black/10"}`} style={{ backgroundColor: c }}>
+            {i === selected && <Check className="h-3 w-3 text-white mix-blend-difference" />}
+            {i === tapIndex && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+          </span>
+        ))}
+        <span
+          className={`${swatch} border-transparent p-[3px]`}
+          style={{ background: "conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #8b5cf6, #ec4899, #ef4444)" }}
+        >
+          <span className="block h-full w-full rounded-full bg-(--s-bg)" />
+        </span>
+      </div>
     </div>
   );
 }
 
-function Segmented({ options, selected, tapIndex, tap }: { options: string[]; selected: number; tapIndex: number; tap: number }) {
+const VARIANT_VISUAL = [
+  "border border-emerald-500/40 bg-emerald-500/15",
+  "bg-emerald-500",
+  "border-2 border-emerald-500",
+  "border border-white/30 bg-(--s-text)/10",
+];
+
+function VariantRow({ label, options, selected, tap }: { label: string; options: string[]; selected: number; tap: number }) {
   return (
-    <div className="mt-2 grid grid-cols-4 gap-1 rounded-xl bg-(--s-surface) p-1">
-      {options.map((o, i) => (
-        <span
-          key={o}
-          className={`relative rounded-lg py-1.5 text-center text-[10px] font-semibold transition-[background-color,box-shadow] duration-300 ${
-            i === selected ? "bg-(--s-bg) shadow-sm" : "text-(--s-muted)"
-          }`}
-        >
-          {o}
-          {i === tapIndex && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
-        </span>
-      ))}
+    <div>
+      <p className="mb-2 text-[10.5px] font-medium">{label}</p>
+      <div className="grid grid-cols-4 gap-1.5">
+        {options.map((o, i) => (
+          <span
+            key={o}
+            className={`relative flex flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-[9.5px] transition-colors duration-300 ${
+              i === selected ? PICKER_ACTIVE : PICKER_IDLE
+            }`}
+          >
+            <span className={`h-2.5 w-7 rounded-full ${VARIANT_VISUAL[i]}`} />
+            {o}
+            {i === 1 && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const BAR = "bg-current opacity-35";
+const LAYOUT_VISUAL = [
+  <span key="icons" className="flex gap-1">
+    {[0, 1, 2].map((i) => <span key={i} className={`h-3 w-3 rounded-[3px] ${BAR}`} />)}
+  </span>,
+  <span key="chips" className="flex gap-1">
+    {[0, 1].map((i) => (
+      <span key={i} className="flex h-3 items-center gap-0.5 rounded-full border border-current/30 px-1">
+        <span className={`h-1.5 w-1.5 rounded-full ${BAR}`} />
+        <span className={`h-1 w-2.5 rounded-full ${BAR}`} />
+      </span>
+    ))}
+  </span>,
+  <span key="stack" className="flex w-11 flex-col gap-0.5">
+    {[0, 1, 2].map((i) => (
+      <span key={i} className="flex h-2 items-center justify-center rounded-[2px] border border-current/30">
+        <span className={`h-0.5 w-4 rounded-full ${BAR}`} />
+      </span>
+    ))}
+  </span>,
+  <span key="minimal" className="flex gap-1.5">
+    {[0, 1, 2].map((i) => <span key={i} className={`h-2 w-2 rounded-full ${BAR}`} />)}
+  </span>,
+];
+
+function LayoutGrid({ label, options, hints, selected, tap }: { label: string; options: string[]; hints: string[]; selected: number; tap: number }) {
+  return (
+    <div>
+      <p className="mb-2 text-[10.5px] font-medium">{label}</p>
+      <div className="grid grid-cols-2 gap-1.5">
+        {options.map((o, i) => (
+          <span
+            key={o}
+            className={`relative flex flex-col items-center gap-1 rounded-xl border px-1.5 pt-1.5 pb-1 transition-colors duration-300 ${
+              i === selected ? PICKER_ACTIVE : PICKER_IDLE
+            }`}
+          >
+            <span className="flex h-4 items-center justify-center">{LAYOUT_VISUAL[i]}</span>
+            <span className="text-center leading-tight">
+              <span className="block text-[9.5px] font-medium">{o}</span>
+              <span className="block text-[8px] opacity-70">{hints[i]}</span>
+            </span>
+            {i === 1 && <TapRing delay={tap} className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -659,58 +980,84 @@ export function StyleScreen({ step, scrollY, rootRef, mock }: ScreenProps) {
   const tap = step === 0 ? 1.15 : 0.55; // step 0 waits for the sheet to land
   const tapped = useTapped(step, tap * 1000 + 100);
   const level = step + (tapped ? 1 : 0); // how many of the 4 changes are applied
+  // The booking color was already set to the "Pink" preset; this tour changes its look.
   const vars: ScreenVars = {
-    ...(level >= 1 ? BLUSH : { "--s-accent": "#b4466a", "--s-cover": "rgb(180 70 106 / 0.16)" }),
-    ...(level >= 2 ? { "--s-btn": "#e3a5b4", "--s-btn-text": "#3b1f2b" } : {}),
+    "--s-accent": "#db2777",
+    ...(level >= 1 ? BLUSH : {}),
+    ...(level >= 2 ? { "--s-btn": BTN_PRESETS[ROSE_BTN], "--s-btn-text": "#ffffff" } : {}),
   };
   const tabs = [mock.tabPage, mock.tabButtons, mock.tabBooking];
   const activeTab = [0, 1, 2, 1][step];
 
   const panels = [
-    <div key="bg">
-      <p className="text-[10px] font-semibold text-(--s-muted)">{mock.background}</p>
-      <Swatches colors={BG_SWATCHES} selected={level >= 1 ? 2 : 0} tapIndex={2} tap={tap} />
-    </div>,
-    <div key="btn">
-      <p className="text-[10px] font-semibold text-(--s-muted)">{mock.buttonColor}</p>
-      <Swatches colors={BTN_SWATCHES} selected={level >= 2 ? 1 : 0} tapIndex={1} tap={tap} />
-    </div>,
-    <div key="booking">
-      <p className="text-[10px] font-semibold text-(--s-muted)">{mock.bookNow}</p>
-      <Segmented options={mock.variants} selected={level >= 3 ? 1 : 0} tapIndex={1} tap={tap} />
-    </div>,
-    <div key="layout">
-      <p className="text-[10px] font-semibold text-(--s-muted)">{mock.socialLinks}</p>
-      <Segmented options={mock.layouts} selected={level >= 4 ? 1 : 0} tapIndex={1} tap={tap} />
-    </div>,
+    <ColorGroup
+      key="bg"
+      label={mock.background}
+      presets={BG_PRESETS}
+      selected={level >= 1 ? PINK_BG : null}
+      tap={tap}
+      tapIndex={PINK_BG}
+      defaultLabel={mock.defaultColor}
+    />,
+    <ColorGroup
+      key="btn"
+      label={mock.buttonColor}
+      presets={BTN_PRESETS}
+      selected={level >= 2 ? ROSE_BTN : null}
+      tap={tap}
+      tapIndex={ROSE_BTN}
+      defaultLabel={mock.defaultColor}
+    />,
+    <VariantRow key="booking" label={mock.variantLabel} options={mock.variants} selected={level >= 3 ? 1 : 0} tap={tap} />,
+    <LayoutGrid
+      key="layout"
+      label={mock.layoutLabel}
+      options={mock.layouts}
+      hints={mock.layoutHints}
+      selected={level >= 4 ? 1 : 0}
+      tap={tap}
+    />,
   ];
 
+  // Phones get the picker as a bottom sheet with a clear backdrop, so the page
+  // behind previews every change live.
   const sheet = (
     <motion.div
-      className="absolute inset-x-0 bottom-0 z-10 rounded-t-[24px] bg-(--s-bg) px-4 pt-2 pb-6 shadow-[0_-10px_30px_-12px_rgb(0_0_0_/_0.3)] transition-[background-color] duration-500"
+      className="absolute inset-x-0 bottom-0 z-10 rounded-t-[22px] border-t border-(--s-text)/10 bg-(--s-bg)/95 pb-4 shadow-[0_-10px_30px_-12px_rgb(0_0_0_/_0.3)] backdrop-blur-md transition-[background-color] duration-500"
       initial={{ transform: "translateY(100%)" }}
       animate={{ transform: "translateY(0%)" }}
       transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1], delay: 0.25 }}
     >
-      <span className="mx-auto block h-1 w-9 rounded-full bg-(--s-muted)/30" />
-      <p className="mt-2.5 text-[13px] font-bold">{mock.style}</p>
-      <div className="mt-2 flex gap-1 border-b border-(--s-muted)/15">
-        {tabs.map((tab, i) => (
-          <span
-            key={tab}
-            className={`-mb-px border-b-2 px-2 pb-1.5 text-[10.5px] font-semibold transition-colors duration-300 ${
-              i === activeTab ? "border-(--s-text) text-(--s-text)" : "border-transparent text-(--s-muted)"
-            }`}
-          >
-            {tab}
+      <span className="mx-auto mt-2 mb-1 block h-1 w-9 rounded-full bg-(--s-muted)/30" />
+      <div className="flex items-center justify-between px-4 pt-1 pb-2">
+        <p className="text-[12.5px] font-semibold">{mock.style}</p>
+        <span className="flex items-center gap-2 text-(--s-muted)">
+          <span className="inline-flex items-center gap-1 text-[9.5px] font-medium">
+            <RotateCcw className="h-2.5 w-2.5" />
+            {mock.reset}
           </span>
-        ))}
+          <X className="h-3 w-3" />
+        </span>
       </div>
-      <div className="relative mt-3 h-[52px]">
+      <div className="px-4 pb-2.5">
+        <div className="flex rounded-lg bg-(--s-surface) p-0.5">
+          {tabs.map((tab, i) => (
+            <span
+              key={tab}
+              className={`flex-1 rounded-md py-1 text-center text-[10px] font-medium transition-[background-color,color,box-shadow] duration-300 ${
+                i === activeTab ? "bg-(--s-bg) text-(--s-text) shadow-sm" : "text-(--s-muted)"
+              }`}
+            >
+              {tab}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="relative h-[118px] border-t border-(--s-text)/10">
         <AnimatePresence>
           <motion.div
             key={step}
-            className="absolute inset-0"
+            className="absolute inset-0 px-4 pt-3"
             initial={{ opacity: 0, transform: "translateY(6px)" }}
             animate={{ opacity: 1, transform: "translateY(0px)" }}
             exit={{ opacity: 0 }}
@@ -726,9 +1073,9 @@ export function StyleScreen({ step, scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot vars={vars} scrollY={scrollY} rootRef={rootRef} overlay={sheet}>
       <ProfileTop
-        b={{ name: "Bloom Nails", handle: "bloomnails", avatar: "bloom-avatar", hue: 350, bio: mock.bloomBio, stats: ["2.4k", "318"] }}
+        b={{ name: "Bloom Nails", handle: "bloomnails", avatar: "bloom-avatar", hue: 350, bio: mock.bloomBio, address: "Torino", stats: ["2.4k", "318"] }}
         mock={mock}
-        socials={["instagram", "whatsapp", "email"]}
+        socials={["instagram", "email", "whatsapp"]}
         socialLayout={level >= 4 ? "chips" : "icons"}
         booking={level >= 3 ? "solid" : "soft"}
       />
@@ -744,23 +1091,15 @@ export function LinksScreen({ scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot vars={SAGE} scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
-        b={{ name: "Sole Yoga", handle: "soleyoga", avatar: "yoga-avatar", hue: 120, bio: mock.yogaBio }}
+        b={{ name: "Sole Yoga", handle: "soleyoga", avatar: "yoga-avatar", hue: 120, bio: mock.yogaBio, stats: ["1.1k", "190"] }}
         mock={mock}
-        socials={["instagram", "whatsapp", "youtube", "email"]}
+        socials={["instagram", "email", "youtube", "whatsapp"]}
         socialLayout="stack"
         booking="solid"
+        placement="social"
       />
       <SectionTitle title={mock.links} count={3} />
-      <div className="flex flex-wrap gap-1.5 px-4">
-        {mock.yogaLinks.map((label) => (
-          <span key={label} className="flex items-center gap-1.5 rounded-full bg-(--s-btn) py-1.5 pr-3 pl-1.5 text-[10px] font-medium">
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-(--s-surface)">
-              <Globe className="h-2.5 w-2.5" />
-            </span>
-            {label}
-          </span>
-        ))}
-      </div>
+      <LinkPills labels={mock.yogaLinks} />
     </ScreenRoot>
   );
 }
@@ -773,15 +1112,15 @@ export function GalleryScreen({ scrollY, rootRef, mock }: ScreenProps) {
       <ProfileTop
         b={{ name: "Atelier Rosa", handle: "atelierrosa", avatar: "rosa-avatar", hue: 20, bio: mock.rosaBio, stats: ["9.7k", "502"] }}
         mock={mock}
-        socials={["web", "instagram", "email"]}
+        socials={["website", "instagram", "email"]}
         socialLayout="minimal"
         booking="glass"
       />
       <SectionTitle title={mock.gallery} count={48} />
-      <GalleryGrid
+      <GalleryMasonry
         photos={["rosa-gallery-1", "rosa-gallery-2", "rosa-gallery-3", "rosa-gallery-4", "rosa-gallery-5", "rosa-gallery-6"]}
+        ratios={[0.8, 1.25, 0.75, 1, 0.8, 1.3]}
         hue={15}
-        cols={2}
       />
     </ScreenRoot>
   );
