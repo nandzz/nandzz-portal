@@ -378,6 +378,54 @@ body[data-profile-preview] [data-profile-root] {
   .clay-float, .clay-pop { animation: none; }
 }
 
+/* Home hero showcase: phone screen palette. Follows the site theme unless a
+   screen locks its own (owner-picked background), via inline var overrides. */
+.showcase-screen {
+  --s-bg: #ffffff;
+  --s-surface: #f3f1f7;
+  --s-text: #1d1a26;
+  --s-muted: rgb(29 26 38 / 0.58);
+  --s-btn: #f0eef5;
+  --s-btn-text: #1d1a26;
+  --s-accent: #7c3aed;
+  --s-cover: rgb(124 58 237 / 0.16);
+}
+.dark .showcase-screen {
+  --s-bg: #17151d;
+  --s-surface: #221f2b;
+  --s-text: #ecebf2;
+  --s-muted: rgb(236 235 242 / 0.58);
+  --s-btn: #26232f;
+  --s-btn-text: #ecebf2;
+  --s-accent: #a78bfa;
+  --s-cover: rgb(124 58 237 / 0.28);
+}
+.showcase-placeholder {
+  background: linear-gradient(145deg, oklch(0.9 0.035 var(--h)), oklch(0.8 0.05 var(--h)));
+  color: oklch(0.4 0.05 var(--h));
+}
+.dark .showcase-placeholder {
+  background: linear-gradient(145deg, oklch(0.36 0.035 var(--h)), oklch(0.27 0.03 var(--h)));
+  color: oklch(0.8 0.04 var(--h));
+}
+/* Screen scroll and callouts move together on the same curve. */
+.showcase-scroll,
+.showcase-callout {
+  transition:
+    transform 900ms cubic-bezier(0.77, 0, 0.175, 1),
+    opacity 250ms ease;
+}
+/* Callout labels: overlap the phone edge on phones, reach out past it from sm up. */
+.showcase-callout { right: -10px; }
+.showcase-phone { transition: transform 600ms cubic-bezier(0.77, 0, 0.175, 1); }
+@media (min-width: 640px) {
+  .showcase-callout { right: -124px; }
+  .showcase-stage[data-annotated] .showcase-phone { transform: translateX(-56px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .showcase-scroll, .showcase-callout, .showcase-phone { transition-duration: 0ms; }
+}
+
 /* Auth split layout — one orchestrated entrance: the panel's "nz" rises,
    the form settles. Global reduced-motion rules (if any) still apply. */
 @keyframes auth-panel-mark-rise {

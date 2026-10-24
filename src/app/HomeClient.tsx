@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CalendarCheck, Check, Clock, Link2, X } from "lucide-react";
+import { ArrowRight, Check, Clock, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import mockupLight from "../../public/home/mockup-light.webp";
-import mockupDark from "../../public/home/mockup-dark.webp";
+import { HeroShowcase } from "@/features/home";
 
 const SERVICE_META = [
   { minutes: 45, price: 30 },
@@ -15,19 +14,6 @@ const SERVICE_META = [
 const SLOTS = ["9:00", "9:45", "10:30", "11:15", "12:00", "12:45"];
 const GALLERY = [1, 2, 3, 4, 5, 6].map((n) => `/home/gallery-${n}.webp`);
 const BRAND_SWATCHES = ["#7c3aed", "#1d1a26", "#f4c7d8", "#e9e4f7"];
-
-// Renders "*word*" segments of a translated line in the brand violet.
-function Highlighted({ text }: { text: string }) {
-  return text.split(/\*([^*]+)\*/).map((part, i) =>
-    i % 2 ? (
-      <span key={i} className="text-violet-600 dark:text-violet-400">
-        {part}
-      </span>
-    ) : (
-      part
-    ),
-  );
-}
 
 export function HomeClient() {
   const { t, locale } = useLanguage();
@@ -45,94 +31,8 @@ export function HomeClient() {
 
   return (
     <div className="home-clay">
-      {/* Hero: what Nandzz is, said plainly, next to the real product */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pb-28">
-          <div className="max-w-2xl">
-            <h1 className="text-[clamp(2.6rem,5.6vw,4.4rem)] font-bold leading-[1.02] tracking-[-0.035em]">
-              {h.heroLine1}
-              <br />
-              <Highlighted text={h.heroLine2} />
-            </h1>
-            <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-[color-mix(in_oklab,var(--clay-ink)_68%,transparent)]">
-              {h.heroDescription}
-            </p>
-            {/* Side by side at every width: on mobile each grows from its label width (long locales may wrap), natural width from sm up */}
-            <div className="mt-9 flex items-stretch gap-2.5 sm:flex-wrap sm:items-center sm:gap-3">
-              <Link
-                href="/login?tab=signup"
-                className="clay-violet inline-flex min-h-12 flex-auto items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-semibold leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-7 sm:py-0 sm:text-[15px]"
-              >
-                {h.getStarted}
-                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-              </Link>
-              <Link
-                href="#how"
-                className="clay inline-flex min-h-12 flex-auto items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
-              >
-                {h.howItWorks}
-              </Link>
-            </div>
-          </div>
-
-          {/* Floating layered mockup */}
-          <div className="relative mx-auto w-full max-w-[25rem] lg:max-w-[29rem]">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-[8%] rounded-full blur-3xl"
-              style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
-            />
-            <div className="clay-float relative">
-              <Image
-                src={mockupLight}
-                alt=""
-                priority
-                sizes="(min-width: 1024px) 464px, 400px"
-                className="h-auto w-full drop-shadow-[0_40px_50px_rgb(58_38_112_/_0.22)] dark:hidden"
-              />
-              <Image
-                src={mockupDark}
-                alt=""
-                priority
-                sizes="(min-width: 1024px) 464px, 400px"
-                className="hidden h-auto w-full drop-shadow-[0_40px_60px_rgb(0_0_0_/_0.6)] dark:block"
-              />
-            </div>
-
-            {/* New booking toast */}
-            <div
-              className="clay clay-pop absolute -top-8 left-0 sm:top-[5%] flex items-center gap-3 rounded-2xl py-2.5 pr-4 pl-2.5 sm:-left-10"
-              style={{ animationDelay: "350ms" }}
-            >
-              <span className="clay-violet flex h-9 w-9 items-center justify-center rounded-xl">
-                <CalendarCheck className="h-4.5 w-4.5" aria-hidden />
-              </span>
-              <span className="leading-tight">
-                <span className="block text-[13px] font-semibold">{h.mockToastTitle}</span>
-                <span className="block text-xs text-[color-mix(in_oklab,var(--clay-ink)_60%,transparent)]">
-                  {h.mockToastBody}
-                </span>
-              </span>
-            </div>
-
-            {/* Your link chip */}
-            <div
-              className="clay clay-pop absolute right-0 bottom-[9%] flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2 sm:-right-8"
-              style={{ animationDelay: "550ms" }}
-            >
-              <span className="clay-well flex h-8 w-8 items-center justify-center rounded-full">
-                <Link2 className="h-4 w-4 text-violet-600 dark:text-violet-400" aria-hidden />
-              </span>
-              <span className="leading-tight">
-                <span className="block text-[11px] text-[color-mix(in_oklab,var(--clay-ink)_55%,transparent)]">
-                  {h.mockLinkLabel}
-                </span>
-                <span className="block text-[13px] font-semibold">nandzz.com/yourbrand</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero: the copy + an auto-playing tour of example pages */}
+      <HeroShowcase services={services} />
 
       {/* What's on the page: work, services, booking, brand */}
       <section className="mx-auto max-w-7xl px-4 pb-24">
