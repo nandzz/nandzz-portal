@@ -7,4 +7,7 @@ export {
   getSpaceLikesCount,
   getFollowingIds,
   getIsFollowing,
+  getFollowingFeedPage,
+  getFollowsAnyone,
 } from "./data/social";
+export type { FeedCursor } from "./data/social";

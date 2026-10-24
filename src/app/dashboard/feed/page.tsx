@@ -10,7 +10,12 @@ import { Compass, Rss } from "lucide-react";
 import type { SpaceWithProfile } from "@/lib/types";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { PageShell } from "@/components/layout/PageShell";
-import { getFollowingIds, getAllLikedSpaceIds } from "@/features/social/server";
+import {
+  getFollowingFeedPage,
+  getFollowsAnyone,
+  getLikedSpaceIds,
+  type FeedCursor,
+} from "@/features/social/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerTranslations();
@@ -22,14 +27,32 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const PAGE_SIZE = 25;
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Cursor URL format: `<created_at ISO>_<space id>`. Invalid values are ignored
+// (falls back to the newest page).
+function parseCursor(raw: string | undefined): FeedCursor | null {
+  if (!raw) return null;
+  const sep = raw.lastIndexOf("_");
+  if (sep < 0) return null;
+  const createdAt = raw.slice(0, sep);
+  const id = raw.slice(sep + 1);
+  if (!UUID_RE.test(id) || Number.isNaN(Date.parse(createdAt))) return null;
+  return { createdAt, id };
+}
+
+function cursorParam(space: SpaceWithProfile): string {
+  return encodeURIComponent(`${space.created_at}_${space.id}`);
+}
+
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ before?: string; after?: string }>;
 }) {
   const supabase = await createClient();
   const t = await getServerTranslations();
-  const { page } = await searchParams;
+  const params = await searchParams;
 
   const userId = await getUserIdFromClaims(supabase);
   if (!userId) redirect("/login");
@@ -44,36 +67,24 @@ export default async function FeedPage({
     .single();
   if (me?.account_type === "business") redirect("/dashboard/contents");
 
-  const followingIds = await getFollowingIds(supabase, userId);
+  const before = parseCursor(params.before);
+  const after = before ? null : parseCursor(params.after);
 
-  let spaces: SpaceWithProfile[] = [];
-  let likedSpaceIds: string[] = [];
-  let totalPages = 0;
+  const { spaces, hasOlder, hasNewer } = await getFollowingFeedPage(supabase, {
+    before,
+    after,
+    pageSize: PAGE_SIZE,
+  });
 
-  const currentPage = Math.max(1, parseInt(page || "1", 10) || 1);
-  const from = (currentPage - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-
-  if (followingIds.length > 0) {
-    const [{ data: rawSpaces, count }, likes] = await Promise.all([
-      supabase
-        .from("spaces")
-        .select("*, profiles(username, display_name, avatar_url)", { count: "exact" })
-        .in("user_id", followingIds)
-        .eq("is_public", true)
-        // Feed is publications + photos only — links and videos belong to the
-        // profile's Links section, not the feed. Legacy rows with a null
-        // content_type fall back to a publication, so keep them too.
-        .or("content_type.is.null,content_type.not.in.(link,video)")
-        .order("created_at", { ascending: false })
-        .range(from, to),
-      getAllLikedSpaceIds(supabase, userId),
-    ]);
-
-    spaces = (rawSpaces ?? []) as SpaceWithProfile[];
-    likedSpaceIds = likes;
-    totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
-  }
+  const [likedSpaceIds, followsAnyone] = await Promise.all([
+    getLikedSpaceIds(
+      supabase,
+      userId,
+      spaces.map((s) => s.id)
+    ),
+    // Only the empty state needs to tell "follows nobody" from "no posts".
+    spaces.length === 0 ? getFollowsAnyone(supabase, userId) : Promise.resolve(true),
+  ]);
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
@@ -92,7 +103,7 @@ export default async function FeedPage({
           </div>
         </div>
 
-        {followingIds.length === 0 ? (
+        {!followsAnyone ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-violet-100/80 dark:bg-violet-900/40 border border-violet-200 dark:border-violet-800">
               <Compass className="h-10 w-10 text-violet-400 dark:text-violet-500" />
@@ -122,20 +133,17 @@ export default async function FeedPage({
               likedSpaceIds={likedSpaceIds}
               currentUserId={userId}
             />
-            {totalPages > 1 && (
+            {(hasNewer || hasOlder) && (
               <div className="mt-10 flex items-center justify-center gap-2">
-                {currentPage > 1 && (
-                  <Link href={`/dashboard/feed?page=${currentPage - 1}`}>
+                {hasNewer && (
+                  <Link href={`/dashboard/feed?after=${cursorParam(spaces[0])}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
                       {t.feed.previous}
                     </Button>
                   </Link>
                 )}
-                <span className="px-3 text-sm text-muted-foreground">
-                  {t.feed.pageOf.replace("{current}", String(currentPage)).replace("{total}", String(totalPages))}
-                </span>
-                {currentPage < totalPages && (
-                  <Link href={`/dashboard/feed?page=${currentPage + 1}`}>
+                {hasOlder && (
+                  <Link href={`/dashboard/feed?before=${cursorParam(spaces[spaces.length - 1])}`}>
                     <Button variant="outline" size="sm" className="border-border/60">
                       {t.feed.next}
                     </Button>

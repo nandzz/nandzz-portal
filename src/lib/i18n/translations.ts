@@ -167,7 +167,6 @@ export type Translations = {
     noPublic: string;
     previous: string;
     next: string;
-    pageOf: string;
   };
   collections: {
     title: string;
@@ -1718,7 +1717,6 @@ const en: Translations = {
     noPublic: "No public content yet from the people you follow.",
     previous: "Previous",
     next: "Next",
-    pageOf: "Page {current} of {total}",
   },
   collections: {
     title: "My Collections",
@@ -3267,7 +3265,6 @@ const pt: Translations = {
     noPublic: "Nenhum conteúdo público ainda das pessoas que você segue.",
     previous: "Anterior",
     next: "Próximo",
-    pageOf: "Página {current} de {total}",
   },
   collections: {
     title: "Minhas Coleções",
@@ -4816,7 +4813,6 @@ const fr: Translations = {
     noPublic: "Aucun contenu public encore de la part des personnes que vous suivez.",
     previous: "Précédent",
     next: "Suivant",
-    pageOf: "Page {current} sur {total}",
   },
   collections: {
     title: "Mes Collections",
@@ -6365,7 +6361,6 @@ const es: Translations = {
     noPublic: "Aún no hay contenidos públicos de las personas que sigues.",
     previous: "Anterior",
     next: "Siguiente",
-    pageOf: "Página {current} de {total}",
   },
   collections: {
     title: "Mis Colecciones",
@@ -7914,7 +7909,6 @@ const ja: Translations = {
     noPublic: "フォロー中のユーザーの公開コンテンツがまだありません。",
     previous: "前へ",
     next: "次へ",
-    pageOf: "{total}ページ中 {current}ページ",
   },
   collections: {
     title: "マイコレクション",
@@ -9463,7 +9457,6 @@ const de: Translations = {
     noPublic: "Noch keine öffentlichen Inhalte von den Personen, denen du folgst.",
     previous: "Zurück",
     next: "Weiter",
-    pageOf: "Seite {current} von {total}",
   },
   collections: {
     title: "Meine Sammlungen",
@@ -11012,7 +11005,6 @@ const it: Translations = {
     noPublic: "Ancora nessuno contenuto pubblico dalle persone che segui.",
     previous: "Precedente",
     next: "Successivo",
-    pageOf: "Pagina {current} di {total}",
   },
   collections: {
     title: "Le mie Collezioni",

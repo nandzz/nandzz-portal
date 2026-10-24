@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SpaceWithProfile } from "@/lib/types";
 
 // Server-only read helpers for likes/follows. These consolidate the table
 // access that used to be inlined across the profile/space/feed pages, so UI
@@ -87,4 +88,49 @@ export async function getIsFollowing(
     .eq("following_id", followingId)
     .maybeSingle();
   return !!data;
+}
+
+// Keyset cursor into the following feed: the (created_at, id) of a space.
+export type FeedCursor = { createdAt: string; id: string };
+
+// One page of the following feed via the `get_following_feed` RPC (the follow
+// set is resolved inside Postgres; no exact count). `before` = older page,
+// `after` = newer page. Spaces come back newest first either way.
+export async function getFollowingFeedPage(
+  supabase: SupabaseClient,
+  opts: { before?: FeedCursor | null; after?: FeedCursor | null; pageSize: number }
+): Promise<{ spaces: SpaceWithProfile[]; hasOlder: boolean; hasNewer: boolean }> {
+  const { before, after, pageSize } = opts;
+  const { data } = await supabase
+    .rpc("get_following_feed", {
+      p_before_created_at: before?.createdAt ?? null,
+      p_before_id: before?.id ?? null,
+      p_after_created_at: after?.createdAt ?? null,
+      p_after_id: after?.id ?? null,
+      p_limit: pageSize + 1,
+    })
+    .select("*, profiles(username, display_name, avatar_url)");
+
+  const rows = (data ?? []) as SpaceWithProfile[];
+  const hasExtra = rows.length > pageSize;
+  const page = rows.slice(0, pageSize);
+
+  if (after) {
+    // Newer page arrives oldest first; the cursor itself proves an older page.
+    return { spaces: page.reverse(), hasOlder: true, hasNewer: hasExtra };
+  }
+  return { spaces: page, hasOlder: hasExtra, hasNewer: !!before };
+}
+
+// Whether `followerId` follows anyone at all (feed empty-state copy).
+export async function getFollowsAnyone(
+  supabase: SupabaseClient,
+  followerId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("user_follows")
+    .select("id")
+    .eq("follower_id", followerId)
+    .limit(1);
+  return (data?.length ?? 0) > 0;
 }
