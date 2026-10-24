@@ -8,14 +8,6 @@ import { mapAuthError } from "../error-messages";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { KeyRound } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function ResetPasswordForm() {
@@ -78,17 +70,11 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-xl shadow-black/5 dark:shadow-black/20 border-border/60">
-      <CardHeader className="text-center pb-2">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/50">
-          <KeyRound className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-        </div>
-        <CardTitle className="text-2xl font-bold">{t.passwordForm.updatePassword}</CardTitle>
-        <CardDescription className="text-base">
-          {t.passwordForm.confirmPassword}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-4">
+    <div className="w-full">
+      <div className="mb-8 space-y-2">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em]">{t.passwordForm.updatePassword}</h1>
+        <p className="text-[15px] text-muted-foreground">{t.passwordForm.confirmPassword}</p>
+      </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="newPassword">{t.passwordForm.newPassword}</Label>
@@ -137,7 +123,6 @@ export function ResetPasswordForm() {
             {t.passwordForm.backToLogin}
           </Link>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

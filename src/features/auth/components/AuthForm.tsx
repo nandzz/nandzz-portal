@@ -17,13 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { MailCheck } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -65,7 +58,8 @@ export type AuthResult = {
  * (see `AuthModal`). One component so every entry point stays identical:
  * same fields, same Google button, same validation.
  *
- * - `variant="page"` (default): renders inside a Card and, on success,
+ * - `variant="page"` (default): renders as a plain page section (the route's
+ *   AuthSplitLayout supplies the shell) and, on success,
  *   navigates to `next` — today's behavior, unchanged.
  * - `variant="embedded"`: drops the Card chrome (the modal supplies the shell)
  *   and, when `onSuccess` is given, reports the result instead of navigating.
@@ -467,13 +461,11 @@ export function AuthForm({
         </Button>
       </form>
 
-      <div className="relative my-5">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border/60" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">{t.auth.or}</span>
-        </div>
+      {/* Background-free divider: works on the page color and inside the modal. */}
+      <div className="my-5 flex items-center gap-3 text-xs uppercase text-muted-foreground">
+        <span className="h-px flex-1 bg-border/60" />
+        {t.auth.or}
+        <span className="h-px flex-1 bg-border/60" />
       </div>
 
       <Button
@@ -541,16 +533,12 @@ export function AuthForm({
   }
 
   return (
-    <Card className="w-full max-w-md shadow-xl shadow-black/5 dark:shadow-black/20 border-border/60">
-      <CardHeader className="text-center pb-2">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static brand mark */}
-        <img src="/logo.svg" alt="" aria-hidden className="mx-auto mb-4 h-12 w-12" />
-        <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-        <CardDescription className="text-base">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-4">
-        {confirmSent ? confirmBody : mode === "setup" ? setupBody : formBody}
-      </CardContent>
-    </Card>
+    <div className="w-full">
+      <div className="mb-8 space-y-2">
+        <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
+        <p className="text-[15px] text-muted-foreground">{description}</p>
+      </div>
+      {confirmSent ? confirmBody : mode === "setup" ? setupBody : formBody}
+    </div>
   );
 }

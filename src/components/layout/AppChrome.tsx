@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Navbar, Sidebar, MobileTabBar, ProfileVisitorCta } from "@/features/analytics";
 import { useAuth } from "@/features/auth/AuthContext";
 import { ConditionalFooter } from "./ConditionalFooter";
-import { AuthTopBar } from "./AuthTopBar";
 import { SIDEBAR_COLLAPSED_COOKIE, isAuthRoute, isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
 import { cn } from "@/lib/utils";
 import { useChrome } from "@/contexts/ChromeContext";
@@ -43,7 +42,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
   // Post-signup onboarding (choose-a-username): the visitor is authenticated but
   // mid-setup, so no sidebar/navbar/footer/tab bar — just the centered card.
   const onBareAuthPage = isBareAuthRoute(pathname);
-  // Login / password pages: only a logo top bar, no other chrome.
+  // Login / password pages: no app chrome — AuthSplitLayout owns the viewport.
   const onAuthPage = isAuthRoute(pathname);
   // Owner previewing their own profile as a visitor sees it: no chrome at all
   // (not even the visitor CTA pill). Cleared whenever they leave the profile.
@@ -112,8 +111,6 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
           immersive space pages never show it — they render their own chrome —
           and neither does a logged-out visitor on a profile (clean branded
           page; the floating CTA pill is their only Nandzz affordance). */}
-      {onAuthPage && <AuthTopBar />}
-
       {!onWidgetPage && !onImmersivePage && !onBareAuthPage && !onAuthPage && !isVisitorProfile && !previewing && (
         <div className={cn(showSidebar && "md:hidden")}>
           <Navbar />

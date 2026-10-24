@@ -377,3 +377,26 @@ body[data-profile-preview] [data-profile-root] {
 @media (prefers-reduced-motion: reduce) {
   .clay-float, .clay-pop { animation: none; }
 }
+
+/* Auth split layout — one orchestrated entrance: the panel's "nz" rises,
+   the form settles. Global reduced-motion rules (if any) still apply. */
+@keyframes auth-panel-mark-rise {
+  from { transform: translateY(14%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes auth-panel-form-in {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.auth-panel-mark {
+  animation: auth-panel-mark-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.auth-panel-form {
+  animation: auth-panel-form-in 500ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-panel-mark,
+  .auth-panel-form {
+    animation: none;
+  }
+}

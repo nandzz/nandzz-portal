@@ -32,9 +32,8 @@ export function isBareAuthRoute(pathname: string): boolean {
 }
 
 // Sign-in surfaces (login/signup, forgot + reset password). Visitors here only
-// need the form, so the full Navbar, footer and tab bar give way to a
-// logo-only top bar (AuthTopBar) — Log in / Sign up links would just point at
-// the page they're already on.
+// need the form, so the Navbar, footer and tab bar are suppressed and
+// AuthSplitLayout (brand panel + form) owns the whole viewport.
 const AUTH_ROUTE_RE = /^\/(?:login|forgot-password|auth\/reset-password)(?:\/|$)/;
 
 export function isAuthRoute(pathname: string): boolean {

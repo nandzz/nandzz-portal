@@ -207,6 +207,8 @@ export type Translations = {
     signup: string;
     loading: string;
     continueGoogle: string;
+    /** Line on the brand panel beside the sign-in form (desktop). */
+    panelTagline: string;
     or: string;
     noAccount: string;
     hasAccount: string;
@@ -1758,6 +1760,7 @@ const en: Translations = {
     signup: "Sign up",
     loading: "Loading...",
     continueGoogle: "Continue with Google",
+    panelTagline: "Your page and online bookings, all in one link.",
     or: "or",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
@@ -3307,6 +3310,7 @@ const pt: Translations = {
     signup: "Cadastrar",
     loading: "Carregando...",
     continueGoogle: "Continuar com o Google",
+    panelTagline: "Sua página e suas reservas online, tudo em um só link.",
     or: "ou",
     noAccount: "Não tem uma conta?",
     hasAccount: "Já tem uma conta?",
@@ -4856,6 +4860,7 @@ const fr: Translations = {
     signup: "S'inscrire",
     loading: "Chargement...",
     continueGoogle: "Continuer avec Google",
+    panelTagline: "Votre page et vos réservations en ligne, réunies dans un seul lien.",
     or: "ou",
     noAccount: "Pas encore de compte ?",
     hasAccount: "Déjà un compte ?",
@@ -6405,6 +6410,7 @@ const es: Translations = {
     signup: "Registrarse",
     loading: "Cargando...",
     continueGoogle: "Continuar con Google",
+    panelTagline: "Tu página y tus reservas online, todo en un solo enlace.",
     or: "o",
     noAccount: "¿No tienes cuenta?",
     hasAccount: "¿Ya tienes cuenta?",
@@ -7954,6 +7960,7 @@ const ja: Translations = {
     signup: "登録",
     loading: "読み込み中...",
     continueGoogle: "Googleで続ける",
+    panelTagline: "あなたのページとオンライン予約を、ひとつのリンクに。",
     or: "または",
     noAccount: "アカウントをお持ちでないですか？",
     hasAccount: "すでにアカウントをお持ちですか？",
@@ -9503,6 +9510,7 @@ const de: Translations = {
     signup: "Registrieren",
     loading: "Laden...",
     continueGoogle: "Mit Google fortfahren",
+    panelTagline: "Deine Seite und Online-Buchungen – alles in einem Link.",
     or: "oder",
     noAccount: "Noch kein Konto?",
     hasAccount: "Bereits ein Konto?",
@@ -11052,6 +11060,7 @@ const it: Translations = {
     signup: "Registrati",
     loading: "Caricamento...",
     continueGoogle: "Continua con Google",
+    panelTagline: "La tua pagina e le prenotazioni online, tutto in un solo link.",
     or: "o",
     noAccount: "Non hai un account?",
     hasAccount: "Hai già un account?",
