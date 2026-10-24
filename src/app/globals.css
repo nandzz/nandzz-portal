@@ -412,6 +412,20 @@ body[data-profile-preview] [data-profile-root] {
   transition-duration: 500ms;
   transition-timing-function: ease;
 }
+/* Hero phone: as big as the viewport height allows, in steps so the server
+   render already has it. Below lg the budget is phone + caption + dots on one
+   screen; from lg up, the whole hero under the navbar (the booking chips drop
+   out first, see .showcase-chips). Transforms leave the screens' offset-based
+   anchor math untouched. */
+.showcase-fit { --phone-scale: 1; height: calc(var(--phone-h) * var(--phone-scale)); }
+.showcase-fit > * { transform: scale(var(--phone-scale)); transform-origin: top center; }
+@media (max-width: 1023.98px) and (max-height: 765px) { .showcase-fit { --phone-scale: 0.9; } }
+@media (max-width: 1023.98px) and (max-height: 708px) { .showcase-fit { --phone-scale: 0.8; } }
+@media (max-width: 1023.98px) and (max-height: 650px) { .showcase-fit { --phone-scale: 0.7; } }
+@media (max-width: 1023.98px) and (max-height: 593px) { .showcase-fit { --phone-scale: 0.62; } }
+@media (min-width: 1024px) and (max-height: 780px) { .showcase-fit { --phone-scale: 0.9; } }
+@media (min-width: 1024px) and (max-height: 722px) { .showcase-fit { --phone-scale: 0.8; } }
+@media (max-height: 820px) { .showcase-chips { display: none; } }
 /* Screen scroll and callouts move together on the same curve. */
 .showcase-scroll,
 .showcase-callout {

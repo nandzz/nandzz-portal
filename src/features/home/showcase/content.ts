@@ -26,6 +26,7 @@ export type ShowcaseCopy = {
     next: string;
     names: string[]; // one per slide, in order
   };
+  heroCaption: string; // slide 1's line under the phone, on phones
   anatomy: Tour;
   content: Tour;
   booking: {
@@ -111,6 +112,7 @@ const en: ShowcaseCopy = {
     next: "Next",
     names: ["Intro", "Your page", "Content", "Booking", "Style", "Links first", "Gallery first"],
   },
+  heroCaption: "Your work, your services and online booking, on one page.",
   anatomy: {
     eyebrow: "Tour · Your page",
     title: "Everything clients need, on one page.",
@@ -243,6 +245,7 @@ const it: ShowcaseCopy = {
     next: "Successivo",
     names: ["Intro", "La tua pagina", "Contenuti", "Prenotazione", "Stile", "Prima i link", "Prima la galleria"],
   },
+  heroCaption: "Il tuo lavoro, i tuoi servizi e le prenotazioni online, in una pagina.",
   anatomy: {
     eyebrow: "Tour · La tua pagina",
     title: "Tutto ciò che serve ai clienti, in una pagina.",

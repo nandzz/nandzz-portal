@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type FocusEvent,
+  type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
@@ -26,7 +27,7 @@ import {
   StyleScreen,
   type ScreenProps,
 } from "./screens";
-import { ANCHORS, SCREEN, SLIDES, slideDuration } from "./slides";
+import { ANCHORS, PHONE, SCREEN, SLIDES, slideDuration } from "./slides";
 
 // Renders "*word*" segments of a translated line in the brand violet.
 function Highlighted({ text }: { text: string }) {
@@ -49,6 +50,28 @@ const pop = {
 const popFade = { initial: still(pop.initial, true), animate: still(pop.animate, true), exit: still(pop.exit, true) };
 
 const muted = "text-[color-mix(in_oklab,var(--clay-ink)_60%,transparent)]";
+
+// The line under the phone on small screens, where the slide's text panel
+// gives way to it: [lead in bold, rest].
+function captionOf(copy: ShowcaseCopy, n: number, step: number): [string, string] {
+  const item = (items: { label: string; desc: string }[]): [string, string] => [items[step].label, items[step].desc];
+  switch (SLIDES[n].kind) {
+    case "hero":
+      return ["", copy.heroCaption];
+    case "anatomy":
+      return item(copy.anatomy.items);
+    case "content":
+      return item(copy.content.items);
+    case "booking":
+      return item(copy.booking.steps);
+    case "style":
+      return item(copy.style.items);
+    case "links":
+      return [copy.controls.names[n], copy.links.title];
+    case "gallery":
+      return [copy.controls.names[n], copy.gallery.title];
+  }
+}
 
 // Layout offset of `el` inside `root`, ignoring transforms (so it's stable while
 // the screen is mid-scroll or mid-slide).
@@ -421,6 +444,28 @@ export function HeroShowcase() {
     else goTo(index - 1, -1, true);
   };
 
+  // Side by side at every width: on mobile each grows from its label width (long
+  // locales may wrap), natural width from sm up. Under the text from lg up, under
+  // the carousel below it.
+  const ctas = (className: string) => (
+    <div className={`flex items-stretch gap-2.5 sm:flex-wrap sm:items-center sm:gap-3 ${className}`}>
+      <Link
+        href="/login?tab=signup"
+        className="clay-violet inline-flex min-h-12 flex-auto items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-semibold leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-7 sm:py-0 sm:text-[15px]"
+      >
+        {h.getStarted}
+        <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+      </Link>
+      <Link
+        href="#how"
+        className="clay inline-flex min-h-12 flex-auto items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform [@media(hover:hover)]:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
+      >
+        {h.howItWorks}
+      </Link>
+    </div>
+  );
+  const [captionLead, captionText] = captionOf(copy, index, step);
+
   const posOf = (n: number) => track.pos[n];
   const fromOf = (n: number): SlidePos => (n === index ? track.from : 0);
   const stepOf = (n: number) => (n === index ? step : track.held[n]);
@@ -436,7 +481,7 @@ export function HeroShowcase() {
       >
         <motion.div
           ref={swipeRef}
-          className="mx-auto grid w-full max-w-7xl items-center gap-x-10 gap-y-12 px-4 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-y-6 lg:py-10"
+          className="mx-auto grid w-full max-w-7xl items-center gap-x-10 gap-y-8 px-4 pt-8 pb-16 sm:pt-12 lg:grid-cols-[1.05fr_1fr] lg:gap-y-6 lg:py-10"
           style={{ touchAction: "pan-y" }}
           onPanEnd={onPanEnd}
           onFocus={onFocus}
@@ -447,7 +492,15 @@ export function HeroShowcase() {
             <h1 className="sr-only">
               {h.heroLine1} {h.heroLine2.replace(/\*/g, "")}
             </h1>
-            <div className="grid [grid-template-areas:'stack']">
+            {/* Below lg: a fixed headline, and the slide text becomes the caption under
+                the phone, so what the visitor reads sits next to what it describes.
+                The panels stay for screen readers. */}
+            <p aria-hidden className="text-[clamp(2.25rem,9vw,3.25rem)] leading-[1.04] font-bold tracking-[-0.035em] lg:hidden">
+              {h.heroLine1}
+              <br />
+              <Highlighted text={h.heroLine2} />
+            </p>
+            <div className="grid [grid-template-areas:'stack'] max-lg:sr-only">
               <Panel pos={posOf(0)} from={fromOf(0)} label={label(0)}>
                 {/* The visible headline leaves with slide 1; the h1 for assistive tech and crawlers stays put (below). */}
                 <p aria-hidden className="text-[clamp(2.6rem,5.6vw,4.4rem)] leading-[1.02] font-bold tracking-[-0.035em]">
@@ -471,7 +524,7 @@ export function HeroShowcase() {
               <Panel pos={posOf(3)} from={fromOf(3)} label={label(3)}>
                 <PanelHeading eyebrow={copy.booking.eyebrow} title={copy.booking.title} />
                 <StepList items={copy.booking.steps} step={index === 3 ? step : -1} onPick={pickStep} />
-                <div className="hidden sm:block">
+                <div className="showcase-chips hidden sm:block">
                   <Chips title={copy.booking.businessTitle} items={copy.booking.business} />
                 </div>
               </Panel>
@@ -492,59 +545,62 @@ export function HeroShowcase() {
               </Panel>
             </div>
 
-            {/* Side by side at every width: on mobile each grows from its label width (long locales may wrap), natural width from sm up */}
-            <div className="mt-9 flex items-stretch gap-2.5 sm:flex-wrap sm:items-center sm:gap-3">
-              <Link
-                href="/login?tab=signup"
-                className="clay-violet inline-flex min-h-12 flex-auto items-center justify-center gap-2 rounded-full px-4 py-2 text-center text-sm font-semibold leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-7 sm:py-0 sm:text-[15px]"
-              >
-                {h.getStarted}
-                <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-              </Link>
-              <Link
-                href="#how"
-                className="clay inline-flex min-h-12 flex-auto items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform [@media(hover:hover)]:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
-              >
-                {h.howItWorks}
-              </Link>
-            </div>
+            {ctas("mt-9 hidden lg:flex")}
           </div>
 
           {/* ── Phones: one per slide, moving in lockstep with their text ── */}
           <div className="flex flex-col items-center">
-            {/* Hovering the phone (not the whole hero) holds the slide */}
-            <div
-              className="relative grid [grid-template-areas:'stack']"
-              aria-hidden
-              onPointerEnter={onPointerEnter}
-              onPointerLeave={onPointerLeave}
-            >
-              {/* One soft glow behind the stack, instead of a blurred one per phone */}
+            {/* Scaled to fit the viewport height (see .showcase-fit) */}
+            <div className="showcase-fit" style={{ "--phone-h": `${PHONE.height}px` } as CSSProperties}>
+              {/* Hovering the phone (not the whole hero) holds the slide */}
               <div
-                className="pointer-events-none absolute -inset-16 rounded-full"
-                style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
-              />
-              {SLIDES.map((_, n) => (
-                <PhoneStage
-                  key={n}
-                  i={n}
-                  pos={posOf(n)}
-                  from={fromOf(n)}
-                  step={stepOf(n)}
-                  visit={track.visits[n]}
-                  copy={copy}
-                  locale={locale}
-                  heroCards={{ toastTitle: h.mockToastTitle, toastBody: h.mockToastBody, linkLabel: h.mockLinkLabel }}
+                className="relative grid [grid-template-areas:'stack']"
+                aria-hidden
+                onPointerEnter={onPointerEnter}
+                onPointerLeave={onPointerLeave}
+              >
+                {/* One soft glow behind the stack, instead of a blurred one per phone */}
+                <div
+                  className="pointer-events-none absolute -inset-16 rounded-full"
+                  style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
                 />
-              ))}
+                {SLIDES.map((_, n) => (
+                  <PhoneStage
+                    key={n}
+                    i={n}
+                    pos={posOf(n)}
+                    from={fromOf(n)}
+                    step={stepOf(n)}
+                    visit={track.visits[n]}
+                    copy={copy}
+                    locale={locale}
+                    heroCards={{ toastTitle: h.mockToastTitle, toastBody: h.mockToastBody, linkLabel: h.mockLinkLabel }}
+                  />
+                ))}
+              </div>
             </div>
 
+            {/* Small screens: the current step in one line (two at most), right under the phone */}
+            <div aria-hidden className="mt-5 grid h-10 w-full max-w-sm [grid-template-areas:'cap'] lg:hidden">
+              <AnimatePresence initial={false}>
+                <motion.p
+                  key={`${index}-${step}`}
+                  className="line-clamp-2 self-center text-center text-sm leading-snug [grid-area:cap]"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1, transition: { duration: 0.3, delay: 0.15 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                >
+                  {captionLead && <span className="font-semibold">{captionLead} · </span>}
+                  <span className={muted}>{captionText}</span>
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* ── Controls: centered under both columns. Dots, with the current slide
               as a pill that fills while autoplay runs (full once it's stopped) ── */}
           <div
-            className="-mt-4 flex items-center justify-center gap-3 lg:col-span-2 lg:mt-0"
+            className="-mt-5 flex items-center justify-center gap-3 lg:col-span-2 lg:mt-0"
             role="group"
             aria-label={copy.controls.region}
             onKeyDown={onKeyDown}
@@ -593,6 +649,8 @@ export function HeroShowcase() {
               {announced}
             </p>
           </div>
+
+          {ctas("lg:hidden")}
         </motion.div>
       </section>
     </MotionConfig>
