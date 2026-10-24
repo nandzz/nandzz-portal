@@ -458,7 +458,7 @@ export function ContentScreen({ scrollY, rootRef, mock }: ScreenProps) {
         mock={mock}
         follow
         socials={["instagram", "email", "whatsapp"]}
-        socialLayout="chips"
+        socialLayout="stack"
         booking="outline"
       />
       <SectionTitle title={mock.publications} count={2} anchor="publications" />
