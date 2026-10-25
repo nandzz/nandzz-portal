@@ -61,3 +61,8 @@ verify_jwt = false
 # Admin-only MCP (demo accounts). Same PAT/OAuth auth as mcp, admin-scoped tokens only.
 [functions.mcp-admin]
 verify_jwt = false
+
+# Agent MCP (Business Agent). Called only by the business-agent worker; auth is a
+# per-call HMAC run token verified inside Postgres, not a Supabase JWT.
+[functions.mcp-agent]
+verify_jwt = false
