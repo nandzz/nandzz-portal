@@ -15,6 +15,7 @@ import {
   fetchCalendarData,
   fetchListData,
   fetchCustomersData,
+  fetchTodayData,
 } from "@/features/booking/dashboardData";
 import { LocaleSelect } from "@/components/layout/LocaleSelect";
 import { Settings } from "lucide-react";
@@ -147,7 +148,8 @@ async function CalendarWorkspaceLoader({
   // RLS-scoped session client (owner reads their own rows; the customers RPC
   // needs auth.uid()).
   const supabase = await createClient();
-  const [overview, calendar, list, customers] = await Promise.all([
+  const [today, overview, calendar, list, customers] = await Promise.all([
+    fetchTodayData(supabase, { instanceId, locationId, config: normalizedConfig, timezone, currencySymbol: symbol }),
     fetchOverviewData(supabase, {
       instanceId,
       locationId,
@@ -169,10 +171,10 @@ async function CalendarWorkspaceLoader({
         instanceId={instanceId}
         enabled={enabled}
         config={normalizedConfig}
-        initial={{ locationId, overview, calendar, list, customers }}
+        initial={{ locationId, today, overview, calendar, list, customers }}
         currencySymbol={symbol}
         shareUrl={shareUrl}
-        initialTab={initialTab ?? "overview"}
+        initialTab={initialTab ?? "today"}
         basePath={BASE_PATH}
       />
     </Suspense>

@@ -5,12 +5,26 @@ import type { CalendarConfig, WidgetBooking } from "@/lib/types";
 import type { BookingRowData, CustomerProfileLink } from "@/features/booking/components/calendar/BookingRow";
 import type { WidgetOverviewData } from "@/features/booking/components/calendar/WidgetOverview";
 import type { WidgetCustomersData, CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";
-import { buildOverview, type OverviewBookingRow, type OverviewSegment } from "@/features/booking/calendarStats";
-import { getLocationScope } from "@/features/booking/domain/calendar";
+import {
+  buildOverview,
+  buildTodaySchedule,
+  type OverviewBookingRow,
+  type OverviewSegment,
+} from "@/features/booking/calendarStats";
+import { addDays, getLocationScope, todayInZone, zonedWallTimeToUtc } from "@/features/booking/domain/calendar";
 import type { StatsPeriod } from "@/lib/period";
-import type { TodaySnapshot, CalendarData, ListData, BookingsFilter } from "@/features/booking/dashboardTypes";
+import type {
+  TodaySnapshot,
+  CalendarData,
+  ListData,
+  BookingsFilter,
+  TodayBooking,
+  TodayData,
+  TodayCustomerInsight,
+} from "@/features/booking/dashboardTypes";
+import { buildCustomerInsight, HISTORY_COLUMNS, type HistoryRow } from "@/features/booking/todayInsights";
 
-export type { TodaySnapshot, CalendarData, ListData, BookingsFilter } from "@/features/booking/dashboardTypes";
+export type { TodaySnapshot, CalendarData, ListData, BookingsFilter, TodayData } from "@/features/booking/dashboardTypes";
 
 // Server-side data layer for the widget dashboard. Every read here is bounded
 // (a month window, a page, a period window, or a SQL aggregate) so the dashboard
@@ -377,19 +391,159 @@ export async function fetchCustomerBookings(
 ): Promise<BookingRowData[]> {
   const { instanceId, locationId, customerId } = opts;
   let q = supabase.from("widget_bookings").select(ROW_COLUMNS).eq("instance_id", instanceId);
-  q = scopeLocation(q, locationId);
-  if (customerId.startsWith("user:")) {
-    // Mirror the RPC: only bookings with no email and no phone fall back to this key.
-    q = q
-      .eq("created_by_user_id", customerId.slice("user:".length))
-      .or("customer_email.is.null,customer_email.eq.")
-      .or("customer_phone.is.null,customer_phone.eq.");
-  } else if (customerId.startsWith("phone:")) {
-    q = q.eq("customer_phone", customerId.slice("phone:".length)).or("customer_email.is.null,customer_email.eq.");
-  } else {
-    // ilike for case-insensitivity; escape its wildcards so the email matches literally.
-    q = q.ilike("customer_email", customerId.replace(/[\\%_]/g, (c) => `\\${c}`));
-  }
+  q = filterByCustomerKey(scopeLocation(q, locationId), customerId);
   const { data } = await q.order("starts_at", { ascending: false }).limit(200);
   return toRows(supabase, (data ?? []) as RowRecord[]);
+}
+
+// Narrows a widget_bookings query to one customer rollup key (see
+// widget_customers_summary): `user:<id>`, `phone:<phone>` or a lowercased email.
+function filterByCustomerKey<T>(query: T, customerId: string): T {
+  const q = query as unknown as {
+    eq: (c: string, v: string) => typeof q;
+    or: (f: string) => typeof q;
+    ilike: (c: string, v: string) => typeof q;
+  };
+  if (customerId.startsWith("user:")) {
+    // Mirror the RPC: only bookings with no email and no phone fall back to this key.
+    return q
+      .eq("created_by_user_id", customerId.slice("user:".length))
+      .or("customer_email.is.null,customer_email.eq.")
+      .or("customer_phone.is.null,customer_phone.eq.") as unknown as T;
+  }
+  if (customerId.startsWith("phone:")) {
+    return q
+      .eq("customer_phone", customerId.slice("phone:".length))
+      .or("customer_email.is.null,customer_email.eq.") as unknown as T;
+  }
+  // ilike for case-insensitivity; escape its wildcards so the email matches literally.
+  return q.ilike("customer_email", customerId.replace(/[\\%_]/g, (c) => `\\${c}`)) as unknown as T;
+}
+
+// The rollup key a booking files under — the TS twin of the RPC's coalesce().
+function customerKeyOf(r: RowRecord): string | null {
+  const email = r.customer_email?.trim().toLowerCase();
+  if (email) return email;
+  const phone = r.customer_phone?.trim();
+  if (phone) return `phone:${phone}`;
+  const id = bookerId(r);
+  return id ? `user:${id}` : null;
+}
+
+// ── Today (the Today tab) ────────────────────────────────────────────────────
+// Everything bounded to one local day: today's rows, their per-staff segments,
+// the first booking after today, and a capped history per customer seen today
+// (≤ MAX_INSIGHT_CUSTOMERS lookups of ≤ 200 rows each) for the history and
+// preferences panel.
+const TODAY_COLUMNS = `${ROW_COLUMNS}, duration_min`;
+const MAX_INSIGHT_CUSTOMERS = 40;
+
+export async function fetchTodayData(
+  supabase: SupabaseClient,
+  opts: {
+    instanceId: string;
+    locationId: string | null;
+    config: CalendarConfig;
+    timezone: string;
+    currencySymbol: string;
+  }
+): Promise<TodayData> {
+  const { instanceId, locationId, config, timezone, currencySymbol } = opts;
+  const now = new Date();
+  const date = todayInZone(timezone, now);
+  const dayStart = zonedWallTimeToUtc(date, "00:00", timezone).toISOString();
+  const dayEnd = zonedWallTimeToUtc(addDays(date, 1), "00:00", timezone).toISOString();
+  const staffed = getLocationScope(config, locationId).staff.length > 0;
+
+  const todayQuery = scopeLocation(
+    supabase
+      .from("widget_bookings")
+      .select(TODAY_COLUMNS)
+      .eq("instance_id", instanceId)
+      .gte("starts_at", dayStart)
+      .lt("starts_at", dayEnd)
+      .order("starts_at", { ascending: true })
+      .limit(500),
+    locationId
+  );
+  const segmentsQuery = staffed
+    ? scopeLocation(
+        supabase
+          .from("widget_booking_segments")
+          .select("booking_id, staff_id, starts_at, ends_at")
+          .eq("instance_id", instanceId)
+          .eq("status", "confirmed")
+          .gte("starts_at", dayStart)
+          .lt("starts_at", dayEnd)
+          .limit(2000),
+        locationId
+      )
+    : null;
+  const nextQuery = scopeLocation(
+    supabase
+      .from("widget_bookings")
+      .select(ROW_COLUMNS)
+      .eq("instance_id", instanceId)
+      .eq("status", "confirmed")
+      .gte("starts_at", dayEnd)
+      .order("starts_at", { ascending: true })
+      .limit(1),
+    locationId
+  );
+
+  const [{ data: todayData }, segmentsRes, { data: nextData }] = await Promise.all([
+    todayQuery,
+    segmentsQuery ?? Promise.resolve({ data: [] }),
+    nextQuery,
+  ]);
+  const todayRecords = (todayData ?? []) as (RowRecord & Pick<WidgetBooking, "duration_min">)[];
+  const nextRecords = (nextData ?? []) as RowRecord[];
+
+  const schedule = buildTodaySchedule(
+    todayRecords.filter((r) => r.status === "confirmed"),
+    { config, locationId, timezone, segments: (segmentsRes.data ?? []) as OverviewSegment[], now }
+  );
+
+  const withKey = async (records: RowRecord[]): Promise<TodayBooking[]> => {
+    const rows = await toRows(supabase, records);
+    return rows.map((row, i) => ({ ...row, customer_key: customerKeyOf(records[i]) }));
+  };
+  const [bookings, nextRows] = await Promise.all([withKey(todayRecords), withKey(nextRecords)]);
+  const nextAfterToday = nextRows[0] ?? null;
+
+  const keys = [
+    ...new Set(
+      [...bookings, ...(nextAfterToday ? [nextAfterToday] : [])]
+        .map((b) => b.customer_key)
+        .filter((k): k is string => Boolean(k))
+    ),
+  ].slice(0, MAX_INSIGHT_CUSTOMERS);
+  const histories = await Promise.all(
+    keys.map(async (key) => {
+      let q = supabase.from("widget_bookings").select(HISTORY_COLUMNS).eq("instance_id", instanceId);
+      q = filterByCustomerKey(scopeLocation(q, locationId), key);
+      const { data } = await q.order("starts_at", { ascending: false }).limit(200);
+      return [key, (data ?? []) as HistoryRow[]] as const;
+    })
+  );
+
+  const insights: Record<string, TodayCustomerInsight> = {};
+  for (const [key, rows] of histories) {
+    insights[key] = buildCustomerInsight(rows, { dayStart, dayEnd, timezone });
+  }
+
+  return {
+    date,
+    timezone,
+    currencySymbol,
+    bookings,
+    hours: schedule.hours,
+    openMin: schedule.openMin,
+    bookedMin: schedule.bookedMin,
+    blocks: schedule.blocks,
+    gaps: schedule.gaps,
+    lanes: schedule.lanes,
+    nextAfterToday,
+    insights,
+  };
 }

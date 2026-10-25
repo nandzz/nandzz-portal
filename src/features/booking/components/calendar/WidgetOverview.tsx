@@ -2,21 +2,12 @@
 
 import type { ChartOptions } from "chart.js";
 import { BarChart } from "@/components/charts/BarChart";
-import {
-  CalendarClock,
-  CalendarCheck,
-  Wallet,
-  TrendingUp,
-  ArrowUpRight,
-} from "lucide-react";
-import { type BookingRowData } from "./BookingRow";
+import { CalendarCheck, Wallet, Receipt, CalendarX, ArrowUpRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useThemeColors } from "@/lib/charts/useThemeColors";
 import { PeriodSelector } from "@/components/ui/PeriodSelector";
 import type { StatsPeriod } from "@/lib/period";
 import { ForecastCard, OccupancyCard, REALIZED, UPCOMING } from "./OverviewInsights";
-
-export type OverviewBooking = BookingRowData;
 
 export type WidgetOverviewData = {
   timezone: string;
@@ -82,19 +73,17 @@ export function WidgetOverview({
 
   const maxService = Math.max(1, ...data.services.map((s) => s.count));
 
+  // Analytics only — upcoming-appointment counts live in the Today and
+  // Bookings tabs.
+  const cancelledPct =
+    data.totals.confirmedInPeriod + data.totals.cancelled > 0
+      ? Math.round((data.totals.cancelled / (data.totals.confirmedInPeriod + data.totals.cancelled)) * 100)
+      : 0;
   const tiles = [
-    {
-      label: t.booking.filterUpcoming,
-      value: String(data.totals.upcoming),
-      hint: t.booking.tileUpcomingHint.replace("{count}", String(data.totals.next7)),
-      icon: CalendarClock,
-    },
     {
       label: t.booking.tileAllTime,
       value: String(data.totals.confirmedInPeriod),
-      hint: data.totals.cancelled
-        ? t.booking.tileAllTimeHintCancelled.replace("{count}", String(data.totals.cancelled))
-        : t.booking.tileAllTimeHintConfirmed,
+      hint: t.booking.tileAllTimeHintConfirmed,
       icon: CalendarCheck,
     },
     {
@@ -104,10 +93,16 @@ export function WidgetOverview({
       icon: Wallet,
     },
     {
-      label: t.booking.tileNext7,
-      value: String(data.totals.next7),
-      hint: t.booking.tileNext7Hint,
-      icon: TrendingUp,
+      label: t.bookingToday.tileAvgTicket,
+      value: data.forecast.avgTicketCents > 0 ? money(data.forecast.avgTicketCents) : "—",
+      hint: t.bookingToday.tileAvgTicketHint,
+      icon: Receipt,
+    },
+    {
+      label: t.booking.filterCancelled,
+      value: String(data.totals.cancelled),
+      hint: t.bookingToday.tileCancelledHint.replace("{pct}", String(cancelledPct)),
+      icon: CalendarX,
     },
   ];
 

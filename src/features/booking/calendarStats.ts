@@ -138,7 +138,7 @@ export function pickReferenceService(
 // staff the business is one resource open during its windows; with staff each
 // member is a resource open during (their windows ∩ business windows), minus
 // their personal days off.
-type Busy = { staffId: string | null; start: number; end: number };
+type Busy = { bookingId: string; staffId: string | null; start: number; end: number };
 
 type ScheduleCtx = {
   scope: LocationScope;
@@ -257,10 +257,15 @@ function buildBusy(confirmed: OverviewBookingRow[], segments: OverviewSegment[],
     const segs = byBooking.get(b.id);
     if (segs) {
       for (const s of segs) {
-        out.push({ staffId: s.staff_id, start: Date.parse(s.starts_at), end: Date.parse(s.ends_at) });
+        out.push({ bookingId: b.id, staffId: s.staff_id, start: Date.parse(s.starts_at), end: Date.parse(s.ends_at) });
       }
     } else if (b.ends_at) {
-      out.push({ staffId: staffMode ? b.staff_id : null, start: Date.parse(b.starts_at), end: Date.parse(b.ends_at) });
+      out.push({
+        bookingId: b.id,
+        staffId: staffMode ? b.staff_id : null,
+        start: Date.parse(b.starts_at),
+        end: Date.parse(b.ends_at),
+      });
     }
   }
   return out;
@@ -314,6 +319,88 @@ export function buildCapacity(
       ? { name: referenceService.name, durationMin: referenceService.duration_min }
       : null,
     days,
+  };
+}
+
+// ── Today schedule (the Today tab's day ribbon) ──────────────────────────────
+// Today's opening windows, open vs. booked minutes (same staff-minute model as
+// buildCapacity), the busy slices per staff lane, and the free gaps where at
+// least one resource is idle long enough for the shortest offered service.
+// Gaps cover the whole day — the client clips them to its live "now".
+export type TodaySchedule = {
+  hours: { start: string; end: string }[];
+  openMin: number;
+  bookedMin: number;
+  blocks: { bookingId: string; staffId: string | null; start: string; end: string }[];
+  gaps: { start: string; end: string }[];
+  lanes: { id: string; name: string }[];
+};
+
+const iso = (ms: number) => new Date(ms).toISOString();
+
+export function buildTodaySchedule(
+  confirmed: OverviewBookingRow[],
+  ctx: { config: CalendarConfig; locationId: string | null; timezone: string; segments: OverviewSegment[]; now: Date }
+): TodaySchedule {
+  const scope = getLocationScope(ctx.config, ctx.locationId);
+  const staffMode = scope.staff.length > 0;
+  const busy = buildBusy(confirmed, ctx.segments, staffMode);
+  const date = todayInZone(ctx.timezone, ctx.now);
+  const weekday = weekdayOf(date);
+  const closedToday = scope.blackout_dates.includes(date);
+  const business = closedToday ? [] : windowsFor(date, scope.availability[weekday], ctx.timezone);
+  const r = dayCapacity(
+    date,
+    { scope, timezone: ctx.timezone, bufferMin: Math.max(0, ctx.config.buffer_min || 0), busy },
+    null,
+    ctx.now.getTime()
+  );
+
+  // Lanes: staff working today, plus anyone (or "unassigned") holding a block.
+  const known = new Set(scope.staff.map((s) => s.id));
+  const withBlocks = new Set(busy.map((b) => b.staffId));
+  const working = scope.staff.filter(
+    (st) =>
+      withBlocks.has(st.id) ||
+      (!st.blackout_dates?.includes(date) && intersect(windowsFor(date, st.availability[weekday], ctx.timezone), business).length > 0)
+  );
+  const lanes = working.map((st) => ({ id: st.id, name: st.name }));
+  const hasUnassigned = staffMode && busy.some((b) => b.staffId === null || !known.has(b.staffId));
+
+  // Free time: per resource (each working staff member, or the business), its
+  // open windows minus its own bookings; a gap is time where any one is idle.
+  const resources: { id: string | null; open: Range[] }[] = staffMode
+    ? working
+        .filter((st) => !st.blackout_dates?.includes(date))
+        .map((st) => ({ id: st.id, open: intersect(windowsFor(date, st.availability[weekday], ctx.timezone), business) }))
+    : [{ id: null, open: business }];
+  const unassigned: Range[] = staffMode
+    ? busy.filter((b) => b.staffId === null || !known.has(b.staffId)).map((b): Range => [b.start, b.end])
+    : [];
+  const free = merge(
+    resources.flatMap((res) =>
+      subtract(
+        res.open,
+        busy.filter((b) => !staffMode || b.staffId === res.id).map((b): Range => [b.start, b.end])
+      )
+    )
+  );
+  const shortest = Math.min(...scope.services.filter((s) => s.duration_min > 0).map((s) => s.duration_min), Infinity);
+  const minGapMs = (Number.isFinite(shortest) ? shortest : 15) * MIN_MS;
+  const gaps = subtract(free, staffMode && resources.length <= 1 ? unassigned : []).filter(([s, e]) => e - s >= minGapMs);
+
+  return {
+    hours: business.map(([s, e]) => ({ start: iso(s), end: iso(e) })),
+    openMin: r.openMin,
+    bookedMin: r.bookedMin,
+    blocks: busy.map((b) => ({
+      bookingId: b.bookingId,
+      staffId: staffMode && b.staffId && known.has(b.staffId) ? b.staffId : null,
+      start: iso(b.start),
+      end: iso(b.end),
+    })),
+    gaps: gaps.map(([s, e]) => ({ start: iso(s), end: iso(e) })),
+    lanes: hasUnassigned ? [...lanes, { id: "", name: "" }] : lanes,
   };
 }
 

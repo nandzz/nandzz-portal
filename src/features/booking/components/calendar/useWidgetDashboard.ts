@@ -3,19 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WidgetOverviewData } from "@/features/booking/components/calendar/WidgetOverview";
 import type { WidgetCustomersData } from "@/features/booking/components/calendar/WidgetCustomers";
-import type { CalendarData, ListData, BookingsFilter } from "@/features/booking/dashboardTypes";
+import type { CalendarData, ListData, BookingsFilter, TodayData } from "@/features/booking/dashboardTypes";
 import type { StatsPeriod } from "@/lib/period";
 
 // Client data controller for the widget dashboard. Holds each tab's windowed
 // dataset in state — seeded from the loader's first-paint payload — and refetches
 // the relevant slice from /api/widgets/[id]/dashboard whenever its inputs change
 // (location, month, list filter/search/page, overview period, or a realtime
-// nonce). Every dataset is bounded, so this scales to any booking volume. A
+// nonce; Today also refreshes itself every few minutes). Every dataset is bounded, so this scales to any booking volume. A
 // per-dataset request counter drops stale responses so fast interactions can't
 // leave an older fetch overwriting a newer one.
 
 export type InitialDashboard = {
   locationId: string | null;
+  today: TodayData;
   overview: WidgetOverviewData;
   calendar: CalendarData;
   list: ListData;
@@ -109,6 +110,21 @@ export function useWidgetDashboard(opts: {
 
   const seedLoc = loc(initial.locationId);
 
+  // Today's free gaps and "next after today" are computed against the server's
+  // now, so the Today slice re-pulls on a slow clock as well as on realtime.
+  const [todayTick, setTodayTick] = useState(0);
+  useEffect(() => {
+    const h = setInterval(() => setTodayTick((n) => n + 1), 5 * 60_000);
+    return () => clearInterval(h);
+  }, []);
+
+  const [today, todayLoading] = useKeyedFetch<TodayData>(
+    `${loc(locationId)}|${nonce}|${todayTick}`,
+    `${seedLoc}|0|0`,
+    initial.today,
+    useCallback(() => getJson<TodayData>(instanceId, "today", { loc: locationId ?? "" }), [instanceId, locationId])
+  );
+
   const [overview, overviewLoading] = useKeyedFetch<WidgetOverviewData>(
     `${loc(locationId)}|${period}|${nonce}`,
     `${seedLoc}|month|0`,
@@ -160,6 +176,8 @@ export function useWidgetDashboard(opts: {
   );
 
   return {
+    today,
+    todayLoading,
     overview,
     overviewLoading,
     period,

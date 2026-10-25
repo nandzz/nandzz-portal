@@ -5,6 +5,7 @@ import {
   buildCapacity,
   buildForecast,
   buildOverview,
+  buildTodaySchedule,
   pickReferenceService,
   type OverviewBookingRow,
   type OverviewSegment,
@@ -229,5 +230,94 @@ describe("buildForecast", () => {
   it("reports zero potential without priced history", () => {
     const f = buildForecast([], ctx(cfg(), "2026-10-15T12:00:00Z", [], "it"));
     expect(f).toMatchObject({ monthLabel: "ottobre", earnedCents: 0, bookedCents: 0, potentialCents: 0, avgTicketCents: 0 });
+  });
+});
+
+describe("buildTodaySchedule — no staff", () => {
+  const range = (start: string, end: string) => ({ start: new Date(start).toISOString(), end: new Date(end).toISOString() });
+
+  it("returns today's hours, booked minutes and gaps long enough for the shortest service", () => {
+    const rows = [
+      bk("2026-10-05T09:00:00Z", "2026-10-05T09:45:00Z"),
+      bk("2026-10-05T10:00:00Z", "2026-10-05T11:00:00Z"),
+      bk("2026-10-05T13:00:00Z", "2026-10-05T14:30:00Z"),
+      bk("2026-10-05T16:40:00Z", "2026-10-05T17:00:00Z"),
+    ];
+    const day = buildTodaySchedule(rows, ctx(cfg(), MON_8AM));
+    expect(day.hours).toEqual([range("2026-10-05T09:00:00Z", "2026-10-05T17:00:00Z")]);
+    expect(day.openMin).toBe(480);
+    expect(day.bookedMin).toBe(45 + 60 + 90 + 20);
+    // 09:45–10:00 is shorter than the 30-min shortest service, so it's dropped.
+    expect(day.gaps).toEqual([
+      range("2026-10-05T11:00:00Z", "2026-10-05T13:00:00Z"),
+      range("2026-10-05T14:30:00Z", "2026-10-05T16:40:00Z"),
+    ]);
+    expect(day.lanes).toEqual([]);
+    expect(day.blocks).toHaveLength(4);
+    expect(day.blocks.every((b) => b.staffId === null)).toBe(true);
+    expect(day.blocks[1]).toEqual({ bookingId: rows[1].id, staffId: null, ...range("2026-10-05T10:00:00Z", "2026-10-05T11:00:00Z") });
+  });
+
+  it("is closed on a day without opening hours", () => {
+    const day = buildTodaySchedule([], ctx(cfg(), "2026-10-04T08:00:00Z")); // Sunday
+    expect(day).toMatchObject({ hours: [], openMin: 0, bookedMin: 0, gaps: [], blocks: [] });
+  });
+
+  it("is closed on a blackout date", () => {
+    const day = buildTodaySchedule([], ctx(cfg({ blackout_dates: ["2026-10-05"] }), MON_8AM));
+    expect(day).toMatchObject({ hours: [], openMin: 0, gaps: [] });
+  });
+
+  it("anchors the opening hours to the location's timezone", () => {
+    const day = buildTodaySchedule([], ctx(cfg({ timezone: "Europe/Rome" }), MON_8AM));
+    // 09:00–17:00 in Rome (CEST, UTC+2).
+    expect(day.hours).toEqual([range("2026-10-05T07:00:00Z", "2026-10-05T15:00:00Z")]);
+    expect(day.gaps).toEqual(day.hours);
+  });
+});
+
+describe("buildTodaySchedule — with staff", () => {
+  const staffCfg = () =>
+    cfg({
+      services: [{ ...A, staff_ids: ["s1"] }, B],
+      staff: [
+        { id: "s1", name: "Ana", availability: { mon: [["09:00", "13:00"]] } },
+        { id: "s2", name: "Bea", availability: { mon: [["12:00", "20:00"]] } },
+        { id: "s3", name: "Cleo", availability: { tue: [["09:00", "17:00"]] } },
+      ],
+    });
+
+  it("puts each block on its staff lane, adds an unassigned lane, and unions free time", () => {
+    const single = bk("2026-10-05T09:00:00Z", "2026-10-05T10:00:00Z", { staff_id: "s1" });
+    const multi = bk("2026-10-05T10:00:00Z", "2026-10-05T13:00:00Z", { staff_id: "s1" });
+    const unassigned = bk("2026-10-05T14:00:00Z", "2026-10-05T14:30:00Z", { staff_id: null });
+    const segments: OverviewSegment[] = [
+      { booking_id: multi.id, staff_id: "s1", starts_at: "2026-10-05T10:00:00Z", ends_at: "2026-10-05T10:30:00Z" },
+      { booking_id: multi.id, staff_id: "s2", starts_at: "2026-10-05T12:00:00Z", ends_at: "2026-10-05T13:00:00Z" },
+    ];
+    const day = buildTodaySchedule([single, multi, unassigned], ctx(staffCfg(), MON_8AM, segments));
+
+    // Cleo doesn't work Mondays and holds no block → no lane.
+    expect(day.lanes).toEqual([
+      { id: "s1", name: "Ana" },
+      { id: "s2", name: "Bea" },
+      { id: "", name: "" },
+    ]);
+    expect(day.blocks.map((b) => [b.bookingId, b.staffId])).toEqual([
+      [single.id, "s1"],
+      [multi.id, "s1"],
+      [multi.id, "s2"],
+      [unassigned.id, null],
+    ]);
+    expect(day.openMin).toBe(540);
+    expect(day.bookedMin).toBe(180);
+    // Ana free 10:30–13:00, Bea free 13:00–17:00 → someone is free 10:30–17:00.
+    expect(day.gaps).toEqual([{ start: "2026-10-05T10:30:00.000Z", end: "2026-10-05T17:00:00.000Z" }]);
+  });
+
+  it("keeps a lane for a staff member whose block falls outside their hours", () => {
+    const late = bk("2026-10-05T09:00:00Z", "2026-10-05T09:30:00Z", { staff_id: "s3" });
+    const day = buildTodaySchedule([late], ctx(staffCfg(), MON_8AM));
+    expect(day.lanes.map((l) => l.id)).toEqual(["s1", "s2", "s3"]);
   });
 });

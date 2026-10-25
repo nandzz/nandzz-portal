@@ -11,6 +11,7 @@ import {
   fetchListData,
   fetchCustomersData,
   fetchCustomerBookings,
+  fetchTodayData,
   type BookingsFilter,
 } from "@/features/booking/dashboardData";
 
@@ -58,6 +59,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inst
         period,
         shareUrl: null, // stable per-instance; the client keeps its own copy
       });
+      return NextResponse.json(data);
+    }
+    case "today": {
+      const data = await fetchTodayData(supabase, { instanceId, locationId, config, timezone, currencySymbol: symbol });
       return NextResponse.json(data);
     }
     case "calendar": {

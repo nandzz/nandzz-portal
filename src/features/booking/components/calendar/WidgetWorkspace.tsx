@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Clock, Tag, ChevronDown, ArrowLeft } from "lucide-react";
+import { Sun, LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Clock, Tag, ChevronDown, ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { subscribeToWidgetBookings } from "@/features/booking/realtime";
 import { AvailabilityManager } from "@/features/booking/components/calendar/AvailabilityManager";
@@ -11,6 +11,7 @@ import { StaffManager } from "@/features/booking/components/calendar/StaffManage
 import { LocationManager } from "@/features/booking/components/calendar/LocationManager";
 import { LocationGate } from "@/features/booking/components/calendar/LocationGate";
 import { useCalendarConfig } from "@/features/booking/components/calendar/useCalendarConfig";
+import { WidgetToday } from "@/features/booking/components/calendar/today/WidgetToday";
 import { WidgetOverview } from "@/features/booking/components/calendar/WidgetOverview";
 import { WidgetBookings } from "@/features/booking/components/calendar/WidgetBookings";
 import { WidgetCustomers } from "@/features/booking/components/calendar/WidgetCustomers";
@@ -124,10 +125,10 @@ export function WidgetWorkspace({
   const [tab, setTab] = useState(initialTab);
 
   useEffect(() => {
-    // The tab is the first segment after basePath (absent on the base/overview
+    // The tab is the first segment after basePath (absent on the base/Today
     // path).
     const rel = pathname.startsWith(basePath) ? pathname.slice(basePath.length).replace(/^\//, "") : "";
-    const next = tabFromSegment(rel.split("/")[0] || undefined) ?? "overview";
+    const next = tabFromSegment(rel.split("/")[0] || undefined) ?? "today";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab to the URL on back/forward (external-state sync, not derived render state)
     setTab((prev) => (prev === next ? prev : next));
   }, [pathname, basePath]);
@@ -197,7 +198,7 @@ export function WidgetWorkspace({
     setMode("pick");
   }
 
-  // Overview/Bookings/Customers are recomputed per selected location — a
+  // Today/Overview/Bookings/Customers are recomputed per selected location — a
   // customer only shows up under the location(s) they've actually booked
   // through, since create_booking_tx snapshots location_id onto every row.
   const currentLocation = locations.find((l) => l.id === currentLocationId) ?? null;
@@ -313,6 +314,9 @@ export function WidgetWorkspace({
               keeps its label) so the row fits without scrolling horizontally. */}
           <div className="w-full min-w-0 sm:w-auto">
             <TabsList variant="line" className="h-9 w-full sm:w-max">
+              <TabsTrigger value="today">
+                <Sun className="h-4 w-4" /> <TabLabel>{t.bookingToday.tab}</TabLabel>
+              </TabsTrigger>
               <TabsTrigger value="overview">
                 <LayoutDashboard className="h-4 w-4" /> <TabLabel>{t.booking.tabDashboard}</TabLabel>
               </TabsTrigger>
@@ -353,6 +357,10 @@ export function WidgetWorkspace({
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
         </div>
+
+        <TabsContent value="today">
+          <WidgetToday data={dash.today} loading={dash.todayLoading} />
+        </TabsContent>
 
         <TabsContent value="overview">
           <WidgetOverview data={dash.overview} period={dash.period} onPeriodChange={dash.setPeriod} />
