@@ -82,6 +82,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "sandbox",
   "space",
   "api",
+  "explore",
 ]);
 
 // A username equal to a top-level route would be shadowed by that route, so

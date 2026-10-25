@@ -1907,7 +1907,7 @@ const en: Translations = {
   notFound: {
     title: "Page not found",
     desc: "The page you're looking for doesn't exist or may have been moved.",
-    cta: "Browse Explore",
+    cta: "Back to home",
   },
   claimPage: {
     titleLead: "Your own page,",
@@ -3457,7 +3457,7 @@ const pt: Translations = {
   notFound: {
     title: "Página não encontrada",
     desc: "A página que você procura não existe ou pode ter sido movida.",
-    cta: "Explorar",
+    cta: "Voltar ao início",
   },
   claimPage: {
     titleLead: "Sua própria página,",
@@ -5007,7 +5007,7 @@ const fr: Translations = {
   notFound: {
     title: "Page introuvable",
     desc: "La page que vous recherchez n'existe pas ou a peut-être été déplacée.",
-    cta: "Explorer",
+    cta: "Retour à l'accueil",
   },
   claimPage: {
     titleLead: "Votre propre page,",
@@ -6557,7 +6557,7 @@ const es: Translations = {
   notFound: {
     title: "Página no encontrada",
     desc: "La página que buscas no existe o puede haber sido movida.",
-    cta: "Explorar",
+    cta: "Volver al inicio",
   },
   claimPage: {
     titleLead: "Tu propia página,",
@@ -8107,7 +8107,7 @@ const ja: Translations = {
   notFound: {
     title: "ページが見つかりません",
     desc: "お探しのページは存在しないか、移動された可能性があります。",
-    cta: "探索する",
+    cta: "ホームに戻る",
   },
   claimPage: {
     titleLead: "あなただけのページを、",
@@ -9657,7 +9657,7 @@ const de: Translations = {
   notFound: {
     title: "Seite nicht gefunden",
     desc: "Die gesuchte Seite existiert nicht oder wurde möglicherweise verschoben.",
-    cta: "Entdecken",
+    cta: "Zur Startseite",
   },
   claimPage: {
     titleLead: "Deine eigene Seite,",
@@ -11207,7 +11207,7 @@ const it: Translations = {
   notFound: {
     title: "Pagina non trovata",
     desc: "La pagina che stai cercando non esiste o potrebbe essere stata spostata.",
-    cta: "Esplora",
+    cta: "Torna alla home",
   },
   claimPage: {
     titleLead: "La tua pagina,",

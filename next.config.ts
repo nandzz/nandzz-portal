@@ -53,6 +53,10 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // /explore was removed in the brand pivot; send old links/indexed URLs home
+      // instead of letting [username] render a 404.
+      { source: "/explore", destination: "/", permanent: true },
+      { source: "/explore/:path*", destination: "/", permanent: true },
       { source: "/dashboard", destination: "/dashboard/contents", permanent: true },
       { source: "/dashboard/create-space", destination: "/dashboard/contents/create-space", permanent: true },
       { source: "/dashboard/create-space/:path*", destination: "/dashboard/contents/create-space/:path*", permanent: true },
