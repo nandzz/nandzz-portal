@@ -16,7 +16,7 @@ import { ArrowRight, BellRing, CalendarCheck, ChevronLeft, ChevronRight, Link2, 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { SHOWCASE_COPY, toShowcaseLocale, type ShowcaseCopy } from "./content";
 import { Chips, Panel, PanelHeading, PanelText, SLIDE_S, StepList, slideFade, slideMove, type SlidePos } from "./panels";
-import { Callout, EASE_OUT, PhoneFrame, still, useReduceMotion, type Anchor } from "./phone";
+import { Callout, EASE_OUT, PhoneFrame, still, useCompact, useReduceMotion, type Anchor } from "./phone";
 import {
   AnatomyScreen,
   BookingScreen,
@@ -27,7 +27,7 @@ import {
   StyleScreen,
   type ScreenProps,
 } from "./screens";
-import { ANCHORS, PHONE, SCREEN, SLIDES, slideDuration } from "./slides";
+import { ANCHORS, PHONE, SCREEN, SLIDES, slideDuration, stepMsOf } from "./slides";
 
 // Renders "*word*" segments of a translated line in the brand violet.
 function Highlighted({ text }: { text: string }) {
@@ -111,6 +111,7 @@ function PhoneStage({
   const slide = SLIDES[i];
   const active = pos === 0;
   const reduce = useReduceMotion();
+  const compact = useCompact();
   const cardFx = reduce ? popFade : pop;
   const anchorIds = ANCHORS[slide.kind];
   const rootRef = useRef<HTMLDivElement>(null);
@@ -155,7 +156,7 @@ function PhoneStage({
       case "content":
         return <ContentScreen key={visit} {...props} />;
       case "booking":
-        return <BookingScreen key={visit} {...props} locale={locale} />;
+        return <BookingScreen key={visit} {...props} stepMs={stepMsOf(slide, compact)} locale={locale} />;
       case "style":
         return <StyleScreen key={visit} {...props} />;
       case "links":
@@ -295,6 +296,8 @@ export function HeroShowcase() {
   const h = t.home;
   const copy = SHOWCASE_COPY[toShowcaseLocale(locale)];
   const reduce = useReduceMotion();
+  // Phones read a one-line caption instead of the text panel, so slides move faster.
+  const compact = useCompact();
 
   /* ── Playback ── */
   const [track, setTrack] = useState(START);
@@ -330,8 +333,8 @@ export function HeroShowcase() {
     left.current = { slide: index, elapsed: elapsed.current, at: now };
     // Reduced motion lands on the last step, so every callout is already shown.
     const s = back ? track.held[next] : reduce ? slide.steps - 1 : 0;
-    elapsed.current = resumeAt ?? s * slide.stepMs;
-    progress.set(elapsed.current / slideDuration(slide));
+    elapsed.current = resumeAt ?? s * stepMsOf(slide, compact);
+    progress.set(elapsed.current / slideDuration(slide, compact));
     setTrack({
       index: next,
       step: s,
@@ -356,7 +359,8 @@ export function HeroShowcase() {
   useEffect(() => {
     if (paused) return;
     const slide = SLIDES[index];
-    const total = slideDuration(slide);
+    const total = slideDuration(slide, compact);
+    const stepMs = stepMsOf(slide, compact);
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
@@ -370,7 +374,7 @@ export function HeroShowcase() {
         return;
       }
       progress.set(elapsed.current / total);
-      const s = Math.min(slide.steps - 1, Math.floor(elapsed.current / slide.stepMs));
+      const s = Math.min(slide.steps - 1, Math.floor(elapsed.current / stepMs));
       // A frame can land after a click already moved to another slide: its step
       // belongs to this one, so drop it.
       setTrack((t) => (t.index !== index || t.step === s ? t : { ...t, step: s }));
@@ -378,7 +382,7 @@ export function HeroShowcase() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused, index, progress]);
+  }, [paused, index, compact, progress]);
 
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -422,8 +426,8 @@ export function HeroShowcase() {
 
   // Picking a guide item jumps there and holds, so it reads like a manual.
   const pickStep = (n: number) => {
-    elapsed.current = n * SLIDES[index].stepMs;
-    progress.set(elapsed.current / slideDuration(SLIDES[index]));
+    elapsed.current = n * stepMsOf(SLIDES[index], compact);
+    progress.set(elapsed.current / slideDuration(SLIDES[index], compact));
     setTrack((t) => ({ ...t, step: n }));
     setUserPaused(true);
   };
@@ -519,17 +523,17 @@ export function HeroShowcase() {
 
               <Panel pos={posOf(1)} from={fromOf(1)} label={label(1)}>
                 <PanelHeading eyebrow={copy.anatomy.eyebrow} title={copy.anatomy.title} />
-                <StepList items={copy.anatomy.items} step={index === 1 ? step : -1} onPick={pickStep} />
+                <StepList items={copy.anatomy.items} step={index === 1 ? step : -1} onPick={pickStep} focusable={!compact} />
               </Panel>
 
               <Panel pos={posOf(2)} from={fromOf(2)} label={label(2)}>
                 <PanelHeading eyebrow={copy.content.eyebrow} title={copy.content.title} />
-                <StepList items={copy.content.items} step={index === 2 ? step : -1} onPick={pickStep} />
+                <StepList items={copy.content.items} step={index === 2 ? step : -1} onPick={pickStep} focusable={!compact} />
               </Panel>
 
               <Panel pos={posOf(3)} from={fromOf(3)} label={label(3)}>
                 <PanelHeading eyebrow={copy.booking.eyebrow} title={copy.booking.title} />
-                <StepList items={copy.booking.steps} step={index === 3 ? step : -1} onPick={pickStep} />
+                <StepList items={copy.booking.steps} step={index === 3 ? step : -1} onPick={pickStep} focusable={!compact} />
                 <div className="showcase-chips hidden sm:block">
                   <Chips title={copy.booking.businessTitle} items={copy.booking.business} />
                 </div>
@@ -537,7 +541,7 @@ export function HeroShowcase() {
 
               <Panel pos={posOf(4)} from={fromOf(4)} label={label(4)}>
                 <PanelHeading eyebrow={copy.style.eyebrow} title={copy.style.title} />
-                <StepList items={copy.style.items} step={index === 4 ? step : -1} onPick={pickStep} />
+                <StepList items={copy.style.items} step={index === 4 ? step : -1} onPick={pickStep} focusable={!compact} />
               </Panel>
 
               <Panel pos={posOf(5)} from={fromOf(5)} label={label(5)}>

@@ -85,19 +85,23 @@ export function PanelHeading({ eyebrow, title }: { eyebrow: string; title: strin
 // The guide list: follows the phone step by step, and picking an item jumps to it.
 // An invisible copy with the longest line open sizes it, so the list keeps one
 // height whichever step is open (and the phone below it doesn't bob on mobile).
+// `focusable` is off below lg, where the list is only there for screen readers
+// (sr-only): Tab shouldn't land on buttons nobody can see.
 export function StepList({
   items,
   step,
   onPick,
+  focusable,
 }: {
   items: { label: string; desc: string }[];
   step: number;
   onPick: (i: number) => void;
+  focusable: boolean;
 }) {
   const longest = items.reduce((m, item, i) => (item.desc.length > items[m].desc.length ? i : m), 0);
   return (
     <div className="mt-7 grid [grid-template-areas:'list']">
-      <StepItems items={items} step={step} onPick={onPick} />
+      <StepItems items={items} step={step} onPick={onPick} focusable={focusable} />
       <div aria-hidden inert className="invisible [grid-area:list]">
         <StepItems items={items} step={longest} />
       </div>
@@ -109,10 +113,12 @@ function StepItems({
   items,
   step,
   onPick,
+  focusable = true,
 }: {
   items: { label: string; desc: string }[];
   step: number;
   onPick?: (i: number) => void;
+  focusable?: boolean;
 }) {
   return (
     <ol className="space-y-0.5 self-start [grid-area:list]">
@@ -123,6 +129,7 @@ function StepItems({
             <button
               type="button"
               onClick={() => onPick?.(i)}
+              tabIndex={focusable ? undefined : -1}
               aria-current={current ? "step" : undefined}
               className={`group flex w-full items-start gap-3.5 rounded-2xl px-3 py-2.5 text-left transition-[opacity,background-color,box-shadow] duration-300 ${
                 current ? "clay" : "opacity-55 [@media(hover:hover)]:hover:opacity-85"

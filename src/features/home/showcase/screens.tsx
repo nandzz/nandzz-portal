@@ -26,7 +26,6 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { ShowcaseCopy } from "./content";
 import { GALLERY_SIZES, PHOTOS, Photo, type PhotoId } from "./Photo";
 import { EASE_OUT, TAP_LAND, TapRing, StatusBar, still, useReduceMotion } from "./phone";
-import { SLIDES } from "./slides";
 
 // Every screen mirrors a real Nandzz surface — keep them truthful:
 //   profile  → src/app/[username]/(profile)/page.tsx + ProfileHeader (header
@@ -495,10 +494,6 @@ const SERVICE_META = [
 ];
 const euro = (n: number) => `€${n.toFixed(2)}`;
 
-// Each step's last tap (Continue, a time slot, Confirm) lands just before the
-// carousel moves to the next step, so the flow reacts right after the tap.
-const BOOKING_STEP_S = SLIDES.find((s) => s.kind === "booking")!.stepMs / 1000;
-const ADVANCE_TAP = BOOKING_STEP_S - TAP_LAND - 0.35;
 
 function Option({ on, children, className = "" }: { on: boolean; children: ReactNode; className?: string }) {
   return (
@@ -557,8 +552,18 @@ function SummaryRow({ icon, label, value, meta }: { icon: ReactNode; label: stri
 const ICON_BADGE =
   "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--s-accent)_15%,var(--s-bg))] text-(--s-accent)";
 
-export function BookingScreen({ step, scrollY, rootRef, mock, locale }: ScreenProps & { locale: string }) {
+export function BookingScreen({
+  step,
+  stepMs,
+  scrollY,
+  rootRef,
+  mock,
+  locale,
+}: ScreenProps & { stepMs: number; locale: string }) {
   const reduce = useReduceMotion();
+  // Each step's last tap (Continue, a time slot, Confirm) lands just before the
+  // carousel moves to the next step, so the flow reacts right after the tap.
+  const ADVANCE_TAP = stepMs / 1000 - TAP_LAND - 0.35;
   // Step 0 first taps "Book now" on the profile; the booking page then pushes in.
   const [pushIn] = useState(step === 0);
   // Picking a time goes straight on, so on that step the pick is the advancing tap.

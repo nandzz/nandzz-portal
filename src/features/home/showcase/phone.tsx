@@ -1,23 +1,36 @@
 "use client";
 
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useSyncExternalStore, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { PHONE, SCREEN } from "./slides";
 
 export const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
 const REDUCE_QUERY = "(prefers-reduced-motion: reduce)";
+const COMPACT_QUERY = "(max-width: 1023.98px)";
 
-function subscribeReduce(onChange: () => void) {
-  const mql = window.matchMedia(REDUCE_QUERY);
-  mql.addEventListener("change", onChange);
-  return () => mql.removeEventListener("change", onChange);
+// A media query's match. False on the server and during hydration (so both
+// render the same markup), then the real value right after.
+function useMediaQuery(query: string) {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mql = window.matchMedia(query);
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+  return useSyncExternalStore(subscribe, () => window.matchMedia(query).matches, () => false);
 }
 
-// The OS reduced-motion setting. False on the server and during hydration (so
-// both render the same markup), then the real value right after.
+// The OS reduced-motion setting.
 export function useReduceMotion() {
-  return useSyncExternalStore(subscribeReduce, () => window.matchMedia(REDUCE_QUERY).matches, () => false);
+  return useMediaQuery(REDUCE_QUERY);
+}
+
+// Below lg: the slide text panels give way to a caption under the phone.
+export function useCompact() {
+  return useMediaQuery(COMPACT_QUERY);
 }
 
 // Reduced motion keeps a target's fade and drops its movement.
