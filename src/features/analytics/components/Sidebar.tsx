@@ -24,6 +24,7 @@ import {
   UserPlus,
   BarChart3,
   Briefcase,
+  Bot,
 } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
@@ -139,6 +140,16 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         label: "Booking",
         icon: CalendarDays,
         isActive: (p) => p === "/dashboard/booking" || p.startsWith("/dashboard/booking/"),
+      });
+    }
+    // My Agent (WhatsApp assistant) sits right under Booking. Dev environments
+    // only while it's a UI preview.
+    if (isBusiness && FEATURES.businessAgent) {
+      business.push({
+        href: "/dashboard/my-agent",
+        label: "My Agent",
+        icon: Bot,
+        isActive: (p) => p.startsWith("/dashboard/my-agent"),
       });
     }
     if (isBusiness && FEATURES.brand) {
