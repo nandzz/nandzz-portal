@@ -62,7 +62,10 @@ export function SettingsTab({ initial, businessName }: { initial: AgentSettings;
         setError(res.error === "INVALID_INPUT" ? "Some values aren't valid. Check the fields and try again." : "Couldn't save. Please try again.");
         return;
       }
-      setBaseline(draft);
+      // Mirror what was stored (trimmed text) so the bar doesn't come back.
+      const saved = { ...draft, name: draft.name.trim(), intro: draft.intro.trim().replace(/[\s.,;:]+$/, "") };
+      setBaseline(saved);
+      setDraft(saved);
       router.refresh();
     });
 

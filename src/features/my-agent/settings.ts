@@ -61,7 +61,9 @@ export function settingsFromRow(row: AgentSettingsRow | null): AgentSettings {
 /** Validates the tab model and maps it to columns; null when anything is off. */
 export function rowFromSettings(s: AgentSettings): Omit<AgentSettingsRow, "enabled"> | null {
   const name = typeof s?.name === "string" ? s.name.trim() : "";
-  const intro = typeof s?.intro === "string" ? s.intro.trim() : "";
+  // The worker prompt reads "You are {name}, {intro}, replying…", so drop a
+  // trailing full stop / comma the owner may type.
+  const intro = typeof s?.intro === "string" ? s.intro.trim().replace(/[\s.,;:]+$/, "") : "";
   if (name.length < 1 || name.length > LIMITS.name || intro.length > LIMITS.intro) return null;
   if (!AUTONOMY_CAPABILITIES.every((c) => AUTONOMY.includes(s.autonomy?.[c]))) return null;
   if (!Number.isInteger(s.takeoverMinutes) || s.takeoverMinutes < LIMITS.takeoverMin || s.takeoverMinutes > LIMITS.takeoverMax) {
@@ -74,9 +76,10 @@ export function rowFromSettings(s: AgentSettings): Omit<AgentSettingsRow, "enabl
     if (!Array.isArray(s.hours) || s.hours.length !== WEEKDAYS.length) return null;
     agentHours = {};
     for (const day of WEEKDAYS) {
-      const h = s.hours.find((x) => x.day === day);
-      if (!h) return null;
+      const h = s.hours.find((x) => x?.day === day);
+      if (!h || typeof h.enabled !== "boolean") return null;
       if (!h.enabled) continue;
+      if (typeof h.from !== "string" || typeof h.to !== "string") return null;
       if (!TIME_RE.test(h.from) || !TIME_RE.test(h.to) || h.from >= h.to) return null;
       agentHours[day] = [[h.from, h.to]];
     }
@@ -85,7 +88,8 @@ export function rowFromSettings(s: AgentSettings): Omit<AgentSettingsRow, "enabl
   return {
     agent_name: name,
     agent_intro: intro,
-    autonomy: { ...s.autonomy },
+    // Only the known capabilities, never whatever else the client sent.
+    autonomy: Object.fromEntries(AUTONOMY_CAPABILITIES.map((c) => [c, s.autonomy[c]])) as AgentSettings["autonomy"],
     agent_hours: agentHours,
     takeover_pause_min: s.takeoverMinutes,
     retention_months: s.retentionMonths,

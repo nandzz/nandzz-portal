@@ -35,6 +35,7 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<KnowledgeEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
 
   const open = (entry?: KnowledgeEntry) => {
@@ -63,8 +64,10 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
 
   const remove = async () => {
     if (!deleting) return;
+    setListError(null);
     const res = await deleteKnowledgeEntry(deleting.id);
     if (res.ok) router.refresh();
+    else setListError("Couldn't delete that entry. Please try again.");
   };
 
   const canSave = !!editing && editing.title.trim().length > 0 && editing.body.trim().length > 0;
@@ -115,6 +118,11 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
               </li>
             ))}
           </ul>
+        )}
+        {listError && (
+          <p role="alert" className="mt-2 text-sm text-destructive">
+            {listError}
+          </p>
         )}
       </Section>
 
