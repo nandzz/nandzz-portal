@@ -45,6 +45,8 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   const textColor = live ? live.textColor : textColorProp;
   const socialLinksStyle = live ? live.socialLinksStyle : socialLinksStyleProp;
   const bookingButtonStyle = live ? live.bookingButtonStyle : profile.booking_button_style;
+  // Hidden by default; the owner always sees their own counts.
+  const showFollowCounts = isOwner || !!profile.show_follow_counts;
 
   // When the owner tints the buttons, override the surface + a readable text
   // color inline (inline wins over the theme `bg-background` / hover classes).
@@ -218,18 +220,22 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       )}
 
       <div className="mt-4 flex items-center gap-5">
-        <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
-          <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
-            <span className="text-muted-foreground" style={textMutedStyle}>{(profile.followers_count ?? 0) === 1 ? t.profile.follower : t.profile.followers}</span>
-          </div>
-        </FollowersDialog>
-        <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
-          <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-semibold" style={textStyle}>{profile.following_count ?? 0}</span>
-            <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.following}</span>
-          </div>
-        </FollowersDialog>
+        {showFollowCounts && (
+          <>
+            <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
+              <div className="flex items-center gap-1.5 text-sm">
+                <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
+                <span className="text-muted-foreground" style={textMutedStyle}>{(profile.followers_count ?? 0) === 1 ? t.profile.follower : t.profile.followers}</span>
+              </div>
+            </FollowersDialog>
+            <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
+              <div className="flex items-center gap-1.5 text-sm">
+                <span className="font-semibold" style={textStyle}>{profile.following_count ?? 0}</span>
+                <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.following}</span>
+              </div>
+            </FollowersDialog>
+          </>
+        )}
         {!isOwner && currentUserId && (
           <FollowButton profileId={profile.id} initialIsFollowing={isFollowing} />
         )}

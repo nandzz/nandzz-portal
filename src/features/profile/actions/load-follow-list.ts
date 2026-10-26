@@ -8,7 +8,7 @@ const PAGE_SIZE = 20;
 
 export type LoadFollowListResult =
   | { ok: true; users: FollowUser[]; hasMore: boolean; nextOffset: number }
-  | { ok: false; error: "INVALID_INPUT" };
+  | { ok: false; error: "INVALID_INPUT" | "HIDDEN" };
 
 // Client-invoked, offset-paginated loader for the followers/following list
 // (shared by the profile dialog and the /dashboard/followers|following pages).
@@ -22,6 +22,17 @@ export async function loadFollowList(input: {
   const { profileId, type, offset } = parsed.data;
 
   const supabase = await createClient();
+
+  // Lists are only served when the owner made their follow counts public (or
+  // to the owner themself) — hidden by default.
+  const [{ data: { user } }, { data: target }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from("profiles").select("show_follow_counts").eq("id", profileId).maybeSingle(),
+  ]);
+  if (user?.id !== profileId && !target?.show_follow_counts) {
+    return { ok: false, error: "HIDDEN" };
+  }
+
   const { users, rowCount } = await getFollowList(
     supabase,
     profileId,

@@ -263,6 +263,8 @@ export type Translations = {
     preferencesDesc: string;
     languageLabel: string;
     languageHint: string;
+    followCountsLabel: string;
+    followCountsHint: string;
     accountTypeTitle: string;
     accountTypeDesc: string;
     accountTypeCurrent: string;
@@ -1880,6 +1882,8 @@ const en: Translations = {
     preferencesDesc: "Customize your experience on Nandzz",
     languageLabel: "Language",
     languageHint: "Choose the language for the interface",
+    followCountsLabel: "Show followers & following",
+    followCountsHint: "Display your follower and following counts on your public profile. Hidden by default.",
     accountTypeTitle: "Account type",
     accountTypeDesc: "A Personal account books other businesses. A Business account unlocks the Booking and Brand tools to get found and booked, and hides your personal Bookings section.",
     accountTypeCurrent: "Current",
@@ -3497,6 +3501,8 @@ const pt: Translations = {
     preferencesDesc: "Personalize sua experiência no Nandzz",
     languageLabel: "Idioma",
     languageHint: "Escolha o idioma da interface",
+    followCountsLabel: "Mostrar seguidores e seguindo",
+    followCountsHint: "Exibe o número de seguidores e seguindo no seu perfil público. Oculto por padrão.",
     accountTypeTitle: "Tipo de conta",
     accountTypeDesc: "Uma conta Pessoal agenda outras empresas. Uma conta Empresarial libera as ferramentas de Agendamento e Marca para ser encontrada e agendada, e oculta a sua seção pessoal de Agendamentos.",
     accountTypeCurrent: "Atual",
@@ -5114,6 +5120,8 @@ const fr: Translations = {
     preferencesDesc: "Personnalisez votre expérience sur Nandzz",
     languageLabel: "Langue",
     languageHint: "Choisissez la langue de l'interface",
+    followCountsLabel: "Afficher abonnés et abonnements",
+    followCountsHint: "Affiche le nombre d'abonnés et d'abonnements sur ton profil public. Masqué par défaut.",
     accountTypeTitle: "Type de compte",
     accountTypeDesc: "Un compte Personnel réserve d'autres entreprises. Un compte Professionnel débloque les outils Réservation et Marque pour être trouvé et réservé, et masque votre section Réservations personnelle.",
     accountTypeCurrent: "Actuel",
@@ -6731,6 +6739,8 @@ const es: Translations = {
     preferencesDesc: "Personaliza tu experiencia en Nandzz",
     languageLabel: "Idioma",
     languageHint: "Elige el idioma de la interfaz",
+    followCountsLabel: "Mostrar seguidores y seguidos",
+    followCountsHint: "Muestra el número de seguidores y seguidos en tu perfil público. Oculto por defecto.",
     accountTypeTitle: "Tipo de cuenta",
     accountTypeDesc: "Una cuenta Personal reserva otras empresas. Una cuenta de Empresa desbloquea las herramientas de Reservas y Marca para ser encontrada y reservada, y oculta tu sección personal de Reservas.",
     accountTypeCurrent: "Actual",
@@ -8348,6 +8358,8 @@ const ja: Translations = {
     preferencesDesc: "Nandzz での体験をカスタマイズ",
     languageLabel: "言語",
     languageHint: "インターフェースの言語を選択",
+    followCountsLabel: "フォロワー・フォロー数を表示",
+    followCountsHint: "公開プロフィールにフォロワー数とフォロー数を表示します。デフォルトでは非表示です。",
     accountTypeTitle: "アカウントの種類",
     accountTypeDesc: "個人アカウントは他のビジネスを予約します。ビジネスアカウントは予約とブランドのツールを解放して見つけられ予約されやすくし、個人の予約セクションを非表示にします。",
     accountTypeCurrent: "現在",
@@ -9965,6 +9977,8 @@ const de: Translations = {
     preferencesDesc: "Passe deine Erfahrung auf Nandzz an",
     languageLabel: "Sprache",
     languageHint: "Wähle die Sprache der Benutzeroberfläche",
+    followCountsLabel: "Follower & Gefolgt anzeigen",
+    followCountsHint: "Zeigt deine Follower- und Gefolgt-Zahlen auf deinem öffentlichen Profil. Standardmäßig ausgeblendet.",
     accountTypeTitle: "Kontotyp",
     accountTypeDesc: "Ein Privatkonto bucht andere Unternehmen. Ein Geschäftskonto schaltet die Buchungs- und Marken-Tools frei, um gefunden und gebucht zu werden, und blendet deinen persönlichen Buchungsbereich aus.",
     accountTypeCurrent: "Aktuell",
@@ -11582,6 +11596,8 @@ const it: Translations = {
     preferencesDesc: "Personalizza la tua esperienza su Nandzz",
     languageLabel: "Lingua",
     languageHint: "Scegli la lingua dell'interfaccia",
+    followCountsLabel: "Mostra follower e seguiti",
+    followCountsHint: "Mostra il numero di follower e seguiti sul tuo profilo pubblico. Nascosto di default.",
     accountTypeTitle: "Tipo di account",
     accountTypeDesc: "Un account Personale prenota altre attività. Un account Business sblocca gli strumenti Prenotazioni e Brand per farsi trovare e prenotare, e nasconde la tua sezione personale Prenotazioni.",
     accountTypeCurrent: "Attuale",

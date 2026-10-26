@@ -41,6 +41,7 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "show_contents",
   "show_gallery",
   "show_links",
+  "show_follow_counts",
 ].join(",");
 
 export async function fetchPublicProfile(username: string): Promise<Profile | null> {

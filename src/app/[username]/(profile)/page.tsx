@@ -181,6 +181,13 @@ export default async function ProfilePage({
   }
 
   const isOwner = user?.id === profile.id;
+  // Follower/following counts are hidden by default (owner opts in from
+  // Settings). When hidden, strip them before the row is serialized to the
+  // client so visitors never receive them — the owner always sees their own.
+  const viewProfile =
+    profile.show_follow_counts || isOwner
+      ? profile
+      : { ...profile, followers_count: null, following_count: null };
   const hasContents = (spaces?.length ?? 0) > 0;
   const hasLinks = (linkSpaces?.length ?? 0) > 0;
   const hasGallery = (galleryImages?.length ?? 0) > 0;
@@ -219,12 +226,12 @@ export default async function ProfilePage({
         profileId={profile.id}
         username={profile.username}
         displayName={profile.display_name || profile.username}
-        profile={profile}
+        profile={viewProfile}
       />
 
       <PageShell width="wide">
         <ProfileHeader
-          profile={profile}
+          profile={viewProfile}
           isOwner={isOwner}
           currentUserId={user?.id ?? null}
           isFollowing={isFollowing}
@@ -240,7 +247,7 @@ export default async function ProfilePage({
               <ProfileGallery
                 images={galleryImages || []}
                 totalCount={totalGalleryCount ?? galleryImages?.length ?? 0}
-                profile={profile}
+                profile={viewProfile}
                 isOwner={isOwner}
                 initialLayout={resolveGalleryLayout(profile)}
                 enableModal
@@ -250,7 +257,7 @@ export default async function ProfilePage({
               <ProfileContent
                 spaces={spaces || []}
                 totalCount={totalSpaceCount ?? spaces?.length ?? 0}
-                profile={profile}
+                profile={viewProfile}
                 isOwner={isOwner}
                 initialLayout={resolveContentsLayout(profile)}
                 likedSpaceIds={likedSpaceIds}
@@ -262,7 +269,7 @@ export default async function ProfilePage({
               <ProfileLinks
                 links={linkSpaces || []}
                 totalCount={totalLinkCount ?? linkSpaces?.length ?? 0}
-                profile={profile}
+                profile={viewProfile}
                 isOwner={isOwner}
                 initialLayout={resolveLinksLayout(profile)}
               />

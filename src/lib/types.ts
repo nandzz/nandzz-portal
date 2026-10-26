@@ -100,6 +100,7 @@ export type Profile = {
   show_contents?: boolean | null;
   show_gallery?: boolean | null;
   show_links?: boolean | null;
+  show_follow_counts?: boolean | null;
 };
 
 // Credits are now LLM-only. The "plan" bucket is the monthly plan allowance

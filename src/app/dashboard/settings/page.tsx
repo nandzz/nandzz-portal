@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BecomeBusinessDialog, loadMyProfile } from "@/features/profile";
+import { BecomeBusinessDialog, loadMyProfile, setFollowCountsVisibility } from "@/features/profile";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ShieldCheck,
@@ -21,6 +22,7 @@ import {
   Globe,
   Briefcase,
   User,
+  Users,
 } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import {
@@ -58,6 +60,15 @@ export default function SettingsPage() {
       // Let the layout chrome (Sidebar / Navbar) re-read the profile and
       // re-gate the Business / Bookings sections without a reload.
       window.dispatchEvent(new Event("profile-updated"));
+    }
+  };
+
+  // Optimistic; reverts if the write fails.
+  const handleFollowCountsChange = async (value: boolean) => {
+    setProfile((prev) => (prev ? { ...prev, show_follow_counts: value } : prev));
+    const res = await setFollowCountsVisibility({ value });
+    if (!res.ok) {
+      setProfile((prev) => (prev ? { ...prev, show_follow_counts: !value } : prev));
     }
   };
 
@@ -231,6 +242,21 @@ export default function SettingsPage() {
                       ))}
                     </div>
                   </div>
+
+                  <label className="flex items-start justify-between gap-4 cursor-pointer">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{t.settings.followCountsLabel}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t.settings.followCountsHint}</p>
+                    </div>
+                    <Switch
+                      checked={!!profile.show_follow_counts}
+                      onCheckedChange={handleFollowCountsChange}
+                      className="mt-0.5"
+                    />
+                  </label>
                 </CardContent>
               </Card>
             </TabsContent>

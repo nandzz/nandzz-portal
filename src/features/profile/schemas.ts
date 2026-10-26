@@ -140,5 +140,9 @@ export const setSectionVisibilitySchema = z.object({
   value: z.boolean(),
 });
 
+export const setFollowCountsVisibilitySchema = z.object({
+  value: z.boolean(),
+});
+
 export type UpdateProfileInfoInput = z.infer<typeof updateProfileInfoSchema>;
 export type UpdateBrandInput = z.infer<typeof updateBrandSchema>;
