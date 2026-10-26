@@ -32,7 +32,7 @@ describe("SettingsTab", () => {
   it("previews the default role from the business name", () => {
     renderTab();
     expect(screen.getByText(/I'm Nina, the virtual assistant of Salone Bella/)).toBeInTheDocument();
-    expect(screen.getByText("Around the clock, every day.")).toBeInTheDocument();
+    expect(screen.getByText("No hours set. The agent tells customers someone will reply soon.")).toBeInTheDocument();
   });
 
   it("saves the edited settings and refreshes", async () => {

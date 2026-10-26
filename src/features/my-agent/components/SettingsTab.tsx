@@ -137,8 +137,8 @@ export function SettingsTab({ initial, businessName }: { initial: AgentSettings;
       </Section>
 
       <Section
-        title="Working hours"
-        description="Outside these hours the agent stays silent. Times are in your calendar's timezone."
+        title="Team hours"
+        description="When someone from your team answers on WhatsApp. The agent replies at any time; when it passes a chat to you, it tells the customer when you're back. Times are in your calendar's timezone."
         action={
           <label className="flex shrink-0 items-center gap-2 text-sm">
             <span className="text-muted-foreground">Set hours</span>
@@ -154,7 +154,7 @@ export function SettingsTab({ initial, businessName }: { initial: AgentSettings;
               const label = DAY_LABEL[h.day];
               return (
                 <li key={h.day} className="flex items-center gap-3">
-                  <Switch checked={h.enabled} onCheckedChange={(enabled) => set({ enabled })} aria-label={`Work on ${label}`} />
+                  <Switch checked={h.enabled} onCheckedChange={(enabled) => set({ enabled })} aria-label={`Team answers on ${label}`} />
                   <span className={cn("w-10 text-sm font-medium", !h.enabled && "text-muted-foreground")}>{label}</span>
                   {h.enabled ? (
                     <span className="flex items-center gap-1.5 text-sm">
@@ -170,7 +170,7 @@ export function SettingsTab({ initial, businessName }: { initial: AgentSettings;
             })}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">Around the clock, every day.</p>
+          <p className="text-sm text-muted-foreground">No hours set. The agent tells customers someone will reply soon.</p>
         )}
         {badHours && <p className="mt-2 text-xs text-destructive">Each day must end after it starts.</p>}
       </Section>
