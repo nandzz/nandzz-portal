@@ -9,7 +9,12 @@ import type { UsageSummary } from "../types";
 
 const DAYS = 14;
 
-export async function loadMyAgentUsage(supabase: SupabaseClient, userId: string, now: number): Promise<UsageSummary> {
+export async function loadMyAgentUsage(
+  supabase: SupabaseClient,
+  userId: string,
+  now: number,
+  locale: string,
+): Promise<UsageSummary> {
   const today = new Date(now);
   const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
   const firstDay = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - (DAYS - 1)));
@@ -40,9 +45,9 @@ export async function loadMyAgentUsage(supabase: SupabaseClient, userId: string,
     if (day >= 0 && day < DAYS) daily[day]++;
   }
 
-  const month = new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" }).format(monthStart);
+  const day = (d: Date) => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: "UTC" }).format(d);
   return {
-    periodLabel: `1–${today.getUTCDate()} ${month}`,
+    periodLabel: today.getUTCDate() === 1 ? day(monthStart) : `${day(monthStart)} – ${day(today)}`,
     inbound: inbound ?? 0,
     replies: replies ?? 0,
     daily,

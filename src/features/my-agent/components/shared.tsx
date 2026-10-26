@@ -3,16 +3,30 @@
 import { Dialog } from "@/components/ui/dialog";
 import { Sheet, useSheetLayout } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Small building blocks shared by the My Agent tabs.
 
+/** Fills `{name}` placeholders in a dictionary string. */
+export function fill(text: string, vars: Record<string, string | number>): string {
+  return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
+/** My Agent strings + the viewer's locale. */
+export function useMyAgentT() {
+  const { t, locale } = useLanguage();
+  return { t: t.myAgent, locale };
+}
+
 /** "4 min ago" against the server-rendered anchor, so server and client agree. */
-export function relativeTime(iso: string, now: number): string {
+export function relativeTime(iso: string, now: number, locale: string): string {
   const diff = Math.round((new Date(iso).getTime() - now) / 60_000);
   const abs = Math.abs(diff);
-  if (abs < 1) return "now";
-  const unit = abs < 60 ? `${abs} min` : abs < 1440 ? `${Math.round(abs / 60)} h` : `${Math.round(abs / 1440)} d`;
-  return diff < 0 ? `${unit} ago` : `in ${unit}`;
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "short" });
+  if (abs < 1) return rtf.format(0, "second");
+  if (abs < 60) return rtf.format(diff, "minute");
+  if (abs < 1440) return rtf.format(Math.round(diff / 60), "hour");
+  return rtf.format(Math.round(diff / 1440), "day");
 }
 
 /** Bottom sheet below `sm`, centered dialog above — the owner-panel convention. */

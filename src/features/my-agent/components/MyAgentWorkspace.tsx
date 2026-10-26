@@ -25,7 +25,7 @@ import { ConversationsTab } from "./ConversationsTab";
 import { KnowledgeTab } from "./KnowledgeTab";
 import { UsageTab } from "./UsageTab";
 import { SettingsTab } from "./SettingsTab";
-import { EmptyState } from "./shared";
+import { EmptyState, fill, useMyAgentT } from "./shared";
 
 const BASE_PATH = "/dashboard/my-agent";
 
@@ -50,8 +50,10 @@ export function MyAgentWorkspace({
   connection: WhatsAppConnection | null;
   settings: AgentSettings;
   knowledge: KnowledgeEntry[];
-  businessName: string;
+  /** null ⇒ the localized "your business". */
+  businessName: string | null;
 }) {
+  const { t } = useMyAgentT();
   const [tab, setTab] = useState<MyAgentTab>(initialTab);
   const router = useRouter();
   // Optimistic: flips at once, rolls back if the save fails.
@@ -86,24 +88,24 @@ export function MyAgentWorkspace({
           </div>
           <div className="min-w-0">
             <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-              My Agent
+              {t.title}
               <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                Dev preview
+                {t.devPreview}
               </span>
             </h1>
             <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", running ? "bg-emerald-500" : "bg-muted-foreground/50")} />
-              {running ? `${settings.name} is answering on WhatsApp` : "Off — customers get no replies"}
+              {running ? fill(t.answering, { name: settings.name }) : t.offStatus}
             </p>
           </div>
         </div>
         <label className="flex shrink-0 items-center gap-2 pt-1 text-sm font-medium">
-          <span className="hidden sm:inline">{running ? "On" : "Off"}</span>
+          <span className="hidden sm:inline">{running ? t.on : t.off}</span>
           <Switch
             checked={running}
             onCheckedChange={toggleRunning}
             disabled={toggling}
-            aria-label={running ? "Turn the agent off" : "Turn the agent on"}
+            aria-label={running ? t.turnOff : t.turnOn}
           />
         </label>
       </div>
@@ -117,10 +119,10 @@ export function MyAgentWorkspace({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">
-            {connection ? `WhatsApp connected${connection.phone ? ` · ${connection.phone}` : ""}` : "Connect your WhatsApp number"}
+            {connection ? `${t.waConnected}${connection.phone ? ` · ${connection.phone}` : ""}` : t.waConnect}
           </span>
           <span className="block truncate text-xs text-muted-foreground">
-            {connection ? "The agent answers customers who write to this number." : "The agent starts answering once a number is connected."}
+            {connection ? t.waConnectedHint : t.waNotConnectedHint}
           </span>
         </span>
         <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -130,24 +132,24 @@ export function MyAgentWorkspace({
         {/* Inactive tabs collapse to icon-only on phones, like the booking tabs. */}
         <TabsList variant="line" className="h-9 w-full sm:w-max">
           <TabsTrigger value="activity">
-            <Activity className="h-4 w-4" /> <TabLabel>Activity</TabLabel>
+            <Activity className="h-4 w-4" /> <TabLabel>{t.tabActivity}</TabLabel>
             {pending > 0 && <Badge>{pending}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="conversations">
-            <MessagesSquare className="h-4 w-4" /> <TabLabel>Assistance</TabLabel>
+            <MessagesSquare className="h-4 w-4" /> <TabLabel>{t.tabAssistance}</TabLabel>
             {handedOff > 0 && <Badge>{handedOff}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="workflows">
-            <WorkflowIcon className="h-4 w-4" /> <TabLabel>Workflows</TabLabel>
+            <WorkflowIcon className="h-4 w-4" /> <TabLabel>{t.tabWorkflows}</TabLabel>
           </TabsTrigger>
           <TabsTrigger value="knowledge">
-            <BookOpen className="h-4 w-4" /> <TabLabel>Knowledge</TabLabel>
+            <BookOpen className="h-4 w-4" /> <TabLabel>{t.tabKnowledge}</TabLabel>
           </TabsTrigger>
           <TabsTrigger value="usage">
-            <BarChart3 className="h-4 w-4" /> <TabLabel>Usage</TabLabel>
+            <BarChart3 className="h-4 w-4" /> <TabLabel>{t.tabUsage}</TabLabel>
           </TabsTrigger>
           <TabsTrigger value="settings">
-            <Settings className="h-4 w-4" /> <TabLabel>Settings</TabLabel>
+            <Settings className="h-4 w-4" /> <TabLabel>{t.tabSettings}</TabLabel>
           </TabsTrigger>
         </TabsList>
 
@@ -160,8 +162,8 @@ export function MyAgentWorkspace({
         <TabsContent value="workflows">
           <EmptyState
             icon={WorkflowIcon}
-            title="Workflows are coming soon"
-            body="Rules in plain words, like “When a customer complains → alert me”. They aren't available yet."
+            title={t.workflowsTitle}
+            body={t.workflowsBody}
           />
         </TabsContent>
         <TabsContent value="knowledge">
@@ -171,7 +173,7 @@ export function MyAgentWorkspace({
           <UsageTab usage={usage} />
         </TabsContent>
         <TabsContent value="settings">
-          <SettingsTab initial={settings} businessName={businessName} />
+          <SettingsTab initial={settings} businessName={businessName ?? t.yourBusiness} />
         </TabsContent>
       </Tabs>
     </>

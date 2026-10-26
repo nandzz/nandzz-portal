@@ -19,8 +19,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { deleteActivityItem } from "../actions/agent-data";
 import { decideApproval } from "../actions/decide-approval";
-import type { ActivityItem, ActivityKind } from "../types";
-import { EmptyState, ResponsivePanel, Segmented, relativeTime } from "./shared";
+import type { Translations } from "@/lib/i18n/translations";
+import type { ActivityItem, ActivityKind, ActivityTitleKey } from "../types";
+import { EmptyState, ResponsivePanel, Segmented, relativeTime, useMyAgentT } from "./shared";
 
 type Filter = "all" | "pending" | "bookings" | "handoffs" | "errors";
 
@@ -33,6 +34,20 @@ const KIND_META: Record<ActivityKind, { icon: LucideIcon; tone: string }> = {
   rule: { icon: Sparkles, tone: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300" },
   error: { icon: AlertTriangle, tone: "bg-destructive/10 text-destructive" },
 };
+
+type Decided = "approved" | "rejected" | "failed";
+
+const DECIDED_TITLE = {
+  approved: "titleDecidedApproved",
+  rejected: "titleDecidedRejected",
+  failed: "titleDecidedFailed",
+} as const satisfies Record<Decided, ActivityTitleKey>;
+
+const STATE_LABEL = {
+  approved: "approved",
+  rejected: "rejected",
+  failed: "notPossible",
+} as const satisfies Record<Decided, keyof Translations["myAgent"]["activity"]>;
 
 function matches(item: ActivityItem, filter: Filter) {
   switch (filter) {
@@ -50,10 +65,12 @@ function matches(item: ActivityItem, filter: Filter) {
 }
 
 export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; now: number }) {
+  const { t: m, locale } = useMyAgentT();
+  const t = m.activity;
   const [items, setItems] = useState(initial);
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [resolved, setResolved] = useState<Record<string, "approved" | "rejected" | "failed">>({});
+  const [resolved, setResolved] = useState<Record<string, Decided>>({});
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, startTransition] = useTransition();
@@ -73,18 +90,11 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
     startTransition(async () => {
       const res = await decideApproval({ approvalId: id, decision });
       if (!res.ok) {
-        setError(
-          res.error === "NOT_PENDING" ? "This request was already decided." : "Something went wrong. Please try again.",
-        );
+        setError(res.error === "NOT_PENDING" ? t.alreadyDecided : m.genericError);
         if (res.error === "NOT_PENDING") router.refresh();
         return;
       }
-      const title =
-        res.status === "approved"
-          ? "Approved by you"
-          : res.status === "rejected"
-            ? "Rejected by you"
-            : "Approved, but the time was no longer free";
+      const title = DECIDED_TITLE[res.status];
       setResolved((r) => ({ ...r, [id]: res.status }));
       setItems((list) => list.map((i) => (i.id === id ? { ...i, title } : i)));
       setOpenId(null);
@@ -97,7 +107,7 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
     setError(null);
     const res = await deleteActivityItem(id);
     if (!res.ok && res.error !== "NOT_FOUND") {
-      setError("Couldn't delete this entry. Please try again.");
+      setError(t.deleteFailed);
       return;
     }
     setItems((list) => list.filter((i) => i.id !== id));
@@ -108,28 +118,24 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
   return (
     <div className="space-y-4">
       <Segmented
-        ariaLabel="Filter activity"
+        ariaLabel={t.filterLabel}
         value={filter}
         onChange={setFilter}
         size="sm"
         options={[
-          { value: "all", label: "All" },
-          { value: "pending", label: "Needs approval", count: pendingCount },
-          { value: "bookings", label: "Bookings" },
-          { value: "handoffs", label: "Handoffs" },
-          { value: "errors", label: "Errors" },
+          { value: "all", label: t.all },
+          { value: "pending", label: t.needsApproval, count: pendingCount },
+          { value: "bookings", label: t.bookings },
+          { value: "handoffs", label: t.handoffs },
+          { value: "errors", label: t.errors },
         ]}
       />
 
       {visible.length === 0 ? (
         <EmptyState
           icon={filter === "pending" ? CheckCircle2 : Inbox}
-          title={filter === "pending" ? "You're all caught up" : "Nothing here yet"}
-          body={
-            filter === "pending"
-              ? "Bookings the agent sets as pending show up here for you to approve."
-              : "Everything the agent does on WhatsApp appears in this feed."
-          }
+          title={filter === "pending" ? t.caughtUpTitle : t.emptyTitle}
+          body={filter === "pending" ? t.caughtUpBody : t.emptyBody}
         />
       ) : (
         <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/60 bg-card">
@@ -150,15 +156,15 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-3">
-                      <span className="truncate text-sm font-medium">{item.title}</span>
-                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{relativeTime(item.at, now)}</span>
+                      <span className="truncate text-sm font-medium">{t[item.title]}</span>
+                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{relativeTime(item.at, now, locale)}</span>
                     </span>
                     <span className="mt-0.5 block truncate text-sm text-muted-foreground">
-                      {item.customer} · {item.detail}
+                      {item.customer ?? m.customerFallback} · {item.detail}
                     </span>
                     {actionable && (
                       <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                        Review
+                        {t.review}
                       </span>
                     )}
                     {state && (
@@ -172,7 +178,7 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
                               : "bg-muted text-muted-foreground",
                         )}
                       >
-                        {state === "approved" ? "Approved" : state === "failed" ? "Not possible" : "Rejected"}
+                        {t[STATE_LABEL[state]]}
                       </span>
                     )}
                   </span>
@@ -187,15 +193,15 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
         <ResponsivePanel
           open
           onClose={() => setOpenId(null)}
-          title={open.title}
+          title={t[open.title]}
           footer={
             open.pending && !resolved[open.id] ? (
               <div className="flex gap-2">
                 <Button variant="outline" className="h-10 flex-1" disabled={busy} onClick={() => resolve(open.id, "reject")}>
-                  Reject
+                  {t.reject}
                 </Button>
                 <Button className="h-10 flex-1" disabled={busy} onClick={() => resolve(open.id, "approve")}>
-                  {busy ? "Working…" : "Approve"}
+                  {busy ? t.working : t.approve}
                 </Button>
               </div>
             ) : (
@@ -204,29 +210,28 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
                 className="h-10 w-full text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
                 onClick={() => setConfirmDelete(true)}
               >
-                <Trash2 aria-hidden /> Delete from activity
+                <Trash2 aria-hidden /> {t.deleteButton}
               </Button>
             )
           }
         >
           <dl className="space-y-3 text-sm">
-            <Row label="Customer" value={`${open.customer} · ${open.phone}`} />
+            <Row label={t.customer} value={`${open.customer ?? m.customerFallback} · ${open.phone}`} />
             {open.pending ? (
               <>
-                <Row label="Service" value={open.pending.service} />
-                <Row label="When" value={open.pending.when} />
-                <Row label="Staff" value={open.pending.staff} />
+                <Row label={t.service} value={open.pending.service} />
+                <Row label={t.when} value={open.pending.when} />
+                <Row label={t.staff} value={open.pending.staff ?? m.anyStaff} />
               </>
             ) : (
-              <Row label="Details" value={open.detail} />
+              <Row label={t.details} value={open.detail} />
             )}
-            {open.reason && <Row label="Why" value={open.reason} />}
-            <Row label="When it happened" value={relativeTime(open.at, now)} />
+            {open.reason && <Row label={t.why} value={open.reason} />}
+            <Row label={t.happened} value={relativeTime(open.at, now, locale)} />
           </dl>
           {open.pending && !resolved[open.id] && (
             <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-              The customer already said yes in the chat. Approving checks the time is still free, then confirms it; the
-              agent tells the customer on WhatsApp either way.
+              {t.approveNote}
             </p>
           )}
           {error && (
@@ -241,10 +246,10 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
         open={confirmDelete && !!open}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => (open ? remove(open.id) : undefined)}
-        title="Delete this entry?"
-        description="It disappears from the activity feed. Bookings and the WhatsApp chat are not affected."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t.deleteTitle}
+        description={t.deleteBody}
+        confirmLabel={m.delete}
+        cancelLabel={m.cancel}
       />
     </div>
   );

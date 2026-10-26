@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
-import type { ActivityItem, ActivityKind } from "../types";
+import type { ActivityItem, ActivityKind, ActivityTitleKey } from "../types";
 
 // My Agent → Activity, real data: pending approvals first (actionable), then
 // the latest feed events. Read with the owner's own client (RLS: owner-only).
@@ -26,30 +26,31 @@ type EventRow = {
   thread: ThreadRef;
 };
 
-const EVENT_VIEW: Record<string, { kind: ActivityKind; title: string } | undefined> = {
-  booking_created: { kind: "booking_created", title: "Booked by the agent" },
-  booking_rescheduled: { kind: "rescheduled", title: "Booking moved" },
-  booking_cancelled: { kind: "cancelled", title: "Booking cancelled" },
-  approval_requested: { kind: "approval", title: "Asked for your approval" },
-  approval_rejected: { kind: "cancelled", title: "You rejected a request" },
-  approval_failed: { kind: "error", title: "Approved, but it couldn't be done" },
-  hand_off: { kind: "handoff", title: "Handed off to you" },
+// Titles are dictionary keys; the client shows them in the viewer's language.
+const EVENT_VIEW: Record<string, { kind: ActivityKind; title: ActivityTitleKey } | undefined> = {
+  booking_created: { kind: "booking_created", title: "titleBookingCreated" },
+  booking_rescheduled: { kind: "rescheduled", title: "titleRescheduled" },
+  booking_cancelled: { kind: "cancelled", title: "titleCancelled" },
+  approval_requested: { kind: "approval", title: "titleApprovalRequested" },
+  approval_rejected: { kind: "cancelled", title: "titleApprovalRejected" },
+  approval_failed: { kind: "error", title: "titleApprovalFailed" },
+  hand_off: { kind: "handoff", title: "titleHandOff" },
 };
 
 const APPROVAL_TITLE = {
-  new_booking: "New booking needs your approval",
-  reschedule: "Reschedule needs your approval",
-  cancel: "Cancellation needs your approval",
-} as const;
+  new_booking: "titlePendingNewBooking",
+  reschedule: "titlePendingReschedule",
+  cancel: "titlePendingCancel",
+} as const satisfies Record<string, ActivityTitleKey>;
 
 const who = (t: ThreadRef) => ({
-  customer: t?.customer_name || "WhatsApp customer",
+  customer: t?.customer_name || null,
   phone: t ? `+${t.customer_wa_id}` : "",
 });
 
-const fmt = (iso: string | undefined, timeZone: string) =>
+const fmt = (iso: string | undefined, timeZone: string, locale: string) =>
   iso
-    ? new Intl.DateTimeFormat("en-GB", {
+    ? new Intl.DateTimeFormat(locale, {
         timeZone,
         weekday: "short",
         day: "numeric",
@@ -60,7 +61,7 @@ const fmt = (iso: string | undefined, timeZone: string) =>
       }).format(new Date(iso))
     : "";
 
-export async function loadMyAgentActivity(supabase: SupabaseClient, userId: string): Promise<ActivityItem[]> {
+export async function loadMyAgentActivity(supabase: SupabaseClient, userId: string, locale: string): Promise<ActivityItem[]> {
   const thread = "thread:agent_threads(customer_wa_id, customer_name)";
   const [{ data: approvals }, { data: events }, { data: connection }] = await Promise.all([
     supabase
@@ -103,12 +104,12 @@ export async function loadMyAgentActivity(supabase: SupabaseClient, userId: stri
     const service =
       a.booking?.service_name ??
       (a.request.service_ids ?? []).map((id) => scope.services.find((s) => s.id === id)?.name ?? id).join(" + ");
-    const staff =
-      a.booking?.staff_name ?? scope.staff.find((s) => s.id === a.request.staff_id)?.name ?? "Any available";
+    // null ⇒ any available staff (localized on the client).
+    const staff = a.booking?.staff_name ?? scope.staff.find((s) => s.id === a.request.staff_id)?.name ?? null;
     const when =
       a.kind === "reschedule"
-        ? `${fmt(a.booking?.starts_at, scope.timezone)} → ${fmt(a.request.starts_at, scope.timezone)}`
-        : fmt(a.request.starts_at ?? a.booking?.starts_at, scope.timezone);
+        ? `${fmt(a.booking?.starts_at, scope.timezone, locale)} → ${fmt(a.request.starts_at, scope.timezone, locale)}`
+        : fmt(a.request.starts_at ?? a.booking?.starts_at, scope.timezone, locale);
     return {
       id: a.id,
       kind: "approval",

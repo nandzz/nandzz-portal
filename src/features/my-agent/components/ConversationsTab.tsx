@@ -7,22 +7,27 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { deleteConversation } from "../actions/agent-data";
+import type { Translations } from "@/lib/i18n/translations";
 import type { Conversation, ConversationState } from "../types";
-import { EmptyState, ResponsivePanel, Segmented, relativeTime } from "./shared";
+import { EmptyState, ResponsivePanel, Segmented, fill, relativeTime, useMyAgentT } from "./shared";
 
 // Assistance cards: one card per WhatsApp chat the agent has handled. This is
 // deliberately NOT a chat client — there is no composer. The owner inspects the
 // thread and replies from WhatsApp on the phone (the agent pauses meanwhile).
 
-const STATE_META: Record<ConversationState, { label: string; dot: string }> = {
-  handling: { label: "Agent replying", dot: "bg-emerald-500" },
-  handed_off: { label: "Handed off to you", dot: "bg-amber-500" },
-  taken_over: { label: "You took over", dot: "bg-violet-500" },
-};
+const STATE_META = {
+  handling: { label: "stateHandling", dot: "bg-emerald-500" },
+  handed_off: { label: "stateHandedOff", dot: "bg-amber-500" },
+  taken_over: { label: "stateTakenOver", dot: "bg-violet-500" },
+} as const satisfies Record<ConversationState, { label: keyof Translations["myAgent"]["assistance"]; dot: string }>;
+
+const SENDER = { customer: "fromCustomer", agent: "fromAgent", owner: "fromYou" } as const;
 
 type Filter = "all" | "handed_off";
 
 export function ConversationsTab({ conversations: initial, now }: { conversations: Conversation[]; now: number }) {
+  const { t: m, locale } = useMyAgentT();
+  const t = m.assistance;
   const router = useRouter();
   const [conversations, setConversations] = useState(initial);
   const [filter, setFilter] = useState<Filter>("all");
@@ -38,7 +43,7 @@ export function ConversationsTab({ conversations: initial, now }: { conversation
     setError(null);
     const res = await deleteConversation(id);
     if (!res.ok && res.error !== "NOT_FOUND") {
-      setError("Couldn't delete this conversation. Please try again.");
+      setError(t.deleteFailed);
       return;
     }
     setConversations((list) => list.filter((c) => c.id !== id));
@@ -49,25 +54,21 @@ export function ConversationsTab({ conversations: initial, now }: { conversation
   return (
     <div className="space-y-4">
       <Segmented
-        ariaLabel="Filter conversations"
+        ariaLabel={t.filterLabel}
         value={filter}
         onChange={setFilter}
         size="sm"
         options={[
-          { value: "all", label: "All", count: conversations.length },
-          { value: "handed_off", label: "Handed off", count: handedOff.length },
+          { value: "all", label: t.all, count: conversations.length },
+          { value: "handed_off", label: t.handedOff, count: handedOff.length },
         ]}
       />
 
       {visible.length === 0 ? (
         <EmptyState
           icon={MessagesSquare}
-          title={filter === "all" ? "No conversations yet" : "Nothing handed off"}
-          body={
-            filter === "all"
-              ? "When a customer writes on WhatsApp, the chat the agent is handling appears here."
-              : "Chats the agent passes to you (complaints, refunds, questions it can't answer) are listed here."
-          }
+          title={filter === "all" ? t.emptyAllTitle : t.emptyHandedTitle}
+          body={filter === "all" ? t.emptyAllBody : t.emptyHandedBody}
         />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
@@ -83,18 +84,20 @@ export function ConversationsTab({ conversations: initial, now }: { conversation
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-semibold">{c.customer}</span>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{relativeTime(c.updatedAt, now)}</span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{relativeTime(c.updatedAt, now, locale)}</span>
                   </span>
                   <span className="mt-0.5 text-xs text-muted-foreground">{c.phone}</span>
                   <span className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">{senderLabel(last.from)}: </span>
+                    <span className="font-medium text-foreground">{t[SENDER[last.from]]}: </span>
                     {last.text}
                   </span>
                   <span className="mt-auto flex items-center gap-1.5 pt-3 text-xs font-medium">
                     <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
-                    {meta.label}
+                    {t[meta.label]}
                     {c.state === "taken_over" && c.resumesAt && (
-                      <span className="font-normal text-muted-foreground">· resumes {relativeTime(c.resumesAt, now)}</span>
+                      <span className="font-normal text-muted-foreground">
+                        · {fill(t.resumes, { time: relativeTime(c.resumesAt, now, locale) })}
+                      </span>
                     )}
                   </span>
                 </button>
@@ -115,43 +118,43 @@ export function ConversationsTab({ conversations: initial, now }: { conversation
               className="h-10 w-full text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
               onClick={() => setConfirmDelete(true)}
             >
-              <Trash2 aria-hidden /> Delete conversation
+              <Trash2 aria-hidden /> {t.deleteButton}
             </Button>
           }
         >
           <p className="mb-4 text-xs text-muted-foreground">
-            {open.phone} · {STATE_META[open.state].label}
+            {open.phone} · {t[STATE_META[open.state].label]}
           </p>
           <ol className="space-y-2">
-            {open.messages.map((m) => (
-              <li key={m.id} className={cn("flex", m.from === "customer" ? "justify-start" : "justify-end")}>
+            {open.messages.map((msg) => (
+              <li key={msg.id} className={cn("flex", msg.from === "customer" ? "justify-start" : "justify-end")}>
                 <div
                   className={cn(
                     "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm",
-                    m.from === "customer" && "rounded-bl-md bg-muted",
-                    m.from === "agent" && "rounded-br-md bg-violet-600 text-white",
-                    m.from === "owner" && "rounded-br-md bg-emerald-600 text-white",
+                    msg.from === "customer" && "rounded-bl-md bg-muted",
+                    msg.from === "agent" && "rounded-br-md bg-violet-600 text-white",
+                    msg.from === "owner" && "rounded-br-md bg-emerald-600 text-white",
                   )}
                 >
-                  {m.from !== "customer" && (
+                  {msg.from !== "customer" && (
                     <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wide opacity-80">
-                      {m.from === "agent" ? "Agent" : "You"}
+                      {t[SENDER[msg.from]]}
                     </span>
                   )}
-                  {m.voice && (
+                  {msg.voice && (
                     <span className="mb-0.5 flex items-center gap-1 text-xs opacity-80">
-                      <Mic aria-hidden className="h-3.5 w-3.5" /> Voice note (transcribed)
+                      <Mic aria-hidden className="h-3.5 w-3.5" /> {t.voiceNote}
                     </span>
                   )}
-                  {m.text}
-                  <span className="mt-1 block text-right text-[10px] tabular-nums opacity-70">{relativeTime(m.at, now)}</span>
+                  {msg.text}
+                  <span className="mt-1 block text-right text-[10px] tabular-nums opacity-70">{relativeTime(msg.at, now, locale)}</span>
                 </div>
               </li>
             ))}
           </ol>
           <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Smartphone aria-hidden className="h-3.5 w-3.5" />
-            Reply from WhatsApp on your phone — the agent pauses while you write.
+            {t.replyHint}
           </p>
           {error && (
             <p role="alert" className="mt-3 text-sm text-destructive">
@@ -165,15 +168,11 @@ export function ConversationsTab({ conversations: initial, now }: { conversation
         open={confirmDelete && !!open}
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => (open ? remove(open.id) : undefined)}
-        title="Delete this conversation?"
-        description="All its messages, activity and open requests are deleted from Nandzz for good, and the agent forgets the chat. Bookings stay in your calendar, and the chat stays in the WhatsApp Business app on your phone."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t.deleteTitle}
+        description={t.deleteBody}
+        confirmLabel={m.delete}
+        cancelLabel={m.cancel}
       />
     </div>
   );
-}
-
-function senderLabel(from: "customer" | "agent" | "owner") {
-  return from === "customer" ? "Customer" : from === "agent" ? "Agent" : "You";
 }

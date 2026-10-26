@@ -1,21 +1,26 @@
 // My Agent (Business Agent) view models, all backed by real data.
 
 import type { WeekdayKey } from "@/lib/types";
+import type { Translations } from "@/lib/i18n/translations";
+
+/** Activity titles are dictionary keys (t.myAgent.activity.title*). */
+export type ActivityTitleKey = Extract<keyof Translations["myAgent"]["activity"], `title${string}`>;
 
 export type ActivityKind = "booking_created" | "approval" | "handoff" | "rescheduled" | "cancelled" | "rule" | "error";
 
 export type ActivityItem = {
   id: string;
   kind: ActivityKind;
-  customer: string;
+  /** null ⇒ no WhatsApp name; shown as the localized fallback. */
+  customer: string | null;
   phone: string;
-  title: string;
+  title: ActivityTitleKey;
   detail: string;
   /** Why the agent did it — the rule or reasoning shown in the feed. */
   reason?: string;
   at: string; // ISO
   /** Pending approvals only: what the owner approves or rejects. */
-  pending?: { service: string; when: string; staff: string };
+  pending?: { service: string; when: string; staff: string | null };
 };
 
 export type ConversationState = "handling" | "handed_off" | "taken_over";

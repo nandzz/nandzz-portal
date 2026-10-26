@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { deleteKnowledgeEntry, saveKnowledgeEntry } from "../actions/agent-settings";
 import type { KnowledgeEntry } from "../types";
-import { EmptyState, ResponsivePanel, Section, relativeTime } from "./shared";
+import { EmptyState, ResponsivePanel, Section, fill, relativeTime, useMyAgentT } from "./shared";
 
 // Knowledge = the owner's entries the agent searches before answering
 // (agent_knowledge).
@@ -18,9 +18,13 @@ import { EmptyState, ResponsivePanel, Section, relativeTime } from "./shared";
 const TITLE_MAX = 200;
 const BODY_MAX = 8000;
 
+const SAVE_ERROR: Record<string, "tooMany" | "invalid" | undefined> = { TOO_MANY: "tooMany", INVALID_INPUT: "invalid" };
+
 type Editing = { id?: string; title: string; body: string };
 
 export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now: number }) {
+  const { t: m, locale } = useMyAgentT();
+  const t = m.knowledge;
   const router = useRouter();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [deleting, setDeleting] = useState<KnowledgeEntry | null>(null);
@@ -38,13 +42,7 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
     startSaving(async () => {
       const res = await saveKnowledgeEntry(editing);
       if (!res.ok) {
-        setError(
-          res.error === "TOO_MANY"
-            ? "You've reached the maximum number of entries. Merge or delete some first."
-            : res.error === "INVALID_INPUT"
-              ? "Add a title and some content."
-              : "Couldn't save. Please try again.",
-        );
+        setError(t[SAVE_ERROR[res.error] ?? "saveFailed"]);
         return;
       }
       setEditing(null);
@@ -57,7 +55,7 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
     setListError(null);
     const res = await deleteKnowledgeEntry(deleting.id);
     if (res.ok) router.refresh();
-    else setListError("Couldn't delete that entry. Please try again.");
+    else setListError(t.deleteFailed);
   };
 
   const canSave = !!editing && editing.title.trim().length > 0 && editing.body.trim().length > 0;
@@ -65,12 +63,12 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
   return (
     <div className="space-y-4">
       <Section
-        title="What the agent knows"
-        description="Prices, policies, opening details, FAQs. The agent looks here before answering and never makes things up."
+        title={t.title}
+        description={t.description}
         action={
           entries.length > 0 && (
             <Button size="sm" variant="outline" onClick={() => open()}>
-              <Plus aria-hidden /> Add
+              <Plus aria-hidden /> {t.add}
             </Button>
           )
         }
@@ -79,12 +77,12 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
           <div className="space-y-4">
             <EmptyState
               icon={BookOpen}
-              title="Nothing here yet"
-              body="Add what customers usually ask about: prices, parking, payment methods, cancellation policy."
+              title={t.emptyTitle}
+              body={t.emptyBody}
             />
             <div className="flex justify-center">
               <Button size="sm" onClick={() => open()}>
-                <Plus aria-hidden /> Add your first entry
+                <Plus aria-hidden /> {t.addFirst}
               </Button>
             </div>
           </div>
@@ -95,13 +93,13 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
                 <button type="button" onClick={() => open(e)} className="min-w-0 flex-1 text-left">
                   <p className="truncate text-sm font-medium">{e.title}</p>
                   <p className="line-clamp-2 text-sm text-muted-foreground">{e.body}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">Updated {relativeTime(e.updatedAt, now)}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">{fill(t.updated, { time: relativeTime(e.updatedAt, now, locale) })}</p>
                 </button>
                 <div className="flex shrink-0 gap-0.5">
-                  <Button size="icon-sm" variant="ghost" onClick={() => open(e)} aria-label={`Edit ${e.title}`}>
+                  <Button size="icon-sm" variant="ghost" onClick={() => open(e)} aria-label={fill(t.editAria, { title: e.title })}>
                     <Pencil aria-hidden />
                   </Button>
-                  <Button size="icon-sm" variant="ghost" onClick={() => setDeleting(e)} aria-label={`Delete ${e.title}`}>
+                  <Button size="icon-sm" variant="ghost" onClick={() => setDeleting(e)} aria-label={fill(t.deleteAria, { title: e.title })}>
                     <Trash2 aria-hidden />
                   </Button>
                 </div>
@@ -119,7 +117,7 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
       <ResponsivePanel
         open={editing !== null}
         onClose={() => !saving && setEditing(null)}
-        title={editing?.id ? "Edit entry" : "New entry"}
+        title={editing?.id ? t.editTitle : t.newTitle}
         footer={
           <div className="flex items-center justify-end gap-2">
             {error && (
@@ -128,10 +126,10 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
               </p>
             )}
             <Button variant="ghost" onClick={() => setEditing(null)} disabled={saving}>
-              Cancel
+              {m.cancel}
             </Button>
             <Button onClick={save} disabled={saving || !canSave}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? m.saving : m.save}
             </Button>
           </div>
         }
@@ -139,27 +137,27 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
         {editing && (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="knowledge-title">Title</Label>
+              <Label htmlFor="knowledge-title">{t.fieldTitle}</Label>
               <Input
                 id="knowledge-title"
                 value={editing.title}
                 onChange={(e) => setEditing({ ...editing, title: e.target.value })}
                 maxLength={TITLE_MAX}
-                placeholder="e.g. Prices"
+                placeholder={t.titlePlaceholder}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="knowledge-body">Content</Label>
+              <Label htmlFor="knowledge-body">{t.fieldContent}</Label>
               <Textarea
                 id="knowledge-body"
                 value={editing.body}
                 onChange={(e) => setEditing({ ...editing, body: e.target.value })}
                 maxLength={BODY_MAX}
                 rows={10}
-                placeholder="Write it the way you'd explain it to a new colleague."
+                placeholder={t.contentPlaceholder}
               />
               <p className="text-right text-[11px] tabular-nums text-muted-foreground">
-                {editing.body.length.toLocaleString()} / {BODY_MAX.toLocaleString()}
+                {editing.body.length.toLocaleString(locale)} / {BODY_MAX.toLocaleString(locale)}
               </p>
             </div>
           </div>
@@ -170,10 +168,10 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
         open={deleting !== null}
         onClose={() => setDeleting(null)}
         onConfirm={remove}
-        title="Delete this entry?"
-        description={deleting ? `The agent will no longer know “${deleting.title}”.` : undefined}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t.deleteTitle}
+        description={deleting ? fill(t.deleteBody, { title: deleting.title }) : undefined}
+        confirmLabel={m.delete}
+        cancelLabel={m.cancel}
       />
     </div>
   );

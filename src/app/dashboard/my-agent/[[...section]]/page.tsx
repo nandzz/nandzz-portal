@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/account/server";
 import { FEATURES } from "@/lib/flags";
+import { getCurrentLocale } from "@/lib/i18n/server";
 import { PageShell } from "@/components/layout/PageShell";
 import { MyAgentWorkspace, myAgentTabFromSegment } from "@/features/my-agent";
 import { loadMyAgentActivity } from "@/features/my-agent/server/load-activity";
@@ -32,16 +33,17 @@ export default async function MyAgentPage({ params }: { params: Promise<{ sectio
   if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
 
   const now = requestTime();
+  const locale = await getCurrentLocale();
   const [activity, settings, knowledge, usage, connection, { data: profile }] = await Promise.all([
-    loadMyAgentActivity(supabase, userId),
+    loadMyAgentActivity(supabase, userId, locale),
     loadMyAgentSettings(supabase, userId),
     loadMyAgentKnowledge(supabase, userId),
-    loadMyAgentUsage(supabase, userId, now),
+    loadMyAgentUsage(supabase, userId, now, locale),
     loadWhatsAppConnection(supabase, userId),
     supabase.from("profiles").select("username, display_name").eq("id", userId).maybeSingle(),
   ]);
   const conversations = await loadMyAgentConversations(supabase, userId, settings.takeoverMinutes, now);
-  const businessName = profile?.display_name?.trim() || profile?.username || "your business";
+  const businessName = profile?.display_name?.trim() || profile?.username || null;
 
   return (
     <PageShell width="content">
