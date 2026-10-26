@@ -23,7 +23,7 @@ export const COMPANY = {
   website: "https://nandzz.com",
   // Operator until incorporation (art. 7 D.Lgs. 70/2003 needs a real name).
   founder: "Felipe Fernandes",
-  founderLocation: "[CITY (PROVINCE)], Italia",
+  founderLocation: "Torino (TO), Italia",
   emails: {
     support: "support@nandzz.com",
     privacy: "privacy@nandzz.com",
