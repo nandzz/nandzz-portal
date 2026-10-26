@@ -1,6 +1,6 @@
 "use client";
 
-import { SpaceCard } from "@/features/spaces";
+import { SpaceCard } from "@/features/spaces/components/SpaceCard";
 import type { Space, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProfileStyle } from "@/contexts/ProfileStyleContext";

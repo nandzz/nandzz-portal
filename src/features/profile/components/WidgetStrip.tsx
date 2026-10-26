@@ -1,9 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
 import { useFeatureFlags } from "@/features/auth/AuthContext";
-import { CalendarWidgetEmbed } from "@/features/booking";
-import { AgentWidgetCard } from "@/features/agent";
+// Direct paths: the feature barrels drag their whole UI (booking flow, agent
+// chat + markdown) into every profile.
+import { CalendarWidgetEmbed } from "@/features/booking/components/calendar/CalendarWidgetEmbed";
+
+// Only profiles with a live agent widget (and the AI flag on) render it.
+const AgentWidgetCard = dynamic(() =>
+  import("@/features/agent/components/AgentWidgetCard").then((m) => m.AgentWidgetCard),
+);
 
 interface WidgetStripProps {
   widgets: WidgetInstanceWithCatalog[];

@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { avatarImageProps } from "@/lib/avatarImage";
 import { Camera } from "lucide-react";
 import type { Profile, SocialLinksStyle, WidgetInstanceWithCatalog } from "@/lib/types";
 import { SocialLinkButtons, buildSocialLinks, resolveSocialLinksStyle } from "./SocialLinkButtons";
-import { FollowButton } from "@/features/social";
+import { FollowButton } from "@/features/social/components/FollowButton";
 import { FollowersDialog } from "./FollowersDialog";
 import { AddressMenu } from "./AddressMenu";
 import { WidgetStrip } from "./WidgetStrip";
-import { AvatarCropModal } from "@/components/ui/AvatarCropModal";
 import { uploadAvatar } from "../storage";
 import { updateAvatar } from "../actions/update-avatar";
 import { FEATURES } from "@/lib/flags";
@@ -17,6 +18,12 @@ import { isColorDark } from "@/lib/color";
 import { resolveBookingButtonStyle } from "@/lib/bookingButtonStyle";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProfileStyle } from "@/contexts/ProfileStyleContext";
+
+// Owner-only, mounted once a picture is picked: the cropper stays out of the
+// page every visitor loads.
+const AvatarCropModal = dynamic(() =>
+  import("@/components/ui/AvatarCropModal").then((m) => m.AvatarCropModal),
+);
 
 // Guard against absurd inputs only (memory). The cropper always re-encodes to a
 // 400×400 JPEG (~50 KB), so ordinary 3–10 MB phone photos must be accepted.
@@ -144,7 +151,8 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     <div className="flex flex-col items-center text-center">
       <div className="relative group">
         <Avatar className="h-28 w-28 border-4 border-background shadow-xl ring-2 ring-violet-200/50 dark:ring-violet-800/30">
-          <AvatarImage src={localAvatarUrl || undefined} alt={profile.display_name || profile.username} />
+          {/* h-28 = 112px */}
+          <AvatarImage {...avatarImageProps(localAvatarUrl, 112)} alt={profile.display_name || profile.username} />
           <AvatarFallback className="text-3xl bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">
             {profile.display_name?.[0]?.toUpperCase() ||
               profile.username[0]?.toUpperCase()}

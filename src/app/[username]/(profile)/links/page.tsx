@@ -4,7 +4,9 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicProfile, redirectToCanonicalUsername } from "@/features/profile/server";
-import { ProfileStyleRoot } from "@/features/profile";
+// Direct paths, not the barrels: from a Server Component a barrel turns every
+// client component it exports into client code for this page.
+import { ProfileStyleRoot } from "@/features/profile/components/ProfileStyleRoot";
 import { profileStyleFromRow } from "@/features/profile/domain/style";
 import { LinkChip } from "@/components/profile/LinkChip";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const ph = vi.hoisted(() => ({
   init: vi.fn(),
@@ -17,14 +17,25 @@ describe("posthog (lazy SDK)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+    vi.useFakeTimers();
   });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // The SDK loads once the page is idle (a timer in jsdom), then imports.
+  const settle = async () => {
+    await vi.runAllTimersAsync();
+    await vi.dynamicImportSettled();
+  };
 
   it("does nothing without a key", async () => {
     vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "");
     const { initPostHog, track } = await load();
     expect(initPostHog()).toBe(false);
     track("x");
-    await vi.dynamicImportSettled();
+    await settle();
     expect(ph.init).not.toHaveBeenCalled();
     expect(ph.capture).not.toHaveBeenCalled();
   });
@@ -37,7 +48,7 @@ describe("posthog (lazy SDK)", () => {
     track("plan_viewed", { plan: "pro" });
     expect(ph.capture).not.toHaveBeenCalled();
 
-    await vi.dynamicImportSettled();
+    await settle();
     expect(ph.init).toHaveBeenCalledOnce();
     expect(ph.init.mock.calls[0][0]).toBe("phc_test");
     expect(ph.identify).toHaveBeenCalledWith("user-1");

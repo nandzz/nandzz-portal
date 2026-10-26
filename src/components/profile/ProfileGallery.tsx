@@ -3,16 +3,21 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import type { Space, Profile } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProfileStyle } from "@/contexts/ProfileStyleContext";
-import { GalleryModal } from "@/features/profile";
 import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
 import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
 import { useSerialSave } from "@/lib/useSerialSave";
 import { GALLERY_LAYOUTS, type GalleryLayout } from "@/lib/gallery/layouts";
 import { spaceDisplayTitle } from "@/lib/spaces/display-title";
+
+// Mounted only once "See more" opens it.
+const GalleryModal = dynamic(() =>
+  import("@/features/profile/components/GalleryModal").then((m) => m.GalleryModal),
+);
 
 interface ProfileGalleryProps {
   images: Space[];

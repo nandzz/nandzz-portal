@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import { Globe } from "lucide-react";
-import { SpacePreview } from "@/features/spaces";
+import { SpacePreview } from "@/features/spaces/components/SpacePreview";
 import type { Space } from "@/lib/types";
 import { getFaviconUrl, getLinkHost, getLinkTarget } from "@/lib/spaces/links";
 

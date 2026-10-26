@@ -9,8 +9,11 @@ import type { PostHog } from "posthog-js";
 // Requests go through the same-origin `/ingest` rewrite (next.config.ts), so
 // no CSP change is needed and ad blockers drop fewer events.
 //
-// The SDK (~100 KB) is imported on demand rather than bundled, so it stays out
-// of every page's first load. Calls made while it loads are queued and replayed.
+// The SDK (~100 KB) is imported on demand rather than bundled, and only once the
+// page has loaded and gone idle, so neither it nor the session recorder it pulls
+// in competes with first paint or hydration. Calls made meanwhile are queued and
+// replayed.
+const IDLE_TIMEOUT_MS = 4000;
 
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
@@ -28,7 +31,7 @@ export function initPostHog(): boolean {
   if (initialized) return true;
   if (!KEY || typeof window === "undefined") return false;
   initialized = true;
-  import("posthog-js")
+  const start = () => void import("posthog-js")
     .then(({ default: posthog }) => {
       posthog.init(KEY, {
         api_host: "/ingest",
@@ -49,6 +52,15 @@ export function initPostHog(): boolean {
       failed = true;
       pending = [];
     });
+  const whenIdle = () => {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(start, { timeout: IDLE_TIMEOUT_MS });
+    } else {
+      window.setTimeout(start, 1500);
+    }
+  };
+  if (document.readyState === "complete") whenIdle();
+  else window.addEventListener("load", whenIdle, { once: true });
   return true;
 }
 

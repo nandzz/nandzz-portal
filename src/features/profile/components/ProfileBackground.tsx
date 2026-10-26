@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Camera, X, Move, Check, Share2, Pencil, Trash2, UserPen, Eye, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
@@ -10,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ShareMenu } from "@/features/spaces/components/ShareMenu";
-import { EditProfileDialog } from "./EditProfileDialog";
 import { ProfileStylePicker } from "./ProfileStylePicker";
 import { uploadBackground, removeBackgroundFiles } from "../storage";
 import { updateBackground, updateBackgroundPosition } from "../actions/update-background";
@@ -21,6 +21,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { isColorDark } from "@/lib/color";
 import { CHROME_TINT_EVENT } from "@/components/theme-color-sync";
+
+// Owner-only and mounted only while open: stays out of the page visitors load.
+const EditProfileDialog = dynamic(() => import("./EditProfileDialog").then((m) => m.EditProfileDialog));
 
 const MAX_BG_SIZE = 1.5 * 1024 * 1024;
 

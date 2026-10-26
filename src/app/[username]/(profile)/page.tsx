@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ProfileHeader, ProfileBackground, ProfileStyleRoot } from "@/features/profile";
+// Direct paths, not the barrels: from a Server Component a barrel turns every
+// client component it exports into client code for this page.
+import { ProfileHeader } from "@/features/profile/components/ProfileHeader";
+import { ProfileBackground } from "@/features/profile/components/ProfileBackground";
+import { ProfileStyleRoot } from "@/features/profile/components/ProfileStyleRoot";
 import { getPublicProfile, redirectToCanonicalUsername } from "@/features/profile/server";
 import { profileStyleFromRow, safeHex } from "@/features/profile/domain/style";
-import { ProfileViewTracker } from "@/features/analytics";
+import { ProfileViewTracker } from "@/features/analytics/components/ProfileViewTracker";
 import { ProfileContent } from "@/components/profile/ProfileContent";
 import { ProfileLinks } from "@/components/profile/ProfileLinks";
 import { ProfileGallery } from "@/components/profile/ProfileGallery";
