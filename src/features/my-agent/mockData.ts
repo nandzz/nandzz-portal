@@ -1,6 +1,5 @@
 import type {
   ActivityItem,
-  AgentSettingsDraft,
   Conversation,
   Workflow,
 } from "./types";
@@ -170,30 +169,6 @@ export function buildMockData(now: number) {
     { id: "w7", builtIn: false, when: "Someone writes about a personal, non-business topic", action: "suspend_chat", enabled: false, firedThisMonth: 0 },
   ];
 
-  const settings: AgentSettingsDraft = {
-    name: "Nina",
-    intro: "Hi! I'm Nina, the salon's AI assistant. I can answer questions and book, move or cancel your appointments.",
-    capabilities: [
-      { id: "answer", label: "Answer questions", hint: "From your knowledge and imported chat history", options: ["off", "answer", "answer_handoff"], value: "answer_handoff" },
-      { id: "book", label: "New booking", hint: "After the customer confirms in chat", options: ["off", "pending", "confirm"], value: "pending" },
-      { id: "reschedule", label: "Reschedule / change", hint: "Only the customer's own bookings", options: ["off", "pending", "confirm"], value: "pending" },
-      { id: "cancel", label: "Cancel", hint: "Only the customer's own bookings", options: ["off", "pending", "confirm"], value: "pending" },
-      { id: "lookup", label: "Booking lookup", hint: "The customer's own past and upcoming visits", options: ["off", "on"], value: "on" },
-    ],
-    hours: [
-      { day: "Mon", enabled: true, from: "09:00", to: "19:00" },
-      { day: "Tue", enabled: true, from: "09:00", to: "19:00" },
-      { day: "Wed", enabled: true, from: "09:00", to: "19:00" },
-      { day: "Thu", enabled: true, from: "09:00", to: "21:00" },
-      { day: "Fri", enabled: true, from: "09:00", to: "21:00" },
-      { day: "Sat", enabled: true, from: "09:00", to: "14:00" },
-      { day: "Sun", enabled: false, from: "09:00", to: "13:00" },
-    ],
-    takeoverMinutes: 5,
-    alerts: { email: true, whatsapp: true, inApp: true },
-    retentionMonths: 6,
-  };
-
   const usage = {
     periodLabel: "1–31 Oct",
     served: { used: 1_842, limit: 2_500 },
@@ -206,7 +181,7 @@ export function buildMockData(now: number) {
     daily: [52, 61, 48, 70, 88, 94, 40, 33, 71, 79, 66, 92, 101, 58],
   };
 
-  return { activity, conversations, workflows, settings, usage };
+  return { activity, conversations, workflows, usage };
 }
 
 export type MockData = ReturnType<typeof buildMockData>;

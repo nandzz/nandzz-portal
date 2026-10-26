@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   BarChart3,
@@ -18,7 +19,8 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { buildMockData } from "../mockData";
 import type { MyAgentTab } from "../tabs";
-import type { ActivityItem } from "../types";
+import { setAgentEnabled } from "../actions/agent-settings";
+import type { ActivityItem, AgentSettings, KnowledgeEntry } from "../types";
 import { ActivityTab } from "./ActivityTab";
 import { ConversationsTab } from "./ConversationsTab";
 import { WorkflowsTab } from "./WorkflowsTab";
@@ -31,19 +33,33 @@ const BASE_PATH = "/dashboard/my-agent";
 export function MyAgentWorkspace({
   initialTab,
   now,
-  knowledgeStudioHref,
   activity,
+  settings,
+  knowledge,
+  businessName,
 }: {
   initialTab: MyAgentTab;
   /** Server render time — the anchor for every placeholder timestamp. */
   now: number;
-  knowledgeStudioHref: string | null;
-  /** Real feed + pending approvals (Activity is the first tab on real data). */
+  /** Real feed + pending approvals. */
   activity: ActivityItem[];
+  settings: AgentSettings;
+  knowledge: KnowledgeEntry[];
+  businessName: string;
 }) {
   const data = useMemo(() => buildMockData(now), [now]);
   const [tab, setTab] = useState<MyAgentTab>(initialTab);
-  const [running, setRunning] = useState(true);
+  const router = useRouter();
+  // Optimistic: flips at once, rolls back if the save fails.
+  const [running, setRunning] = useState(settings.enabled);
+  const [toggling, startToggle] = useTransition();
+  const toggleRunning = (next: boolean) =>
+    startToggle(async () => {
+      setRunning(next);
+      const res = await setAgentEnabled(next);
+      if (!res.ok) setRunning(!next);
+      else router.refresh();
+    });
 
   const pending = activity.filter((a) => a.pending).length;
   const live = data.conversations.filter((c) => c.state !== "suspended").length;
@@ -73,13 +89,18 @@ export function MyAgentWorkspace({
             </h1>
             <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", running ? "bg-emerald-500" : "bg-muted-foreground/50")} />
-              {running ? `${data.settings.name} is answering on WhatsApp` : "Paused — customers get no replies"}
+              {running ? `${settings.name} is answering on WhatsApp` : "Off — customers get no replies"}
             </p>
           </div>
         </div>
         <label className="flex shrink-0 items-center gap-2 pt-1 text-sm font-medium">
           <span className="hidden sm:inline">{running ? "On" : "Off"}</span>
-          <Switch checked={running} onCheckedChange={setRunning} aria-label={running ? "Pause the agent" : "Turn the agent on"} />
+          <Switch
+            checked={running}
+            onCheckedChange={toggleRunning}
+            disabled={toggling}
+            aria-label={running ? "Turn the agent off" : "Turn the agent on"}
+          />
         </label>
       </div>
 
@@ -129,19 +150,19 @@ export function MyAgentWorkspace({
           <ActivityTab items={activity} now={now} />
         </TabsContent>
         <TabsContent value="conversations">
-          <ConversationsTab conversations={data.conversations} now={now} takeoverMinutes={data.settings.takeoverMinutes} />
+          <ConversationsTab conversations={data.conversations} now={now} takeoverMinutes={settings.takeoverMinutes} />
         </TabsContent>
         <TabsContent value="workflows">
           <WorkflowsTab workflows={data.workflows} />
         </TabsContent>
         <TabsContent value="knowledge">
-          <KnowledgeTab knowledgeStudioHref={knowledgeStudioHref} />
+          <KnowledgeTab entries={knowledge} now={now} />
         </TabsContent>
         <TabsContent value="usage">
           <UsageTab usage={data.usage} />
         </TabsContent>
         <TabsContent value="settings">
-          <SettingsTab initial={data.settings} />
+          <SettingsTab initial={settings} businessName={businessName} />
         </TabsContent>
       </Tabs>
     </>

@@ -1,5 +1,7 @@
-// My Agent (Business Agent) view models. UI-only for now: every value comes
-// from `mockData.ts` until the WhatsApp runtime and `agent_*` tables exist.
+// My Agent (Business Agent) view models. Activity, Settings and Knowledge are
+// real data; the other tabs still come from `mockData.ts`.
+
+import type { WeekdayKey } from "@/lib/types";
 
 export type ActivityKind = "booking_created" | "approval" | "handoff" | "rescheduled" | "cancelled" | "rule" | "error";
 
@@ -53,24 +55,24 @@ export type Workflow = {
   firedThisMonth: number;
 };
 
-export type Autonomy = "off" | "answer" | "answer_handoff" | "pending" | "confirm" | "on";
+// Mirrors agent_settings (one row per business). Answering questions is always
+// on while the agent is enabled; booking actions carry an autonomy each.
+export type Autonomy = "off" | "pending" | "confirm";
 
-export type Capability = {
-  id: "answer" | "book" | "reschedule" | "cancel" | "lookup";
-  label: string;
-  hint: string;
-  options: Autonomy[];
-  value: Autonomy;
-};
+export type AutonomyCapability = "new_booking" | "reschedule" | "cancel";
 
-export type WorkingDay = { day: string; enabled: boolean; from: string; to: string };
+export type WorkingDay = { day: WeekdayKey; enabled: boolean; from: string; to: string };
 
-export type AgentSettingsDraft = {
+export type AgentSettings = {
+  enabled: boolean;
   name: string;
   intro: string;
-  capabilities: Capability[];
+  autonomy: Record<AutonomyCapability, Autonomy>;
+  /** false ⇒ around the clock (agent_hours null). */
+  limitHours: boolean;
   hours: WorkingDay[];
   takeoverMinutes: number;
-  alerts: { email: boolean; whatsapp: boolean; inApp: boolean };
-  retentionMonths: number;
+  retentionMonths: 1 | 3 | 6 | 12;
 };
+
+export type KnowledgeEntry = { id: string; title: string; body: string; updatedAt: string };

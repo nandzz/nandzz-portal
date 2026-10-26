@@ -3,15 +3,15 @@ export const dynamic = "force-dynamic";
 import { notFound, redirect } from "next/navigation";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/account/server";
-import { getFeatureFlags } from "@/lib/featureFlags";
 import { FEATURES } from "@/lib/flags";
 import { PageShell } from "@/components/layout/PageShell";
 import { MyAgentWorkspace, myAgentTabFromSegment } from "@/features/my-agent";
 import { loadMyAgentActivity } from "@/features/my-agent/server/load-activity";
+import { loadMyAgentKnowledge, loadMyAgentSettings } from "@/features/my-agent/server/load-settings";
 
 // My Agent — the owner's private WhatsApp assistant. Dev environments only for
-// now (FEATURES.businessAgent). Activity (feed + approvals) is real data; the
-// other tabs still render placeholders.
+// now (FEATURES.businessAgent). Activity (feed + approvals), Settings and
+// Knowledge are real data; the other tabs still render placeholders.
 // Tab deep-links hang off the base path (`/dashboard/my-agent/{tab}`).
 // Server components render once per request, so reading the clock here is
 // stable; it anchors every placeholder timestamp for server + client alike.
@@ -30,12 +30,24 @@ export default async function MyAgentPage({ params }: { params: Promise<{ sectio
   if (!userId) redirect("/login");
   if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
 
-  // The Knowledge Studio still lives at /dashboard/agent behind the AI switch.
-  const [{ ai }, activity] = await Promise.all([getFeatureFlags(), loadMyAgentActivity(supabase, userId)]);
+  const [activity, settings, knowledge, { data: profile }] = await Promise.all([
+    loadMyAgentActivity(supabase, userId),
+    loadMyAgentSettings(supabase, userId),
+    loadMyAgentKnowledge(supabase, userId),
+    supabase.from("profiles").select("username, display_name").eq("id", userId).maybeSingle(),
+  ]);
+  const businessName = profile?.display_name?.trim() || profile?.username || "your business";
 
   return (
     <PageShell width="content">
-      <MyAgentWorkspace initialTab={initialTab} now={requestTime()} knowledgeStudioHref={ai ? "/dashboard/agent" : null} activity={activity} />
+      <MyAgentWorkspace
+        initialTab={initialTab}
+        now={requestTime()}
+        activity={activity}
+        settings={settings}
+        knowledge={knowledge}
+        businessName={businessName}
+      />
     </PageShell>
   );
 }
