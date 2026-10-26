@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CalendarCheck,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { decideApproval } from "../actions/decide-approval";
 import type { ActivityItem, ActivityKind } from "../types";
 import { EmptyState, ResponsivePanel, Segmented, relativeTime } from "./shared";
 
@@ -48,7 +50,10 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
   const [items, setItems] = useState(initial);
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [resolved, setResolved] = useState<Record<string, "approved" | "rejected">>({});
+  const [resolved, setResolved] = useState<Record<string, "approved" | "rejected" | "failed">>({});
+  const [error, setError] = useState<string | null>(null);
+  const [busy, startTransition] = useTransition();
+  const router = useRouter();
 
   const pendingCount = items.filter((i) => i.pending && !resolved[i.id]).length;
   const visible = useMemo(
@@ -57,17 +62,30 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
   );
   const open = items.find((i) => i.id === openId) ?? null;
 
-  // Placeholder: approving only flips local state until the approval RPC exists.
-  const resolve = (id: string, outcome: "approved" | "rejected") => {
-    setResolved((r) => ({ ...r, [id]: outcome }));
-    setItems((list) =>
-      list.map((i) =>
-        i.id === id
-          ? { ...i, title: outcome === "approved" ? "Approved by you" : "Rejected by you" }
-          : i,
-      ),
-    );
-    setOpenId(null);
+  // Approving re-checks the slot on the server; it can still end as failed
+  // (time taken meanwhile). Either way the agent tells the customer.
+  const resolve = (id: string, decision: "approve" | "reject") => {
+    setError(null);
+    startTransition(async () => {
+      const res = await decideApproval({ approvalId: id, decision });
+      if (!res.ok) {
+        setError(
+          res.error === "NOT_PENDING" ? "This request was already decided." : "Something went wrong. Please try again.",
+        );
+        if (res.error === "NOT_PENDING") router.refresh();
+        return;
+      }
+      const title =
+        res.status === "approved"
+          ? "Approved by you"
+          : res.status === "rejected"
+            ? "Rejected by you"
+            : "Approved, but the time was no longer free";
+      setResolved((r) => ({ ...r, [id]: res.status }));
+      setItems((list) => list.map((i) => (i.id === id ? { ...i, title } : i)));
+      setOpenId(null);
+      router.refresh();
+    });
   };
 
   return (
@@ -132,10 +150,12 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
                           "mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
                           state === "approved"
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                            : "bg-muted text-muted-foreground",
+                            : state === "failed"
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-muted text-muted-foreground",
                         )}
                       >
-                        {state === "approved" ? "Approved" : "Rejected"}
+                        {state === "approved" ? "Approved" : state === "failed" ? "Not possible" : "Rejected"}
                       </span>
                     )}
                   </span>
@@ -154,11 +174,11 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
           footer={
             open.pending && !resolved[open.id] ? (
               <div className="flex gap-2">
-                <Button variant="outline" className="h-10 flex-1" onClick={() => resolve(open.id, "rejected")}>
+                <Button variant="outline" className="h-10 flex-1" disabled={busy} onClick={() => resolve(open.id, "reject")}>
                   Reject
                 </Button>
-                <Button className="h-10 flex-1" onClick={() => resolve(open.id, "approved")}>
-                  Approve
+                <Button className="h-10 flex-1" disabled={busy} onClick={() => resolve(open.id, "approve")}>
+                  {busy ? "Working…" : "Approve"}
                 </Button>
               </div>
             ) : undefined
@@ -180,8 +200,13 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
           </dl>
           {open.pending && !resolved[open.id] && (
             <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-              The customer already said yes in the chat. Approving confirms the booking and sends them a WhatsApp + email
-              confirmation.
+              The customer already said yes in the chat. Approving checks the time is still free, then confirms it; the
+              agent tells the customer on WhatsApp either way.
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {error}
             </p>
           )}
         </ResponsivePanel>

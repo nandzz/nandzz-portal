@@ -7,9 +7,11 @@ import { getFeatureFlags } from "@/lib/featureFlags";
 import { FEATURES } from "@/lib/flags";
 import { PageShell } from "@/components/layout/PageShell";
 import { MyAgentWorkspace, myAgentTabFromSegment } from "@/features/my-agent";
+import { loadMyAgentActivity } from "@/features/my-agent/server/load-activity";
 
 // My Agent — the owner's private WhatsApp assistant. Dev environments only for
-// now (FEATURES.businessAgent) and UI-only: every tab renders placeholder data.
+// now (FEATURES.businessAgent). Activity (feed + approvals) is real data; the
+// other tabs still render placeholders.
 // Tab deep-links hang off the base path (`/dashboard/my-agent/{tab}`).
 // Server components render once per request, so reading the clock here is
 // stable; it anchors every placeholder timestamp for server + client alike.
@@ -29,11 +31,11 @@ export default async function MyAgentPage({ params }: { params: Promise<{ sectio
   if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
 
   // The Knowledge Studio still lives at /dashboard/agent behind the AI switch.
-  const { ai } = await getFeatureFlags();
+  const [{ ai }, activity] = await Promise.all([getFeatureFlags(), loadMyAgentActivity(supabase, userId)]);
 
   return (
     <PageShell width="content">
-      <MyAgentWorkspace initialTab={initialTab} now={requestTime()} knowledgeStudioHref={ai ? "/dashboard/agent" : null} />
+      <MyAgentWorkspace initialTab={initialTab} now={requestTime()} knowledgeStudioHref={ai ? "/dashboard/agent" : null} activity={activity} />
     </PageShell>
   );
 }

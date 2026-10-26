@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { buildMockData } from "../mockData";
 import type { MyAgentTab } from "../tabs";
+import type { ActivityItem } from "../types";
 import { ActivityTab } from "./ActivityTab";
 import { ConversationsTab } from "./ConversationsTab";
 import { WorkflowsTab } from "./WorkflowsTab";
@@ -31,17 +32,20 @@ export function MyAgentWorkspace({
   initialTab,
   now,
   knowledgeStudioHref,
+  activity,
 }: {
   initialTab: MyAgentTab;
   /** Server render time — the anchor for every placeholder timestamp. */
   now: number;
   knowledgeStudioHref: string | null;
+  /** Real feed + pending approvals (Activity is the first tab on real data). */
+  activity: ActivityItem[];
 }) {
   const data = useMemo(() => buildMockData(now), [now]);
   const [tab, setTab] = useState<MyAgentTab>(initialTab);
   const [running, setRunning] = useState(true);
 
-  const pending = data.activity.filter((a) => a.pending).length;
+  const pending = activity.filter((a) => a.pending).length;
   const live = data.conversations.filter((c) => c.state !== "suspended").length;
 
   // Same URL model as the booking workspace: reflect the tab in the path with
@@ -122,7 +126,7 @@ export function MyAgentWorkspace({
         </TabsList>
 
         <TabsContent value="activity">
-          <ActivityTab items={data.activity} now={now} />
+          <ActivityTab items={activity} now={now} />
         </TabsContent>
         <TabsContent value="conversations">
           <ConversationsTab conversations={data.conversations} now={now} takeoverMinutes={data.settings.takeoverMinutes} />

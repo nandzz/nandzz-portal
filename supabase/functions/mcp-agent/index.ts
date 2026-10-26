@@ -158,6 +158,17 @@ const TOOLS: Record<string, Tool> = {
       return row.result;
     },
   },
+  get_approval: {
+    definition: {
+      name: "get_approval",
+      description: "A decided approval request of this chat, for telling the customer.",
+      inputSchema: schema({ approval_id: { type: "string" } }, ["approval_id"]),
+    },
+    run: async (db, token, a) => {
+      const [row] = await db`select agent_api.get_approval(${token}, ${str(a.approval_id, 64)}::uuid) as result`;
+      return row.result;
+    },
+  },
   hand_off: {
     definition: {
       name: "hand_off",
@@ -189,7 +200,7 @@ const TOOLS: Record<string, Tool> = {
 // outcomes the customer can be told about. Everything else stays generic.
 const BUSINESS_ERRORS = new Set([
   "SLOT_TAKEN", "OUT_OF_HOURS", "BLACKOUT", "STAFF_UNAVAILABLE", "INVALID_SERVICE", "INVALID_LOCATION",
-  "WIDGET_UNAVAILABLE", "NO_ACCESS", "BOOKING_NOT_FOUND", "INVALID_RANGE", "agent_not_connected",
+  "WIDGET_UNAVAILABLE", "NO_ACCESS", "BOOKING_NOT_FOUND", "INVALID_RANGE", "APPROVAL_NOT_FOUND", "agent_not_connected",
 ]);
 
 const json = (body: unknown, status = 200) =>
