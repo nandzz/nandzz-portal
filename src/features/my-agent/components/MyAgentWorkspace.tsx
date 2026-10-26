@@ -117,7 +117,7 @@ export function MyAgentWorkspace({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">
-            {connection ? `WhatsApp connected${connection.phone ? ` · +${connection.phone}` : ""}` : "Connect your WhatsApp number"}
+            {connection ? `WhatsApp connected${connection.phone ? ` · ${connection.phone}` : ""}` : "Connect your WhatsApp number"}
           </span>
           <span className="block truncate text-xs text-muted-foreground">
             {connection ? "The agent answers customers who write to this number." : "The agent starts answering once a number is connected."}

@@ -92,5 +92,8 @@ export async function loadWhatsAppConnection(supabase: SupabaseClient, userId: s
     .eq("status", "active")
     .limit(1)
     .maybeSingle();
-  return data ? { phone: data.display_phone_number ?? null, connectedAt: data.created_at } : null;
+  if (!data) return null;
+  // Meta's display_phone_number may or may not carry the leading "+".
+  const digits = data.display_phone_number?.trim().replace(/^\+/, "");
+  return { phone: digits ? `+${digits}` : null, connectedAt: data.created_at };
 }

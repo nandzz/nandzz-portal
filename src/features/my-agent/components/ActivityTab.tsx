@@ -11,10 +11,13 @@ import {
   Hand,
   Inbox,
   Sparkles,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { deleteActivityItem } from "../actions/agent-data";
 import { decideApproval } from "../actions/decide-approval";
 import type { ActivityItem, ActivityKind } from "../types";
 import { EmptyState, ResponsivePanel, Segmented, relativeTime } from "./shared";
@@ -52,6 +55,7 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
   const [openId, setOpenId] = useState<string | null>(null);
   const [resolved, setResolved] = useState<Record<string, "approved" | "rejected" | "failed">>({});
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, startTransition] = useTransition();
   const router = useRouter();
 
@@ -86,6 +90,19 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
       setOpenId(null);
       router.refresh();
     });
+  };
+
+  // Feed entries only; a pending request is approved or rejected instead.
+  const remove = async (id: string) => {
+    setError(null);
+    const res = await deleteActivityItem(id);
+    if (!res.ok && res.error !== "NOT_FOUND") {
+      setError("Couldn't delete this entry. Please try again.");
+      return;
+    }
+    setItems((list) => list.filter((i) => i.id !== id));
+    setOpenId(null);
+    router.refresh();
   };
 
   return (
@@ -181,7 +198,15 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
                   {busy ? "Working…" : "Approve"}
                 </Button>
               </div>
-            ) : undefined
+            ) : (
+              <Button
+                variant="ghost"
+                className="h-10 w-full text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 aria-hidden /> Delete from activity
+              </Button>
+            )
           }
         >
           <dl className="space-y-3 text-sm">
@@ -211,6 +236,16 @@ export function ActivityTab({ items: initial, now }: { items: ActivityItem[]; no
           )}
         </ResponsivePanel>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete && !!open}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => (open ? remove(open.id) : undefined)}
+        title="Delete this entry?"
+        description="It disappears from the activity feed. Bookings and the WhatsApp chat are not affected."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+      />
     </div>
   );
 }

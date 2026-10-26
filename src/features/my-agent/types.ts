@@ -50,6 +50,7 @@ export type UsageSummary = {
   daily: number[];
 };
 
+/** phone is display-ready, with its leading "+". */
 export type WhatsAppConnection = { phone: string | null; connectedAt: string };
 
 // Mirrors agent_settings (one row per business). Answering questions is always
