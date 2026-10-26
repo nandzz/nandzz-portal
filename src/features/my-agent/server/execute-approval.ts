@@ -130,7 +130,9 @@ async function createBooking(admin: Admin, a: ClaimedApproval): Promise<ExecuteO
   return { ok: true, bookingId: booking.id, summary: `${booking.service_name}, ${fmt(booking.starts_at, location?.timezone || config.timezone)}` };
 }
 
-// The booking must still belong to this chat and be upcoming.
+// The booking must still be this owner's and upcoming. That it belongs to the
+// chat's customer (made in the chat, or carrying their WhatsApp number) was
+// verified in the database when the request was created.
 async function ownBooking(admin: Admin, a: ClaimedApproval) {
   if (!a.booking_id) return null;
   const { data } = await admin
@@ -138,7 +140,6 @@ async function ownBooking(admin: Admin, a: ClaimedApproval) {
     .select("id, manage_token, status, starts_at, service_name")
     .eq("id", a.booking_id)
     .eq("owner_user_id", a.owner_user_id)
-    .eq("agent_thread_id", a.thread_id)
     .maybeSingle();
   if (!data || data.status !== "confirmed" || new Date(data.starts_at).getTime() <= Date.now()) return null;
   return data as { id: string; manage_token: string; service_name: string; starts_at: string };
