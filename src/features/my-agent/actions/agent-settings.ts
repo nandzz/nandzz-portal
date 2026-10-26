@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/account/server";
 import { FEATURES } from "@/lib/flags";
+import { embedAgentDocument } from "@/features/agent/actions/embed-agent-document";
 import { rowFromSettings } from "../settings";
 import type { AgentSettings } from "../types";
 
@@ -11,9 +12,9 @@ export type SaveAgentSettingsResult = { ok: true } | { ok: false; error: "UNAUTH
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// The owner's own client writes agent_settings / agent_knowledge (RLS pins
-// owner_user_id = auth.uid()). The worker reads them on every message, so a
-// save takes effect on the next customer message.
+// The owner's own client writes agent_settings and the knowledge documents
+// (agent_documents; RLS pins the owner = auth.uid()). The worker reads them on
+// every message, so a save takes effect on the next customer message.
 async function businessOwner() {
   if (!FEATURES.businessAgent) return null;
   const supabase = await createClient();
@@ -72,32 +73,40 @@ export async function saveKnowledgeEntry(input: { id?: string; title: string; bo
 
   if (input.id) {
     const { data, error } = await owner.supabase
-      .from("agent_knowledge")
-      .update({ title, body, updated_at: now })
+      .from("agent_documents")
+      .update({ title, content: body, updated_at: now })
       .eq("id", input.id)
-      .eq("owner_user_id", owner.userId)
+      .eq("user_id", owner.userId)
       .select("id")
       .maybeSingle();
     if (error) return { ok: false, error: "FAILED" };
     if (!data) return { ok: false, error: "NOT_FOUND" };
-    revalidatePath("/dashboard/my-agent", "layout");
-    return { ok: true, id: data.id };
+    return knowledgeSaved(data.id);
   }
 
   const { count } = await owner.supabase
-    .from("agent_knowledge")
+    .from("agent_documents")
     .select("id", { count: "exact", head: true })
-    .eq("owner_user_id", owner.userId);
+    .eq("user_id", owner.userId);
   if ((count ?? 0) >= KNOWLEDGE_MAX_ENTRIES) return { ok: false, error: "TOO_MANY" };
 
+  // New entries are public + active: the set the agent answers customers from.
   const { data, error } = await owner.supabase
-    .from("agent_knowledge")
-    .insert({ owner_user_id: owner.userId, title, body, created_at: now, updated_at: now })
+    .from("agent_documents")
+    .insert({ user_id: owner.userId, title, content: body, visibility: "public", status: "active", created_at: now, updated_at: now })
     .select("id")
     .single();
   if (error || !data) return { ok: false, error: "FAILED" };
+  return knowledgeSaved(data.id);
+}
+
+// Re-embed for semantic search (embed-document edge function, same pipeline as
+// the agent chat). A failed embed doesn't fail the save: until it's retried
+// the agent falls back to reading the whole knowledge.
+async function knowledgeSaved(id: string): Promise<SaveKnowledgeResult> {
+  await embedAgentDocument(id).catch(() => null);
   revalidatePath("/dashboard/my-agent", "layout");
-  return { ok: true, id: data.id };
+  return { ok: true, id };
 }
 
 export async function deleteKnowledgeEntry(id: string): Promise<SaveAgentSettingsResult> {
@@ -105,7 +114,8 @@ export async function deleteKnowledgeEntry(id: string): Promise<SaveAgentSetting
   const owner = await businessOwner();
   if (!owner) return { ok: false, error: "UNAUTHENTICATED" };
 
-  const { error } = await owner.supabase.from("agent_knowledge").delete().eq("id", id).eq("owner_user_id", owner.userId);
+  // Its chunks go with it (agent_document_chunks cascades).
+  const { error } = await owner.supabase.from("agent_documents").delete().eq("id", id).eq("user_id", owner.userId);
   if (error) return { ok: false, error: "FAILED" };
   revalidatePath("/dashboard/my-agent", "layout");
   return { ok: true };

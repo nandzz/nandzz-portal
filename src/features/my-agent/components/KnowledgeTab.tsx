@@ -12,8 +12,9 @@ import { deleteKnowledgeEntry, saveKnowledgeEntry } from "../actions/agent-setti
 import type { KnowledgeEntry } from "../types";
 import { EmptyState, ResponsivePanel, Section, fill, relativeTime, useMyAgentT } from "./shared";
 
-// Knowledge = the owner's entries the agent searches before answering
-// (agent_knowledge).
+// Knowledge = the owner's documents (agent_documents) the agent searches
+// semantically before answering. Private or inactive ones are listed but never
+// reach customers.
 
 const TITLE_MAX = 200;
 const BODY_MAX = 8000;
@@ -93,7 +94,10 @@ export function KnowledgeTab({ entries, now }: { entries: KnowledgeEntry[]; now:
                 <button type="button" onClick={() => open(e)} className="min-w-0 flex-1 text-left">
                   <p className="truncate text-sm font-medium">{e.title}</p>
                   <p className="line-clamp-2 text-sm text-muted-foreground">{e.body}</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">{fill(t.updated, { time: relativeTime(e.updatedAt, now, locale) })}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">
+                    {fill(t.updated, { time: relativeTime(e.updatedAt, now, locale) })}
+                    {e.usedByAgent === false && <span className="ml-2 font-medium text-amber-700 dark:text-amber-400">{t.notUsed}</span>}
+                  </p>
                 </button>
                 <div className="flex shrink-0 gap-0.5">
                   <Button size="icon-sm" variant="ghost" onClick={() => open(e)} aria-label={fill(t.editAria, { title: e.title })}>

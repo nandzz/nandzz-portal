@@ -56,6 +56,9 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const embedAgentDocument = vi.fn<(id: string) => Promise<{ ok: boolean }>>(async () => ({ ok: true }));
+vi.mock("@/features/agent/actions/embed-agent-document", () => ({ embedAgentDocument: (id: string) => embedAgentDocument(id) }));
+
 import { deleteKnowledgeEntry, saveAgentSettings, saveKnowledgeEntry, setAgentEnabled } from "./agent-settings";
 
 const valid: AgentSettings = {
@@ -76,6 +79,7 @@ const valid: AgentSettings = {
 
 beforeEach(() => {
   mockUser = { id: "owner_1" };
+  embedAgentDocument.mockClear();
   accountType = "business";
   featureOn = true;
   dbError = null;
@@ -158,10 +162,16 @@ describe("saveKnowledgeEntry", () => {
   it("creates an entry for the caller", async () => {
     expect(await saveKnowledgeEntry({ title: " Prices ", body: " Cut 25 € " })).toEqual({ ok: true, id: "new_id" });
     expect(calls[0]).toMatchObject({
-      table: "agent_knowledge",
+      table: "agent_documents",
       op: "insert",
-      payload: { owner_user_id: "owner_1", title: "Prices", body: "Cut 25 €" },
+      payload: { user_id: "owner_1", title: "Prices", content: "Cut 25 €", visibility: "public", status: "active" },
     });
+    expect(embedAgentDocument).toHaveBeenCalledWith("new_id");
+  });
+
+  it("still saves when embedding fails", async () => {
+    embedAgentDocument.mockRejectedValueOnce(new Error("edge down"));
+    expect(await saveKnowledgeEntry({ title: "A", body: "B" })).toEqual({ ok: true, id: "new_id" });
   });
 
   it("stops at the entry cap", async () => {
@@ -175,8 +185,9 @@ describe("saveKnowledgeEntry", () => {
     expect(calls[0].op).toBe("update");
     expect(calls[0].filters).toEqual([
       ["id", ENTRY_ID],
-      ["owner_user_id", "owner_1"],
+      ["user_id", "owner_1"],
     ]);
+    expect(embedAgentDocument).toHaveBeenCalledWith(ENTRY_ID);
   });
 
   it("NOT_FOUND when the entry isn't the caller's", async () => {
@@ -202,10 +213,10 @@ describe("saveKnowledgeEntry", () => {
 describe("deleteKnowledgeEntry", () => {
   it("deletes only the caller's entry", async () => {
     expect(await deleteKnowledgeEntry(ENTRY_ID)).toEqual({ ok: true });
-    expect(calls[0]).toMatchObject({ table: "agent_knowledge", op: "delete" });
+    expect(calls[0]).toMatchObject({ table: "agent_documents", op: "delete" });
     expect(calls[0].filters).toEqual([
       ["id", ENTRY_ID],
-      ["owner_user_id", "owner_1"],
+      ["user_id", "owner_1"],
     ]);
   });
 
@@ -219,6 +230,7 @@ describe("deleteKnowledgeEntry", () => {
 
 function beforeEachReset() {
   mockUser = { id: "owner_1" };
+  embedAgentDocument.mockClear();
   accountType = "business";
   featureOn = true;
 }

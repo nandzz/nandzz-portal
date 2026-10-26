@@ -1721,6 +1721,7 @@ export const ja: Translations = {
       emptyBody: "料金、駐車場、支払い方法、キャンセルポリシーなど、お客様がよく尋ねることを追加しましょう。",
       addFirst: "最初の項目を追加",
       updated: "{time}に更新",
+      notUsed: "非公開(エージェントは使用しません)",
       editAria: "{title}を編集",
       deleteAria: "{title}を削除",
       editTitle: "項目を編集",

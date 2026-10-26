@@ -1714,6 +1714,8 @@ export type Translations = {
       emptyBody: string;
       addFirst: string;
       updated: string;
+      /** Tag on a private/inactive document the agent never uses. */
+      notUsed: string;
       editAria: string;
       deleteAria: string;
       editTitle: string;

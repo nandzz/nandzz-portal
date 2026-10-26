@@ -18,10 +18,16 @@ export async function loadMyAgentSettings(supabase: SupabaseClient, userId: stri
 
 export async function loadMyAgentKnowledge(supabase: SupabaseClient, userId: string): Promise<KnowledgeEntry[]> {
   const { data } = await supabase
-    .from("agent_knowledge")
-    .select("id, title, body, updated_at")
-    .eq("owner_user_id", userId)
+    .from("agent_documents")
+    .select("id, title, content, visibility, status, updated_at")
+    .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .limit(200);
-  return (data ?? []).map((r) => ({ id: r.id, title: r.title, body: r.body, updatedAt: r.updated_at }));
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    body: r.content,
+    updatedAt: r.updated_at,
+    usedByAgent: r.visibility === "public" && r.status === "active",
+  }));
 }

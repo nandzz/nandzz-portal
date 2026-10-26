@@ -1721,6 +1721,7 @@ export const pt: Translations = {
       emptyBody: "Adicione o que os clientes costumam perguntar: preços, estacionamento, formas de pagamento, política de cancelamento.",
       addFirst: "Adicionar o primeiro item",
       updated: "Atualizado {time}",
+      notUsed: "Privada, o agente não a usa",
       editAria: "Editar {title}",
       deleteAria: "Excluir {title}",
       editTitle: "Editar item",

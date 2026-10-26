@@ -1721,6 +1721,7 @@ export const fr: Translations = {
       emptyBody: "Ajoutez ce que les clients demandent souvent : tarifs, stationnement, moyens de paiement, conditions d'annulation.",
       addFirst: "Ajouter la première entrée",
       updated: "Mis à jour {time}",
+      notUsed: "Privé, l'agent ne l'utilise pas",
       editAria: "Modifier {title}",
       deleteAria: "Supprimer {title}",
       editTitle: "Modifier l'entrée",

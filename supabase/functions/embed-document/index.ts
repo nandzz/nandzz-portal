@@ -55,10 +55,14 @@ async function embedBatch(texts: string[], apiKey: string): Promise<(number[] | 
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model: "text-embedding-3-small", input: texts }),
     });
-    if (!res.ok) return texts.map(() => null);
+    if (!res.ok) {
+      console.error(`[embed-document] OpenAI embeddings ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      return texts.map(() => null);
+    }
     const json = await res.json();
     return (json.data as { embedding: number[] }[]).map((d) => d.embedding);
-  } catch {
+  } catch (err) {
+    console.error(`[embed-document] OpenAI embeddings failed: ${String(err).slice(0, 300)}`);
     return texts.map(() => null);
   }
 }

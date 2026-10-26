@@ -34,6 +34,9 @@ const strArr = (v: unknown) =>
   Array.isArray(v) && v.length <= 10 && v.every((x) => typeof x === "string" && x.length <= 100) ? (v as string[]) : null;
 // Passed as a real jsonb value (a pre-stringified JSON would arrive as a jsonb string).
 const jsonArg = (db: NonNullable<typeof sql>, v: unknown) => (v === undefined || v === null ? null : db.json(v as never));
+// A 1536-number embedding as pgvector text ("[0.1,0.2,…]"); anything else ⇒ null (keyword-free fallback).
+const embeddingArg = (v: unknown) =>
+  Array.isArray(v) && v.length === 1536 && v.every((x) => typeof x === "number" && Number.isFinite(x)) ? `[${v.join(",")}]` : null;
 
 const schema = (properties: Record<string, unknown>, required: string[] = []) => ({
   type: "object",
@@ -87,11 +90,11 @@ const TOOLS: Record<string, Tool> = {
   search_knowledge: {
     definition: {
       name: "search_knowledge",
-      description: "Search the business's knowledge.",
-      inputSchema: schema({ query: { type: "string" } }, ["query"]),
+      description: "Semantic search over the business's public knowledge (embedding = the question embedded with text-embedding-3-small).",
+      inputSchema: schema({ query: { type: "string" }, embedding: { type: "array", items: { type: "number" } } }, ["query"]),
     },
     run: async (db, token, a) => {
-      const [row] = await db`select agent_api.search_knowledge(${token}, ${str(a.query) ?? ""}) as result`;
+      const [row] = await db`select agent_api.search_knowledge(${token}, ${str(a.query) ?? ""}, ${embeddingArg(a.embedding)}) as result`;
       return row.result;
     },
   },

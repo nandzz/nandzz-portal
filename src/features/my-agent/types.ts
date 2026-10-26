@@ -78,4 +78,11 @@ export type AgentSettings = {
   retentionMonths: 1 | 3 | 6 | 12;
 };
 
-export type KnowledgeEntry = { id: string; title: string; body: string; updatedAt: string };
+export type KnowledgeEntry = {
+  id: string;
+  title: string;
+  body: string;
+  updatedAt: string;
+  /** false ⇒ a private or inactive document: customers never see it. */
+  usedByAgent?: boolean;
+};
