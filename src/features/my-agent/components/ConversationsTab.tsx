@@ -1,59 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, Hand, MessagesSquare, Mic, Play, Smartphone, Square } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MessagesSquare, Mic, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Conversation, ConversationState } from "../types";
 import { EmptyState, ResponsivePanel, Segmented, relativeTime } from "./shared";
 
-// Assistance cards: one card per live conversation the agent is handling. This
-// is deliberately NOT a chat client — there is no composer. The owner inspects
-// the thread and can Stop the run, Suspend the agent for the chat, or Take over
-// (the agent pauses and the owner continues from WhatsApp on the phone).
+// Assistance cards: one card per WhatsApp chat the agent has handled. This is
+// deliberately NOT a chat client — there is no composer. The owner inspects the
+// thread and replies from WhatsApp on the phone (the agent pauses meanwhile).
 
 const STATE_META: Record<ConversationState, { label: string; dot: string }> = {
   handling: { label: "Agent replying", dot: "bg-emerald-500" },
-  waiting: { label: "Waiting for you", dot: "bg-amber-500" },
+  handed_off: { label: "Handed off to you", dot: "bg-amber-500" },
   taken_over: { label: "You took over", dot: "bg-violet-500" },
-  suspended: { label: "Agent off", dot: "bg-muted-foreground/50" },
 };
 
-type Filter = "live" | "suspended";
+type Filter = "all" | "handed_off";
 
-export function ConversationsTab({
-  conversations: initial,
-  now,
-  takeoverMinutes,
-}: {
-  conversations: Conversation[];
-  now: number;
-  takeoverMinutes: number;
-}) {
-  const [conversations, setConversations] = useState(initial);
-  const [filter, setFilter] = useState<Filter>("live");
+export function ConversationsTab({ conversations, now }: { conversations: Conversation[]; now: number }) {
+  const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const live = conversations.filter((c) => c.state !== "suspended");
-  const suspended = conversations.filter((c) => c.state === "suspended");
-  const visible = filter === "live" ? live : suspended;
+  const handedOff = conversations.filter((c) => c.state === "handed_off");
+  const visible = filter === "all" ? conversations : handedOff;
   const open = conversations.find((c) => c.id === openId) ?? null;
-
-  // Placeholder actions: local state only until the runtime exposes controls.
-  const setState = (id: string, state: ConversationState) => {
-    setConversations((list) =>
-      list.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              state,
-              resumesAt: state === "taken_over" ? new Date(now + takeoverMinutes * 60_000).toISOString() : undefined,
-            }
-          : c,
-      ),
-    );
-    setOpenId(null);
-  };
 
   return (
     <div className="space-y-4">
@@ -63,19 +34,19 @@ export function ConversationsTab({
         onChange={setFilter}
         size="sm"
         options={[
-          { value: "live", label: "Live", count: live.length },
-          { value: "suspended", label: "Agent off", count: suspended.length },
+          { value: "all", label: "All", count: conversations.length },
+          { value: "handed_off", label: "Handed off", count: handedOff.length },
         ]}
       />
 
       {visible.length === 0 ? (
         <EmptyState
           icon={MessagesSquare}
-          title={filter === "live" ? "No live conversations" : "No chats with the agent off"}
+          title={filter === "all" ? "No conversations yet" : "Nothing handed off"}
           body={
-            filter === "live"
+            filter === "all"
               ? "When a customer writes on WhatsApp, the chat the agent is handling appears here."
-              : "Chats where you switched the agent off are listed here so you can turn it back on."
+              : "Chats the agent passes to you (complaints, refunds, questions it can't answer) are listed here."
           }
         />
       ) : (
@@ -94,12 +65,10 @@ export function ConversationsTab({
                     <span className="truncate text-sm font-semibold">{c.customer}</span>
                     <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{relativeTime(c.updatedAt, now)}</span>
                   </span>
-                  <span className="mt-0.5 text-xs text-muted-foreground">
-                    {c.intent} · {c.language}
-                  </span>
+                  <span className="mt-0.5 text-xs text-muted-foreground">{c.phone}</span>
                   <span className="mt-3 line-clamp-2 text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">{senderLabel(last.from)}: </span>
-                    {last.voice ? `Voice note (${last.voice.seconds}s)` : last.text}
+                    {last.text}
                   </span>
                   <span className="mt-auto flex items-center gap-1.5 pt-3 text-xs font-medium">
                     <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} />
@@ -116,21 +85,16 @@ export function ConversationsTab({
       )}
 
       {open && (
-        <ResponsivePanel
-          open
-          onClose={() => setOpenId(null)}
-          title={open.customer}
-          footer={<ConversationActions conversation={open} onChange={(s) => setState(open.id, s)} />}
-        >
+        <ResponsivePanel open onClose={() => setOpenId(null)} title={open.customer}>
           <p className="mb-4 text-xs text-muted-foreground">
-            {open.phone} · {open.intent} · {open.language}
+            {open.phone} · {STATE_META[open.state].label}
           </p>
           <ol className="space-y-2">
             {open.messages.map((m) => (
               <li key={m.id} className={cn("flex", m.from === "customer" ? "justify-start" : "justify-end")}>
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
+                    "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm",
                     m.from === "customer" && "rounded-bl-md bg-muted",
                     m.from === "agent" && "rounded-br-md bg-violet-600 text-white",
                     m.from === "owner" && "rounded-br-md bg-emerald-600 text-white",
@@ -141,14 +105,12 @@ export function ConversationsTab({
                       {m.from === "agent" ? "Agent" : "You"}
                     </span>
                   )}
-                  {m.voice ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Mic aria-hidden className="h-3.5 w-3.5" /> Voice note · {m.voice.seconds}s
-                      <span className="text-muted-foreground">(transcribed)</span>
+                  {m.voice && (
+                    <span className="mb-0.5 flex items-center gap-1 text-xs opacity-80">
+                      <Mic aria-hidden className="h-3.5 w-3.5" /> Voice note (transcribed)
                     </span>
-                  ) : (
-                    m.text
                   )}
+                  {m.text}
                   <span className="mt-1 block text-right text-[10px] tabular-nums opacity-70">{relativeTime(m.at, now)}</span>
                 </div>
               </li>
@@ -166,38 +128,4 @@ export function ConversationsTab({
 
 function senderLabel(from: "customer" | "agent" | "owner") {
   return from === "customer" ? "Customer" : from === "agent" ? "Agent" : "You";
-}
-
-function ConversationActions({
-  conversation,
-  onChange,
-}: {
-  conversation: Conversation;
-  onChange: (state: ConversationState) => void;
-}) {
-  if (conversation.state === "suspended") {
-    return (
-      <Button className="h-10 w-full" onClick={() => onChange("handling")}>
-        <Play aria-hidden /> Turn the agent back on
-      </Button>
-    );
-  }
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      <Button variant="outline" className="h-10" onClick={() => onChange("waiting")} title="End the agent's current run">
-        <Square aria-hidden /> Stop
-      </Button>
-      <Button variant="outline" className="h-10" onClick={() => onChange("suspended")} title="Switch the agent off for this chat">
-        <Ban aria-hidden /> Suspend
-      </Button>
-      <Button
-        className="h-10"
-        disabled={conversation.state === "taken_over"}
-        onClick={() => onChange("taken_over")}
-        title="Pause the agent and continue on your phone"
-      >
-        <Hand aria-hidden /> Take over
-      </Button>
-    </div>
-  );
 }

@@ -6,9 +6,10 @@ import { getAccountType } from "@/lib/account/server";
 import { FEATURES } from "@/lib/flags";
 import { PageShell } from "@/components/layout/PageShell";
 import { WhatsAppChannel } from "@/features/my-agent";
+import { loadWhatsAppConnection } from "@/features/my-agent/server/load-conversations";
 
 // Channels → WhatsApp: connect the business's own number (Coexistence).
-// Placeholder flow until Embedded Signup and the webhook receiver exist.
+// Real connection status; connecting waits for Meta Embedded Signup.
 export default async function WhatsAppChannelPage() {
   if (!FEATURES.businessAgent) notFound();
 
@@ -19,7 +20,7 @@ export default async function WhatsAppChannelPage() {
 
   return (
     <PageShell width="content">
-      <WhatsAppChannel />
+      <WhatsAppChannel connection={await loadWhatsAppConnection(supabase, userId)} />
     </PageShell>
   );
 }

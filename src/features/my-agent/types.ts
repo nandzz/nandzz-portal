@@ -1,5 +1,4 @@
-// My Agent (Business Agent) view models. Activity, Settings and Knowledge are
-// real data; the other tabs still come from `mockData.ts`.
+// My Agent (Business Agent) view models, all backed by real data.
 
 import type { WeekdayKey } from "@/lib/types";
 
@@ -19,14 +18,15 @@ export type ActivityItem = {
   pending?: { service: string; when: string; staff: string };
 };
 
-export type ConversationState = "handling" | "waiting" | "taken_over" | "suspended";
+export type ConversationState = "handling" | "handed_off" | "taken_over";
 
 export type ChatMessage = {
   id: string;
   from: "customer" | "agent" | "owner";
+  /** Voice notes carry their transcript. */
   text: string;
   at: string; // ISO
-  voice?: { seconds: number };
+  voice?: boolean;
 };
 
 export type Conversation = {
@@ -34,26 +34,23 @@ export type Conversation = {
   customer: string;
   phone: string;
   state: ConversationState;
-  intent: string;
-  language: string;
   /** Owner takeover: when the agent resumes (ISO). */
   resumesAt?: string;
   updatedAt: string; // ISO
   messages: ChatMessage[];
 };
 
-export type RuleAction = "send_message" | "alert_owner" | "pending_booking" | "hand_off" | "suspend_chat";
-
-export type Workflow = {
-  id: string;
-  builtIn: boolean;
-  when: string;
-  action: RuleAction;
-  /** send_message only: what the agent says. */
-  message?: string;
-  enabled: boolean;
-  firedThisMonth: number;
+export type UsageSummary = {
+  periodLabel: string;
+  /** Customer messages the agent read this month. */
+  inbound: number;
+  /** Replies the agent sent this month. */
+  replies: number;
+  /** Served messages per day, last 14 days (oldest first). */
+  daily: number[];
 };
+
+export type WhatsAppConnection = { phone: string | null; connectedAt: string };
 
 // Mirrors agent_settings (one row per business). Answering questions is always
 // on while the agent is enabled; booking actions carry an autonomy each.

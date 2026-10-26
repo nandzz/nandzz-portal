@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition, type ReactNode } from "react";
+import { useCallback, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,16 +17,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { buildMockData } from "../mockData";
 import type { MyAgentTab } from "../tabs";
 import { setAgentEnabled } from "../actions/agent-settings";
-import type { ActivityItem, AgentSettings, KnowledgeEntry } from "../types";
+import type { ActivityItem, AgentSettings, Conversation, KnowledgeEntry, UsageSummary, WhatsAppConnection } from "../types";
 import { ActivityTab } from "./ActivityTab";
 import { ConversationsTab } from "./ConversationsTab";
-import { WorkflowsTab } from "./WorkflowsTab";
 import { KnowledgeTab } from "./KnowledgeTab";
 import { UsageTab } from "./UsageTab";
 import { SettingsTab } from "./SettingsTab";
+import { EmptyState } from "./shared";
 
 const BASE_PATH = "/dashboard/my-agent";
 
@@ -34,20 +33,25 @@ export function MyAgentWorkspace({
   initialTab,
   now,
   activity,
+  conversations,
+  usage,
+  connection,
   settings,
   knowledge,
   businessName,
 }: {
   initialTab: MyAgentTab;
-  /** Server render time — the anchor for every placeholder timestamp. */
+  /** Server render time — the anchor for every relative timestamp. */
   now: number;
-  /** Real feed + pending approvals. */
+  /** Feed + pending approvals. */
   activity: ActivityItem[];
+  conversations: Conversation[];
+  usage: UsageSummary;
+  connection: WhatsAppConnection | null;
   settings: AgentSettings;
   knowledge: KnowledgeEntry[];
   businessName: string;
 }) {
-  const data = useMemo(() => buildMockData(now), [now]);
   const [tab, setTab] = useState<MyAgentTab>(initialTab);
   const router = useRouter();
   // Optimistic: flips at once, rolls back if the save fails.
@@ -62,7 +66,7 @@ export function MyAgentWorkspace({
     });
 
   const pending = activity.filter((a) => a.pending).length;
-  const live = data.conversations.filter((c) => c.state !== "suspended").length;
+  const handedOff = conversations.filter((c) => c.state === "handed_off").length;
 
   // Same URL model as the booking workspace: reflect the tab in the path with
   // pushState so the component stays mounted (drafts survive tab switches) and
@@ -104,7 +108,6 @@ export function MyAgentWorkspace({
         </label>
       </div>
 
-      {/* Placeholder: always "not connected" until the WhatsApp connection exists. */}
       <Link
         href={`${BASE_PATH}/channels/whatsapp`}
         className="mb-6 flex items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 transition-colors hover:bg-muted/50"
@@ -113,9 +116,11 @@ export function MyAgentWorkspace({
           <Phone aria-hidden className="h-4 w-4 text-[#128C7E]" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-medium">Connect your WhatsApp number</span>
+          <span className="block text-sm font-medium">
+            {connection ? `WhatsApp connected${connection.phone ? ` · +${connection.phone}` : ""}` : "Connect your WhatsApp number"}
+          </span>
           <span className="block truncate text-xs text-muted-foreground">
-            The data below is sample content until a number is connected.
+            {connection ? "The agent answers customers who write to this number." : "The agent starts answering once a number is connected."}
           </span>
         </span>
         <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -130,7 +135,7 @@ export function MyAgentWorkspace({
           </TabsTrigger>
           <TabsTrigger value="conversations">
             <MessagesSquare className="h-4 w-4" /> <TabLabel>Assistance</TabLabel>
-            {live > 0 && <Badge>{live}</Badge>}
+            {handedOff > 0 && <Badge>{handedOff}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="workflows">
             <WorkflowIcon className="h-4 w-4" /> <TabLabel>Workflows</TabLabel>
@@ -150,16 +155,20 @@ export function MyAgentWorkspace({
           <ActivityTab items={activity} now={now} />
         </TabsContent>
         <TabsContent value="conversations">
-          <ConversationsTab conversations={data.conversations} now={now} takeoverMinutes={settings.takeoverMinutes} />
+          <ConversationsTab conversations={conversations} now={now} />
         </TabsContent>
         <TabsContent value="workflows">
-          <WorkflowsTab workflows={data.workflows} />
+          <EmptyState
+            icon={WorkflowIcon}
+            title="Workflows are coming soon"
+            body="Rules in plain words, like “When a customer complains → alert me”. They aren't available yet."
+          />
         </TabsContent>
         <TabsContent value="knowledge">
           <KnowledgeTab entries={knowledge} now={now} />
         </TabsContent>
         <TabsContent value="usage">
-          <UsageTab usage={data.usage} />
+          <UsageTab usage={usage} />
         </TabsContent>
         <TabsContent value="settings">
           <SettingsTab initial={settings} businessName={businessName} />
