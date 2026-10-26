@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mapAuthError } from "./error-messages";
-import { translations } from "@/lib/i18n/translations";
+import { translations } from "@/lib/i18n/dictionaries";
 
 const t = translations.en;
 

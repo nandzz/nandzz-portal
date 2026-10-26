@@ -10,13 +10,16 @@ import { AppChrome } from "@/components/layout/AppChrome";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { type Locale } from "@/lib/i18n/translations";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
+import { getTranslations } from "@/lib/i18n/dictionaries";
 import { createClient } from "@/lib/supabase/server";
 import { getChromeProfile } from "@/features/analytics/server";
 import { getFeatureFlags } from "@/lib/featureFlags";
 import { getEntitlementsLookup } from "@/lib/plan";
 import { SIDEBAR_COLLAPSED_COOKIE } from "@/lib/layout/appShell";
 import { cookies } from "next/headers";
-import { TermsUpdateBanner } from "@/features/legal";
+// Direct path, not the barrel: from a Server Component the barrel turns every
+// legal client component (forms + zod) into client code for every page.
+import { TermsUpdateBanner } from "@/features/legal/components/TermsUpdateBanner";
 import { getTermsAcceptanceStatus } from "@/features/legal/server";
 import type { PlanEntitlements, Profile } from "@/lib/types";
 import "./globals.css";
@@ -160,7 +163,11 @@ export default async function RootLayout({
         >
           <ThemeColorSync />
           <InAppLinkFix />
-          <LanguageProvider initialLocale={initialLocale}>
+          {/* English ships in the client bundle; other languages come with the page */}
+          <LanguageProvider
+            initialLocale={initialLocale}
+            initialTranslations={initialLocale === "en" ? undefined : getTranslations(initialLocale)}
+          >
             <ChromeProvider>
               <AuthProvider
                 initialUserId={initialUserId}

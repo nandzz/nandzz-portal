@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "next-themes";
@@ -31,8 +32,13 @@ import { NotificationBell } from "./NotificationBell";
 import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
-import { BecomeBusinessDialog } from "@/features/profile";
 import { useAuth } from "@/features/auth/AuthContext";
+
+// Loaded on first open: the dialog (and the profile code behind it) stays out
+// of every page's first load.
+const BecomeBusinessDialog = dynamic(() =>
+  import("@/features/profile/components/BecomeBusinessDialog").then((m) => m.BecomeBusinessDialog),
+);
 
 type NavItem = {
   href: string;

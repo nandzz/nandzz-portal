@@ -1,12 +1,7 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
-import {
-  getTranslations,
-  detectLocale,
-  SUPPORTED_LOCALES,
-  type Locale,
-  type Translations,
-} from "./translations";
+import { detectLocale, SUPPORTED_LOCALES, type Locale, type Translations } from "./translations";
+import { getTranslations } from "./dictionaries";
 
 export async function getCurrentLocale(): Promise<Locale> {
   const cookieStore = await cookies();

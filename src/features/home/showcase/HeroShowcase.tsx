@@ -307,6 +307,10 @@ export function HeroShowcase() {
   const [offscreen, setOffscreen] = useState(false);
   const [userPaused, setUserPaused] = useState<boolean | null>(null);
   const [announced, setAnnounced] = useState("");
+  // Only the first phone renders on load; the others mount once the browser is
+  // idle, already parked off-stage, so hydration (and the first paint on slow
+  // phones) doesn't pay for six screens nobody sees yet.
+  const [allPhones, setAllPhones] = useState(false);
   const stopped = userPaused ?? reduce; // reduced motion: no autoplay until asked
   const paused = stopped || hovered || focused || offscreen;
 
@@ -328,6 +332,7 @@ export function HeroShowcase() {
     if (next === index) return;
     const slide = SLIDES[next];
     const now = performance.now();
+    setAllPhones(true); // a move before the idle mount still needs its phone
     const back = left.current?.slide === next && now - left.current.at < SLIDE_S * 1000;
     const resumeAt = back ? left.current!.elapsed : null;
     left.current = { slide: index, elapsed: elapsed.current, at: now };
@@ -383,6 +388,17 @@ export function HeroShowcase() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [paused, index, compact, progress]);
+
+  // Well inside the hero slide's first step, so the next phone is in place
+  // before autoplay slides it in.
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(() => setAllPhones(true), { timeout: 2500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => setAllPhones(true), 1500);
+    return () => clearTimeout(id);
+  }, []);
 
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -574,7 +590,7 @@ export function HeroShowcase() {
                   className="pointer-events-none absolute -inset-16 rounded-full"
                   style={{ background: "radial-gradient(closest-side, var(--clay-glow), transparent)" }}
                 />
-                {SLIDES.map((_, n) => (
+                {SLIDES.map((_, n) => (allPhones || n === index) && (
                   <PhoneStage
                     key={n}
                     i={n}

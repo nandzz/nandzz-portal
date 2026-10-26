@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getTranslations } from "@/lib/i18n/translations";
+import { getTranslations } from "@/lib/i18n/dictionaries";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { whatsappLink } from "@/features/booking/domain/contact";
 
