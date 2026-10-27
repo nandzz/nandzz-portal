@@ -160,13 +160,13 @@ const CaptionStyleContext = createContext<GalleryCaptionStyle>("none");
 type CaptionSize = "sm" | "md" | "lg";
 
 const CAPTION_TEXT: Record<CaptionSize, { title: string; description: string }> = {
-  // Small tiles (3-col grid / masonry on phones): one line of caption.
+  // Captions show up to 3 lines everywhere, small tiles included.
   sm: {
-    title: "text-[11px] sm:text-sm",
-    description: "text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2",
+    title: "text-xs sm:text-sm",
+    description: "text-[11px] sm:text-xs line-clamp-3",
   },
-  md: { title: "text-sm", description: "text-xs line-clamp-2" },
-  lg: { title: "text-base sm:text-lg", description: "text-xs sm:text-sm line-clamp-2" },
+  md: { title: "text-sm", description: "text-xs line-clamp-3" },
+  lg: { title: "text-base sm:text-lg", description: "text-xs sm:text-sm line-clamp-3" },
 };
 
 const CAPTION_PAD: Record<CaptionSize, string> = {
@@ -227,7 +227,7 @@ function TileCaption({ space, size = "md" }: { space: Space; size?: CaptionSize 
 
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-10 text-white ${CAPTION_PAD[size]}`}
+      className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent text-white ${size === "sm" ? "pt-6" : "pt-10"} ${CAPTION_PAD[size]}`}
     >
       {body}
     </div>
