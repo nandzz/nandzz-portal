@@ -1,63 +1,16 @@
 export const dynamic = "force-dynamic";
 
-import { notFound, redirect } from "next/navigation";
-import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
-import { getAccountType } from "@/lib/account/server";
-import { FEATURES } from "@/lib/flags";
-import { getCurrentLocale } from "@/lib/i18n/server";
-import { PageShell } from "@/components/layout/PageShell";
-import { MyAgentWorkspace, myAgentTabFromSegment } from "@/features/my-agent";
-import { loadMyAgentActivity } from "@/features/my-agent/server/load-activity";
-import { loadMyAgentKnowledge, loadMyAgentSettings } from "@/features/my-agent/server/load-settings";
-import { loadMyAgentConversations, loadWhatsAppConnection } from "@/features/my-agent/server/load-conversations";
-import { loadMyAgentUsage } from "@/features/my-agent/server/load-usage";
+import { notFound } from "next/navigation";
 
-// My Agent — the owner's private WhatsApp assistant. Dev environments only for
-// now (FEATURES.businessAgent). Every tab is real data; Workflows isn't built yet.
-// Tab deep-links hang off the base path (`/dashboard/my-agent/{tab}`).
-// Server components render once per request, so reading the clock here is
-// stable; it anchors every relative timestamp for server + client alike.
-const requestTime = () => Date.now();
-
-export default async function MyAgentPage({ params }: { params: Promise<{ section?: string[] }> }) {
-  if (!FEATURES.businessAgent) notFound();
-
-  const { section } = await params;
-  if (section && section.length > 1) notFound();
-  const initialTab = myAgentTabFromSegment(section?.[0]);
-  if (initialTab === null) notFound();
-
-  const supabase = await createClient();
-  const userId = await getUserIdFromClaims(supabase);
-  if (!userId) redirect("/login");
-  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
-
-  const now = requestTime();
-  const locale = await getCurrentLocale();
-  const [activity, settings, knowledge, usage, connection, { data: profile }] = await Promise.all([
-    loadMyAgentActivity(supabase, userId, locale),
-    loadMyAgentSettings(supabase, userId),
-    loadMyAgentKnowledge(supabase, userId),
-    loadMyAgentUsage(supabase, userId, now, locale),
-    loadWhatsAppConnection(supabase, userId),
-    supabase.from("profiles").select("username, display_name").eq("id", userId).maybeSingle(),
-  ]);
-  const conversations = await loadMyAgentConversations(supabase, userId, settings.takeoverMinutes, now);
-  const businessName = profile?.display_name?.trim() || profile?.username || null;
-
-  return (
-    <PageShell width="content">
-      <MyAgentWorkspace
-        initialTab={initialTab}
-        now={now}
-        activity={activity}
-        conversations={conversations}
-        usage={usage}
-        connection={connection}
-        settings={settings}
-        knowledge={knowledge}
-        businessName={businessName}
-      />
-    </PageShell>
-  );
+// My Agent is dev-only (FEATURES.businessAgent). The check reads the env var
+// inline, not via FEATURES: the bundler only folds it to a literal here, which
+// makes this branch (and the dynamic import behind it) dead code in prod — no
+// My Agent server code, client chunks or server actions ship. Keep the import
+// inside the branch; a top-level import would bundle it regardless.
+export default async function Page(props: { params: Promise<{ section?: string[] }> }) {
+  if (process.env.BUSINESS_AGENT_ENABLED === "1") {
+    const { MyAgentPage } = await import("@/features/my-agent/pages/MyAgentPage");
+    return MyAgentPage(props);
+  }
+  notFound();
 }

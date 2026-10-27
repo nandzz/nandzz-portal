@@ -16,9 +16,11 @@ export const FEATURES = {
   monetization: true,
   widgets: true,
   brand: true,
-  // My Agent (Business Agent, WhatsApp). UI-only with placeholder data for now;
-  // on in dev environments only, never in prod.
-  businessAgent: IS_DEV_ENV,
+  // My Agent (Business Agent, WhatsApp). Dev environments only, never in prod.
+  // BUSINESS_AGENT_ENABLED is set from IS_DEV_ENV in next.config.ts and inlined
+  // as a literal, so prod builds dead-code-eliminate every gated import (the
+  // `.includes()` in IS_DEV_ENV can't be folded by the bundler).
+  businessAgent: process.env.BUSINESS_AGENT_ENABLED === "1",
 };
 
 // Runtime (admin-controlled) flags. The type + default live here so BOTH the

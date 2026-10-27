@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { FEATURES } from "@/lib/flags";
 import { executeApproval, type ClaimedApproval } from "../server/execute-approval";
 import { notifyApprovalDecided } from "../server/notify-worker";
 
@@ -27,6 +28,7 @@ export async function decideApproval(input: {
   approvalId: string;
   decision: "approve" | "reject";
 }): Promise<DecideApprovalResult> {
+  if (!FEATURES.businessAgent) return { ok: false, error: "UNAUTHENTICATED" };
   if (!UUID_RE.test(input?.approvalId ?? "") || !["approve", "reject"].includes(input?.decision)) {
     return { ok: false, error: "INVALID_INPUT" };
   }

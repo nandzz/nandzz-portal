@@ -9,6 +9,8 @@ let claimPatch: Record<string, unknown> | null;
 let updates: { table: string; patch: Record<string, unknown> }[];
 let inserts: { table: string; row: Record<string, unknown> }[];
 
+vi.mock("@/lib/flags", () => ({ FEATURES: { businessAgent: true } }));
+
 const executeApproval = vi.fn();
 const notifyApprovalDecided = vi.fn();
 

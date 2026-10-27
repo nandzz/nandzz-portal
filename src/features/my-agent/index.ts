@@ -1,5 +1,6 @@
 // My Agent (Business Agent): the owner's private WhatsApp assistant area.
-// Gated by `FEATURES.businessAgent` (dev only). All tabs run on real data;
+// Gated by `FEATURES.businessAgent` (dev only); routes reach it via pages/ with a
+// dynamic import so prod never bundles it. All tabs run on real data;
 // Workflows isn't built yet.
 export { MyAgentWorkspace } from "./components/MyAgentWorkspace";
 export { WhatsAppChannel } from "./components/WhatsAppChannel";

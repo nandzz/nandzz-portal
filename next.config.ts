@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { IS_DEV_ENV } from "./src/lib/flags";
 
 // Supabase project host — used in CSP directives
 const supabaseHost = "*.supabase.co";
@@ -21,6 +22,8 @@ const nextConfig: NextConfig = {
   // Amplify's Lambda@Edge runtime has no process.env — values must come from the build.
   env: {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    // Drives FEATURES.businessAgent (My Agent, dev only) — see src/lib/flags.ts.
+    BUSINESS_AGENT_ENABLED: IS_DEV_ENV ? "1" : "0",
   },
   images: {
     remotePatterns: [
