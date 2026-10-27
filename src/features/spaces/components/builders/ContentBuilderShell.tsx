@@ -73,6 +73,25 @@ export function ContentBuilderShell({
         <form onSubmit={form.handleSubmit} className="space-y-6">
           {form.titleOptional && children}
 
+          {form.titleOptional && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="title">{t.contentBuilder.imageBatchTitleLabel}</Label>
+                <span className="text-xs text-muted-foreground">
+                  {form.title.length}/{form.LIMITS.title}
+                </span>
+              </div>
+              <Input
+                id="title"
+                placeholder={t.contentBuilder.imageBatchTitlePlaceholder}
+                value={form.title}
+                onChange={(e) => form.setTitle(e.target.value.slice(0, form.LIMITS.title))}
+                maxLength={form.LIMITS.title}
+                className="bg-muted/50 border-border/60 focus:border-violet-500/50 focus:bg-background transition-colors"
+              />
+            </div>
+          )}
+
           {!form.titleOptional && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">

@@ -94,6 +94,7 @@ export type Profile = {
   brand_values?: string[] | null;
   brand_description?: string | null;
   gallery_layout?: string | null;
+  gallery_caption_style?: string | null;
   contents_layout?: string | null;
   links_layout?: string | null;
   section_order?: string[] | null;

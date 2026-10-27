@@ -15,6 +15,7 @@ import { ProfileGallery } from "@/components/profile/ProfileGallery";
 import { ProfileSections } from "@/components/profile/ProfileSections";
 import {
   resolveGalleryLayout,
+  resolveGalleryCaptionStyle,
   resolveContentsLayout,
   resolveLinksLayout,
   resolveSectionOrder,
@@ -254,6 +255,7 @@ export default async function ProfilePage({
                 profile={viewProfile}
                 isOwner={isOwner}
                 initialLayout={resolveGalleryLayout(profile)}
+                initialCaptionStyle={resolveGalleryCaptionStyle(profile)}
                 enableModal
               />
             ) : null,

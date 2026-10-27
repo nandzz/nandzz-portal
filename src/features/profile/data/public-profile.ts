@@ -35,6 +35,7 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "agent_enabled",
   "agent_suggested_questions",
   "gallery_layout",
+  "gallery_caption_style",
   "contents_layout",
   "links_layout",
   "section_order",

@@ -7,6 +7,10 @@ import {
   GalleryThumbnails,
   Rows3,
   Tags,
+  ImageOff,
+  Blend,
+  MousePointer2,
+  PanelBottom,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import type { Translations } from "@/lib/i18n/translations";
@@ -87,6 +91,40 @@ export function getSectionLayoutLabel(t: Translations, id: SectionLayout): strin
     featured: t.profile.layoutFeatured,
     stack: t.profile.layoutStack,
     pills: t.profile.layoutPills,
+  };
+  return labels[id];
+}
+
+// ── Gallery captions ─────────────────────────────────────────────────────────
+
+/** How a gallery tile shows its photo's title + caption ('none' = image only). */
+export type GalleryCaptionStyle = "none" | "gradient" | "hover" | "card";
+
+export const GALLERY_CAPTION_STYLES: GalleryCaptionStyle[] = ["none", "gradient", "hover", "card"];
+
+export const GALLERY_CAPTION_ICONS: Record<GalleryCaptionStyle, LucideIcon> = {
+  none: ImageOff,
+  gradient: Blend,
+  hover: MousePointer2,
+  card: PanelBottom,
+};
+
+/** Narrows a profile's stored `gallery_caption_style` (default none). */
+export function resolveGalleryCaptionStyle(
+  profile: Pick<Profile, "gallery_caption_style">,
+): GalleryCaptionStyle {
+  const value = profile.gallery_caption_style;
+  return typeof value === "string" && (GALLERY_CAPTION_STYLES as string[]).includes(value)
+    ? (value as GalleryCaptionStyle)
+    : "none";
+}
+
+export function getGalleryCaptionStyleLabel(t: Translations, id: GalleryCaptionStyle): string {
+  const labels: Record<GalleryCaptionStyle, string> = {
+    none: t.profile.captionNone,
+    gradient: t.profile.captionGradient,
+    hover: t.profile.captionHover,
+    card: t.profile.captionCard,
   };
   return labels[id];
 }

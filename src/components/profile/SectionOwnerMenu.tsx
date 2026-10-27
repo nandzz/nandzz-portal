@@ -4,15 +4,20 @@ import { Settings2, Check, ChevronUp, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  GALLERY_CAPTION_ICONS,
   SECTION_LAYOUT_ICONS,
+  getGalleryCaptionStyleLabel,
   getSectionLayoutLabel,
+  type GalleryCaptionStyle,
   type SectionId,
   type SectionLayout,
 } from "@/lib/gallery/layouts";
@@ -27,6 +32,12 @@ interface SectionOwnerMenuProps {
   layouts: SectionLayout[];
   layout: SectionLayout;
   onLayoutChange: (next: SectionLayout) => void;
+  /** Gallery only: title/caption overlay styles to offer below the layouts. */
+  captions?: {
+    styles: GalleryCaptionStyle[];
+    value: GalleryCaptionStyle;
+    onChange: (next: GalleryCaptionStyle) => void;
+  };
 }
 
 /**
@@ -40,6 +51,7 @@ export function SectionOwnerMenu({
   layouts,
   layout,
   onLayoutChange,
+  captions,
 }: SectionOwnerMenuProps) {
   const { t } = useLanguage();
   const order = useSectionOrder();
@@ -81,6 +93,36 @@ export function SectionOwnerMenu({
             );
           })}
         </DropdownMenuRadioGroup>
+
+        {captions && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                {t.profile.captionsLabel}
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={captions.value}
+                onValueChange={(v) => captions.onChange(v as GalleryCaptionStyle)}
+              >
+                {captions.styles.map((id) => {
+                  const Icon = GALLERY_CAPTION_ICONS[id];
+                  return (
+                    <DropdownMenuRadioItem
+                      key={id}
+                      value={id}
+                      className="pl-2 [&>span:first-child]:hidden"
+                    >
+                      <Icon className="mr-2 h-3.5 w-3.5" />
+                      <span className="flex-1">{getGalleryCaptionStyleLabel(t, id)}</span>
+                      {captions.value === id && <Check className="h-3.5 w-3.5 text-violet-500" />}
+                    </DropdownMenuRadioItem>
+                  );
+                })}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuGroup>
+          </>
+        )}
 
         {canReorder && (
           <>

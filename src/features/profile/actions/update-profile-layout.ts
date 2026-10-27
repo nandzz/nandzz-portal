@@ -10,11 +10,13 @@ export type UpdateProfileLayoutResult =
 
 const layout = z.enum(["carousel", "grid", "masonry", "justified", "featured", "stack", "pills"]);
 const sectionId = z.enum(["gallery", "publications", "links"]);
+const captionStyle = z.enum(["none", "gradient", "hover", "card"]);
 
 // Only the owner-controlled presentation columns — never an arbitrary patch.
 const schema = z
   .object({
     gallery_layout: layout,
+    gallery_caption_style: captionStyle,
     contents_layout: layout,
     links_layout: layout,
     section_order: z.array(sectionId).max(3),

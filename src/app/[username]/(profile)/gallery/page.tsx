@@ -12,7 +12,7 @@ import { ProfileGallery } from "@/components/profile/ProfileGallery";
 import { Button } from "@/components/ui/button";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { PageShell } from "@/components/layout/PageShell";
-import { resolveGalleryLayout } from "@/lib/gallery/layouts";
+import { resolveGalleryCaptionStyle, resolveGalleryLayout } from "@/lib/gallery/layouts";
 
 const PAGE_SIZE = 24;
 
@@ -113,6 +113,7 @@ export default async function ProfileGalleryPage({
           profile={profile}
           isOwner={isOwner}
           initialLayout={resolveGalleryLayout(profile)}
+          initialCaptionStyle={resolveGalleryCaptionStyle(profile)}
         />
 
         {totalPages > 1 && (

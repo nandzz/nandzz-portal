@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -11,7 +11,12 @@ import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
 import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
 import { useSerialSave } from "@/lib/useSerialSave";
-import { GALLERY_LAYOUTS, type GalleryLayout } from "@/lib/gallery/layouts";
+import {
+  GALLERY_CAPTION_STYLES,
+  GALLERY_LAYOUTS,
+  type GalleryCaptionStyle,
+  type GalleryLayout,
+} from "@/lib/gallery/layouts";
 import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 
 // Mounted only once "See more" opens it.
@@ -25,6 +30,7 @@ interface ProfileGalleryProps {
   profile: Profile;
   isOwner: boolean;
   initialLayout: GalleryLayout;
+  initialCaptionStyle: GalleryCaptionStyle;
   /** When set, a "see all" link is shown once totalCount exceeds what's rendered. */
   seeMoreHref?: string;
   /** When true, "see more" opens a paginated modal instead of navigating to
@@ -40,6 +46,7 @@ export function ProfileGallery({
   profile,
   isOwner,
   initialLayout,
+  initialCaptionStyle,
   seeMoreHref,
   enableModal,
 }: ProfileGalleryProps) {
@@ -54,6 +61,13 @@ export function ProfileGallery({
     const result = await updateProfileLayout({ gallery_layout: value });
     if (!result.ok) throw new Error(result.error);
   });
+  const [captionStyle, handleCaptionStyleChange] = useSerialSave<GalleryCaptionStyle>(
+    initialCaptionStyle,
+    async (value) => {
+      const result = await updateProfileLayout({ gallery_caption_style: value });
+      if (!result.ok) throw new Error(result.error);
+    },
+  );
   const [modalOpen, setModalOpen] = useState(false);
 
   const withImage = useMemo(() => images.filter((s) => imageSrc(s)), [images]);
@@ -85,11 +99,18 @@ export function ProfileGallery({
             layouts={GALLERY_LAYOUTS}
             layout={layout}
             onLayoutChange={handleLayoutChange}
+            captions={{
+              styles: GALLERY_CAPTION_STYLES,
+              value: captionStyle,
+              onChange: handleCaptionStyleChange,
+            }}
           />
         )}
       </div>
 
-      <GalleryLayoutView layout={layout} images={withImage} username={profile.username} />
+      <CaptionStyleContext.Provider value={captionStyle}>
+        <GalleryLayoutView layout={layout} images={withImage} username={profile.username} />
+      </CaptionStyleContext.Provider>
 
       {showSeeMore &&
         (enableModal ? (
@@ -132,6 +153,87 @@ function tileHref(username: string, space: Space) {
   return `/${username}/space/${space.id}`;
 }
 
+// ── Tile captions ────────────────────────────────────────────────────────────
+
+const CaptionStyleContext = createContext<GalleryCaptionStyle>("none");
+
+type CaptionSize = "sm" | "md" | "lg";
+
+const CAPTION_TEXT: Record<CaptionSize, { title: string; description: string }> = {
+  // Small tiles (3-col grid / masonry on phones): one line of caption.
+  sm: {
+    title: "text-[11px] sm:text-sm",
+    description: "text-[10px] sm:text-xs line-clamp-1 sm:line-clamp-2",
+  },
+  md: { title: "text-sm", description: "text-xs line-clamp-2" },
+  lg: { title: "text-base sm:text-lg", description: "text-xs sm:text-sm line-clamp-2" },
+};
+
+const CAPTION_PAD: Record<CaptionSize, string> = {
+  sm: "p-1.5 sm:p-3",
+  md: "p-3",
+  lg: "p-4 sm:p-5",
+};
+
+/**
+ * The photo's title + caption over the bottom of a tile, in the owner's chosen
+ * style. Must sit inside a `group relative` tile. Renders nothing when the
+ * style is 'none' or the photo has neither title nor caption.
+ */
+function TileCaption({ space, size = "md" }: { space: Space; size?: CaptionSize }) {
+  const style = useContext(CaptionStyleContext);
+  if (style === "none") return null;
+  const title = space.title?.trim();
+  const description = space.description?.trim();
+  if (!title && !description) return null;
+
+  const text = CAPTION_TEXT[size];
+  const body = (
+    <>
+      {title && <p className={`${text.title} font-semibold leading-snug line-clamp-1`}>{title}</p>}
+      {description && (
+        <p className={`${text.description} leading-snug text-white/80 ${title ? "mt-0.5" : ""}`}>
+          {description}
+        </p>
+      )}
+    </>
+  );
+
+  if (style === "card") {
+    const inset = size === "sm" ? "inset-x-1 bottom-1 sm:inset-x-2 sm:bottom-2" : "inset-x-2 bottom-2 sm:inset-x-3 sm:bottom-3";
+    const pad = size === "sm" ? "px-1.5 py-1 sm:px-3 sm:py-2" : "px-3 py-2";
+    return (
+      <div className={`pointer-events-none absolute ${inset}`}>
+        <div className={`rounded-md border border-white/15 bg-black/45 text-white shadow-lg backdrop-blur-md sm:rounded-lg ${pad}`}>
+          {body}
+        </div>
+      </div>
+    );
+  }
+
+  if (style === "hover") {
+    // Revealed on hover/focus; touch screens can't hover, so there it falls
+    // back to an always-on bottom gradient instead of hiding the text.
+    return (
+      <div
+        className={`pointer-events-none absolute inset-0 flex flex-col justify-end bg-black/60 text-white opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:bg-transparent [@media(hover:none)]:bg-gradient-to-t [@media(hover:none)]:from-black/75 [@media(hover:none)]:via-transparent [@media(hover:none)]:opacity-100 ${CAPTION_PAD[size]}`}
+      >
+        <div className="transition-transform duration-200 ease-out motion-safe:translate-y-1 motion-safe:group-hover:translate-y-0">
+          {body}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-10 text-white ${CAPTION_PAD[size]}`}
+    >
+      {body}
+    </div>
+  );
+}
+
 /** Single horizontal row that scrolls sideways (portrait tiles). */
 function CarouselLayout({ images, username }: { images: Space[]; username: string }) {
   return (
@@ -150,6 +252,7 @@ function CarouselLayout({ images, username }: { images: Space[]; username: strin
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
             priority={i === 0}
           />
+          <TileCaption space={space} />
         </HoverPrefetchLink>
       ))}
     </div>
@@ -173,6 +276,7 @@ function GridLayout({ images, username }: { images: Space[]; username: string })
             sizes="(max-width: 640px) 33vw, (max-width: 1280px) 30vw, 400px"
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
           />
+          <TileCaption space={space} size="sm" />
         </HoverPrefetchLink>
       ))}
     </div>
@@ -206,6 +310,7 @@ function MasonryLayout({ images, username }: { images: Space[]; username: string
               setRatios((prev) => (prev[space.id] === r ? prev : { ...prev, [space.id]: r }));
             }}
           />
+          <TileCaption space={space} size="sm" />
         </HoverPrefetchLink>
       ))}
     </div>
@@ -299,6 +404,7 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
               className="object-cover"
               onLoad={(e) => handleLoad(space.id, e)}
             />
+            <TileCaption space={space} />
           </HoverPrefetchLink>
         ))}
       </div>
@@ -324,6 +430,7 @@ function JustifiedLayout({ images, username }: { images: Space[]; username: stri
                 className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
                 onLoad={(e) => handleLoad(space.id, e)}
               />
+              <TileCaption space={space} />
             </HoverPrefetchLink>
           ))}
         </div>
@@ -349,6 +456,7 @@ function FeaturedLayout({ images, username }: { images: Space[]; username: strin
           className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
           priority
         />
+        <TileCaption space={hero} size="lg" />
       </HoverPrefetchLink>
       {rest.length > 0 && <GridLayout images={rest} username={username} />}
     </div>

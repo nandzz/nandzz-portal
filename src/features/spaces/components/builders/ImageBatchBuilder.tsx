@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ interface BatchItem {
   id: string;
   file: File;
   objectUrl: string;
+  title: string;
   caption: string;
   status: ItemStatus;
   /** Why this item failed, shown in the caption panel. */
@@ -80,9 +82,9 @@ function createLimiter(max: number) {
 
 /**
  * Create-mode image builder: pick or drop many photos at once, give each an
- * optional caption, share hashtags + visibility across the batch, then publish
- * them as one space per photo. Images carry no title (stored as ""), only a
- * caption (description) and hashtags. Editing a single image still goes
+ * optional title + caption, share hashtags + visibility across the batch, then
+ * publish them as one space per photo. The title is optional (stored as "" when
+ * blank); the caption is the description. Editing a single image still goes
  * through `ImageBuilder` + the shared shell.
  */
 export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
@@ -134,6 +136,7 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
       id: crypto.randomUUID(),
       file,
       objectUrl: URL.createObjectURL(file),
+      title: "",
       caption: "",
       status: "idle",
       requestId: crypto.randomUUID(),
@@ -186,6 +189,9 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
     patchItem(id, { caption: value });
   };
 
+  const setTitle = (id: string, value: string) =>
+    patchItem(id, { title: value.slice(0, SHARED_LIMITS.title) });
+
   const applyCaptionToAll = (caption: string) => {
     setItems((prev) => prev.map((i) => (i.status === "done" ? i : { ...i, caption })));
     setCaptionApplied(true);
@@ -236,10 +242,11 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
       }
       try {
         const imageUrl = await uploads[n];
-        const caption = itemsRef.current.find((i) => i.id === item.id)?.caption.trim() ?? "";
+        const latest = itemsRef.current.find((i) => i.id === item.id);
+        const caption = latest?.caption.trim() ?? "";
         const payload: PublishSpacePayload = {
           content_type: "image",
-          title: "",
+          title: latest?.title.trim() ?? "",
           description: caption || null,
           image_url: imageUrl,
           preview_image_url: imageUrl,
@@ -408,7 +415,7 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.objectUrl} alt="" className="h-full w-full object-cover" draggable={false} />
 
-                      {item.caption.trim() && item.status !== "done" && (
+                      {(item.title.trim() || item.caption.trim()) && item.status !== "done" && (
                         <span className="absolute bottom-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
                           <MessageSquareText className="h-3 w-3 text-white" />
                         </span>
@@ -469,14 +476,26 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
                   <img src={selected.objectUrl} alt="" className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="batch-title" className="text-xs">
+                    {cb.imageBatchTitleLabel}
+                    {total > 1 && (
+                      <span className="ml-1.5 font-normal text-muted-foreground">
+                        · {cb.imageBatchCaptionFor.replace("{index}", String(selectedIndex + 1)).replace("{total}", String(total))}
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id="batch-title"
+                    value={selected.title}
+                    maxLength={SHARED_LIMITS.title}
+                    disabled={publishing || selected.status === "done"}
+                    placeholder={cb.imageBatchTitlePlaceholder}
+                    onChange={(e) => setTitle(selected.id, e.target.value)}
+                    className="h-8 bg-background/60 border-border/60 text-sm focus:border-violet-500/50 focus:bg-background transition-colors"
+                  />
+                  <div className="flex items-center justify-between gap-2 pt-1">
                     <Label htmlFor="batch-caption" className="text-xs">
                       {cb.imageBatchCaptionLabel}
-                      {total > 1 && (
-                        <span className="ml-1.5 font-normal text-muted-foreground">
-                          · {cb.imageBatchCaptionFor.replace("{index}", String(selectedIndex + 1)).replace("{total}", String(total))}
-                        </span>
-                      )}
                     </Label>
                     <span
                       className={`text-[11px] tabular-nums ${
