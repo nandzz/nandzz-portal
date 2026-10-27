@@ -19,9 +19,21 @@ export type GuideStep = {
   tips: string[];
 };
 
+export type GuideFaq = { q: string; a: string };
+
 export type GuideCopy = {
   metaTitle: string;
   metaDescription: string;
+  // First slide of the showcase that opens the page.
+  hero: { line1: string; line2: string; description: string; whatLink: string };
+  what: {
+    title: string;
+    body: string;
+    clients: { title: string; items: string[] };
+    business: { title: string; items: string[] };
+  };
+  faqTitle: string;
+  faq: GuideFaq[];
   title: string;
   subtitle: string;
   cta: string;
@@ -53,6 +65,67 @@ const en: GuideCopy = {
   metaTitle: "Guide: set up your business on Nandzz",
   metaDescription:
     "How to set up your Nandzz page in six steps: claim your link, add your style and content, turn on booking, and share it with your clients.",
+  hero: {
+    line1: "How Nandzz works,",
+    line2: "for you and *your clients*",
+    description:
+      "One page for your link in bio, with online booking for your clients and a back office for you. Here's what you get, what it costs and how to set it up.",
+    whatLink: "What you get",
+  },
+  what: {
+    title: "What you get",
+    body: "One page to put as your Instagram link in bio, with your gallery, address, WhatsApp and Instagram, in your style. On top of it:",
+    clients: {
+      title: "For your clients: online booking",
+      items: [
+        "They book on their own, 24/7: they pick a service and a free time, without messaging you.",
+        "They get a confirmation by email right away.",
+        "Automatic reminders by email and WhatsApp, so fewer appointments are missed.",
+        "They can reschedule or cancel on their own, and the slot frees up.",
+      ],
+    },
+    business: {
+      title: "For you: the back office",
+      items: [
+        "A calendar with every booking by day, week and month.",
+        "Client records that build themselves: contacts and visit history (when, what, how much spent).",
+        "Your team: each person's hours and services, and you can reassign appointments.",
+        "Services by category with price and duration, editable anytime.",
+        "Closures and holidays blocked in one click.",
+      ],
+    },
+  },
+  faqTitle: "Questions",
+  faq: [
+    {
+      q: "We built a page for you. What now?",
+      a: "Open the link we sent you to claim it and sign in with email or Google. The page becomes yours with everything already set up. Services and durations are only a starting point: you can change all of it in a few minutes.",
+    },
+    {
+      q: "Who can see my page before I claim it?",
+      a: "Only people who have the link. It stays private until you claim it.",
+    },
+    {
+      q: "What if I don't claim it?",
+      a: "Pages we create for a business are deleted automatically if they aren't claimed within 7 days.",
+    },
+    {
+      q: "How much does it cost?",
+      a: "The Free plan covers your page, gallery and links. Online booking and analytics are on Pro, paid monthly or yearly (yearly costs less). Every plan is on the pricing page.",
+    },
+    {
+      q: "Will I be charged when the free period ends?",
+      a: "No. Nothing is charged automatically when a free period ends. You only pay if you choose a plan yourself.",
+    },
+    {
+      q: "How do payments work?",
+      a: "Payments and plan changes happen only on nandzz.com, from your dashboard. Never through messages or third parties.",
+    },
+    {
+      q: "Can you help me set it up?",
+      a: "Yes. Reply to our message or write to us from the contact page, and we'll set it up with you.",
+    },
+  ],
   title: "Your business page, live in an afternoon",
   subtitle:
     "Six short steps take you from sign-up to your first booking. No website, no designer, nothing to install.",
@@ -129,6 +202,67 @@ const it: GuideCopy = {
   metaTitle: "Guida: porta la tua attività su Nandzz",
   metaDescription:
     "Come configurare la tua pagina Nandzz in sei passi: scegli il tuo link, aggiungi stile e contenuti, attiva le prenotazioni e condividila con i clienti.",
+  hero: {
+    line1: "Come funziona Nandzz,",
+    line2: "per te e *i tuoi clienti*",
+    description:
+      "Una pagina da mettere come link in bio, con la prenotazione online per i tuoi clienti e un gestionale per te. Qui trovi cosa include, quanto costa e come configurarla.",
+    whatLink: "Cosa include",
+  },
+  what: {
+    title: "Cosa include",
+    body: "Una pagina unica da mettere come link in bio su Instagram, con galleria, indirizzo, WhatsApp e Instagram, nel tuo stile. In più:",
+    clients: {
+      title: "Per i tuoi clienti: la prenotazione online",
+      items: [
+        "Prenotano da soli, 24/7: scelgono il servizio e l'orario libero, senza scriverti.",
+        "Ricevono subito la conferma via email.",
+        "Promemoria automatico via email e WhatsApp: meno appuntamenti saltati.",
+        "Possono spostare o cancellare da soli, e lo slot si libera.",
+      ],
+    },
+    business: {
+      title: "Per te: il gestionale",
+      items: [
+        "Un'agenda con tutte le prenotazioni per giorno, settimana e mese.",
+        "Schede clienti che si creano da sole: contatti e storico visite (quando, cosa, quanto speso).",
+        "Il tuo team: orari e servizi di ciascuno, con la possibilità di riassegnare gli appuntamenti.",
+        "Servizi divisi per categoria con prezzo e durata, modificabili quando vuoi.",
+        "Giorni di chiusura e ferie bloccati in un clic.",
+      ],
+    },
+  },
+  faqTitle: "Domande",
+  faq: [
+    {
+      q: "Ti abbiamo creato una pagina: e ora?",
+      a: "Apri il link che ti abbiamo inviato per prenderne possesso e accedi con email o Google. La pagina diventa tua, con tutto già configurato. Servizi e durate sono solo un punto di partenza: puoi modificare tutto in pochi minuti.",
+    },
+    {
+      q: "Chi vede la pagina prima che la attivi?",
+      a: "Solo chi ha il link. Resta privata finché non ne prendi possesso.",
+    },
+    {
+      q: "E se non la attivo?",
+      a: "Le pagine che creiamo per un'attività vengono cancellate automaticamente se non vengono attivate entro 7 giorni.",
+    },
+    {
+      q: "Quanto costa?",
+      a: "Il piano Free include pagina, galleria e link. Prenotazione online e statistiche sono nel piano Pro, mensile o annuale (l'annuale costa meno). Tutti i piani sono nella pagina dei prezzi.",
+    },
+    {
+      q: "Mi verrà addebitato qualcosa alla fine del periodo gratuito?",
+      a: "No. Alla fine del periodo gratuito non viene addebitato nulla in automatico: paghi solo se scegli tu un piano.",
+    },
+    {
+      q: "Come funzionano i pagamenti?",
+      a: "Pagamenti e cambi di piano avvengono solo su nandzz.com, dalla tua dashboard. Mai tramite messaggi o terzi.",
+    },
+    {
+      q: "Mi aiutate a configurarla?",
+      a: "Sì. Rispondi al nostro messaggio o scrivici dalla pagina contatti e la sistemiamo insieme.",
+    },
+  ],
   title: "La pagina della tua attività, online in un pomeriggio",
   subtitle:
     "Sei passi veloci dalla registrazione alla prima prenotazione. Niente sito, niente designer, niente da installare.",

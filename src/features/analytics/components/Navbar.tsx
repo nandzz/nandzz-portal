@@ -43,7 +43,9 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   // On the home page the bar paints the home's clay base instead of the app
   // background, so it doesn't read as a separate darker band.
-  const onHome = usePathname() === "/";
+  // The home and the guide share the clay page color (both open with the showcase).
+  const pathname = usePathname();
+  const onHome = pathname === "/" || pathname === "/guide";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);

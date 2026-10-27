@@ -291,9 +291,19 @@ const START: Track = {
   visits: SLIDES.map(() => 0),
 };
 
-export function HeroShowcase() {
+// Overrides the first slide's headline and the secondary button, so another
+// page (the guide) can open with the same tour under its own heading.
+export type ShowcaseIntro = {
+  line1: string;
+  line2: string; // *word* renders in the brand violet
+  description: string;
+  secondary: { href: string; label: string };
+};
+
+export function HeroShowcase({ intro }: { intro?: ShowcaseIntro } = {}) {
   const { t, locale } = useLanguage();
-  const h = t.home;
+  const h = { ...t.home, ...(intro && { heroLine1: intro.line1, heroLine2: intro.line2, heroDescription: intro.description }) };
+  const secondary = intro?.secondary ?? { href: "#how", label: t.home.howItWorks };
   const copy = SHOWCASE_COPY[toShowcaseLocale(locale)];
   const reduce = useReduceMotion();
   // Phones read a one-line caption instead of the text panel, so slides move faster.
@@ -483,10 +493,10 @@ export function HeroShowcase() {
         <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
       </Link>
       <Link
-        href="#how"
+        href={secondary.href}
         className="clay inline-flex min-h-12 flex-auto items-center justify-center rounded-full px-4 py-2 text-center text-sm font-medium leading-tight transition-transform [@media(hover:hover)]:hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 sm:h-12 sm:flex-none sm:px-6 sm:py-0 sm:text-[15px]"
       >
-        {h.howItWorks}
+        {secondary.label}
       </Link>
     </div>
   );
