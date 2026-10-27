@@ -11,6 +11,151 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   it: "Italiano",
 };
 
+// Home hero showcase (features/home/showcase). The phone mock strings mirror
+// the real UI labels (booking strings = `booking.*`, profile = `profile.*`).
+type ShowcaseItem = { label: string; desc: string };
+type ShowcaseTour = { eyebrow: string; title: string; items: ShowcaseItem[] };
+type ShowcaseExample = { eyebrow: string; title: string; desc: string };
+type ShowcaseFour = [string, string, string, string];
+
+export type ShowcaseCopy = {
+  controls: {
+    region: string;
+    slideOf: string; // "{n}" and "{total}" are replaced
+    prev: string;
+    next: string;
+    names: string[]; // one per slide, in order
+  };
+  heroCaption: string; // slide 1's line under the phone, on phones
+  anatomy: ShowcaseTour;
+  content: ShowcaseTour;
+  booking: {
+    eyebrow: string;
+    title: string;
+    steps: ShowcaseItem[];
+    businessTitle: string;
+    business: string[];
+    toasts: ShowcaseItem[];
+  };
+  style: ShowcaseTour;
+  links: ShowcaseExample;
+  gallery: ShowcaseExample;
+  mock: {
+    // Public profile
+    bookNow: string;
+    follow: string;
+    followers: string;
+    following: string;
+    gallery: string;
+    publications: string;
+    links: string;
+    // Booking page (CalendarBookingFlow)
+    share: string;
+    back: string;
+    chooseService: string;
+    selectServicesHint: string;
+    total: string;
+    continue: string;
+    chooseSpecialist: string;
+    specialistHint: string;
+    anyAvailable: string;
+    pickDateTime: string; // "{service}" is replaced
+    signInTitle: string;
+    signInBody: string;
+    signInCta: string;
+    summaryService: string;
+    summaryWhen: string;
+    summarySpecialist: string;
+    yourDetails: string;
+    fullName: string;
+    emailOptional: string;
+    phone: string;
+    whatsapp: string;
+    confirm: string;
+    booked: string;
+    withName: string; // "{name}" is replaced
+    confirmationSent: string; // "{email}" is replaced
+    manageBooking: string;
+    // Style picker (owner)
+    style: string;
+    reset: string;
+    tabPage: string;
+    tabButtons: string;
+    tabBooking: string;
+    background: string;
+    buttonColor: string;
+    defaultColor: string;
+    variantLabel: string;
+    variants: ShowcaseFour; // soft, solid, outline, glass
+    layoutLabel: string;
+    layouts: ShowcaseFour; // icons, labeled, stacked, minimal
+    layoutHints: ShowcaseFour;
+    // Example businesses
+    barberBio: string;
+    physioBio: string;
+    physioServices: [string, string, string];
+    inkBio: string;
+    inkPublications: [string, string];
+    inkLinks: [string, string, string];
+    bloomBio: string;
+    yogaBio: string;
+    yogaLinks: [string, string, string];
+    rosaBio: string;
+  };
+};
+
+// Public business guide (/guide).
+export type GuideStepId = "claim" | "style" | "content" | "booking" | "share" | "insights";
+
+export type GuideStep = {
+  id: GuideStepId;
+  title: string;
+  body: string;
+  tips: string[];
+};
+
+export type GuideFaq = { q: string; a: string };
+
+export type GuideCopy = {
+  metaTitle: string;
+  metaDescription: string;
+  // First slide of the showcase that opens the page.
+  hero: { line1: string; line2: string; description: string; whatLink: string };
+  what: {
+    title: string;
+    body: string;
+    clients: { title: string; items: string[] };
+    business: { title: string; items: string[] };
+  };
+  faqTitle: string;
+  faq: GuideFaq[];
+  title: string;
+  subtitle: string;
+  cta: string;
+  pricingLink: string;
+  stepsLabel: string;
+  steps: GuideStep[];
+  paidNote: string;
+  closingTitle: string;
+  closingBody: string;
+  visual: {
+    available: string;
+    yourPage: string;
+    background: string;
+    buttons: string;
+    bookNow: string;
+    tabs: [string, string, string, string];
+    services: { name: string; duration: string; price: string }[];
+    pickTime: string;
+    copyLink: string;
+    newBooking: string;
+    newBookingDetail: string;
+    visitors: string;
+    thisWeek: string;
+    days: string[];
+  };
+};
+
 export type Translations = {
   plan: {
     upgradeCta: string;
@@ -671,6 +816,11 @@ export type Translations = {
     layoutFeatured: string;
     layoutStack: string;
     layoutPills: string;
+    captionsLabel: string;
+    captionNone: string;
+    captionGradient: string;
+    captionHover: string;
+    captionCard: string;
     followersPageSubtitle: string;
     followingPageSubtitle: string;
     bookingPosition: string;
@@ -919,6 +1069,8 @@ export type Translations = {
     imageBatchSelected: string;
     imageBatchAddMore: string;
     imageBatchClearAll: string;
+    imageBatchTitleLabel: string;
+    imageBatchTitlePlaceholder: string;
     imageBatchCaptionLabel: string;
     imageBatchCaptionPlaceholder: string;
     imageBatchCaptionFor: string;
@@ -1844,6 +1996,8 @@ export type Translations = {
       confirmBodyKeep: string;
     };
   };
+  showcase: ShowcaseCopy;
+  guidePage: GuideCopy;
 };
 
 export function detectLocale(acceptLanguage: string): Locale {

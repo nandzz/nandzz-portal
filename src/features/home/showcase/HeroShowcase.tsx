@@ -14,7 +14,7 @@ import Link from "next/link";
 import { AnimatePresence, MotionConfig, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
 import { ArrowRight, BellRing, CalendarCheck, ChevronLeft, ChevronRight, Link2, Mail } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { SHOWCASE_COPY, toShowcaseLocale, type ShowcaseCopy } from "./content";
+import type { ShowcaseCopy } from "./content";
 import { Chips, Panel, PanelHeading, PanelText, SLIDE_S, StepList, slideFade, slideMove, type SlidePos } from "./panels";
 import { Callout, EASE_OUT, PhoneFrame, still, useCompact, useReduceMotion, type Anchor } from "./phone";
 import {
@@ -304,7 +304,7 @@ export function HeroShowcase({ intro }: { intro?: ShowcaseIntro } = {}) {
   const { t, locale } = useLanguage();
   const h = { ...t.home, ...(intro && { heroLine1: intro.line1, heroLine2: intro.line2, heroDescription: intro.description }) };
   const secondary = intro?.secondary ?? { href: "#how", label: t.home.howItWorks };
-  const copy = SHOWCASE_COPY[toShowcaseLocale(locale)];
+  const copy = t.showcase;
   const reduce = useReduceMotion();
   // Phones read a one-line caption instead of the text panel, so slides move faster.
   const compact = useCompact();

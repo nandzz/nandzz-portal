@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { GUIDE_COPY, GuidePage, toGuideLocale } from "@/features/guide";
-import { getCurrentLocale } from "@/lib/i18n/server";
+import { GuidePage } from "@/features/guide";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 async function getCopy() {
-  return GUIDE_COPY[toGuideLocale(await getCurrentLocale())];
+  return (await getServerTranslations()).guidePage;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
