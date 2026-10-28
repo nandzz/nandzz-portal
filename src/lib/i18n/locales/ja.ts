@@ -303,6 +303,8 @@ export const ja: Translations = {
   space: {
     previousItem: "前へ",
     nextItem: "次へ",
+    captionMore: "もっと見る",
+    captionLess: "閉じる",
     public: "公開",
     private: "非公開",
     open: "開く",
@@ -351,9 +353,6 @@ export const ja: Translations = {
   notifications: {
     title: "通知",
     empty: "通知はまだありません",
-    newComment: "{name}がコンテンツ「{title}」にコメントしました",
-    newReply: "{name}が「{title}」のコメントに返信しました",
-    mention: "{name}が「{title}」であなたをメンションしました",
     aiEditReady: "「{title}」のAI編集が完了しました",
     newBooking: "{name}様から{service}の新しい予約が入りました",
     dismiss: "閉じる",
@@ -804,19 +803,6 @@ export const ja: Translations = {
     widgetUsageNoCap: "{used} クレジット使用済み、月間の付与枠は未設定です。",
     widgetKnowledgeDesc: "エージェントスタジオでドキュメントとおすすめの質問を管理します。",
     widgetOpenStudio: "エージェントスタジオを開く",
-  },
-  comment: {
-    panelTitle: "コメント",
-    reply: "返信",
-    hideReplies: "返信を非表示",
-    replySingular: "件の返信",
-    replyPlural: "件の返信",
-    logIn: "ログイン",
-    joinConversation: "して会話に参加する",
-    cancel: "キャンセル",
-    posting: "投稿中…",
-    post: "投稿",
-    loading: "読み込み中…",
   },
   spaceGrid: {
     comfortable: "標準",

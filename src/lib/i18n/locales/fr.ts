@@ -303,6 +303,8 @@ export const fr: Translations = {
   space: {
     previousItem: "Précédent",
     nextItem: "Suivant",
+    captionMore: "plus",
+    captionLess: "moins",
     public: "Public",
     private: "Privé",
     open: "Ouvrir",
@@ -351,9 +353,6 @@ export const fr: Translations = {
   notifications: {
     title: "Notifications",
     empty: "Aucune notification pour l'instant",
-    newComment: "{name} a commenté votre contenu \"{title}\"",
-    newReply: "{name} a répondu à votre commentaire dans \"{title}\"",
-    mention: "{name} vous a mentionné dans \"{title}\"",
     aiEditReady: "Modification IA prête pour \"{title}\"",
     newBooking: "Nouvelle réservation de {name} pour {service}",
     dismiss: "Ignorer",
@@ -804,19 +803,6 @@ export const fr: Translations = {
     widgetUsageNoCap: "{used} crédits utilisés, aucune enveloppe mensuelle configurée.",
     widgetKnowledgeDesc: "Gérez les documents et les questions suggérées dans le studio de l'agent.",
     widgetOpenStudio: "Ouvrir le studio de l'agent",
-  },
-  comment: {
-    panelTitle: "Commentaires",
-    reply: "Répondre",
-    hideReplies: "Masquer les réponses",
-    replySingular: "réponse",
-    replyPlural: "réponses",
-    logIn: "Se connecter",
-    joinConversation: "pour rejoindre la conversation",
-    cancel: "Annuler",
-    posting: "Publication…",
-    post: "Publier",
-    loading: "Chargement…",
   },
   spaceGrid: {
     comfortable: "Confortable",

@@ -13,7 +13,8 @@ interface SpaceSiblingNavProps {
 }
 
 /**
- * Prev/next arrows + ←/→ keys for browsing sibling spaces in the viewer.
+ * Prev/next arrows (desktop only — mobile swipes) + ←/→ keys for browsing
+ * sibling spaces in the viewer.
  * Rendered as an overlay inside the (relative) content area.
  */
 export function SpaceSiblingNav({ onPrev, onNext, pending }: SpaceSiblingNavProps) {
@@ -33,7 +34,7 @@ export function SpaceSiblingNav({ onPrev, onNext, pending }: SpaceSiblingNavProp
   }, [onPrev, onNext]);
 
   const arrowClass =
-    "absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-[background-color,transform] hover:bg-black/60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
+    "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-[background-color,transform] hover:bg-black/60 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 md:flex";
 
   return (
     <>

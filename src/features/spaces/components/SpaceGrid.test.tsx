@@ -50,7 +50,6 @@ const makeSpace = (
   is_public: true,
   likes_count: 0,
   views_count: 0,
-  comments_count: 0,
   hashtags,
   created_at: new Date().toISOString(),
   content_type: contentType,

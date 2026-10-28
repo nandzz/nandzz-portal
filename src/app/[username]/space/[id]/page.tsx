@@ -83,13 +83,10 @@ export async function generateMetadata({
 
 export default async function SpaceViewPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ username: string; id: string }>;
-  searchParams: Promise<{ comments?: string }>;
 }) {
   const { username, id } = await params;
-  const { comments } = await searchParams;
   const space = await getSpace(id);
 
   if (!space) notFound();
@@ -136,7 +133,6 @@ export default async function SpaceViewPage({
       username={username}
       profile={{ username: profile.username, display_name: profile.display_name, avatar_url: profile.avatar_url }}
       signedIn={!!user}
-      commentsOpen={comments === "open"}
     />
   );
 }

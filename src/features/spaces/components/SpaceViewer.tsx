@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BackButton } from "@/components/ui/BackButton";
 import { LikeButton } from "@/features/social";
 import { StarButton } from "@/features/collections";
-import { CommentsController } from "@/features/comments";
 import { ReportLink } from "@/features/legal/components/ReportLink";
 import { IdleChromeActivator } from "@/contexts/ChromeContext";
 import { spaceDisplayTitle } from "@/lib/spaces/display-title";
@@ -26,6 +25,7 @@ import { MarkdownSpaceEditor } from "./MarkdownSpaceEditor";
 import { ViewTracker } from "./ViewTracker";
 import { SpaceSiblingNav } from "./SpaceSiblingNav";
 import { ImageSwipeTrack } from "./ImageSwipeTrack";
+import { SpaceCaption } from "./SpaceCaption";
 
 interface SpaceViewerProps {
   initial: SpaceView;
@@ -33,16 +33,15 @@ interface SpaceViewerProps {
   profile: ViewerProfile;
   /** Signed in → the mobile tab bar is shown, so the viewer clears it. */
   signedIn: boolean;
-  commentsOpen: boolean;
 }
 
 /**
- * The immersive space viewer. Browsing to a sibling (arrows, ←/→, swipe on
- * images) swaps the space in place — the shell stays mounted, the URL is
+ * The immersive space viewer. Browsing to a sibling (arrows on desktop, ←/→,
+ * swipe on images) swaps the space in place — the shell stays mounted, the URL is
  * updated with `history.replaceState` (synced with the Next router), and
  * neighbors are preloaded so the swap is usually instant.
  */
-export function SpaceViewer({ initial, username, profile, signedIn, commentsOpen }: SpaceViewerProps) {
+export function SpaceViewer({ initial, username, profile, signedIn }: SpaceViewerProps) {
   const [view, setView] = useState(initial);
   const [views, setViews] = useState<Record<string, SpaceView>>({ [initial.space.id]: initial });
   const inflight = useRef(new Map<string, Promise<SpaceView | null>>());
@@ -136,16 +135,6 @@ export function SpaceViewer({ initial, username, profile, signedIn, commentsOpen
               initialLiked={view.liked}
               size="md"
             />
-            <CommentsController
-              spaceId={space.id}
-              spaceOwnerId={space.user_id}
-              commentsCount={space.comments_count}
-              userId={view.viewerId}
-              currentProfile={view.currentProfile}
-              initialComments={view.initialComments}
-              initialHasMore={view.initialHasMore}
-              initialOpen={commentsOpen && space.id === initial.space.id}
-            />
             {!isOwner && (
               <StarButton spaceId={space.id} spaceTitle={title} initialSaved={view.saved} size="md" />
             )}
@@ -230,21 +219,27 @@ export function SpaceViewer({ initial, username, profile, signedIn, commentsOpen
       )}
 
       {/* Content */}
-      <div className="relative flex-1 bg-muted/50 min-h-0 overscroll-contain">
-        {imageOnly ? (
-          <ImageSwipeTrack
-            key={space.id}
-            src={space.image_url!}
-            alt={spaceDisplayTitle(space)}
-            prev={neighborImage(view.prevId)}
-            next={neighborImage(view.nextId)}
-            onCommit={(dir) => navigate((dir === "prev" ? view.prevId : view.nextId)!)}
-          />
-        ) : (
+      {imageOnly ? (
+        <div className="flex flex-1 min-h-0 flex-col bg-black/90 overscroll-contain">
+          <div className="relative flex-1 min-h-0">
+            <ImageSwipeTrack
+              key={space.id}
+              src={space.image_url!}
+              alt={spaceDisplayTitle(space)}
+              prev={neighborImage(view.prevId)}
+              next={neighborImage(view.nextId)}
+              onCommit={(dir) => navigate((dir === "prev" ? view.prevId : view.nextId)!)}
+            />
+            <SpaceSiblingNav onPrev={onPrev} onNext={onNext} pending={pending} />
+          </div>
+          <SpaceCaption key={space.id} title={space.title} description={space.description} />
+        </div>
+      ) : (
+        <div className="relative flex-1 bg-muted/50 min-h-0 overscroll-contain">
           <SpaceBody key={space.id} view={view} />
-        )}
-        <SpaceSiblingNav onPrev={onPrev} onNext={onNext} pending={pending} />
-      </div>
+          <SpaceSiblingNav onPrev={onPrev} onNext={onNext} pending={pending} />
+        </div>
+      )}
     </div>
   );
 }

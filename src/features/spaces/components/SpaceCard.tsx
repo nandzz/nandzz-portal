@@ -15,7 +15,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { ExternalLink, FolderPlus, Pencil, Trash2, Bookmark, Globe, Lock, Copy } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ExternalLink, FolderPlus, Pencil, Trash2, Bookmark, Globe, Lock, Copy, MoreHorizontal } from "lucide-react";
 import { LikeButton } from "@/features/social";
 import { ShareButton } from "./ShareButton";
 import { StarButton, AddToCollectionDialog, removeSpaceFromCollection } from "@/features/collections";
@@ -50,6 +57,16 @@ interface SpaceCardProps {
   priority?: boolean;
 }
 
+// The card's actions render twice: as a right-click / long-press context menu
+// and as a visible ⋯ dropdown. Both item components take these props.
+type MenuItemComponent = React.ComponentType<{
+  onClick?: () => void;
+  disabled?: boolean;
+  variant?: "default" | "destructive";
+  children?: React.ReactNode;
+}>;
+type MenuSeparatorComponent = React.ComponentType;
+
 export function SpaceCard({ space, username, routeUsername, editable, liked, saved, compact, collectionId, isOwn, hashtags = [], priority = false }: SpaceCardProps) {
   const spaceUrl = routeUsername ? `/${routeUsername}/space/${space.id}` : `/space/${space.id}`;
   // Link- and video-type spaces jump straight to their external URL in a new
@@ -74,6 +91,15 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(saved ?? false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [dotsMenuOpen, setDotsMenuOpen] = useState(false);
+
+  // Opening a portal dialog straight from a Base UI menu item races with the
+  // menu's own close and swallows the dialog — close the ⋯ menu first, then
+  // open the dialog on the next frame (see SpaceOwnerMenu).
+  const openAfterMenu = (open: () => void) => {
+    setDotsMenuOpen(false);
+    requestAnimationFrame(open);
+  };
 
   const handleRemoveFromCollection = async () => {
     if (!collectionId) return;
@@ -102,14 +128,97 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
     }
   };
 
+  const menuItems = (
+    Item: MenuItemComponent,
+    Separator: MenuSeparatorComponent,
+    openDialog: (open: () => void) => void
+  ) => (
+    <>
+      <Item
+        onClick={() =>
+          isExternalLink
+            ? openExternal(externalUrl!)
+            : router.push(spaceUrl)
+        }
+      >
+        <ExternalLink className="size-4" />
+        {t.space.open}
+      </Item>
+      {!editable && !isOwn && (
+        <>
+          <Item onClick={() => openDialog(() => setCollectionDialogOpen(true))}>
+            <Bookmark className={`size-4 ${isSaved ? "fill-violet-500 text-violet-500" : ""}`} />
+            {isSaved ? t.space.manageCollections : t.space.saveToCollection}
+          </Item>
+          {space.is_public && (
+            <Item onClick={handleDuplicate} disabled={isDuplicating}>
+              <Copy className="size-4" />
+              {isDuplicating ? t.space.duplicating : t.space.duplicate}
+            </Item>
+          )}
+        </>
+      )}
+      {editable && (
+        <>
+          <Separator />
+          <Item onClick={() => openDialog(() => setCollectionDialogOpen(true))}>
+            <FolderPlus className="size-4" />
+            {t.space.addToCollection}
+          </Item>
+          {collectionId && (
+            <Item variant="destructive" onClick={handleRemoveFromCollection}>
+              <Trash2 className="size-4" />
+              {t.space.removeFromCollection}
+            </Item>
+          )}
+          {isOwn && (
+            <>
+              <Separator />
+              <Item
+                onClick={() => router.push(`/dashboard/contents/edit-space/${space.id}`)}
+              >
+                <Pencil className="size-4" />
+                {t.space.edit}
+              </Item>
+              <Item variant="destructive" onClick={() => openDialog(() => setDeleteConfirmOpen(true))}>
+                <Trash2 className="size-4" />
+                {t.space.deleteSpace}
+              </Item>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  // Visible entry point for the same actions — many owners never discover the
+  // right-click / long-press menu. Sits outside the card link.
+  const dotsMenu = editable ? (
+    <DropdownMenu open={dotsMenuOpen} onOpenChange={setDotsMenuOpen}>
+      <DropdownMenuTrigger
+        aria-label={t.space.spaceActions}
+        className={
+          compact
+            ? "absolute top-1 right-1 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            : "absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        }
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-max">
+        {menuItems(DropdownMenuItem, DropdownMenuSeparator, openAfterMenu)}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null;
+
   const cardContent = compact ? (
-    <Card className="@container group overflow-hidden rounded-xl p-0 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-white/10 border-foreground/10 hover:border-violet-500/40 dark:hover:border-violet-500/25">
+    <Card className="@container group relative overflow-hidden rounded-xl p-0 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-white/10 border-foreground/10 hover:border-violet-500/40 dark:hover:border-violet-500/25">
       <HoverPrefetchLink href={clickHref} {...externalLinkProps} className="block">
         <div className="aspect-square bg-muted relative overflow-hidden">
           <SpacePreview space={space} priority={priority} />
           {/* Visibility badge — owner only */}
           {editable && (
-            <div className="absolute top-1.5 right-1.5 z-10">
+            <div className="absolute top-1.5 left-1.5 z-10">
               {space.is_public ? (
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-black/55 backdrop-blur-sm px-1.5 py-0.5 text-[7px] @[120px]:text-[9px] font-medium text-white">
                   <Globe className="h-2 w-2" />
@@ -140,9 +249,10 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
           )}
         </div>
       </HoverPrefetchLink>
+      {dotsMenu}
     </Card>
   ) : (
-    <Card className="@container group overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/5 hover:-translate-y-1 border-foreground/10 hover:border-violet-500/35 dark:hover:border-violet-500/20 p-0">
+    <Card className="@container group relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/5 hover:-translate-y-1 border-foreground/10 hover:border-violet-500/35 dark:hover:border-violet-500/20 p-0">
       <HoverPrefetchLink href={clickHref} {...externalLinkProps} className="block">
         <div className="aspect-video bg-muted relative overflow-hidden">
           <SpacePreview space={space} priority={priority} />
@@ -150,7 +260,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {/* Visibility badge — owner only */}
           {editable && (
-            <div className="absolute top-2 right-2 z-10">
+            <div className="absolute top-2 left-2 z-10">
               {space.is_public ? (
                 <span className="inline-flex items-center gap-0.5 @[280px]:gap-1 rounded-full bg-black/55 backdrop-blur-sm px-1.5 @[280px]:px-2 py-0.5 text-[8px] @[280px]:text-[10px] font-medium text-white">
                   <Globe className="h-2 w-2 @[280px]:h-2.5 @[280px]:w-2.5" />
@@ -210,6 +320,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
           </div>
         </CardContent>
       </HoverPrefetchLink>
+      {dotsMenu}
     </Card>
   );
 
@@ -218,60 +329,7 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
       <ContextMenu>
         <ContextMenuTrigger>{cardContent}</ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem
-            onClick={() =>
-              isExternalLink
-                ? openExternal(externalUrl!)
-                : router.push(spaceUrl)
-            }
-          >
-            <ExternalLink className="size-4" />
-            {t.space.open}
-          </ContextMenuItem>
-          {!editable && !isOwn && (
-            <>
-              <ContextMenuItem onClick={() => setCollectionDialogOpen(true)}>
-                <Bookmark className={`size-4 ${isSaved ? "fill-violet-500 text-violet-500" : ""}`} />
-                {isSaved ? t.space.manageCollections : t.space.saveToCollection}
-              </ContextMenuItem>
-              {space.is_public && (
-                <ContextMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
-                  <Copy className="size-4" />
-                  {isDuplicating ? t.space.duplicating : t.space.duplicate}
-                </ContextMenuItem>
-              )}
-            </>
-          )}
-          {editable && (
-            <>
-              <ContextMenuSeparator />
-              <ContextMenuItem onClick={() => setCollectionDialogOpen(true)}>
-                <FolderPlus className="size-4" />
-                {t.space.addToCollection}
-              </ContextMenuItem>
-              {collectionId && (
-                <ContextMenuItem variant="destructive" onClick={handleRemoveFromCollection}>
-                  <Trash2 className="size-4" />
-                  {t.space.removeFromCollection}
-                </ContextMenuItem>
-              )}
-              {isOwn && (
-                <>
-                  <ContextMenuSeparator />
-                  <ContextMenuItem
-                    onClick={() => router.push(`/dashboard/contents/edit-space/${space.id}`)}
-                  >
-                    <Pencil className="size-4" />
-                    {t.space.edit}
-                  </ContextMenuItem>
-                  <ContextMenuItem variant="destructive" onClick={() => setDeleteConfirmOpen(true)}>
-                    <Trash2 className="size-4" />
-                    {t.space.deleteSpace}
-                  </ContextMenuItem>
-                </>
-              )}
-            </>
-          )}
+          {menuItems(ContextMenuItem, ContextMenuSeparator, (open) => open())}
         </ContextMenuContent>
       </ContextMenu>
 

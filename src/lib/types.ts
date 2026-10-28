@@ -213,7 +213,6 @@ export type Space = {
   is_public: boolean;
   likes_count: number;
   views_count: number;
-  comments_count: number;
   hashtags: string[];
   created_at: string;
   content_type: string | null;
@@ -279,34 +278,9 @@ export type CollectionSpace = {
   created_at: string;
 };
 
-export type SpaceComment = {
-  id: string;
-  space_id: string;
-  user_id: string;
-  parent_id: string | null;
-  content: string;
-  likes_count: number;
-  replies_count: number;
-  created_at: string;
-  updated_at: string;
-};
-
-export type SpaceCommentWithProfile = SpaceComment & {
-  profiles: Pick<Profile, 'username' | 'display_name' | 'avatar_url'>;
-};
-
-export type CommentWithLike = SpaceCommentWithProfile & { liked: boolean };
-
-export type NotificationType = 'new_comment' | 'new_reply' | 'comment_mention' | 'ai_edit_ready' | 'new_booking';
+export type NotificationType = 'ai_edit_ready' | 'new_booking';
 
 export type NotificationPayload = {
-  space_id: string;
-  space_title: string;
-  space_owner_username: string;
-  commenter_username: string;
-  commenter_display_name: string | null;
-  comment_preview: string;
-} | {
   space_id: string;
   space_title: string;
   space_owner_username: string;

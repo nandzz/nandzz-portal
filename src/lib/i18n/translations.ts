@@ -441,6 +441,8 @@ export type Translations = {
   space: {
     previousItem: string;
     nextItem: string;
+    captionMore: string;
+    captionLess: string;
     public: string;
     private: string;
     open: string;
@@ -489,9 +491,6 @@ export type Translations = {
   notifications: {
     title: string;
     empty: string;
-    newComment: string;
-    newReply: string;
-    mention: string;
     aiEditReady: string;
     newBooking: string;
     dismiss: string;
@@ -942,19 +941,6 @@ export type Translations = {
     widgetUsageNoCap: string;
     widgetKnowledgeDesc: string;
     widgetOpenStudio: string;
-  };
-  comment: {
-    panelTitle: string;
-    reply: string;
-    hideReplies: string;
-    replySingular: string;
-    replyPlural: string;
-    logIn: string;
-    joinConversation: string;
-    cancel: string;
-    posting: string;
-    post: string;
-    loading: string;
   };
   spaceGrid: {
     comfortable: string;
