@@ -21,6 +21,10 @@ export const FEATURES = {
   // as a literal, so prod builds dead-code-eliminate every gated import (the
   // `.includes()` in IS_DEV_ENV can't be folded by the bundler).
   businessAgent: process.env.BUSINESS_AGENT_ENABLED === "1",
+  // Call assistant (record a phone call → AI booking draft) inside the Today
+  // tab's "Check availability" modal. Prototype, dev environments only (same
+  // inlining trick as businessAgent); the modal itself ships everywhere.
+  callAssist: process.env.CALL_ASSIST_ENABLED === "1",
 };
 
 // Runtime (admin-controlled) flags. The type + default live here so BOTH the

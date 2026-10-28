@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { CalendarSearch, ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { TodayBooking, TodayData } from "@/features/booking/dashboardTypes";
 import { CustomerAvatar } from "../CustomerIdentity";
 import { TodayRibbon } from "./TodayRibbon";
 import { TodayFocusPanel } from "./TodayFocusPanel";
+import { CheckAvailabilityModal, type AvailabilityScope } from "./CheckAvailabilityModal";
 import { phaseOf, serviceLines, useTodayFormat, type TodayFormat } from "./todayFormat";
 
 // The Today tab: how the business's day is going right now. A one-line status,
@@ -22,7 +23,15 @@ type AgendaItem =
   | { kind: "booking"; booking: TodayBooking }
   | { kind: "gap"; start: number; end: number };
 
-export function WidgetToday({ data, loading }: { data: TodayData; loading: boolean }) {
+export function WidgetToday({
+  data,
+  loading,
+  availability,
+}: {
+  data: TodayData;
+  loading: boolean;
+  availability?: AvailabilityScope;
+}) {
   const { t } = useLanguage();
   const tt = t.bookingToday;
   const fmt = useTodayFormat(data.timezone, data.currencySymbol);
@@ -36,6 +45,7 @@ export function WidgetToday({ data, loading }: { data: TodayData; loading: boole
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [showDone, setShowDone] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [availOpen, setAvailOpen] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const agendaId = useId();
 
@@ -138,13 +148,27 @@ export function WidgetToday({ data, loading }: { data: TodayData; loading: boole
 
   return (
     <div className={cn("space-y-6 transition-opacity", loading && "opacity-70")}>
-      <header>
-        <h2 className="text-2xl font-bold tracking-tight first-letter:uppercase">{fmt.longDate(now)}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {status}
-          {nextLine && <> {nextLine}</>}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight first-letter:uppercase">{fmt.longDate(now)}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {status}
+            {nextLine && <> {nextLine}</>}
+          </p>
+        </div>
+        {availability && (
+          <button
+            type="button"
+            onClick={() => setAvailOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <CalendarSearch className="h-4 w-4" /> {tt.checkAvailability}
+          </button>
+        )}
       </header>
+      {availability && availOpen && (
+        <CheckAvailabilityModal open onClose={() => setAvailOpen(false)} scope={availability} />
+      )}
 
       {/* Summary: the day ribbon + four figures */}
       <section className="rounded-2xl border border-border bg-background">

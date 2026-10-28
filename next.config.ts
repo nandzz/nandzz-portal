@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     // Drives FEATURES.businessAgent (My Agent, dev only) — see src/lib/flags.ts.
     BUSINESS_AGENT_ENABLED: IS_DEV_ENV ? "1" : "0",
+    // Drives FEATURES.callAssist (Today call assistant prototype, dev only).
+    CALL_ASSIST_ENABLED: IS_DEV_ENV ? "1" : "0",
   },
   images: {
     remotePatterns: [
@@ -87,7 +89,9 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value:
-              "camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=(), usb=(), serial=(), compute-pressure=()",
+              // Mic allowed for our own origin in dev only: the Today tab's call
+              // assistant prototype (FEATURES.callAssist) records the call.
+              `camera=(), microphone=${IS_DEV_ENV ? "(self)" : "()"}, geolocation=(), browsing-topics=(), payment=(), usb=(), serial=(), compute-pressure=()`,
           },
           {
             key: "X-DNS-Prefetch-Control",

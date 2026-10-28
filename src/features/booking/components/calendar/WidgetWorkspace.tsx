@@ -359,7 +359,17 @@ export function WidgetWorkspace({
         </div>
 
         <TabsContent value="today">
-          <WidgetToday data={dash.today} loading={dash.todayLoading} />
+          <WidgetToday
+            data={dash.today}
+            loading={dash.todayLoading}
+            availability={{
+              instanceId,
+              locationId: manualBookingScope.locationId,
+              services: manualBookingScope.services,
+              staff: manualBookingScope.staff,
+              timezone: effectiveTimezone,
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="overview">
