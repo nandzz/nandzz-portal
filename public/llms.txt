@@ -1,13 +1,12 @@
 # Nandzz
 
-> Nandzz is a social platform that connects businesses and their clients. Each business
-> gets a branded page (nandzz.com/yourbrand) that works like a link-in-bio, with bookings,
-> content, and links in one place, and clients can follow it, discover its work, and
-> book in a tap. No website needed: claim a handle, add what you offer, and share the link.
+> Nandzz is a link-in-bio page with online booking built in. Each business gets a branded
+> page (nandzz.com/yourbrand) with its links, content, and services in one place, where
+> clients book in a tap, 24/7. No website needed: claim a handle, add what you offer, and share the link.
 
 ## What Nandzz is
 
-- A social platform: businesses publish a branded page, and clients follow pages, save content to collections, and book appointments.
+- A link-in-bio page with online booking: businesses publish one branded page, and clients book appointments from it (they can also follow pages and save content to collections).
 - A branded public page at `nandzz.com/[handle]` that works as a link-in-bio destination and a lightweight business site.
 - Features you add to that page: **Booking** (24/7 appointments with staff and availability), **Content** (publish pages, PDFs, and interactive tools), **Gallery** (images), and **Links** (all your links in one place).
 - **MCP access** so tools like Claude can connect to a page.

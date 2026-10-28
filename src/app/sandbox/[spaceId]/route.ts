@@ -94,6 +94,8 @@ export async function GET(
   return new NextResponse(injectNavGuard(html), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
+      // Raw embed of a space; the indexable page is /{username}/space/{id}.
+      "X-Robots-Tag": "noindex, nofollow",
       "Content-Security-Policy": SANDBOX_CSP,
       "X-Frame-Options": "SAMEORIGIN",
       "Cache-Control": isPostChange

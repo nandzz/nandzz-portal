@@ -10,5 +10,6 @@ export {
   PUBLIC_PROFILE_COLUMNS,
   fetchPublicProfile,
   getPublicProfile,
+  getIsDemoProfile,
   redirectToCanonicalUsername,
 } from "./data/public-profile";

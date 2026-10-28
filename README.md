@@ -2,7 +2,7 @@
 
 **Your business, on one page. Get found — and get booked.**
 
-nandzz is a social platform that connects businesses and their clients. Every business gets a branded page (`nandzz.com/yourbrand`) that works like a link-in-bio — take bookings, publish content, show a gallery, and share links — and clients follow, save, and book in a tap. Whether you run a hair salon, clean homes, or coach clients, you get found on social and booked in a tap.
+nandzz is a link-in-bio page with online booking built in. Every business gets a branded page (`nandzz.com/yourbrand`) — take bookings, publish content, show a gallery, and share links — and clients book in a tap. Whether you run a hair salon, clean homes, or coach clients, you get found on social and booked in a tap.
 
 ---
 

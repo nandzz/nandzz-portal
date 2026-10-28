@@ -101,7 +101,7 @@ export const ja: Translations = {
     faq: [
       {
         q: "Nandzzとは何ですか？",
-        a: "Nandzzは、ビジネスとお客様をつなぐソーシャルプラットフォームです。あなたのページはリンクインバイオのように予約・コンテンツ・リンクを1か所にまとめ、お客様はあなたをフォローし、作品を見て、ワンタップで予約できます。Webサイトは不要です。",
+        a: "Nandzzは、オンライン予約を組み込んだリンクインバイオページです。nandzz.com/yourbrand にリンク、コンテンツ、サービスをまとめたブランドページを持てて、お客様はワンタップで24時間いつでも予約できます。Webサイトは不要です。",
       },
       {
         q: "InstagramやSNSのプロフィールから予約を受けられますか？",
@@ -1583,10 +1583,10 @@ export const ja: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | コンテンツ・リンク・予約をひとつのページに",
+    rootTitle: "Nandzz | 予約機能付きのリンクインバイオページ",
     rootTitleTemplate: "%s | Nandzz",
-    rootDescription: "Nandzzは、ビジネスとお客様をつなぐソーシャルプラットフォームです。予約、コンテンツ、リンクを1つのページに。SNSで見つけられ、ワンタップで予約。",
-    rootOgDescription: "あなたのビジネスを1つのページに。予約、コンテンツ、リンクをお客様がフォローできる1か所に。SNSで見つけられ、ワンタップで予約。",
+    rootDescription: "オンライン予約を組み込んだ、あなた専用のリンクインバイオページ。リンク、コンテンツ、サービスをブランドページにまとめ、お客様は24時間いつでも予約できます。無料で始められます。",
+    rootOgDescription: "リンク、コンテンツ、オンライン予約をひとつのブランドページに。プロフィールに載せて、ワンタップで予約を受け付け。",
     contactTitle: "お問い合わせ | Nandzz",
     contactDescription: "Nandzzチームにお問い合わせください。",
     cookiesTitle: "Cookieポリシー | Nandzz",
@@ -1603,6 +1603,7 @@ export const ja: Translations = {
     hashtagDescription: "Nandzzで#{tag}のタグが付いた最新のコンテンツをチェック。",
     profileNotFoundTitle: "プロフィールが見つかりません | Nandzz",
     profileDescriptionFallback: "Nandzzで{name}さんのページをチェック。",
+    profileBusinessDescription: "{details} · Nandzzの{name}。",
     profileAvatarAlt: "{name}のアバター",
     spaceTitleFallback: "コンテンツ | Nandzz",
     spaceNotFoundTitle: "コンテンツが見つかりません | Nandzz",

@@ -1772,6 +1772,7 @@ export type Translations = {
     hashtagDescription: string;
     profileNotFoundTitle: string;
     profileDescriptionFallback: string;
+    profileBusinessDescription: string;
     profileAvatarAlt: string;
     spaceTitleFallback: string;
     spaceNotFoundTitle: string;

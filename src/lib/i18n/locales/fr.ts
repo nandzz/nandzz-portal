@@ -101,7 +101,7 @@ export const fr: Translations = {
     faq: [
       {
         q: "Qu'est-ce que Nandzz ?",
-        a: "Nandzz est une plateforme sociale qui relie les entreprises et leurs clients. Votre page fonctionne comme un lien en bio, avec réservations, contenus et liens au même endroit, et vos clients peuvent vous suivre, découvrir votre travail et réserver en un clic. Pas besoin de site web.",
+        a: "Nandzz est une page lien en bio avec la réservation en ligne intégrée. Vous obtenez une page à votre image sur nandzz.com/votremarque avec vos liens, contenus et services, et vos clients vous réservent en un clic, 24h/24. Pas besoin de site web.",
       },
       {
         q: "Puis-je recevoir des réservations depuis ma bio Instagram ou mes réseaux ?",
@@ -1583,10 +1583,10 @@ export const fr: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Contenus, liens et réservations sur une seule page",
+    rootTitle: "Nandzz | Page lien en bio avec réservation en ligne",
     rootTitleTemplate: "%s | Nandzz",
-    rootDescription: "Nandzz est la plateforme sociale qui relie les entreprises et leurs clients. Une page pour vos réservations, contenus et liens. Soyez trouvé sur les réseaux et réservé en un clic.",
-    rootOgDescription: "Votre entreprise, sur une seule page. Réservations, contenus et liens dans un espace que vos clients peuvent suivre. Soyez trouvé sur les réseaux et réservé en un clic.",
+    rootDescription: "Votre page lien en bio avec la réservation en ligne intégrée. Liens, contenus et services sur une page à votre image, et vos clients réservent 24h/24. Gratuit pour commencer.",
+    rootOgDescription: "Une page à votre image pour vos liens, contenus et réservations en ligne. Mettez-la dans votre bio et soyez réservé en un clic.",
     contactTitle: "Contact | Nandzz",
     contactDescription: "Contactez l'équipe Nandzz.",
     cookiesTitle: "Politique de cookies | Nandzz",
@@ -1603,6 +1603,7 @@ export const fr: Translations = {
     hashtagDescription: "Découvrez les derniers Contenus marqués #{tag} sur Nandzz.",
     profileNotFoundTitle: "Profil introuvable | Nandzz",
     profileDescriptionFallback: "Découvrez la page de {name} sur Nandzz.",
+    profileBusinessDescription: "{details} · {name} sur Nandzz.",
     profileAvatarAlt: "Avatar de {name}",
     spaceTitleFallback: "Contenu | Nandzz",
     spaceNotFoundTitle: "Contenu introuvable | Nandzz",

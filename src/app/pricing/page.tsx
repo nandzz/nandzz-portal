@@ -11,10 +11,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t.meta.pricingTitle,
     description: t.meta.pricingDescription,
+    alternates: { canonical: "/pricing" },
     openGraph: {
       title: t.meta.pricingTitle,
       description: t.meta.pricingShortDescription,
       type: "website",
+      url: "/pricing",
     },
     twitter: {
       card: "summary",

@@ -101,7 +101,7 @@ export const es: Translations = {
     faq: [
       {
         q: "¿Qué es Nandzz?",
-        a: "Nandzz es una plataforma social que conecta negocios y sus clientes. Tu página funciona como un link en la bio, con reservas, contenidos y enlaces en un solo lugar, y tus clientes pueden seguirte, descubrir tu trabajo y reservar en un toque. Sin necesidad de web.",
+        a: "Nandzz es una página de link en bio con reservas online integradas. Tienes una página con tu marca en nandzz.com/tumarca con tus enlaces, contenidos y servicios, y tus clientes te reservan en un toque, 24/7. Sin necesidad de web.",
       },
       {
         q: "¿Puedo recibir reservas desde mi bio de Instagram o redes?",
@@ -1583,10 +1583,10 @@ export const es: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Contenido, enlaces y reservas en una sola página",
+    rootTitle: "Nandzz | Página de link en bio con reservas online",
     rootTitleTemplate: "%s | Nandzz",
-    rootDescription: "Nandzz es la plataforma social que conecta negocios y clientes. Una página para tus reservas, contenidos y enlaces, para que te encuentren en redes y te reserven en un toque.",
-    rootOgDescription: "Tu negocio, en una sola página. Reservas, contenidos y enlaces en un lugar que tus clientes pueden seguir. Que te encuentren en redes y te reserven en un toque.",
+    rootDescription: "Tu página de link en bio con reservas online integradas. Enlaces, contenidos y servicios en una página con tu marca, y tus clientes reservan 24/7. Empieza gratis.",
+    rootOgDescription: "Una página con tu marca para tus enlaces, contenidos y reservas online. Ponla en tu bio y que te reserven en un toque.",
     contactTitle: "Contacto | Nandzz",
     contactDescription: "Ponte en contacto con el equipo de Nandzz.",
     cookiesTitle: "Política de Cookies | Nandzz",
@@ -1603,6 +1603,7 @@ export const es: Translations = {
     hashtagDescription: "Explora los últimos contenidos etiquetados con #{tag} en Nandzz.",
     profileNotFoundTitle: "Perfil No Encontrado | Nandzz",
     profileDescriptionFallback: "Descubre la página de {name} en Nandzz.",
+    profileBusinessDescription: "{details} · {name} en Nandzz.",
     profileAvatarAlt: "Avatar de {name}",
     spaceTitleFallback: "Contenido | Nandzz",
     spaceNotFoundTitle: "Contenido No Encontrado | Nandzz",

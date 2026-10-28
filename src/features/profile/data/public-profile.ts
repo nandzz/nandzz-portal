@@ -66,6 +66,24 @@ export const getPublicProfile = cache((username: string) =>
   )()
 );
 
+// Server-only: is_demo stays out of PUBLIC_PROFILE_COLUMNS (never serialized to
+// the client). Demo pages are admin-built pitches, so search engines must not
+// index them until the business claims the page (claim clears is_demo).
+export const getIsDemoProfile = cache((username: string) =>
+  unstable_cache(
+    async () => {
+      const { data } = await createAdminClient()
+        .from("profiles")
+        .select("is_demo")
+        .eq("username", username.toLowerCase())
+        .maybeSingle();
+      return data?.is_demo === true;
+    },
+    ["profile-is-demo", username.toLowerCase()],
+    { revalidate: 60, tags: [`profile:${username.toLowerCase()}`] }
+  )()
+);
+
 // Usernames are stored lowercase; send `/MarioSalon/...` to `/mariosalon/...`
 // instead of 404ing links shared with capitals (e.g. an Instagram bio).
 export function redirectToCanonicalUsername(username: string, rest = "") {

@@ -23,7 +23,8 @@ import {
 import { FEATURES } from "@/lib/flags";
 import { getProfileWidgets } from "@/features/booking/server";
 import type { WidgetInstanceWithCatalog, Space } from "@/lib/types";
-import { getServerTranslations } from "@/lib/i18n/server";
+import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
+import { buildProfileJsonLd, profileMetaDescription } from "@/features/profile/domain/seo";
 import { getIsFollowing, getLikedSpaceIds } from "@/features/social/server";
 import { getSavedSpaceIds } from "@/features/collections/server";
 import { PageShell } from "@/components/layout/PageShell";
@@ -35,7 +36,11 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const [profile, t] = await Promise.all([getPublicProfile(username), getServerTranslations()]);
+  const [profile, t, locale] = await Promise.all([
+    getPublicProfile(username),
+    getServerTranslations(),
+    getCurrentLocale(),
+  ]);
 
   if (!profile) {
     return { title: t.meta.profileNotFoundTitle };
@@ -43,7 +48,10 @@ export async function generateMetadata({
 
   const name = profile.display_name || profile.username;
 
-  const description = profile.tagline || t.meta.profileDescriptionFallback.replace("{name}", name);
+  const description = profileMetaDescription(profile, locale, {
+    businessTemplate: t.meta.profileBusinessDescription,
+    fallbackTemplate: t.meta.profileDescriptionFallback,
+  });
 
   return {
     title: `${name} (@${profile.username})`,
@@ -202,6 +210,7 @@ export default async function ProfilePage({
   // computes it identically on the server render → no flash, and live while the
   // owner edits).
   const initialStyle = profileStyleFromRow(profile);
+  const jsonLd = buildProfileJsonLd(profile, widgets);
 
   // Logged-in users get a sticky top Navbar here (mobile only; the Sidebar
   // takes over at md+). Pull the whole profile up behind it (h-16) and add back
@@ -221,6 +230,13 @@ export default async function ProfilePage({
       isOwner={isOwner}
       className={`relative min-h-[calc(100vh-8rem)] ${coverUnderNav}`}
     >
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          // Owner-written text: escape "<" so a bio can't close the script tag.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
+      )}
       {!isOwner && <ProfileViewTracker profileId={profile.id} />}
       <ProfileBackground
         backgroundUrl={profile.background_url ?? null}

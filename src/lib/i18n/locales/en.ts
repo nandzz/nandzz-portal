@@ -101,7 +101,7 @@ export const en: Translations = {
     faq: [
       {
         q: "What is Nandzz?",
-        a: "Nandzz is a social platform that connects businesses and their clients. Your page works like a link-in-bio, with bookings, content and links in one place, and clients can follow you, discover your work and book you in a tap. No website needed.",
+        a: "Nandzz is a link-in-bio page with online booking built in. You get one branded page at nandzz.com/yourbrand with your links, content and services, and clients can book you in a tap, 24/7. No website needed.",
       },
       {
         q: "Can I take bookings from my Instagram or social bio?",
@@ -1583,10 +1583,10 @@ export const en: Translations = {
   },
 
   meta: {
-    rootTitle: "Nandzz | Content, links & bookings on one page",
+    rootTitle: "Nandzz | Link-in-bio page with online booking",
     rootTitleTemplate: "%s | Nandzz",
-    rootDescription: "Nandzz is the social platform that connects businesses and clients. One page for your bookings, content and links. Get found on social and booked in a tap.",
-    rootOgDescription: "Your business, on one page. Bookings, content and links in one place clients can follow. Get found on social and booked in a tap.",
+    rootDescription: "Your link-in-bio page with online booking built in. Put your links, content and services on one branded page and let clients book you 24/7. Free to start.",
+    rootOgDescription: "One branded page for your links, content and online bookings. Share it in your bio and get booked in a tap.",
     contactTitle: "Contact | Nandzz",
     contactDescription: "Get in touch with the Nandzz team.",
     cookiesTitle: "Cookie Policy | Nandzz",
@@ -1603,6 +1603,7 @@ export const en: Translations = {
     hashtagDescription: "Browse the latest content tagged #{tag} on Nandzz.",
     profileNotFoundTitle: "Profile Not Found | Nandzz",
     profileDescriptionFallback: "Check out {name}'s page on Nandzz.",
+    profileBusinessDescription: "{details} · {name} on Nandzz.",
     profileAvatarAlt: "{name}'s avatar",
     spaceTitleFallback: "Content | Nandzz",
     spaceNotFoundTitle: "Content Not Found | Nandzz",

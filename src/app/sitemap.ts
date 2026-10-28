@@ -47,12 +47,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .from("profiles")
         .select("username, updated_at")
         .not("username", "is", null)
+        // Business pages only: client accounts are near-empty pages, and demos
+        // are unclaimed pitches (also noindex in app/[username]/layout.tsx).
+        .eq("account_type", "business")
+        .eq("is_demo", false)
         .order("created_at", { ascending: false })
         .limit(1000),
       admin
         .from("spaces")
-        .select("id, user_id, updated_at, profiles(username)")
+        .select("id, user_id, updated_at, profiles!inner(username, is_demo)")
         .eq("is_public", true)
+        .eq("profiles.is_demo", false)
         .order("created_at", { ascending: false })
         .limit(5000),
     ]);

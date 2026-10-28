@@ -57,7 +57,7 @@ export default async function HomePage() {
         url: "https://nandzz.com",
         name: "nandzz",
         description:
-          "A social platform that connects businesses and their clients: a branded page with booking, content and links.",
+          "A link-in-bio page with online booking built in: one branded page for your links, content and bookings.",
       },
       {
         "@type": "Organization",
@@ -65,13 +65,13 @@ export default async function HomePage() {
         name: "nandzz",
         url: "https://nandzz.com",
         description:
-          "Nandzz is a social platform that connects businesses and their clients: a branded link-in-bio page where clients follow you, see your content and links, and book in a tap.",
+          "Nandzz is a link-in-bio page with online booking built in. Each business gets one branded page for its links, content and services, where clients book in a tap, 24/7.",
       },
       {
         "@type": "SoftwareApplication",
         "@id": "https://nandzz.com/#app",
         name: "nandzz",
-        applicationCategory: "WebApplication",
+        applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         ...(offers.length > 0 ? { offers } : {}),
       },

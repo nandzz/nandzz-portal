@@ -49,7 +49,9 @@ export async function generateMetadata({
   // 404 if space doesn't belong to the username in the URL
   if (profile?.username !== username) return { title: t.meta.spaceNotFoundTitle };
 
-  if (!space.is_public) return { title: t.meta.privateSpaceTitle };
+  if (!space.is_public) {
+    return { title: t.meta.privateSpaceTitle, robots: { index: false, follow: false } };
+  }
 
   const author = profile?.display_name || profile?.username || "Unknown";
   const description = space.description || t.meta.spaceDescriptionFallback.replace("{author}", author);
