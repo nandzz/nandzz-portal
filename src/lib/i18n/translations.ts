@@ -565,6 +565,20 @@ export type Translations = {
     usernameInvalid: string;
     usernameTaken: string;
   };
+  demoNotice: {
+    badge: string;
+    titleLead: string;
+    titleAccent: string;
+    desc: string;
+    codePlaceholder: string;
+    cta: string;
+    noCode: string;
+    requestCode: string;
+    requestSubject: string;
+    pillCta: string;
+    explore: string;
+    close: string;
+  };
   claim: {
     title: string;
     desc: string;

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChrome } from "@/contexts/ChromeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ClaimPageSheet } from "./ClaimPageSheet";
+import { demoNotice, useDemoNotice } from "@/features/claim/lib/demo-notice-store";
 
 /**
  * The only piece of Nandzz chrome a logged-out visitor sees on a public profile.
@@ -23,6 +24,9 @@ export function ProfileVisitorCta() {
   const { isHidden } = useChrome();
   const { t } = useLanguage();
   const [claimOpen, setClaimOpen] = useState(false);
+  // On a demo page the pitch is to the business, not visitors: the CTA
+  // becomes a persistent "Demo page · Claim it" chip reopening the notice.
+  const { username: demoUsername } = useDemoNotice();
 
   return (
     <>
@@ -56,15 +60,29 @@ export function ProfileVisitorCta() {
           </Link>
 
           {/* Primary CTA: create your own page (the growth funnel) — opens the
-            claim-your-username sheet in place instead of leaving the profile. */}
-          <button
-            type="button"
-            onClick={() => setClaimOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <Sparkles className="h-3.5 w-3.5" aria-hidden />
-            {t.nav.createYours}
-          </button>
+            claim-your-username sheet in place instead of leaving the profile.
+            On a demo page it's the "Demo page · Claim it" chip instead. */}
+          {demoUsername ? (
+            <button
+              type="button"
+              onClick={demoNotice.open}
+              className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3.5 py-1.5 text-sm font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+              {t.demoNotice.badge}
+              <span aria-hidden className="opacity-50">·</span>
+              {t.demoNotice.pillCta}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setClaimOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Sparkles className="h-3.5 w-3.5" aria-hidden />
+              {t.nav.createYours}
+            </button>
+          )}
         </div>
       </div>
       <ClaimPageSheet open={claimOpen} onClose={() => setClaimOpen(false)} />
