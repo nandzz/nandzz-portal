@@ -37,14 +37,29 @@ export async function recordSpaceView(
   // space per day).
   const viewedDate = new Date().toISOString().split("T")[0];
 
+  // The unique index is partial (viewer_id is not null), which PostgREST's
+  // on_conflict can't target, so check first for logged-in viewers instead of
+  // letting the insert raise unique_violation into the Postgres error logs.
+  if (user) {
+    const { data: existing } = await admin
+      .from("space_views")
+      .select("id")
+      .eq("space_id", parsed.data.spaceId)
+      .eq("viewer_id", user.id)
+      .eq("viewed_date", viewedDate)
+      .limit(1)
+      .maybeSingle();
+    if (existing) return { ok: true };
+  }
+
   const { error } = await admin.from("space_views").insert({
     space_id: parsed.data.spaceId,
     viewer_id: user?.id ?? null,
     viewed_date: viewedDate,
   });
 
-  // 23505 = unique_violation (expected for the per-day dedup), anything else is
-  // a real problem.
+  // 23505 = unique_violation (only on a same-instant race now), anything else
+  // is a real problem.
   if (error && error.code !== "23505") {
     console.error("[recordSpaceView]", error.message);
     return { ok: false, error: "FAILED", message: error.message };

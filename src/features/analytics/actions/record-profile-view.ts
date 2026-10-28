@@ -53,15 +53,21 @@ export async function recordProfileView(profileId: string): Promise<RecordProfil
         )
         .digest("hex")}`;
 
-  const { error } = await createAdminClient().from("profile_views").insert({
-    profile_id: parsed.data.profileId,
-    visitor_key: visitorKey,
-    viewer_id: user?.id ?? null,
-    viewed_date: viewedDate,
-  });
+  // ON CONFLICT DO NOTHING: a repeat visit the same day is a no-op instead of a
+  // unique_violation that would flood the Postgres error logs.
+  const { error } = await createAdminClient()
+    .from("profile_views")
+    .upsert(
+      {
+        profile_id: parsed.data.profileId,
+        visitor_key: visitorKey,
+        viewer_id: user?.id ?? null,
+        viewed_date: viewedDate,
+      },
+      { onConflict: "profile_id,visitor_key,viewed_date", ignoreDuplicates: true }
+    );
 
-  // 23505 = unique_violation (already counted today).
-  if (error && error.code !== "23505") {
+  if (error) {
     console.error("[recordProfileView]", error.message);
     return { ok: false, error: "FAILED", message: error.message };
   }
