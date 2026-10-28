@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { HeroShowcase } from "@/features/home";
 import { cn } from "@/lib/utils";
 import type { GuideCopy } from "../content";
+import { GuideTour } from "../tour/GuideTour";
 import { GUIDE_VISUALS } from "./visuals";
 
 const SIGNUP_HREF = "/login?tab=signup";
@@ -18,7 +19,7 @@ const muted = "text-[color-mix(in_oklab,var(--clay-ink)_62%,transparent)]";
 // Public guide for business owners, including the ones we built a page for:
 // the home's showcase (with the guide's own headline), what the page includes
 // for clients and for the business, the setup steps as a numbered sequence
-// (text beside an illustration), questions on cost and claiming, and a closing CTA.
+// (a live tour of the back office, then text beside an illustration), questions on cost and claiming, and a closing CTA.
 export function GuidePage({ copy }: { copy: GuideCopy }) {
   const sides = [
     { ...copy.what.clients, Icon: CalendarCheck },
@@ -36,7 +37,7 @@ export function GuidePage({ copy }: { copy: GuideCopy }) {
         }}
       />
 
-      <PageShell width="medium" className="pt-4 pb-16">
+      <PageShell width="medium" className="pt-4 pb-0">
         <section id="what" className="scroll-mt-24">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             {copy.what.title}
@@ -78,6 +79,14 @@ export function GuidePage({ copy }: { copy: GuideCopy }) {
           </div>
         </section>
 
+      </PageShell>
+
+      {/* Wider than the rest: the browser window needs room to show a dashboard */}
+      <PageShell width="wide" className="py-0">
+        <GuideTour copy={copy.tour} />
+      </PageShell>
+
+      <PageShell width="medium" className="pt-0 pb-16">
         <header id="steps" className="mt-24 max-w-2xl scroll-mt-24 sm:mt-32">
           <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {copy.title}

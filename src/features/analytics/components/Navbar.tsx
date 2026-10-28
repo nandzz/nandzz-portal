@@ -25,6 +25,7 @@ import { useChrome } from "@/contexts/ChromeContext";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/AuthContext";
 import { Wordmark } from "@/components/layout/Wordmark";
+import { LocaleQuickSwitch } from "@/components/layout/LocaleSelect";
 
 // Loaded on first open: the dialog (and the profile code behind it) stays out
 // of every page's first load.
@@ -119,6 +120,10 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Home and guide visitors may land in the wrong language (browser
+              default); a discreet switch lets them pick theirs. */}
+          {!userId && onHome && <LocaleQuickSwitch className="-mr-1 md:mr-0" />}
+
           {userId ? (
             <div className="hidden md:flex items-center gap-3">
               {isBusiness && FEATURES.widgets && entitlements.hasWidgets && (

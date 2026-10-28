@@ -116,6 +116,30 @@ export type GuideStep = {
 
 export type GuideFaq = { q: string; a: string };
 
+// The back-office tour on /guide: one chapter per area of the dashboard, each
+// a sequence of steps narrated beside a live mock (real components, fake data).
+export type GuideTourChapterId = "dashboard" | "booking" | "contents";
+
+// The sample business's own words inside the tour mocks (Studio Lume, a salon),
+// so an Italian visitor sees an Italian salon. People's names stay as data.
+export type GuideTourSample = {
+  services: { cut: string; colour: string; blow: string; beard: string };
+  categories: { hair: string; barber: string };
+  roles: { senior: string; barber: string; colourist: string };
+  bookingNote: string;
+  clientNotes: [string, string];
+  publications: { title: string; description: string; preview: string }[]; // 3
+  gallery: { title: string; caption: string }[]; // 6, "" = no caption
+  links: { title: string; preview: string }[]; // 3
+};
+
+export type GuideTourChapter = {
+  tab: string; // chapter switch label
+  title: string;
+  body: string;
+  steps: { label: string; desc: string }[];
+};
+
 export type GuideCopy = {
   metaTitle: string;
   metaDescription: string;
@@ -138,6 +162,13 @@ export type GuideCopy = {
   paidNote: string;
   closingTitle: string;
   closingBody: string;
+  tour: {
+    title: string;
+    subtitle: string;
+    chaptersLabel: string; // aria-label of the chapter switch
+    chapters: Record<GuideTourChapterId, GuideTourChapter>;
+    sample: GuideTourSample;
+  };
   visual: {
     available: string;
     yourPage: string;
