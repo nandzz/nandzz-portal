@@ -21,8 +21,9 @@ export async function generateMetadata({
   };
 }
 
-// Demo pages open a notice on arrival: content may not match the business,
-// and the business can claim the page (code → /claim) or request a code.
+// Demo pages mount a notice, opened only from the visitor pill: content may not
+// match the business, and the business can claim the page (code → /claim) or
+// request a code.
 export default async function UsernameLayout({
   children,
   params,

@@ -23,7 +23,7 @@ function subscribe(l: () => void) {
 }
 
 export const demoNotice = {
-  register: (username: string, open: boolean) => set({ username, open }),
+  register: (username: string) => set({ username, open: false }),
   unregister: () => set({ username: null, open: false }),
   open: () => set({ open: true }),
   close: () => set({ open: false }),

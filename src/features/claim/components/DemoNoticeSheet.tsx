@@ -10,7 +10,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { demoNotice, useDemoNotice } from "../lib/demo-notice-store";
 
 const SUPPORT_EMAIL = "support@nandzz.com";
-const SEEN_KEY = "nandzz-demo-notice-seen:";
 
 // Codes are NDZ-XXXXX-XXXXX; keep what a code can hold, as the visitor types.
 function sanitize(v: string) {
@@ -18,12 +17,11 @@ function sanitize(v: string) {
 }
 
 /**
- * Opens as soon as a visitor lands on a demo profile (admin-built pitch page):
- * warns the content may not match the business and offers the claim path —
- * enter the activation code (→ /claim?code=…) or request one by email.
- * Opens by itself once per browser session per demo, so moving between the
- * profile's sub-pages doesn't re-open it; after that the visitor pill's
- * "Demo page" chip reopens it (see demo-notice-store).
+ * Notice for a demo profile (admin-built pitch page): warns the content may
+ * not match the business and offers the claim path — enter the activation
+ * code (→ /claim?code=…) or request one by email. Never opens by itself: only
+ * the visitor pill's "Demo page · Claim it" chip opens it (see
+ * demo-notice-store).
  *
  * Same look as ClaimPageSheet: bottom sheet on phones, centered card from md up.
  */
@@ -36,23 +34,13 @@ export function DemoNoticeSheet({ username }: { username: string }) {
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Register this page as a demo (the visitor pill reads it) and open on
-  // arrival unless already dismissed this session.
+  // Register this page as a demo (the visitor pill reads it); starts closed.
   useEffect(() => {
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem(SEEN_KEY + username) === "1";
-    } catch {}
-    demoNotice.register(username, !seen);
+    demoNotice.register(username);
     return () => demoNotice.unregister();
   }, [username]);
 
-  const close = () => {
-    demoNotice.close();
-    try {
-      sessionStorage.setItem(SEEN_KEY + username, "1");
-    } catch {}
-  };
+  const close = demoNotice.close;
 
   // Escape to close + lock the page behind the sheet.
   useEffect(() => {
@@ -65,8 +53,7 @@ export function DemoNoticeSheet({ username }: { username: string }) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- close only touches state + storage
-  }, [open]);
+  }, [open, close]);
 
   if (!open) return null;
 

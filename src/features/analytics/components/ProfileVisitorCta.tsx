@@ -51,13 +51,16 @@ export function ProfileVisitorCta() {
             </span>
           </Link>
 
-          {/* Quiet secondary: sign in (returning users). */}
-          <Link
-            href="/login"
-            className="rounded-full px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t.nav.login}
-          </Link>
+          {/* Quiet secondary: sign in (returning users). Not on demo pages:
+            there it's just the wordmark + the claim chip. */}
+          {!demoUsername && (
+            <Link
+              href="/login"
+              className="rounded-full px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t.nav.login}
+            </Link>
+          )}
 
           {/* Primary CTA: create your own page (the growth funnel) — opens the
             claim-your-username sheet in place instead of leaving the profile.
