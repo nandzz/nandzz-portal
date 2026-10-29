@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ExternalLink, Smartphone } from "lucide-react";
@@ -110,7 +111,7 @@ export function SpaceViewer({ initial, username, profile, signedIn }: SpaceViewe
 
   return (
     <div
-      className="chrome-immersive-space fixed left-0 right-0 flex flex-col overflow-hidden md:static md:h-[calc(100dvh-4rem)]"
+      className="chrome-immersive-space fixed left-0 right-0 flex flex-col overflow-hidden md:static md:h-dvh"
       // Logged-out visitors get no mobile tab bar here, so there's nothing to clear.
       style={{
         top: "env(safe-area-inset-top, 0px)",
@@ -124,8 +125,9 @@ export function SpaceViewer({ initial, username, profile, signedIn }: SpaceViewe
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 pl-4 pr-6 py-2.5">
           <div className="flex items-center gap-3 min-w-0">
             <BackButton />
-            <div className="h-4 w-px bg-border shrink-0" />
-            <h1 className="font-semibold truncate">{title}</h1>
+            {!imageOnly && <div className="h-4 w-px bg-border shrink-0" />}
+            {/* Image posts show the title in the caption under the photo instead. */}
+            <h1 className={cn("font-semibold truncate", imageOnly && "sr-only")}>{title}</h1>
           </div>
           <div key={space.id} className="flex items-center gap-3 shrink-0">
             <LikeButton
@@ -228,7 +230,7 @@ export function SpaceViewer({ initial, username, profile, signedIn }: SpaceViewe
             />
             <SpaceSiblingNav onPrev={onPrev} onNext={onNext} pending={pending} />
           </div>
-          <SpaceCaption key={space.id} description={space.description} />
+          <SpaceCaption key={space.id} title={space.title} description={space.description} />
         </div>
       ) : (
         <div className="relative flex-1 bg-muted/50 min-h-0 overscroll-contain">
