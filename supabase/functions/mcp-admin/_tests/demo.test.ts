@@ -123,12 +123,41 @@ Deno.test("buildCalendarConfig: converts prices, generates ids, merges over exis
       staff: [{ id: "anna", name: "Anna", availability: { tue: [["10:00", "14:00"]] } }],
     },
   );
-  const svc = (cfg.services as Record<string, unknown>[])[0];
+  // Single site ⇒ stored as one location; the top-level scope is emptied.
+  const [loc] = cfg.locations as Record<string, unknown>[];
+  const svc = (loc.services as Record<string, unknown>[])[0];
   assertEquals(svc.price_cents, 2550);
   assertMatch(String(svc.id), /^svc_/);
   assertEquals(cfg.currency, "eur");
-  assertEquals(cfg.availability, { mon: [["09:00", "17:00"]] });
+  assertEquals(loc.availability, { mon: [["09:00", "17:00"]] });
+  assertEquals(cfg.services, []);
   assertEquals(cfg.timezone, "Europe/Rome");
+});
+
+Deno.test("buildCalendarConfig: single site wraps into one named location; top-level edits target it", () => {
+  const first = buildCalendarConfig(
+    { timezone: "Europe/Rome", availability: { mon: [["09:00", "17:00"]] } },
+    { services: [{ name: "Cut", duration_min: 30 }] },
+    { name: "SC Nail Art", address: "Genova GE, Italia" },
+  );
+  const locs = first.locations as Record<string, unknown>[];
+  assertEquals(locs.length, 1);
+  assertEquals(locs[0].id, "loc_main");
+  assertEquals(locs[0].name, "SC Nail Art");
+  assertEquals(locs[0].address, "Genova GE, Italia");
+  assertEquals(serviceCount(first), 1);
+  // A later top-level edit replaces the location's services, not the top level.
+  const second = buildCalendarConfig(first, { services: [{ name: "Gel", duration_min: 60 }, { name: "Cut", duration_min: 30 }] });
+  assertEquals((second.locations as Record<string, unknown>[]).length, 1);
+  assertEquals(serviceCount(second), 2);
+  assertEquals(second.services, []);
+  // Settings-only config with no services stays location-less.
+  assertEquals(buildCalendarConfig({ timezone: "UTC" }, { show_prices: false }).locations, undefined);
+  // With several locations, top-level scope args are ambiguous.
+  const multi = buildCalendarConfig({ timezone: "UTC" }, {
+    locations: [{ id: "a", name: "A", services: [{ name: "S", duration_min: 10 }] }, { id: "b", name: "B" }],
+  });
+  assertThrows(() => buildCalendarConfig(multi, { services: [{ name: "X", duration_min: 10 }] }), Error, "2 locations");
 });
 
 Deno.test("buildCalendarConfig: rejects bad timezone, unknown staff ref, bad windows", () => {

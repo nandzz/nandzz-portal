@@ -171,6 +171,38 @@ export type LocationScope = {
   blackout_dates: string[];
 };
 
+// Adds an owner's FIRST location. A legacy config (services/staff at the top
+// level, no locations) is live publicly, and adding an empty location would
+// switch the public flow to it and drop every service — so an empty new
+// location adopts the top-level scope, which is then cleared. Mirrors
+// mcp-admin's wrapSingleSite and migration 20261029120000.
+export function addFirstLocation(config: CalendarConfig, loc: Location): CalendarConfig {
+  const legacy = config.services.length > 0 || config.staff.length > 0;
+  const empty = loc.services.length === 0 && loc.staff.length === 0;
+  if (config.locations.length > 0 || !legacy || !empty) {
+    return { ...config, locations: [...config.locations, loc] };
+  }
+  return {
+    ...config,
+    locations: [
+      {
+        ...loc,
+        services: config.services,
+        categories: config.categories ?? [],
+        staff: config.staff,
+        // Keep hours the owner just typed in the form; else the legacy hours.
+        availability: Object.keys(loc.availability).length ? loc.availability : config.availability,
+        blackout_dates: loc.blackout_dates?.length ? loc.blackout_dates : config.blackout_dates,
+      },
+    ],
+    services: [],
+    categories: [],
+    staff: [],
+    availability: {},
+    blackout_dates: [],
+  };
+}
+
 // `locationId` null/undefined ⇒ legacy top-level scope (unchanged behavior).
 export function getLocationScope(config: CalendarConfig, locationId?: string | null): LocationScope {
   if (!locationId) {

@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search, MapPinned, MapPinX } from "lucide-react";
+import { Plus, Search, MapPinX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { CalendarConfig, Location } from "@/lib/types";
 import type { CalendarConfigController } from "@/features/booking/components/calendar/useCalendarConfig";
 import { LocationCard } from "@/features/booking/components/calendar/LocationCard";
 import { LocationFormModal } from "@/features/booking/components/calendar/LocationFormModal";
+import { BookingSetupGuide } from "@/features/booking/components/calendar/BookingSetupGuide";
+import { addFirstLocation } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
@@ -15,7 +17,10 @@ interface Props {
   // Called after the owner saves their FIRST location (the roster was empty
   // before). WidgetWorkspace uses it to drop them straight into that location's
   // dashboard instead of the "choose a location" gate — nothing to choose yet.
-  onFirstLocationCreated?: (id: string) => void;
+  // `hasServices` is false when it still needs services (next setup step).
+  onFirstLocationCreated?: (id: string, hasServices: boolean) => void;
+  // Prefill for the first location (the business's own name + address).
+  siteDefaults?: { name?: string; address?: string };
 }
 
 // Top-level Locations roster: a searchable grid of cards. Creating or editing a
@@ -25,7 +30,7 @@ interface Props {
 // blackout_dates (edited elsewhere, via the location-scope selector re-targeting
 // the Services/Staff/Availability sections); this manager only handles the
 // location's own identity: name, address, photo, timezone, hours + days off.
-export function LocationManager({ controller, onFirstLocationCreated }: Props) {
+export function LocationManager({ controller, onFirstLocationCreated, siteDefaults }: Props) {
   const { t } = useLanguage();
   const { config, setConfig, saving, status, saveWith } = controller;
 
@@ -38,9 +43,11 @@ export function LocationManager({ controller, onFirstLocationCreated }: Props) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   function openCreate() {
+    const first = config.locations.length === 0;
     const loc: Location = {
       id: `loc_${Math.random().toString(36).slice(2, 9)}`,
-      name: t.booking.newLocationDefaultName,
+      name: (first && siteDefaults?.name) || t.booking.newLocationDefaultName,
+      address: (first && siteDefaults?.address) || undefined,
       services: [],
       staff: [],
       availability: {},
@@ -59,17 +66,18 @@ export function LocationManager({ controller, onFirstLocationCreated }: Props) {
   async function handleModalSave(loc: Location) {
     const wasEmpty = config.locations.length === 0;
     const exists = config.locations.some((l) => l.id === loc.id);
-    const merged: CalendarConfig = {
-      ...config,
-      locations: exists
-        ? config.locations.map((l) => (l.id === loc.id ? loc : l))
-        : [...config.locations, loc],
-    };
+    // The first location adopts a legacy top-level scope (see addFirstLocation).
+    const merged: CalendarConfig = exists
+      ? { ...config, locations: config.locations.map((l) => (l.id === loc.id ? loc : l)) }
+      : addFirstLocation(config, loc);
     setConfig(merged);
     const ok = await saveWith(merged);
     if (!ok) return;
     setEditing(null);
-    if (wasEmpty) onFirstLocationCreated?.(loc.id);
+    if (wasEmpty) {
+      const saved = merged.locations.find((l) => l.id === loc.id);
+      onFirstLocationCreated?.(loc.id, (saved?.services.length ?? 0) > 0);
+    }
   }
 
   async function handleModalDelete(id: string) {
@@ -117,29 +125,19 @@ export function LocationManager({ controller, onFirstLocationCreated }: Props) {
         variant="destructive"
       />
 
-      {/* Section header */}
-      <div className="border-b border-border pb-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {t.booking.locationsSectionTitle}
-        </h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">{t.booking.locationsSectionDesc}</p>
-      </div>
-
       {config.locations.length === 0 ? (
-        // Empty state — no locations yet.
-        <div className="rounded-2xl border border-dashed border-border bg-background px-5 py-14 text-center">
-          <MapPinned className="mx-auto h-9 w-9 text-muted-foreground/50" />
-          <p className="mt-3 text-sm font-medium">{t.booking.noLocationsYetTitle}</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-            {t.booking.noLocationsYetDesc}
-          </p>
-          <Button className="mt-5" onClick={openCreate}>
-            <Plus className="h-4 w-4" /> {t.booking.createLocation}
-          </Button>
-        </div>
+        // First run — no locations yet: guided setup instead of a bare roster.
+        <BookingSetupGuide onStart={openCreate} />
       ) : (
-        // List view — searchable grid of cards.
+        // List view — section header + searchable grid of cards.
         <div className="space-y-4">
+          <div className="border-b border-border pb-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {t.booking.locationsSectionTitle}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t.booking.locationsSectionDesc}</p>
+          </div>
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <h3 className="font-semibold">{t.booking.locationsListTitle}</h3>

@@ -54,8 +54,16 @@ export default async function BookingDashboardPage({
   const [t, locale, { data: profile }] = await Promise.all([
     getServerTranslations(),
     getCurrentLocale(),
-    admin.from("profiles").select("username").eq("id", userId).maybeSingle(),
+    admin.from("profiles").select("username, display_name, address").eq("id", userId).maybeSingle(),
   ]);
+  // No location yet ⇒ first-run setup: the header explains the page instead of
+  // reporting a live status, and settings stay out of the way until it's done.
+  const needsSetup = normalizeCalendarConfig(widget.config).locations.length === 0;
+  const address = profile?.address as { formatted?: string } | null | undefined;
+  const siteDefaults = {
+    name: profile?.display_name?.trim() || undefined,
+    address: address?.formatted?.trim() || undefined,
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -67,24 +75,28 @@ export default async function BookingDashboardPage({
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{widget.catalog.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {widget.has_access
-                ? widget.enabled
-                  ? t.booking.liveOnProfile
-                  : t.booking.activeHiddenFromProfile
-                : t.booking.inactiveSubscribe}
+              {needsSetup
+                ? t.booking.setupHeaderSubtitle
+                : widget.has_access
+                  ? widget.enabled
+                    ? t.booking.liveOnProfile
+                    : t.booking.activeHiddenFromProfile
+                  : t.booking.inactiveSubscribe}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <LocaleSelect />
-          <Link
-            href={`${BASE_PATH}/settings`}
-            aria-label={t.booking.widgetSettingsTitle}
-            title={t.booking.widgetSettingsTitle}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          >
-            <Settings className="h-4 w-4" />
-          </Link>
+          {!needsSetup && (
+            <Link
+              href={`${BASE_PATH}/settings`}
+              aria-label={t.booking.widgetSettingsTitle}
+              title={t.booking.widgetSettingsTitle}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <Settings className="h-4 w-4" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -103,6 +115,7 @@ export default async function BookingDashboardPage({
         username={profile?.username}
         locale={locale}
         initialTab={initialTab}
+        siteDefaults={siteDefaults}
       />
     </div>
   );
@@ -116,6 +129,7 @@ async function CalendarWorkspaceLoader({
   username,
   locale,
   initialTab,
+  siteDefaults,
 }: {
   instanceId: string;
   hasAccess: boolean;
@@ -124,6 +138,7 @@ async function CalendarWorkspaceLoader({
   username?: string;
   locale: Awaited<ReturnType<typeof getCurrentLocale>>;
   initialTab: string;
+  siteDefaults: { name?: string; address?: string };
 }) {
   const normalizedConfig = normalizeCalendarConfig(config);
   const symbol = currencySymbol(normalizedConfig.currency);
@@ -176,6 +191,7 @@ async function CalendarWorkspaceLoader({
         shareUrl={shareUrl}
         initialTab={initialTab ?? "today"}
         basePath={BASE_PATH}
+        siteDefaults={siteDefaults}
       />
     </Suspense>
   );

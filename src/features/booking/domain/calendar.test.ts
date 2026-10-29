@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  addFirstLocation,
   computeAvailableSlots,
   normalizeCalendarConfig,
   normalizeLocation,
@@ -489,3 +490,29 @@ describe("validateCalendarConfig — locations", () => {
 // Keep the Slot type referenced so the import isn't tree-shaken by lint.
 const _typecheck: Slot = { start: "", end: "" };
 void _typecheck;
+
+describe("addFirstLocation", () => {
+  const empty = (): Location => ({ id: "loc_new", name: "Shop", services: [], staff: [], availability: {} });
+
+  it("moves a legacy top-level scope into the first location", () => {
+    const next = addFirstLocation(utcConfig(), empty());
+    expect(next.locations).toHaveLength(1);
+    expect(next.locations[0].services).toEqual([service]);
+    expect(next.locations[0].availability).toEqual({ mon: [["09:00", "11:00"]] });
+    expect(next.services).toEqual([]);
+    expect(next.availability).toEqual({});
+  });
+
+  it("keeps hours typed in the new location", () => {
+    const next = addFirstLocation(utcConfig(), { ...empty(), availability: { tue: [["10:00", "12:00"]] } });
+    expect(next.locations[0].availability).toEqual({ tue: [["10:00", "12:00"]] });
+    expect(next.locations[0].services).toEqual([service]);
+  });
+
+  it("just appends when there is nothing legacy to adopt", () => {
+    const cfg = utcConfig({ services: [] });
+    const next = addFirstLocation(cfg, empty());
+    expect(next.locations).toEqual([empty()]);
+    expect(next.availability).toEqual(cfg.availability);
+  });
+});

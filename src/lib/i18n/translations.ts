@@ -1580,8 +1580,18 @@ export type Translations = {
 
     locationsSectionTitle: string;
     locationsSectionDesc: string;
-    noLocationsYetTitle: string;
-    noLocationsYetDesc: string;
+    setupHeaderSubtitle: string;
+    setupTitle: string;
+    setupDesc: string;
+    setupStepLocationTitle: string;
+    setupStepLocationDesc: string;
+    setupStepServicesTitle: string;
+    setupStepServicesDesc: string;
+    setupStepHoursTitle: string;
+    setupStepHoursDesc: string;
+    setupCta: string;
+    setupTime: string;
+    setupTourLink: string;
     createLocation: string;
     locationsListTitle: string;
     searchLocationsPlaceholder: string;

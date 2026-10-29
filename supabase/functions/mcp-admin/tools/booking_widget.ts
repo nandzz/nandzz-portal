@@ -87,7 +87,8 @@ const locationsSchema = {
   type: "array",
   description:
     "Optional sites / branches. When set, customers first pick a location and EACH location has its own services, staff, " +
-    "hours and days off (the top-level services/staff/availability are then not used). Pass [] to go back to a single site.",
+    "hours and days off. Omit it for a single-site business: the top-level services/staff/availability are stored as ONE " +
+    "location named after the business (the owner dashboard only works with locations), and later top-level edits go to it.",
   items: {
     type: "object",
     required: ["id", "name"],
@@ -320,6 +321,7 @@ function parseLocations(raw: unknown, existing: Record<string, unknown>[]): Reco
 export function buildCalendarConfig(
   existing: Record<string, unknown>,
   a: Record<string, unknown>,
+  site: SiteInfo = { name: "Main location" },
 ): Record<string, unknown> {
   const cfg: Record<string, unknown> = { ...existing };
 
@@ -348,14 +350,62 @@ export function buildCalendarConfig(
     cfg.whatsapp_contact_phone = phone;
   }
 
-  applyScope(cfg, a, "");
+  // Top-level scope args (services/staff/hours…) target the business itself:
+  // with a single location that IS the business, so they edit it; with
+  // several, they're ambiguous and must go inside `locations`.
+  const current = (cfg.locations as Record<string, unknown>[] | undefined) ?? [];
+  const hasScopeArgs = SCOPE_KEYS.some((k) => a[k] !== undefined);
+  if (a.locations === undefined && current.length === 1) {
+    const loc = { ...current[0] };
+    applyScope(loc, a, `Location "${loc.name}"`);
+    cfg.locations = [loc];
+  } else if (a.locations === undefined && current.length > 1 && hasScopeArgs) {
+    throw new Error(`This widget has ${current.length} locations — pass services/staff/hours inside \`locations\`.`);
+  } else {
+    applyScope(cfg, a, "");
+  }
 
   if (a.locations !== undefined) {
-    cfg.locations = parseLocations(a.locations, (cfg.locations as Record<string, unknown>[] | undefined) ?? []);
+    cfg.locations = parseLocations(a.locations, current);
   }
+
+  wrapSingleSite(cfg, site);
 
   if (!cfg.timezone) throw new Error("timezone is required for a new booking widget (e.g. Europe/Rome).");
   return cfg;
+}
+
+const SCOPE_KEYS = ["categories", "staff", "services", "availability", "blackout_dates"] as const;
+
+export type SiteInfo = { name: string; address?: string };
+
+// The owner dashboard only opens a location — a config with services but no
+// locations ("legacy" top-level scope) books fine publicly yet shows the owner
+// an empty "add a location" screen. So a single-site setup is always stored as
+// ONE location holding the top-level scope, which is then cleared.
+// Mirrors supabase/migrations/20261029120000_booking_wrap_legacy_location.sql.
+function wrapSingleSite(cfg: Record<string, unknown>, site: SiteInfo) {
+  const locs = (cfg.locations as unknown[] | undefined) ?? [];
+  const services = (cfg.services as unknown[] | undefined) ?? [];
+  const staff = (cfg.staff as unknown[] | undefined) ?? [];
+  if (locs.length || (!services.length && !staff.length)) return;
+  cfg.locations = [
+    {
+      id: "loc_main",
+      name: site.name,
+      ...(site.address ? { address: site.address } : {}),
+      services,
+      categories: cfg.categories ?? [],
+      staff,
+      availability: cfg.availability ?? {},
+      blackout_dates: cfg.blackout_dates ?? [],
+    },
+  ];
+  cfg.services = [];
+  cfg.categories = [];
+  cfg.staff = [];
+  cfg.availability = {};
+  cfg.blackout_dates = [];
 }
 
 // Total bookable services across the active mode (locations ⇒ per-location).
@@ -405,7 +455,12 @@ export const configureBookingWidget: ToolHandler = async (args, ctx) => {
     blackout_dates: [],
     availability: { mon: [["09:00", "17:00"]], tue: [["09:00", "17:00"]], wed: [["09:00", "17:00"]], thu: [["09:00", "17:00"]], fri: [["09:00", "17:00"]] },
   };
-  const config = buildCalendarConfig(base, args);
+  const { data: prof } = await ctx.admin.from("profiles").select("display_name, address").eq("id", demo.id).maybeSingle();
+  const p = prof as { display_name: string | null; address: { formatted?: string } | null } | null;
+  const config = buildCalendarConfig(base, args, {
+    name: (p?.display_name ?? "").trim().slice(0, 80) || demo.username,
+    address: p?.address?.formatted?.trim().slice(0, 300) || undefined,
+  });
   const services = serviceCount(config);
   const enabled = typeof args.enabled === "boolean" ? args.enabled : true;
   if (enabled && services === 0) {

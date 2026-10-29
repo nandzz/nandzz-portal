@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sun, LayoutDashboard, CalendarDays, Users, UserCog, MapPin, Clock, Tag, ChevronDown, ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { subscribeToWidgetBookings } from "@/features/booking/realtime";
@@ -103,6 +103,8 @@ interface Props {
   // Tab segments hang off it (`${basePath}/{segment}`); no instance id in the URL
   // since booking is a single per-owner feature surface.
   basePath: string;
+  // Prefill for the owner's first location (business name + address).
+  siteDefaults?: { name?: string; address?: string };
 }
 
 export function WidgetWorkspace({
@@ -114,9 +116,11 @@ export function WidgetWorkspace({
   shareUrl,
   initialTab,
   basePath,
+  siteDefaults,
 }: Props) {
   const { t } = useLanguage();
   const pathname = usePathname();
+  const router = useRouter();
   // The active tab lives in the URL path (`${basePath}/{segment}`), resolved
   // server-side into `initialTab` for the first render / deep links. We keep it
   // in local state (so switching is instant and never remounts the workspace,
@@ -293,7 +297,17 @@ export function WidgetWorkspace({
               <ArrowLeft className="h-4 w-4" /> {t.booking.backToLocations}
             </button>
           )}
-          <LocationManager controller={controller} onFirstLocationCreated={pickLocation} />
+          <LocationManager
+            controller={controller}
+            siteDefaults={siteDefaults}
+            onFirstLocationCreated={(id, hasServices) => {
+              pickLocation(id);
+              // Setup continues on Services when the location has none yet;
+              // the refresh updates the server-rendered header (setup copy).
+              if (!hasServices) handleTabChange("services");
+              router.refresh();
+            }}
+          />
           {bookingBanner}
         </div>
       );
