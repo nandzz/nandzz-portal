@@ -228,7 +228,7 @@ export function SpaceViewer({ initial, username, profile, signedIn }: SpaceViewe
             />
             <SpaceSiblingNav onPrev={onPrev} onNext={onNext} pending={pending} />
           </div>
-          <SpaceCaption key={space.id} title={space.title} description={space.description} />
+          <SpaceCaption key={space.id} description={space.description} />
         </div>
       ) : (
         <div className="relative flex-1 bg-muted/50 min-h-0 overscroll-contain">
