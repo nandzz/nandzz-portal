@@ -268,6 +268,46 @@ function HistoryItem({
   );
 }
 
+// The customer card opened from a booking (Bookings rows, Today panel): builds
+// the summary from the booking and lets the dialog derive the stats from the
+// customer's history. Scoped to the booking's own instance + location.
+export function BookingCustomerCard({
+  b,
+  timezone,
+  money,
+  onClose,
+}: {
+  b: BookingRowData;
+  timezone: string;
+  money: (cents: number) => string;
+  onClose: () => void;
+}) {
+  if (!b.customer_key) return null;
+  return (
+    <CustomerDetailsDialog
+      customer={{
+        id: b.customer_key,
+        email: b.customer_email,
+        name: b.customer_name,
+        phone: b.customer_phone,
+        bookings: 0,
+        upcoming: 0,
+        cancelled: 0,
+        revenueCents: 0,
+        lastVisit: null,
+        nextVisit: null,
+        profile: b.customer_profile ?? null,
+      }}
+      deriveStats
+      onClose={onClose}
+      instanceId={b.instance_id}
+      locationId={b.location_id}
+      timezone={timezone}
+      money={money}
+    />
+  );
+}
+
 // The Customers-tab rollup, recomputed from a customer's fetched history
 // (confirmed bookings/revenue all time, upcoming confirmed, cancellations).
 function withDerivedStats(c: CustomerSummary, rows: BookingRowData[] | null, now: number): CustomerSummary {

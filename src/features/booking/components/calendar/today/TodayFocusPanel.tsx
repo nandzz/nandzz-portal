@@ -21,7 +21,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import type { TodayBooking, TodayCustomerInsight } from "@/features/booking/dashboardTypes";
 import { CustomerAvatar, ViewProfileLink } from "../CustomerIdentity";
-import { CustomerDetailsDialog } from "../CustomerDetailsDialog";
+import { BookingCustomerCard } from "../CustomerDetailsDialog";
 import { useBookingActions } from "../useBookingActions";
 import { phaseOf, serviceLines, type TodayFormat } from "./todayFormat";
 
@@ -56,6 +56,8 @@ export function TodayFocusPanel({ ref, booking, isLaterDay, isPicked, insight, n
   const { t } = useLanguage();
   const tt = t.bookingToday;
   const headingId = useId();
+  // Customer card (history + stats), opened from the name or the action bar.
+  const [cardFor, setCardFor] = useState<string | null>(null);
 
   if (!booking) {
     return (
@@ -131,7 +133,17 @@ export function TodayFocusPanel({ ref, booking, isLaterDay, isPicked, insight, n
         <div className="mt-4 flex items-center gap-3">
           <CustomerAvatar name={b.customer_name} profile={b.customer_profile} className="h-11 w-11 text-sm" />
           <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold">{b.customer_name}</p>
+            {actions && b.customer_key ? (
+              <button
+                type="button"
+                onClick={() => setCardFor(b.id)}
+                className="block max-w-full truncate text-left font-semibold underline-offset-4 hover:underline"
+              >
+                {b.customer_name}
+              </button>
+            ) : (
+              <p className="truncate font-semibold">{b.customer_name}</p>
+            )}
             {visitNumber !== null && (
               <p className="text-xs text-muted-foreground">
                 {visitNumber === 1 ? (
@@ -168,7 +180,12 @@ export function TodayFocusPanel({ ref, booking, isLaterDay, isPicked, insight, n
           </div>
         )}
 
-        {actions && <FocusActions key={b.id} b={b} now={now} fmt={fmt} scope={actions} />}
+        {actions && (
+          <FocusActions key={b.id} b={b} now={now} fmt={fmt} scope={actions} onOpenCustomer={() => setCardFor(b.id)} />
+        )}
+        {actions && cardFor === b.id && (
+          <BookingCustomerCard b={b} timezone={actions.timezone} money={fmt.money} onClose={() => setCardFor(null)} />
+        )}
 
         {(b.customer_phone || b.customer_email) && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -386,15 +403,16 @@ function FocusActions({
   now,
   fmt,
   scope,
+  onOpenCustomer,
 }: {
   b: TodayBooking;
   now: number;
   fmt: TodayFormat;
   scope: FocusActionsScope;
+  onOpenCustomer: () => void;
 }) {
   const { t } = useLanguage();
   const tt = t.bookingToday;
-  const [cardOpen, setCardOpen] = useState(false);
   const when = `${fmt.longDate(b.starts_at)}, ${fmt.time(b.starts_at)}`;
   const { busy, openReschedule, openAssign, cancel, dialogs } = useBookingActions({
     b,
@@ -414,7 +432,7 @@ function FocusActions({
           <ActionButton onClick={openAssign} disabled={busy} icon={<Users className="h-4 w-4" />} label={t.booking.assignStaff} />
         )}
         {b.customer_key && (
-          <ActionButton onClick={() => setCardOpen(true)} icon={<Contact className="h-4 w-4" />} label={tt.customerCard} />
+          <ActionButton onClick={onOpenCustomer} icon={<Contact className="h-4 w-4" />} label={tt.customerCard} />
         )}
         {editable && (
           <ActionButton
@@ -427,29 +445,6 @@ function FocusActions({
         )}
       </div>
       {dialogs}
-      {cardOpen && b.customer_key && (
-        <CustomerDetailsDialog
-          customer={{
-            id: b.customer_key,
-            email: b.customer_email,
-            name: b.customer_name,
-            phone: b.customer_phone,
-            bookings: 0,
-            upcoming: 0,
-            cancelled: 0,
-            revenueCents: 0,
-            lastVisit: null,
-            nextVisit: null,
-            profile: b.customer_profile ?? null,
-          }}
-          deriveStats
-          onClose={() => setCardOpen(false)}
-          instanceId={scope.instanceId}
-          locationId={scope.locationId}
-          timezone={scope.timezone}
-          money={fmt.money}
-        />
-      )}
     </>
   );
 }

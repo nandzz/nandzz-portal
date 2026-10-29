@@ -102,6 +102,7 @@ function toRow(r: RowRecord): BookingRowData {
     location_id: r.location_id,
     manage_token: r.manage_token,
     notes: r.notes,
+    customer_key: customerKeyOf(r),
   };
 }
 

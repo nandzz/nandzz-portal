@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BookingDetailsDialog } from "./BookingDetailsDialog";
 import { CustomerAvatar } from "./CustomerIdentity";
 import { useBookingActions } from "./useBookingActions";
+import { BookingCustomerCard } from "./CustomerDetailsDialog";
 import type { BookingServiceSnapshot } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -41,6 +42,9 @@ export type BookingRowData = {
   manage_token: string;
   notes?: string | null;
   customer_profile?: CustomerProfileLink | null;
+  // Customers-tab rollup key (email, `phone:…` or `user:…`) — opens the
+  // customer card. Absent on rows not read through the dashboard loader.
+  customer_key?: string | null;
 };
 
 // Chronological status pill shown above the customer name. Each category gets
@@ -83,6 +87,7 @@ export function BookingRow({
 }) {
   const { t } = useLanguage();
   const [details, setDetails] = useState(false);
+  const [cardOpen, setCardOpen] = useState(false);
 
   // The booked services with their assigned staff: the per-service breakdown
   // when present, else the single aggregate line. Drives the row's staff display.
@@ -288,6 +293,14 @@ export function BookingRow({
         money={money}
         wa={wa}
         busy={busy}
+        onOpenCustomer={
+          b.customer_key
+            ? () => {
+                setDetails(false);
+                setCardOpen(true);
+              }
+            : undefined
+        }
         onReschedule={
           cancellable
             ? () => {
@@ -315,6 +328,9 @@ export function BookingRow({
       />
 
       {dialogs}
+      {cardOpen && (
+        <BookingCustomerCard b={b} timezone={timezone} money={money} onClose={() => setCardOpen(false)} />
+      )}
     </>
   );
 }

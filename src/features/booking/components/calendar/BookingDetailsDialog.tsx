@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Ban, CalendarClock, Clock, Loader2, Mail, MapPin, Phone, StickyNote, Users } from "lucide-react";
+import { Ban, CalendarClock, ChevronRight, Clock, Loader2, Mail, MapPin, Phone, StickyNote, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { Dialog } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -23,6 +23,8 @@ type Props = {
   money: (cents: number) => string;
   wa: string | null;
   busy: boolean;
+  // Opens the customer card (history + stats); absent when the row has no key.
+  onOpenCustomer?: () => void;
   onReschedule?: () => void;
   onAssign?: () => void;
   onCancel?: () => void;
@@ -38,6 +40,7 @@ export function BookingDetailsDialog({
   money,
   wa,
   busy,
+  onOpenCustomer,
   onReschedule,
   onAssign,
   onCancel,
@@ -141,13 +144,30 @@ export function BookingDetailsDialog({
       </h3>
       <div className="mt-2 rounded-xl border border-border p-3">
         <div className="flex items-center gap-3">
-          <CustomerAvatar name={b.customer_name} profile={profile} className="h-12 w-12 text-base" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-semibold">{b.customer_name}</p>
-            {profile && <p className="truncate text-sm text-muted-foreground">@{profile.username}</p>}
-          </div>
+          <button
+            type="button"
+            onClick={onOpenCustomer}
+            disabled={!onOpenCustomer}
+            className="-m-1.5 flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1.5 text-left transition-colors enabled:hover:bg-muted/60"
+          >
+            <CustomerAvatar name={b.customer_name} profile={profile} className="h-12 w-12 text-base" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">{b.customer_name}</p>
+              {profile && <p className="truncate text-sm text-muted-foreground">@{profile.username}</p>}
+            </div>
+          </button>
           {profile && <ViewProfileLink profile={profile} />}
         </div>
+        {onOpenCustomer && (
+          <button
+            type="button"
+            onClick={onOpenCustomer}
+            className="mt-3 flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+          >
+            {t.bookingToday.customerCard}
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
 
         {(email || phone || b.customer_address) && (
           <div className="mt-3 space-y-1 border-t border-border pt-2">
