@@ -14,7 +14,6 @@ import { spaceDisplayTitle } from "@/lib/spaces/display-title";
 import { loadSpaceView } from "../actions/load-space-view";
 import type { SpaceView, ViewerProfile } from "../view-types";
 import { ShareMenu } from "./ShareMenu";
-import { DuplicateSpaceButton } from "./DuplicateSpaceButton";
 import { SpaceOwnerMenu } from "./SpaceOwnerMenu";
 import { HtmlSpaceEditor } from "./HtmlSpaceEditor";
 import { PdfViewerWrapper } from "./PdfViewerWrapper";
@@ -137,9 +136,6 @@ export function SpaceViewer({ initial, username, profile, signedIn }: SpaceViewe
             />
             {!isOwner && (
               <StarButton spaceId={space.id} spaceTitle={title} initialSaved={view.saved} size="md" />
-            )}
-            {!isOwner && space.is_public && (
-              <DuplicateSpaceButton spaceId={space.id} size="md" />
             )}
             <ShareMenu url={`/${username}/space/${space.id}`} title={title} size="md" />
             <Link

@@ -1,6 +1,6 @@
 // Client-safe public API for the spaces feature.
 //
-// Slice 4a: card/grid display cluster + space lifecycle (delete / duplicate).
+// Slice 4a: card/grid display cluster + space lifecycle (delete).
 // Slice 4b: editors, builders, the AI assistant and the passive viewers.
 
 // ── Display + lifecycle (4a) ────────────────────────────────────────────────
@@ -9,14 +9,11 @@ export { SpaceGrid } from "./components/SpaceGrid";
 export { SpacePreview } from "./components/SpacePreview";
 export { SpaceOwnerMenu } from "./components/SpaceOwnerMenu";
 export { DeleteSpaceButton } from "./components/DeleteSpaceButton";
-export { DuplicateSpaceButton } from "./components/DuplicateSpaceButton";
 export { ShareButton } from "./components/ShareButton";
 export { ShareMenu } from "./components/ShareMenu";
 
 export { deleteSpace } from "./actions/delete-space";
-export { duplicateSpace } from "./actions/duplicate-space";
 export type { DeleteSpaceResult } from "./actions/delete-space";
-export type { DuplicateSpaceResult } from "./actions/duplicate-space";
 
 // ── Editors, viewers, builders (4b) ─────────────────────────────────────────
 export { HtmlSpaceEditor } from "./components/HtmlSpaceEditor";

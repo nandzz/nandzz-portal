@@ -7,7 +7,6 @@ import { HoverPrefetchLink } from "@/components/HoverPrefetchLink";
 import { Card, CardContent } from "@/components/ui/card";
 import { SpacePreview } from "./SpacePreview";
 import { deleteSpace } from "../actions/delete-space";
-import { duplicateSpace } from "../actions/duplicate-space";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -22,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ExternalLink, FolderPlus, Pencil, Trash2, Bookmark, Globe, Lock, Copy, MoreHorizontal } from "lucide-react";
+import { ExternalLink, FolderPlus, Pencil, Trash2, Bookmark, Globe, Lock, MoreHorizontal } from "lucide-react";
 import { LikeButton } from "@/features/social";
 import { ShareButton } from "./ShareButton";
 import { StarButton, AddToCollectionDialog, removeSpaceFromCollection } from "@/features/collections";
@@ -90,7 +89,6 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(saved ?? false);
-  const [isDuplicating, setIsDuplicating] = useState(false);
   const [dotsMenuOpen, setDotsMenuOpen] = useState(false);
 
   // Opening a portal dialog straight from a Base UI menu item races with the
@@ -111,21 +109,6 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
   const handleDelete = async () => {
     await deleteSpace({ id: space.id });
     router.refresh();
-  };
-
-  const handleDuplicate = async () => {
-    if (isDuplicating) return;
-    setIsDuplicating(true);
-    try {
-      const res = await duplicateSpace({ id: space.id });
-      if (!res.ok) {
-        alert(res.error === "SPACE_LIMIT_REACHED" ? t.plan.spaceLimitReached : (res.error || t.space.duplicateFailed));
-        return;
-      }
-      router.push(`/dashboard/contents/edit-space/${res.spaceId}`);
-    } finally {
-      setIsDuplicating(false);
-    }
   };
 
   const menuItems = (
@@ -150,12 +133,6 @@ export function SpaceCard({ space, username, routeUsername, editable, liked, sav
             <Bookmark className={`size-4 ${isSaved ? "fill-violet-500 text-violet-500" : ""}`} />
             {isSaved ? t.space.manageCollections : t.space.saveToCollection}
           </Item>
-          {space.is_public && (
-            <Item onClick={handleDuplicate} disabled={isDuplicating}>
-              <Copy className="size-4" />
-              {isDuplicating ? t.space.duplicating : t.space.duplicate}
-            </Item>
-          )}
         </>
       )}
       {editable && (

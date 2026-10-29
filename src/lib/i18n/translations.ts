@@ -481,10 +481,6 @@ export type Translations = {
     removeFromStarred: string;
     saveToCollection: string;
     manageCollections: string;
-    duplicate: string;
-    duplicating: string;
-    duplicateFailed: string;
-    duplicateNoCredits: string;
     addToCollection: string;
     removeFromCollection: string;
     edit: string;
