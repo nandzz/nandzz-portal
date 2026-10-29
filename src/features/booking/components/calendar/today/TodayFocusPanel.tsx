@@ -1,13 +1,28 @@
 "use client";
 
-import { useId, type ReactNode, type Ref } from "react";
-import { CalendarCheck, CalendarPlus, Mail, Phone, StickyNote, TriangleAlert, Sparkles } from "lucide-react";
+import { useId, useState, type ReactNode, type Ref } from "react";
+import {
+  Ban,
+  CalendarCheck,
+  CalendarClock,
+  CalendarPlus,
+  Contact,
+  Loader2,
+  Mail,
+  Phone,
+  StickyNote,
+  TriangleAlert,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { whatsappLink } from "@/features/booking/domain/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import type { TodayBooking, TodayCustomerInsight } from "@/features/booking/dashboardTypes";
 import { CustomerAvatar, ViewProfileLink } from "../CustomerIdentity";
+import { CustomerDetailsDialog } from "../CustomerDetailsDialog";
+import { useBookingActions } from "../useBookingActions";
 import { phaseOf, serviceLines, type TodayFormat } from "./todayFormat";
 
 // The right-hand focus of the Today tab: one appointment in detail (by default
@@ -24,9 +39,20 @@ type Props = {
   insight: TodayCustomerInsight | null;
   now: number;
   fmt: TodayFormat;
+  // Enables the owner's actions on the appointment (reschedule, staff, cancel,
+  // customer card); omitted ⇒ the panel is read-only.
+  actions?: FocusActionsScope;
 };
 
-export function TodayFocusPanel({ ref, booking, isLaterDay, isPicked, insight, now, fmt }: Props) {
+export type FocusActionsScope = {
+  instanceId: string;
+  locationId: string | null;
+  timezone: string;
+  hasStaff: boolean;
+  onChanged: () => void;
+};
+
+export function TodayFocusPanel({ ref, booking, isLaterDay, isPicked, insight, now, fmt, actions }: Props) {
   const { t } = useLanguage();
   const tt = t.bookingToday;
   const headingId = useId();
@@ -141,6 +167,8 @@ export function TodayFocusPanel({ ref, booking, isLaterDay, isPicked, insight, n
             <p className="whitespace-pre-line break-words">{b.notes.trim()}</p>
           </div>
         )}
+
+        {actions && <FocusActions key={b.id} b={b} now={now} fmt={fmt} scope={actions} />}
 
         {(b.customer_phone || b.customer_email) && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -347,5 +375,112 @@ function ContactButton({
       <span className="text-muted-foreground">{icon}</span>
       {label}
     </a>
+  );
+}
+
+// Reschedule (date, time, services, staff), reassign staff and cancel — the
+// same actions as a Bookings row, via the shared hook — plus the customer card
+// from the Customers tab. Changes only apply to appointments still to come.
+function FocusActions({
+  b,
+  now,
+  fmt,
+  scope,
+}: {
+  b: TodayBooking;
+  now: number;
+  fmt: TodayFormat;
+  scope: FocusActionsScope;
+}) {
+  const { t } = useLanguage();
+  const tt = t.bookingToday;
+  const [cardOpen, setCardOpen] = useState(false);
+  const when = `${fmt.longDate(b.starts_at)}, ${fmt.time(b.starts_at)}`;
+  const { busy, openReschedule, openAssign, cancel, dialogs } = useBookingActions({
+    b,
+    when,
+    timezone: scope.timezone,
+    onChanged: scope.onChanged,
+  });
+  const editable = b.status === "confirmed" && Date.parse(b.starts_at) >= now;
+
+  return (
+    <>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {editable && (
+          <ActionButton onClick={openReschedule} disabled={busy} icon={<CalendarClock className="h-4 w-4" />} label={tt.actionReschedule} />
+        )}
+        {editable && scope.hasStaff && (
+          <ActionButton onClick={openAssign} disabled={busy} icon={<Users className="h-4 w-4" />} label={t.booking.assignStaff} />
+        )}
+        {b.customer_key && (
+          <ActionButton onClick={() => setCardOpen(true)} icon={<Contact className="h-4 w-4" />} label={tt.customerCard} />
+        )}
+        {editable && (
+          <ActionButton
+            onClick={cancel}
+            disabled={busy}
+            danger
+            icon={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+            label={tt.actionCancel}
+          />
+        )}
+      </div>
+      {dialogs}
+      {cardOpen && b.customer_key && (
+        <CustomerDetailsDialog
+          customer={{
+            id: b.customer_key,
+            email: b.customer_email,
+            name: b.customer_name,
+            phone: b.customer_phone,
+            bookings: 0,
+            upcoming: 0,
+            cancelled: 0,
+            revenueCents: 0,
+            lastVisit: null,
+            nextVisit: null,
+            profile: b.customer_profile ?? null,
+          }}
+          deriveStats
+          onClose={() => setCardOpen(false)}
+          instanceId={scope.instanceId}
+          locationId={scope.locationId}
+          timezone={scope.timezone}
+          money={fmt.money}
+        />
+      )}
+    </>
+  );
+}
+
+function ActionButton({
+  onClick,
+  disabled,
+  danger,
+  icon,
+  label,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50",
+        danger
+          ? "text-red-600 hover:border-red-200 hover:bg-red-50 dark:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/30"
+          : "hover:bg-muted"
+      )}
+    >
+      <span className={danger ? "" : "text-muted-foreground"}>{icon}</span>
+      {label}
+    </button>
   );
 }

@@ -6,17 +6,9 @@ import type { BookingRowData } from "@/features/booking/components/calendar/Book
 
 export type BookingsFilter = "all" | "upcoming" | "past" | "cancelled";
 
-export type TodaySnapshot = {
-  count: number;
-  done: number;
-  revenueCents: number;
-  nextStartsAt: string | null;
-};
-
 export type CalendarData = {
-  monthKey: string; // "YYYY-MM" the rows belong to
+  monthKey: string; // "YYYY-MM" whose Monday-first grid the rows cover
   bookings: BookingRowData[];
-  today: TodaySnapshot;
 };
 
 export type ListData = {

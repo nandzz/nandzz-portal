@@ -1,17 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { whatsappLink } from "@/features/booking/domain/contact";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Dialog } from "@/components/ui/dialog";
-import { ReschedulePicker } from "./ReschedulePicker";
-import { AssignStaffDialog } from "./AssignStaffDialog";
 import { BookingDetailsDialog } from "./BookingDetailsDialog";
 import { CustomerAvatar } from "./CustomerIdentity";
-import type { Slot } from "@/features/booking/domain/calendar";
+import { useBookingActions } from "./useBookingActions";
 import type { BookingServiceSnapshot } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -70,6 +66,7 @@ export function BookingRow({
   dim,
   cancellable,
   hasStaff = false,
+  onChanged,
 }: {
   b: BookingRowData;
   money: (cents: number) => string;
@@ -81,13 +78,10 @@ export function BookingRow({
   // Whether the instance has any staff — gates the "Assign staff" action. The
   // dialog itself fetches the full roster + availability from the server.
   hasStaff?: boolean;
+  // Refetch hook after a reschedule/reassign/cancel (see useBookingActions).
+  onChanged?: () => void;
 }) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [rescheduling, setRescheduling] = useState(false);
-  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
-  const [assigning, setAssigning] = useState(false);
   const [details, setDetails] = useState(false);
 
   // The booked services with their assigned staff: the per-service breakdown
@@ -158,58 +152,7 @@ export function BookingRow({
       )
     : null;
 
-  async function reschedule(slot: Slot, staffByService: Record<string, string>, serviceIds?: string[]) {
-    setBusy(true);
-    setRescheduleError(null);
-    try {
-      const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          starts_at: slot.start,
-          staff_by_service: staffByService,
-          service_ids: serviceIds,
-        }),
-      });
-      if (!res.ok) {
-        setRescheduleError(t.booking.errorRescheduleThis);
-        return;
-      }
-      setRescheduling(false);
-      router.refresh(); // re-run the server page → tiles, chart & lists all update
-    } catch {
-      setRescheduleError(t.booking.errorRescheduleThis);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-
-  async function cancel() {
-    if (
-      !confirm(
-        t.booking.confirmCancelThis
-          .replace("{name}", b.customer_name)
-          .replace("{service}", b.service_name)
-          .replace("{when}", when)
-      )
-    )
-      return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/widgets/bookings/${b.manage_token}`, { method: "DELETE" });
-      if (!res.ok) {
-        // Never surface the raw API error body; show localized copy only.
-        alert(t.booking.errorCancelThis);
-        return;
-      }
-      router.refresh(); // re-run the server page → tiles, chart & lists all update
-    } catch {
-      alert(t.booking.errorCancelThis);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { busy, openReschedule, openAssign, cancel, dialogs } = useBookingActions({ b, when, timezone, onChanged });
 
   // Row icon buttons sit inside the clickable row — keep their clicks from also
   // opening the details modal.
@@ -217,12 +160,6 @@ export function BookingRow({
     e.stopPropagation();
     fn();
   };
-
-  function openReschedule() {
-    setDetails(false);
-    setRescheduleError(null);
-    setRescheduling(true);
-  }
 
   return (
     <>
@@ -307,7 +244,7 @@ export function BookingRow({
           )}
           {canReassign && (
             <button
-              onClick={stop(() => setAssigning(true))}
+              onClick={stop(openAssign)}
               disabled={busy}
               className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
               aria-label={t.booking.assignStaff}
@@ -351,12 +288,19 @@ export function BookingRow({
         money={money}
         wa={wa}
         busy={busy}
-        onReschedule={cancellable ? openReschedule : undefined}
+        onReschedule={
+          cancellable
+            ? () => {
+                setDetails(false);
+                openReschedule();
+              }
+            : undefined
+        }
         onAssign={
           canReassign
             ? () => {
                 setDetails(false);
-                setAssigning(true);
+                openAssign();
               }
             : undefined
         }
@@ -364,38 +308,13 @@ export function BookingRow({
           cancellable
             ? () => {
                 setDetails(false);
-                void cancel();
+                cancel();
               }
             : undefined
         }
       />
 
-      <Dialog
-        open={rescheduling}
-        onClose={() => setRescheduling(false)}
-        title={t.booking.rescheduleDialogTitle.replace("{name}", b.customer_name)}
-      >
-        <p className="mb-4 text-sm text-muted-foreground">
-          {t.booking.rescheduleDialogSubtitle
-            .replace("{service}", b.service_name)
-            .replace("{when}", when)}
-        </p>
-        <ReschedulePicker
-          token={b.manage_token}
-          timezone={timezone}
-          busy={busy}
-          error={rescheduleError}
-          onPick={reschedule}
-        />
-      </Dialog>
-
-      <AssignStaffDialog
-        token={b.manage_token}
-        timezone={timezone}
-        open={assigning}
-        onClose={() => setAssigning(false)}
-        onDone={() => router.refresh()}
-      />
+      {dialogs}
     </>
   );
 }

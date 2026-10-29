@@ -383,6 +383,7 @@ export function WidgetWorkspace({
               staff: manualBookingScope.staff,
               timezone: effectiveTimezone,
             }}
+            onChanged={dash.refetchAll}
           />
         </TabsContent>
 

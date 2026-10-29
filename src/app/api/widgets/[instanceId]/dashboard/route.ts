@@ -70,7 +70,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ inst
       if (!/^\d{4}-\d{2}$/.test(monthKey)) {
         return NextResponse.json({ error: "month=YYYY-MM required" }, { status: 400 });
       }
-      const data = await fetchCalendarData(supabase, { instanceId, locationId, monthKey, timezone });
+      const data = await fetchCalendarData(supabase, { instanceId, locationId, monthKey });
       return NextResponse.json(data);
     }
     case "list": {

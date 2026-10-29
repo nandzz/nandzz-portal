@@ -175,7 +175,7 @@ async function CalendarWorkspaceLoader({
       period: "month",
       shareUrl,
     }),
-    fetchCalendarData(supabase, { instanceId, locationId, monthKey, timezone }),
+    fetchCalendarData(supabase, { instanceId, locationId, monthKey }),
     fetchListData(supabase, { instanceId, locationId, filter: "all", query: "", limit: 12, offset: 0 }),
     fetchCustomersData(supabase, { instanceId, locationId, timezone, currencySymbol: symbol }),
   ]);

@@ -58,7 +58,6 @@ function makeBooking(overrides: Partial<BookingRowData> = {}): BookingRowData {
 const emptyCalendar: CalendarData = {
   monthKey: "2026-08",
   bookings: [],
-  today: { count: 0, done: 0, revenueCents: 0, nextStartsAt: null },
 };
 
 function renderBookings(over: {

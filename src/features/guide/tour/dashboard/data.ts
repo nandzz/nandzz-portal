@@ -261,9 +261,6 @@ const LIST_SEEDS: Seed[] = [
 
 export function buildBookings(now: number, sample: GuideTourSample): { calendar: CalendarData; list: ListData } {
   const rows: BookingRowData[] = LIST_SEEDS.map((s) => booking(s, now, sample));
-  const today = buildToday(now, sample);
-  const confirmedToday = today.bookings.filter((b) => b.status === "confirmed");
-  const nextToday = confirmedToday.find((b) => Date.parse(b.starts_at) > now);
   const monthKey = new Intl.DateTimeFormat("en-CA", { timeZone: tourTimezone(), year: "numeric", month: "2-digit" }).format(
     new Date(now)
   );
@@ -271,12 +268,6 @@ export function buildBookings(now: number, sample: GuideTourSample): { calendar:
     calendar: {
       monthKey,
       bookings: rows,
-      today: {
-        count: confirmedToday.length,
-        done: confirmedToday.filter((b) => Date.parse(b.ends_at) <= now).length,
-        revenueCents: confirmedToday.reduce((sum, b) => sum + (b.price_cents ?? 0), 0),
-        nextStartsAt: nextToday?.starts_at ?? null,
-      },
     },
     list: { bookings: rows, total: 148 },
   };

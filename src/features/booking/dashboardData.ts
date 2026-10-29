@@ -14,7 +14,6 @@ import {
 import { addDays, getLocationScope, todayInZone, zonedWallTimeToUtc } from "@/features/booking/domain/calendar";
 import type { StatsPeriod } from "@/lib/period";
 import type {
-  TodaySnapshot,
   CalendarData,
   ListData,
   BookingsFilter,
@@ -24,7 +23,7 @@ import type {
 } from "@/features/booking/dashboardTypes";
 import { buildCustomerInsight, HISTORY_COLUMNS, type HistoryRow } from "@/features/booking/todayInsights";
 
-export type { TodaySnapshot, CalendarData, ListData, BookingsFilter, TodayData } from "@/features/booking/dashboardTypes";
+export type { CalendarData, ListData, BookingsFilter, TodayData } from "@/features/booking/dashboardTypes";
 
 // Server-side data layer for the widget dashboard. Every read here is bounded
 // (a month window, a page, a period window, or a SQL aggregate) so the dashboard
@@ -124,19 +123,24 @@ function searchOr(q: string): string {
   return `customer_name.ilike.*${safe}*,customer_email.ilike.*${safe}*,service_name.ilike.*${safe}*`;
 }
 
-// ── Calendar month grid + Today snapshot ─────────────────────────────────────
-// `monthKey` is "YYYY-MM". We over-fetch the UTC window by a day on each edge so
-// every booking whose *local* (widget-tz) day lands in the month is included —
-// the client groups precisely by tz day-key and only renders the month's cells,
-// so the padding rows are harmless.
+// ── Calendar month grid ──────────────────────────────────────────────────────
+// `monthKey` is "YYYY-MM". The window is the month's whole Monday-first grid
+// (the full weeks around the 1st and the last day), so the week view can show
+// any week of that grid without a second fetch. It's over-fetched by a day on
+// each UTC edge so every booking whose *local* (widget-tz) day lands in the
+// grid is included — the client groups precisely by tz day-key.
 export async function fetchCalendarData(
   supabase: SupabaseClient,
-  opts: { instanceId: string; locationId: string | null; monthKey: string; timezone: string }
+  opts: { instanceId: string; locationId: string | null; monthKey: string }
 ): Promise<CalendarData> {
-  const { instanceId, locationId, monthKey, timezone } = opts;
+  const { instanceId, locationId, monthKey } = opts;
   const [y, m] = monthKey.split("-").map(Number);
-  const startUtc = Date.UTC(y, m - 1, 1) - DAY_MS;
-  const endUtc = Date.UTC(y, m, 1) + DAY_MS;
+  const first = Date.UTC(y, m - 1, 1);
+  const next = Date.UTC(y, m, 1);
+  const lead = (new Date(first).getUTCDay() + 6) % 7; // Monday = 0
+  const trail = (7 - ((new Date(next).getUTCDay() + 6) % 7)) % 7;
+  const startUtc = first - (lead + 1) * DAY_MS;
+  const endUtc = next + (trail + 1) * DAY_MS;
 
   let q = supabase
     .from("widget_bookings")
@@ -150,47 +154,7 @@ export async function fetchCalendarData(
   const { data } = await q;
   const bookings = await toRows(supabase, (data ?? []) as RowRecord[]);
 
-  return { monthKey, bookings, today: await fetchToday(supabase, { instanceId, locationId, timezone }) };
-}
-
-// Today's confirmed bookings, anchored to the widget timezone. Over-fetch ±1 day
-// in UTC, then keep only the rows whose tz day-key equals "today".
-async function fetchToday(
-  supabase: SupabaseClient,
-  opts: { instanceId: string; locationId: string | null; timezone: string }
-): Promise<TodaySnapshot> {
-  const { instanceId, locationId, timezone } = opts;
-  const now = Date.now();
-  const dayFmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const todayKey = dayFmt.format(new Date(now));
-
-  let q = supabase
-    .from("widget_bookings")
-    .select("starts_at, price_cents")
-    .eq("instance_id", instanceId)
-    .eq("status", "confirmed")
-    .gte("starts_at", new Date(now - DAY_MS).toISOString())
-    .lt("starts_at", new Date(now + DAY_MS).toISOString());
-  q = scopeLocation(q, locationId);
-  const { data } = await q;
-  const rows = (data ?? []) as { starts_at: string; price_cents: number | null }[];
-  const today = rows.filter((r) => dayFmt.format(new Date(r.starts_at)) === todayKey);
-
-  let done = 0;
-  let revenueCents = 0;
-  let nextStartsAt: string | null = null;
-  for (const r of today) {
-    const t = new Date(r.starts_at).getTime();
-    revenueCents += r.price_cents ?? 0;
-    if (t < now) done += 1;
-    else if (!nextStartsAt || r.starts_at < nextStartsAt) nextStartsAt = r.starts_at;
-  }
-  return { count: today.length, done, revenueCents, nextStartsAt };
+  return { monthKey, bookings };
 }
 
 // ── Bookings list (filter + search + offset pagination) ──────────────────────

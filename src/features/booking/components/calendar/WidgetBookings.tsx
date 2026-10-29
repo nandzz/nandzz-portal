@@ -8,8 +8,6 @@ import {
   ChevronRight,
   List,
   LayoutGrid,
-  Clock,
-  Wallet,
   Plus,
   Loader2,
 } from "lucide-react";
@@ -36,6 +34,9 @@ export type ManualBookingScope = {
 const PAGE_SIZE = 12;
 
 type View = "list" | "calendar";
+// The calendar already lays out past and future, so its pills filter by status
+// only; the time-based pills (upcoming/past) belong to the list view.
+type CalendarStatus = "all" | "confirmed" | "cancelled";
 
 // The Bookings tab. Data is windowed server-side: the calendar view renders one
 // fetched month (search + status pills apply client-side over that bounded set),
@@ -85,7 +86,13 @@ export function WidgetBookings({
     { key: "past", label: t.booking.filterPast },
     { key: "cancelled", label: t.booking.filterCancelled },
   ];
+  const CALENDAR_FILTERS: { key: CalendarStatus; label: string }[] = [
+    { key: "all", label: t.booking.filterAll },
+    { key: "confirmed", label: t.booking.statusConfirmed },
+    { key: "cancelled", label: t.booking.filterCancelled },
+  ];
   const [view, setView] = useState<View>("list");
+  const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>("all");
   // Manual booking modal: `modalDate` seeds the day when opened from a calendar
   // cell (null ⇒ the flow picks the first open day itself).
   const [modalOpen, setModalOpen] = useState(false);
@@ -142,37 +149,12 @@ export function WidgetBookings({
     [timezone, locale]
   );
 
-  const fmtTime = useMemo(
-    () => new Intl.DateTimeFormat(locale, { timeZone: timezone, hour: "numeric", minute: "2-digit" }),
-    [timezone, locale]
-  );
-
-  // "Today Overview" — a same-day snapshot the server computes (in the widget
-  // timezone), independent of the search box, status pills and viewed month.
-  const today = calendar.today;
-  const todayLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        timeZone: timezone,
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-      }).format(new Date(now)),
-    [timezone, locale, now]
-  );
-
   // Calendar view applies search + status pills client-side over the single
-  // fetched month — a bounded set, so this stays cheap at any total volume.
+  // fetched month grid — a bounded set, so this stays cheap at any total volume.
   const calendarFiltered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return calendar.bookings.filter((b) => {
-      if (filter !== "all") {
-        const ts = new Date(b.starts_at).getTime();
-        const cancelled = b.status === "cancelled";
-        if (filter === "cancelled" && !cancelled) return false;
-        if (filter === "upcoming" && (cancelled || ts < now)) return false;
-        if (filter === "past" && (cancelled || ts >= now)) return false;
-      }
+      if (calendarStatus !== "all" && b.status !== calendarStatus) return false;
       if (!q) return true;
       return (
         b.customer_name.toLowerCase().includes(q) ||
@@ -180,7 +162,7 @@ export function WidgetBookings({
         b.service_name.toLowerCase().includes(q)
       );
     });
-  }, [calendar.bookings, filter, query, now]);
+  }, [calendar.bookings, calendarStatus, query]);
 
   // List view rows come already filtered, searched, ordered and paged from the
   // server; `list.total` drives the pager.
@@ -209,45 +191,6 @@ export function WidgetBookings({
     <div className="space-y-4">
       <div className="flex items-center justify-end">{newBookingButton}</div>
 
-      {/* Today Overview — same-day snapshot, above the search/filter toolbar */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">{t.booking.today}</p>
-          <p className="text-sm font-semibold">{todayLabel}</p>
-        </div>
-        <div className="grid grid-cols-3 gap-4 sm:gap-6">
-          <div>
-            <p className="text-xs text-muted-foreground">{t.booking.appointments}</p>
-            <p className="text-lg font-bold tabular-nums">{today.count}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {t.booking.doneCount.replace("{count}", String(today.done))}
-            </p>
-          </div>
-          <div>
-            <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" /> {t.booking.nextUp}
-            </p>
-            <p className="text-lg font-bold tabular-nums">
-              {today.nextStartsAt ? fmtTime.format(new Date(today.nextStartsAt)) : "—"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {today.nextStartsAt
-                ? t.booking.stillToCome
-                : today.count
-                  ? t.booking.allDone
-                  : t.booking.nothingToday}
-            </p>
-          </div>
-          <div>
-            <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <Wallet className="h-3 w-3" /> {t.booking.revenue}
-            </p>
-            <p className="text-lg font-bold tabular-nums">{money(today.revenueCents)}</p>
-            <p className="text-[11px] text-muted-foreground">{t.booking.todayLower}</p>
-          </div>
-        </div>
-      </div>
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -260,19 +203,33 @@ export function WidgetBookings({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 rounded-lg border border-border p-0.5 text-sm">
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => onFilterChange(f.key)}
-                className={`rounded-md px-2.5 py-1 font-medium transition ${
-                  filter === f.key
-                    ? "bg-emerald-500 text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+            {view === "calendar"
+              ? CALENDAR_FILTERS.map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => setCalendarStatus(f.key)}
+                    className={`rounded-md px-2.5 py-1 font-medium transition ${
+                      calendarStatus === f.key
+                        ? "bg-emerald-500 text-white"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))
+              : FILTERS.map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => onFilterChange(f.key)}
+                    className={`rounded-md px-2.5 py-1 font-medium transition ${
+                      filter === f.key
+                        ? "bg-emerald-500 text-white"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
           </div>
           <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5">
             <button
@@ -307,6 +264,7 @@ export function WidgetBookings({
         <div className={calendarLoading ? "opacity-60 transition-opacity" : "transition-opacity"} aria-busy={calendarLoading}>
           <BookingsCalendar
             bookings={calendarFiltered}
+            allBookings={calendar.bookings}
             monthKey={monthKey}
             onMonthChange={onMonthChange}
             timezone={timezone}
@@ -315,6 +273,7 @@ export function WidgetBookings({
             fmtDate={(iso) => fmtDate.format(new Date(iso))}
             onNewBooking={openManual}
             hasStaff={manual.staff.length > 0}
+            onChanged={onBooked}
           />
         </div>
       ) : (
@@ -343,6 +302,7 @@ export function WidgetBookings({
                       now={now}
                       cancellable={upcoming}
                       hasStaff={manual.staff.length > 0}
+                      onChanged={onBooked}
                     />
                   );
                 })}

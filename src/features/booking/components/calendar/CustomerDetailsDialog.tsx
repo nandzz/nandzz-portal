@@ -21,9 +21,12 @@ type Props = {
   locationId: string | null;
   timezone: string;
   money: (cents: number) => string;
+  // Opened from a booking rather than the Customers tab, so the summary carries
+  // no rollup: compute the stats from the fetched history instead.
+  deriveStats?: boolean;
 };
 
-export function CustomerDetailsDialog({ customer, onClose, instanceId, locationId, timezone, money }: Props) {
+export function CustomerDetailsDialog({ customer, onClose, instanceId, locationId, timezone, money, deriveStats = false }: Props) {
   const { t, locale } = useLanguage();
   // Keyed by customer id so a stale result never shows for a different customer;
   // `now` is captured at fetch time to split upcoming/past without impure renders.
@@ -87,7 +90,8 @@ export function CustomerDetailsDialog({ customer, onClose, instanceId, locationI
 
   if (!customer) return null;
 
-  const c = customer;
+  const c = deriveStats ? withDerivedStats(customer, bookings, current?.now ?? 0) : customer;
+  const statsPending = deriveStats && !bookings;
   const firstName = c.name.split(" ")[0] || c.name;
   const wa = c.phone ? whatsappLink(c.phone, t.booking.whatsappSimpleGreeting.replace("{name}", firstName)) : null;
 
@@ -96,7 +100,7 @@ export function CustomerDetailsDialog({ customer, onClose, instanceId, locationI
     { label: t.booking.filterUpcoming, value: String(c.upcoming) },
     { label: t.booking.filterCancelled, value: String(c.cancelled) },
     { label: t.booking.customerStatRevenue, value: money(c.revenueCents) },
-  ];
+  ].map((s) => (statsPending ? { ...s, value: "…" } : s));
 
   return (
     <Dialog open onClose={onClose} maxWidthClass="max-w-lg">
@@ -262,4 +266,24 @@ function HistoryItem({
       )}
     </div>
   );
+}
+
+// The Customers-tab rollup, recomputed from a customer's fetched history
+// (confirmed bookings/revenue all time, upcoming confirmed, cancellations).
+function withDerivedStats(c: CustomerSummary, rows: BookingRowData[] | null, now: number): CustomerSummary {
+  if (!rows) return c;
+  let bookings = 0;
+  let upcoming = 0;
+  let cancelled = 0;
+  let revenueCents = 0;
+  for (const r of rows) {
+    if (r.status === "cancelled") {
+      cancelled += 1;
+      continue;
+    }
+    bookings += 1;
+    revenueCents += r.price_cents ?? 0;
+    if (Date.parse(r.starts_at) >= now) upcoming += 1;
+  }
+  return { ...c, bookings, upcoming, cancelled, revenueCents };
 }

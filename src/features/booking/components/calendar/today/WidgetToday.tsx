@@ -27,10 +27,13 @@ export function WidgetToday({
   data,
   loading,
   availability,
+  onChanged,
 }: {
   data: TodayData;
   loading: boolean;
   availability?: AvailabilityScope;
+  // Refetch after the owner reschedules/reassigns/cancels from the focus panel.
+  onChanged?: () => void;
 }) {
   const { t } = useLanguage();
   const tt = t.bookingToday;
@@ -210,6 +213,17 @@ export function WidgetToday({
               insight={insight}
               now={now}
               fmt={fmt}
+              actions={
+                availability && onChanged
+                  ? {
+                      instanceId: availability.instanceId,
+                      locationId: availability.locationId,
+                      timezone: data.timezone,
+                      hasStaff: availability.staff.length > 0,
+                      onChanged,
+                    }
+                  : undefined
+              }
             />
           </div>
         </div>
