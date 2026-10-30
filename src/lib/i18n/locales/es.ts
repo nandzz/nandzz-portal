@@ -1277,6 +1277,7 @@ export const es: Translations = {
     errorOutOfHours: "Ese horario está fuera del horario disponible.",
     errorStaffUnavailable: "Ese especialista no está disponible en ese horario. Elige otro.",
     errorSlotTaken: "Ese horario acaba de reservarse. Elige otro.",
+    errorSlotPast: "Ese horario ya pasó. Elige otro.",
     errorGeneric: "No se pudo completar la reserva. Inténtalo de nuevo.",
     yourBooking: "Tu reserva",
     withBusiness: "con {business}",

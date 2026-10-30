@@ -9,7 +9,7 @@ import type { CalendarConfigController } from "@/features/booking/components/cal
 import { LocationCard } from "@/features/booking/components/calendar/LocationCard";
 import { LocationFormModal } from "@/features/booking/components/calendar/LocationFormModal";
 import { BookingSetupGuide } from "@/features/booking/components/calendar/BookingSetupGuide";
-import { addFirstLocation } from "@/features/booking/domain/calendar";
+import { addFirstLocation, adoptDetectedTimezone } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
@@ -21,6 +21,14 @@ interface Props {
   onFirstLocationCreated?: (id: string, hasServices: boolean) => void;
   // Prefill for the first location (the business's own name + address).
   siteDefaults?: { name?: string; address?: string };
+}
+
+function browserTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
+  }
 }
 
 // Top-level Locations roster: a searchable grid of cards. Creating or editing a
@@ -67,9 +75,11 @@ export function LocationManager({ controller, onFirstLocationCreated, siteDefaul
     const wasEmpty = config.locations.length === 0;
     const exists = config.locations.some((l) => l.id === loc.id);
     // The first location adopts a legacy top-level scope (see addFirstLocation).
+    // A new location also replaces a never-chosen "UTC" business timezone with
+    // the owner's own (see adoptDetectedTimezone).
     const merged: CalendarConfig = exists
       ? { ...config, locations: config.locations.map((l) => (l.id === loc.id ? loc : l)) }
-      : addFirstLocation(config, loc);
+      : adoptDetectedTimezone(addFirstLocation(config, loc), browserTimezone());
     setConfig(merged);
     const ok = await saveWith(merged);
     if (!ok) return;

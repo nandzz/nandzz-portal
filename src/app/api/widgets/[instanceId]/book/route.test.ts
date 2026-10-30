@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { POST } from "./route";
 import type { CalendarConfig, WidgetBooking } from "@/lib/types";
 
@@ -125,6 +125,25 @@ beforeEach(() => {
 });
 
 describe("POST /api/widgets/[instanceId]/book", () => {
+  // Fixtures target Aug 2026; freeze "now" just before them so the route's
+  // past-start guard treats them as upcoming regardless of the wall clock.
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-08-05T00:00:00.000Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("409s SLOT_PAST for a start that has already passed (stale slot list)", async () => {
+    vi.setSystemTime(new Date("2026-08-10T09:30:00.000Z"));
+    const res = await POST(makeReq(validBody), params());
+    const body = await res.json();
+    expect(res.status).toBe(409);
+    expect(body.error).toBe("SLOT_PAST");
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
   it("400s when a required field (customer_name) is missing", async () => {
     const res = await POST(makeReq({ ...validBody, customer_name: undefined }), params());
     expect(res.status).toBe(400);

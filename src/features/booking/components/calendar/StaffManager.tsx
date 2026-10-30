@@ -58,17 +58,26 @@ export function StaffManager({ controller, currentLocationId = null }: Props) {
   // ── staff ── (scoped to the current location, or the top-level config when
   // currentLocationId is null — see getLocationScope/withLocationScope)
   function createStaff() {
-    const member: StaffMember = {
-      id: `stf_${Math.random().toString(36).slice(2, 9)}`,
-      name: t.booking.newStaffDefaultName,
-      availability: {},
-    };
+    const id = `stf_${Math.random().toString(36).slice(2, 9)}`;
     setConfig((c) => {
       const s = getLocationScope(c, currentLocationId);
+      // A new member starts on the location's opening hours. Once anyone is on
+      // staff, every booking needs a working staff member — a member with no
+      // hours would close the whole booking page of a business that had none.
+      const member: StaffMember = {
+        id,
+        name: t.booking.newStaffDefaultName,
+        availability: Object.fromEntries(
+          Object.entries(s.availability).map(([day, windows]) => [
+            day,
+            (windows ?? []).map(([from, to]) => [from, to] as [string, string]),
+          ])
+        ),
+      };
       return withLocationScope(c, currentLocationId, { staff: [...s.staff, member] });
     });
     // Jump straight into the editor for the fresh member.
-    setEditingStaffId(member.id);
+    setEditingStaffId(id);
     setMode("edit");
   }
   function updateStaff(id: string, fields: Partial<StaffMember>) {

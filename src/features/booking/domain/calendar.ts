@@ -203,6 +203,19 @@ export function addFirstLocation(config: CalendarConfig, loc: Location): Calenda
   };
 }
 
+// Calendars are provisioned server-side (getOrCreateOwnerCalendar), where
+// defaultCalendarConfig() sees the server's zone — UTC — so a fresh config says
+// "UTC" without the owner ever choosing it, and their hours would run in UTC.
+// When the owner adds a location from their browser, adopt the browser's zone
+// in its place. A real business never deliberately picks bare "UTC".
+export function adoptDetectedTimezone(
+  config: CalendarConfig,
+  detected: string | null | undefined
+): CalendarConfig {
+  if (config.timezone !== "UTC" || !detected || detected === "UTC") return config;
+  return { ...config, timezone: detected };
+}
+
 // `locationId` null/undefined ⇒ legacy top-level scope (unchanged behavior).
 export function getLocationScope(config: CalendarConfig, locationId?: string | null): LocationScope {
   if (!locationId) {
@@ -403,6 +416,15 @@ export function addDays(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d + n, 12));
   return dt.toISOString().slice(0, 10);
+}
+
+// The IANA timezone a location's bookings live in: the location's own override,
+// else the business timezone. `locationId` null/unknown ⇒ the business timezone.
+// Anything that shows a booking's time to a person must use this, not
+// config.timezone alone.
+export function timezoneForLocation(config: CalendarConfig, locationId?: string | null): string {
+  const loc = locationId ? config.locations.find((l) => l.id === locationId) : undefined;
+  return loc?.timezone || config.timezone;
 }
 
 // Today's calendar date in a given timezone as "YYYY-MM-DD".
@@ -832,7 +854,7 @@ export type ResolvedSegment = {
 // constraint. Reasons mirror the create_booking_tx error codes.
 export type SegmentPlanResult =
   | { ok: true; segments: ResolvedSegment[]; totalMin: number }
-  | { ok: false; reason: "BLACKOUT" | "OUT_OF_HOURS" | "STAFF_UNAVAILABLE" };
+  | { ok: false; reason: "SLOT_PAST" | "BLACKOUT" | "OUT_OF_HOURS" | "STAFF_UNAVAILABLE" };
 
 export function resolveSegmentPlan(input: {
   config: CalendarConfig;
@@ -840,6 +862,10 @@ export function resolveSegmentPlan(input: {
   startIso: string;
   existingBusy: ExistingSegmentBusy[];
   location?: Location;
+  // When set, a start at or before this instant is rejected (SLOT_PAST). The
+  // book/reschedule routes pass the current time: a slot list left open in a
+  // tab goes stale, and nothing else stops it booking a time that has passed.
+  now?: Date;
 }): SegmentPlanResult {
   const { config, choices, startIso, existingBusy, location } = input;
   const buffer = Math.max(0, config.buffer_min || 0);
@@ -852,6 +878,7 @@ export function resolveSegmentPlan(input: {
 
   const { segments, totalMin } = layoutServiceSegments(choices, hasStaff);
   const startMs = new Date(startIso).getTime();
+  if (input.now && startMs <= input.now.getTime()) return { ok: false, reason: "SLOT_PAST" };
 
   // Owner-local wall clock of the requested start, to test it against the day's
   // windows / blackout the same way computeSegmentedSlots generates them.

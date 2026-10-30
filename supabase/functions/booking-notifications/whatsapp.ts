@@ -30,7 +30,7 @@ import {
   TwilioSendError,
   type TwilioConfig,
 } from "./twilio.ts";
-import { resolveLocale, type BookingRow, type Locale } from "./types.ts";
+import { bookingTimezone, resolveLocale, type BookingRow, type Locale } from "./types.ts";
 
 export const WHATSAPP_SETTING_KEY = "booking_whatsapp_template";
 
@@ -113,7 +113,7 @@ export function whatsAppVars(
   locale: Locale,
   siteUrl: string,
 ): Record<string, string> {
-  const timezone = typeof config.timezone === "string" && config.timezone ? config.timezone : "UTC";
+  const timezone = bookingTimezone(config, booking);
   const ctx: BookingMessageContext = {
     customerName: booking.customer_name,
     businessName: owner?.display_name || owner?.username || "your provider",

@@ -157,6 +157,17 @@ describe("GET /api/widgets/bookings/[token]", () => {
     expect(body.status).toBe("confirmed");
   });
 
+  it("presents times in the booking location's own timezone", async () => {
+    const located = {
+      ...config,
+      locations: [{ id: "loc_rome", name: "Rome", timezone: "Europe/Rome", services: [], staff: [], availability: {} }],
+    };
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({ location_id: "loc_rome" }, { config: located }) });
+    const res = await GET(new Request("http://x") as never, params());
+    const body = await res.json();
+    expect(body.timezone).toBe("Europe/Rome");
+  });
+
   it("falls back to the username when display_name is unset", async () => {
     mockLoadMaybeSingle.mockResolvedValue({
       data: loadRow({}, { owner: { display_name: "", username: "acme_user" } }),
@@ -241,6 +252,14 @@ describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
     const body = await res.json();
     expect(res.status).toBe(409);
     expect(body.error).toBe("That time isn't available.");
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("409s when the requested time has already passed", async () => {
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
+    vi.setSystemTime(new Date("2026-08-11T10:00:00.000Z"));
+    const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
+    expect(res.status).toBe(409);
     expect(mockRpc).not.toHaveBeenCalled();
   });
 

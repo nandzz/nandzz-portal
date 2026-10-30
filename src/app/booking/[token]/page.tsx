@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
+import { normalizeCalendarConfig, timezoneForLocation } from "@/features/booking/domain/calendar";
 import { ManageBooking, type ManageBookingData } from "@/features/booking";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,10 @@ export default async function BookingManagePage({
     status: data.status as "confirmed" | "cancelled",
     business_name: owner?.display_name || owner?.username || "your provider",
     business_username: owner?.username ?? null,
-    timezone: normalizeCalendarConfig(instance?.config).timezone,
+    timezone: timezoneForLocation(
+      normalizeCalendarConfig(instance?.config),
+      (data.location_id as string | null) ?? null
+    ),
     staff_name: (data.staff_name as string | null) ?? null,
   };
 

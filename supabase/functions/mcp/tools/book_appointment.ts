@@ -1,5 +1,5 @@
 import type { ToolDefinition, ToolHandler } from "./types.ts";
-import { resolveOwnerCalendar } from "./_calendar.ts";
+import { pickService, resolveOwnerCalendar } from "./_calendar.ts";
 
 export const bookAppointmentDef: ToolDefinition = {
   name: "book_appointment",
@@ -9,6 +9,10 @@ export const bookAppointmentDef: ToolDefinition = {
     type: "object",
     properties: {
       service_id: { type: "string", description: "The service id (from the services list)." },
+      location_id: {
+        type: "string",
+        description: "The location offering the service, when the business has several locations (as in list_availability).",
+      },
       starts_at: { type: "string", description: "Start time, ISO-8601 UTC (e.g. 2026-08-10T14:00:00Z), from list_availability." },
       customer_name: { type: "string", description: "The customer's full name." },
       customer_email: { type: "string", description: "The customer's email address." },
@@ -26,6 +30,8 @@ const ERROR_HINTS: Record<string, string> = {
   OUT_OF_HOURS: "That time is outside available hours. Pick a slot from list_availability.",
   BLACKOUT: "That date is blacked out. Pick another day.",
   INVALID_SERVICE: "Unknown service_id.",
+  INVALID_LOCATION: "Unknown location_id.",
+  STAFF_UNAVAILABLE: "Nobody is free to do that service then. Pick a slot from list_availability.",
   WIDGET_UNAVAILABLE: "The calendar widget is not available.",
 };
 
@@ -38,11 +44,24 @@ export const bookAppointment: ToolHandler = async (args, { admin, userId }) => {
     };
   }
 
+  // Services live inside locations, so the booking must name the location the
+  // service belongs to (the RPC reads its services/staff/hours from there).
+  const picked = pickService(
+    calendar.config,
+    String(args.service_id ?? ""),
+    args.location_id ? String(args.location_id) : null,
+  );
+  if (!picked.ok) {
+    return { content: [{ type: "text", text: `Booking failed: ${picked.message}` }], isError: true };
+  }
+  const { scope } = picked.match;
+
   // create_booking_tx returns a single widget_bookings row (composite, not
   // setof) — PostgREST hands it back as an object, so no .single() needed.
   const { data: booking, error } = await admin.rpc("create_booking_tx", {
     p_instance_id: calendar.id,
-    p_service_id: String(args.service_id ?? ""),
+    p_service_id: picked.match.service.id,
+    p_location_id: scope.locationId,
     p_starts_at: String(args.starts_at ?? ""),
     p_customer_name: String(args.customer_name ?? ""),
     p_customer_email: String(args.customer_email ?? ""),
@@ -64,7 +83,7 @@ export const bookAppointment: ToolHandler = async (args, { admin, userId }) => {
     content: [
       {
         type: "text",
-        text: `Booked ${b.service_name} for ${b.customer_name} at ${b.starts_at} (times in ${calendar.config.timezone}).`,
+        text: `Booked ${b.service_name} for ${b.customer_name} at ${b.starts_at} (times in ${scope.timezone}).`,
       },
     ],
     structuredContent: {

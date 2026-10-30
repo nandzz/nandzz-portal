@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   addFirstLocation,
+  adoptDetectedTimezone,
   computeAvailableSlots,
   normalizeCalendarConfig,
   normalizeLocation,
+  timezoneForLocation,
   validateCalendarConfig,
   zonedWallTimeToUtc,
   type Slot,
@@ -514,5 +516,42 @@ describe("addFirstLocation", () => {
     const next = addFirstLocation(cfg, empty());
     expect(next.locations).toEqual([empty()]);
     expect(next.availability).toEqual(cfg.availability);
+  });
+});
+
+describe("timezoneForLocation", () => {
+  const cfg = () =>
+    utcConfig({
+      locations: [
+        { ...normalizeLocation({ id: "loc_rome", name: "Rome" })!, timezone: "Europe/Rome" },
+        normalizeLocation({ id: "loc_inherit", name: "Inherit" })!,
+      ],
+    });
+
+  it("prefers the booking location's own timezone", () => {
+    expect(timezoneForLocation(cfg(), "loc_rome")).toBe("Europe/Rome");
+  });
+
+  it("falls back to the business timezone", () => {
+    expect(timezoneForLocation(cfg(), "loc_inherit")).toBe("UTC");
+    expect(timezoneForLocation(cfg(), "loc_gone")).toBe("UTC");
+    expect(timezoneForLocation(cfg(), null)).toBe("UTC");
+  });
+});
+
+describe("adoptDetectedTimezone", () => {
+  it("replaces the server-seeded UTC with the owner's zone", () => {
+    expect(adoptDetectedTimezone(utcConfig(), "Europe/Rome").timezone).toBe("Europe/Rome");
+  });
+
+  it("keeps a timezone the owner already chose", () => {
+    const rome = utcConfig({ timezone: "Europe/Lisbon" });
+    expect(adoptDetectedTimezone(rome, "Europe/Rome")).toBe(rome);
+  });
+
+  it("does nothing without a usable detected zone", () => {
+    const cfg = utcConfig();
+    expect(adoptDetectedTimezone(cfg, null)).toBe(cfg);
+    expect(adoptDetectedTimezone(cfg, "UTC")).toBe(cfg);
   });
 });

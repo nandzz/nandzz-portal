@@ -206,6 +206,42 @@ describe("resolveSegmentPlan", () => {
     expect(res.segments[0].staff_ids).toHaveLength(2);
     expect(res.segments[0].staff_ids).toEqual(expect.arrayContaining([alice.id, bob.id]));
   });
+
+  it("returns SLOT_PAST for a start that has already passed when `now` is given", () => {
+    const base = {
+      config: cfg(),
+      choices: [anyChoice(haircut)],
+      startIso: "2026-08-10T10:00:00.000Z",
+      existingBusy: [],
+    };
+    expect(resolveSegmentPlan({ ...base, now: new Date("2026-08-10T10:00:00.000Z") })).toEqual({
+      ok: false,
+      reason: "SLOT_PAST",
+    });
+    expect(resolveSegmentPlan({ ...base, now: new Date("2026-08-10T09:59:00.000Z") }).ok).toBe(true);
+    // Without `now` (pure planning), the start isn't judged against the clock.
+    expect(resolveSegmentPlan(base).ok).toBe(true);
+  });
+});
+
+describe("computeSegmentedSlots — staff without working hours", () => {
+  it("a business that adds a staff member with no hours has nothing bookable", () => {
+    // Why new staff start on the location's hours (StaffManager.createStaff):
+    // once anyone is on staff, every booking needs a working staff member.
+    const s1: CalendarService = { id: "s1", name: "S1", duration_min: 60 };
+    const run = (staff: StaffMember[]) =>
+      computeSegmentedSlots({
+        config: cfg({ services: [s1], staff }),
+        choices: [anyChoice(s1)],
+        fromDate: MONDAY,
+        days: 1,
+        existingBusy: [],
+        now: farPast,
+      }).length;
+    expect(run([])).toBe(3);
+    expect(run([{ id: "new", name: "New", availability: {} }])).toBe(0);
+    expect(run([{ id: "new", name: "New", availability: { mon: [["09:00", "12:00"]] } }])).toBe(3);
+  });
 });
 
 describe("staffAvailabilityForWindow", () => {

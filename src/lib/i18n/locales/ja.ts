@@ -1277,6 +1277,7 @@ export const ja: Translations = {
     errorOutOfHours: "その時間は営業時間外です。",
     errorStaffUnavailable: "その担当者はその時間帯に対応できません。別の担当者をお選びください。",
     errorSlotTaken: "その枠はたった今予約されました。別の枠をお選びください。",
+    errorSlotPast: "その時間はすでに過ぎています。別の枠をお選びください。",
     errorGeneric: "予約を完了できませんでした。もう一度お試しください。",
     yourBooking: "ご予約内容",
     withBusiness: "{business}",

@@ -18,6 +18,7 @@ import {
 import { escapeHtml } from "./emails.ts";
 import { pickTemplate, type EmailContent, type EmailTemplates } from "./config.ts";
 import {
+  bookingTimezone,
   resolveLocale,
   type BookingRow,
   type Locale,
@@ -219,8 +220,7 @@ export function buildEmailJobs(
   // catalog. Falls back to the helper's default when a legacy config has none.
   const configCurrency = typeof config.currency === "string" ? config.currency : null;
 
-  const timezone =
-    typeof config.timezone === "string" && config.timezone ? config.timezone : "UTC";
+  const timezone = bookingTimezone(config, booking);
   const businessName = owner?.display_name || owner?.username || "your provider";
   const businessImageUrl = owner?.logo_url?.trim() || owner?.avatar_url?.trim() || "";
   const brand = resolveBrandColors(owner?.brand_colors);

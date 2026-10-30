@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeCalendarConfig, resolveSegmentPlan } from "@/features/booking/domain/calendar";
+import { normalizeCalendarConfig, resolveSegmentPlan, timezoneForLocation } from "@/features/booking/domain/calendar";
 import { BOOKING_ERROR_STATUS } from "@/features/booking/domain/booking-errors";
 import { loadRescheduleContext, isLoadError } from "./_shared";
 import type { WidgetBooking } from "@/lib/types";
@@ -56,7 +56,7 @@ function present(booking: WidgetBooking, instance: { owner?: { display_name?: st
     customer_name: booking.customer_name,
     business_name: owner?.display_name || owner?.username || "your provider",
     business_username: owner?.username ?? null,
-    timezone: normalizeCalendarConfig(instance?.config).timezone,
+    timezone: timezoneForLocation(normalizeCalendarConfig(instance?.config), booking.location_id),
     instance_id: booking.instance_id,
     service_id: booking.service_id,
     location_id: booking.location_id,
@@ -158,6 +158,7 @@ export async function PATCH(
     startIso: requestedIso,
     existingBusy: busy ?? [],
     location,
+    now: new Date(),
   });
   if (!plan.ok) {
     const status = BOOKING_ERROR_STATUS[plan.reason] ?? 409;

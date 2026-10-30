@@ -14,6 +14,21 @@ export function resolveLocale(raw: unknown): Locale {
   return "en";
 }
 
+// The IANA timezone a booking's times are shown in: its location's own timezone
+// when it has one, else the business timezone, else UTC. Mirrors the portal's
+// `location?.timezone ?? config.timezone` — the zone the slot was booked in.
+export function bookingTimezone(
+  config: Record<string, unknown>,
+  booking: { location_id?: string | null },
+): string {
+  const locations = Array.isArray(config.locations) ? config.locations : [];
+  const loc = booking.location_id
+    ? (locations as { id?: unknown; timezone?: unknown }[]).find((l) => l?.id === booking.location_id)
+    : undefined;
+  if (typeof loc?.timezone === "string" && loc.timezone) return loc.timezone;
+  return typeof config.timezone === "string" && config.timezone ? config.timezone : "UTC";
+}
+
 export type MessageChannel = "off" | "whatsapp" | "email" | "both";
 
 // An owner-customizable message template with an optional per-locale override map.
@@ -53,6 +68,7 @@ export type BookingRow = {
   instance_id: string;
   owner_user_id: string;
   service_name: string;
+  location_id?: string | null;
   price_cents: number | null;
   staff_name: string | null;
   // Per-service snapshot — set only for multi-service bookings (null otherwise).

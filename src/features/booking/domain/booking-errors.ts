@@ -14,6 +14,7 @@ export const BOOKING_ERROR_STATUS: Record<string, number> = {
   OUT_OF_HOURS: 409,
   STAFF_UNAVAILABLE: 409,
   SLOT_TAKEN: 409,
+  SLOT_PAST: 409,
 };
 
 // Keys into the `booking` namespace of Translations (src/lib/i18n/translations.ts).
@@ -27,6 +28,7 @@ export const BOOKING_ERROR_KEYS: Record<string, string> = {
   OUT_OF_HOURS: "errorOutOfHours",
   STAFF_UNAVAILABLE: "errorStaffUnavailable",
   SLOT_TAKEN: "errorSlotTaken",
+  SLOT_PAST: "errorSlotPast",
 };
 
 export function mapBookingError(message: string | undefined): { status: number; code: string } {

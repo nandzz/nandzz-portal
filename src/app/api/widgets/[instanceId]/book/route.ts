@@ -141,6 +141,7 @@ export async function POST(
     startIso: new Date(body.starts_at).toISOString(),
     existingBusy: busy ?? [],
     location,
+    now: new Date(),
   });
   if (!plan.ok) {
     return NextResponse.json({ error: plan.reason }, { status: BOOKING_ERROR_STATUS[plan.reason] ?? 409 });

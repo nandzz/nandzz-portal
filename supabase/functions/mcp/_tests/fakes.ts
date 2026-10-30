@@ -10,6 +10,8 @@ export type FromCall = {
   table: string;
   select?: string;
   eq: Array<[string, unknown]>;
+  // Range / null filters as [op, column, value] (gte, lte, is).
+  filters: Array<[string, string, unknown]>;
   or: string[];
   order: Array<[string, unknown]>;
   insert?: Record<string, unknown>;
@@ -63,7 +65,7 @@ export function makeCtx(opts: FakeAdminOptions = {}): FakeAdmin {
       return Promise.resolve(wired ?? { data: null, error: null });
     },
     from(table: string) {
-      const call: FromCall = { table, eq: [], or: [], order: [], terminal: null };
+      const call: FromCall = { table, eq: [], filters: [], or: [], order: [], terminal: null };
       fromCalls.push(call);
       // getUsername() looks up profiles.username after every publish/update to
       // build the sharable space URL. Seed a default so existing tests don't
@@ -80,6 +82,18 @@ export function makeCtx(opts: FakeAdminOptions = {}): FakeAdmin {
         },
         eq(col: string, val: unknown) {
           call.eq.push([col, val]);
+          return chain;
+        },
+        gte(col: string, val: unknown) {
+          call.filters.push(["gte", col, val]);
+          return chain;
+        },
+        lte(col: string, val: unknown) {
+          call.filters.push(["lte", col, val]);
+          return chain;
+        },
+        is(col: string, val: unknown) {
+          call.filters.push(["is", col, val]);
           return chain;
         },
         or(expr: string) {

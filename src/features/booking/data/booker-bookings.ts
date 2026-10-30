@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
+import { normalizeCalendarConfig, timezoneForLocation } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
 import type { WidgetBooking } from "@/lib/types";
 
@@ -118,7 +118,7 @@ export async function fetchBookerBookings(
           }
         : null,
       currencySymbol: currencySymbol(config.currency),
-      timezone: config.timezone,
+      timezone: timezoneForLocation(config, b.location_id),
     };
   });
 

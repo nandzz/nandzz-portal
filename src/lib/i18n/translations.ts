@@ -1446,6 +1446,7 @@ export type Translations = {
     errorOutOfHours: string;
     errorStaffUnavailable: string;
     errorSlotTaken: string;
+    errorSlotPast: string;
     errorGeneric: string;
     yourBooking: string;
     withBusiness: string;
