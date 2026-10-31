@@ -130,7 +130,7 @@ export default async function WidgetPage({
         <h1 className="mt-4 text-2xl font-bold tracking-tight">{displayName}</h1>
         <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
           {renderWidgetIcon(widget.catalog.icon, "h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400")}
-          {widget.catalog.name}
+          {widget.catalog.slug === "calendar" ? t.booking.calendarWidgetName : widget.catalog.name}
         </span>
       </header>
 

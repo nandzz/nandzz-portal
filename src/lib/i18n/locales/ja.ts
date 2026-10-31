@@ -1221,6 +1221,7 @@ export const ja: Translations = {
   },
   booking: {
     bookWithName: "{name}さんに予約する",
+    calendarWidgetName: "オンライン予約",
     bookNow: "今すぐ予約",
     widgetNotFound: "予約ページが見つかりません | Nandzz",
     widgetDescriptionFallback: "nandzz上の{name}のプロフィールから直接{heading}",

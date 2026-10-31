@@ -1221,6 +1221,7 @@ export const it: Translations = {
   },
   booking: {
     bookWithName: "Prenota con {name}",
+    calendarWidgetName: "Prenotazione online",
     bookNow: "Prenota ora",
     widgetNotFound: "Prenotazione non trovata | Nandzz",
     widgetDescriptionFallback: "{heading} direttamente dal profilo di {name} su nandzz.",

@@ -1390,6 +1390,8 @@ export type Translations = {
   };
   booking: {
     bookWithName: string;
+    /** Localized name of the booking (calendar) catalog entry, shown instead of the DB name. */
+    calendarWidgetName: string;
     bookNow: string;
     widgetNotFound: string;
     widgetDescriptionFallback: string;
