@@ -186,10 +186,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     ];
     if (FEATURES.monetization) {
       settings.push({
-        href: "/dashboard/credits",
+        href: "/dashboard/subscription",
         label: "Subscription",
         icon: CreditCard,
-        isActive: (p) => p.startsWith("/dashboard/credits"),
+        isActive: (p) => p.startsWith("/dashboard/subscription"),
       });
     }
     if (entitlements.hasMcp) {

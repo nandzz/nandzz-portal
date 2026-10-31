@@ -70,7 +70,7 @@ export type WelcomeInfo = {
   trialEnd: string | null;
 };
 
-// Body of /dashboard/credits, also rendered under /dashboard/subscribed with the
+// Body of /dashboard/subscription, also rendered under /dashboard/subscribed with the
 // welcome modal so ad platforms get a dedicated conversion URL.
 export async function SubscriptionView({
   params,
@@ -84,7 +84,7 @@ export async function SubscriptionView({
   const supabase = await createClient();
 
   const userId = await getUserIdFromClaims(supabase);
-  if (!userId) redirect("/login?redirect=/dashboard/credits");
+  if (!userId) redirect("/login?redirect=/dashboard/subscription");
 
   const page = Math.max(1, Number(params.page) || 1);
   const offset = (page - 1) * PAGE_SIZE;
@@ -619,7 +619,7 @@ export async function SubscriptionView({
                   <p className="text-xs text-muted-foreground">{ts.pageOf.replace("{page}", String(page)).replace("{total}", String(totalPages))}</p>
                   <div className="flex items-center gap-2">
                     {page > 1 ? (
-                      <Link href={`/dashboard/credits?page=${page - 1}`}>
+                      <Link href={`/dashboard/subscription?page=${page - 1}`}>
                         <Button variant="outline" size="sm" className="gap-1">
                           <ChevronLeft className="h-4 w-4" /> {ts.prev}
                         </Button>
@@ -630,7 +630,7 @@ export async function SubscriptionView({
                       </Button>
                     )}
                     {page < totalPages ? (
-                      <Link href={`/dashboard/credits?page=${page + 1}`}>
+                      <Link href={`/dashboard/subscription?page=${page + 1}`}>
                         <Button variant="outline" size="sm" className="gap-1">
                           {ts.next} <ChevronRight className="h-4 w-4" />
                         </Button>

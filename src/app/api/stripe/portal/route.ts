@@ -30,7 +30,7 @@ export async function POST() {
   try {
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${siteUrl}/dashboard/credits`,
+      return_url: `${siteUrl}/dashboard/subscription`,
     });
     // Return the URL as JSON (client redirects). A fetch() can't follow a 303
     // to Stripe cross-origin, so the caller opens the portal itself.

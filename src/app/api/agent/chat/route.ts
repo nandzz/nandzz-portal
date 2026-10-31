@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     agentInstanceId = await resolveAgentInstanceId(admin, profile.id);
     if (!agentInstanceId && (caller?.paid_credits ?? 0) < MIN_CREDITS_FOR_CHAT) {
       return new Response(
-        JSON.stringify({ error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/credits" }),
+        JSON.stringify({ error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/subscription" }),
         { status: 402, headers: { "Content-Type": "application/json" } }
       );
     }

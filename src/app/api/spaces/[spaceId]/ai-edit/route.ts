@@ -131,7 +131,7 @@ export async function POST(
   if (reserveErr) {
     if ((reserveErr.message ?? "").includes("INSUFFICIENT_CREDITS")) {
       return NextResponse.json(
-        { error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/credits" },
+        { error: "INSUFFICIENT_CREDITS", buy_url: "/dashboard/subscription" },
         { status: 402 }
       );
     }

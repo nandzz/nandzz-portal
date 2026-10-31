@@ -8,7 +8,7 @@ export function FeatureGate({
   title,
   description,
   ctaLabel,
-  ctaHref = "/dashboard/credits",
+  ctaHref = "/dashboard/subscription",
 }: {
   title: string;
   description: string;

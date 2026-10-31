@@ -1,14 +1,14 @@
 export const dynamic = "force-dynamic";
 
 // Stripe Checkout success_url for plan subscriptions. A dedicated route (rather
-// than a query flag on /dashboard/credits) so ad platforms can use
+// than a query flag on /dashboard/subscription) so ad platforms can use
 // "URL contains /dashboard/subscribed" as the purchase conversion.
 
 import type Stripe from "stripe";
 import { redirect } from "next/navigation";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
-import { SubscriptionView, type WelcomeInfo } from "../credits/SubscriptionView";
+import { SubscriptionView, type WelcomeInfo } from "../subscription/SubscriptionView";
 
 export default async function SubscribedPage({
   searchParams,
@@ -18,10 +18,10 @@ export default async function SubscribedPage({
   const { session_id: sessionId } = await searchParams;
   const supabase = await createClient();
   const userId = await getUserIdFromClaims(supabase);
-  if (!userId) redirect("/login?redirect=/dashboard/credits");
+  if (!userId) redirect("/login?redirect=/dashboard/subscription");
 
   const welcome = sessionId ? await verifyCheckout(sessionId, userId) : null;
-  if (!welcome) redirect("/dashboard/credits");
+  if (!welcome) redirect("/dashboard/subscription");
 
   return <SubscriptionView params={{}} welcome={welcome} />;
 }

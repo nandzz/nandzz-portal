@@ -567,7 +567,7 @@ export function ImageBatchBuilder({ collectionId }: { collectionId?: string }) {
             <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{t.plan.spaceLimitTitle}</p>
             <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{t.plan.spaceLimitReached}</p>
             <Link
-              href="/dashboard/credits"
+              href="/dashboard/subscription"
               className="inline-flex items-center mt-2 text-sm font-semibold text-amber-900 dark:text-amber-200 underline underline-offset-2"
             >
               {t.plan.upgradeCta}

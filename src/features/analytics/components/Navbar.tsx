@@ -235,7 +235,7 @@ export function Navbar() {
                       </DropdownMenuItem>
                     )}
                     {FEATURES.monetization && (
-                      <DropdownMenuItem render={<Link href="/dashboard/credits" />} className="gap-2">
+                      <DropdownMenuItem render={<Link href="/dashboard/subscription" />} className="gap-2">
                         <CreditCard aria-hidden className="h-4 w-4 text-muted-foreground" />
                         {t.nav.subscription}
                       </DropdownMenuItem>
@@ -379,7 +379,7 @@ export function Navbar() {
                       {t.nav.settings}
                     </DropdownMenuItem>
                     {FEATURES.monetization && (
-                      <DropdownMenuItem render={<Link href="/dashboard/credits" />} className="gap-2">
+                      <DropdownMenuItem render={<Link href="/dashboard/subscription" />} className="gap-2">
                         <CreditCard aria-hidden className="h-4 w-4 text-muted-foreground" />
                         {t.nav.subscription}
                       </DropdownMenuItem>

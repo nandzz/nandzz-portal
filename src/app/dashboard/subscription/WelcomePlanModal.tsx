@@ -50,7 +50,7 @@ export function WelcomePlanModal({
   // Leaving the modal moves to the canonical subscription URL.
   function close() {
     setOpen(false);
-    router.replace("/dashboard/credits");
+    router.replace("/dashboard/subscription");
   }
 
   useEffect(() => {

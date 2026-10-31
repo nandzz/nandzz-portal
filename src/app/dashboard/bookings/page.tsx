@@ -22,7 +22,7 @@ export default async function MyBookingsPage() {
   // Without plan-level widget access the workspace is locked, so send them to the
   // subscription page first; otherwise open the received-bookings tab.
   if ((await getAccountType(supabase, userId)) === "business") {
-    if (!(await ownerHasWidgetAccess(userId))) redirect("/dashboard/credits");
+    if (!(await ownerHasWidgetAccess(userId))) redirect("/dashboard/subscription");
     redirect("/dashboard/booking/bookings");
   }
 

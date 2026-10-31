@@ -723,7 +723,7 @@ export const es: Translations = {
     unavailableMessage: "Este agente no está disponible en este momento.",
     limitReachedMessage: "Este agente alcanzó su límite de chats de este mes y está en pausa hasta el próximo período de facturación. Vuelve más tarde.",
     rateLimitedMessage: "Demasiados mensajes por ahora. Inténtalo de nuevo en un momento.",
-    outOfCreditsMessage: "Te quedaste sin créditos. [Recarga](/dashboard/credits) para seguir chateando.",
+    outOfCreditsMessage: "Te quedaste sin créditos. [Recarga](/dashboard/subscription) para seguir chateando.",
     advisorTitle: "Tu asesor de conocimiento",
     advisorDesc: "Cuéntame sobre ti y te ayudaré a construir tu base de conocimiento",
     askDisplayName: "Pregunta cualquier cosa a {name}",

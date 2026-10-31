@@ -723,7 +723,7 @@ export const ja: Translations = {
     unavailableMessage: "このエージェントは現在利用できません。",
     limitReachedMessage: "このエージェントは今月のチャット上限に達し、次の請求期間まで一時停止しています。後でもう一度お試しください。",
     rateLimitedMessage: "メッセージが多すぎます。しばらくしてからもう一度お試しください。",
-    outOfCreditsMessage: "クレジットが不足しています。[チャージ](/dashboard/credits)して会話を続けましょう。",
+    outOfCreditsMessage: "クレジットが不足しています。[チャージ](/dashboard/subscription)して会話を続けましょう。",
     advisorTitle: "あなたの知識アドバイザー",
     advisorDesc: "自己紹介をしてください。知識ベースを構築するお手伝いをします",
     askDisplayName: "{name}に何でも聞いてください",

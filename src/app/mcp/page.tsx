@@ -159,7 +159,7 @@ export default async function McpConnectPage() {
             icon={Coins}
             title={t.mcp.creditsTitle}
             body={t.mcp.creditsBody}
-            href="/dashboard/credits"
+            href="/dashboard/subscription"
             hrefLabel={t.mcp.viewBalance}
           />
           <InfoCard

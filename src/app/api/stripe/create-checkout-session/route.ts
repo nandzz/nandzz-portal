@@ -74,8 +74,8 @@ export async function POST(request: Request) {
     mode: "payment",
     customer: customerId,
     line_items: [{ price: pack.stripe_price_id, quantity: 1 }],
-    success_url: `${siteUrl}/dashboard/credits?success=1`,
-    cancel_url: `${siteUrl}/dashboard/credits?canceled=1`,
+    success_url: `${siteUrl}/dashboard/subscription?success=1`,
+    cancel_url: `${siteUrl}/dashboard/subscription?canceled=1`,
     allow_promotion_codes: true,
     ...(await checkoutLegalParams("credits", siteUrl)),
     metadata: {

@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-            <Link href="/dashboard/credits">
+            <Link href="/dashboard/subscription">
               <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white shadow-sm shrink-0 gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
                 Upgrade
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
               <Zap className="h-4 w-4 text-yellow-600 shrink-0" />
               <p className="text-sm text-yellow-800 dark:text-yellow-300">
                 <span className="font-medium">{usedSpaces} of {spaceLimit} spaces used.</span>{" "}
-                <Link href="/dashboard/credits" className="underline underline-offset-2 hover:text-yellow-900 dark:hover:text-yellow-200">
+                <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:text-yellow-900 dark:hover:text-yellow-200">
                   Upgrade
                 </Link>{" "}
                 for unlimited spaces.

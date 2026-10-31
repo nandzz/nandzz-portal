@@ -723,7 +723,7 @@ export const fr: Translations = {
     unavailableMessage: "Cet agent n'est pas disponible pour le moment.",
     limitReachedMessage: "Cet agent a atteint sa limite de discussions pour ce mois et est en pause jusqu'à la prochaine période de facturation. Revenez plus tard.",
     rateLimitedMessage: "Trop de messages pour l'instant. Veuillez réessayer dans un moment.",
-    outOfCreditsMessage: "Vous n'avez plus de crédits. [Rechargez](/dashboard/credits) pour continuer à discuter.",
+    outOfCreditsMessage: "Vous n'avez plus de crédits. [Rechargez](/dashboard/subscription) pour continuer à discuter.",
     advisorTitle: "Votre conseiller en connaissances",
     advisorDesc: "Parlez-moi de vous et je vous aiderai à construire votre base de connaissances",
     askDisplayName: "Demandez n'importe quoi à {name}",

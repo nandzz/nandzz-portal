@@ -330,7 +330,7 @@ export function ContentBuilderShell({
                 {t.plan.spaceLimitReached}
               </p>
               <Link
-                href="/dashboard/credits"
+                href="/dashboard/subscription"
                 className="inline-flex items-center mt-2 text-sm font-semibold text-amber-900 dark:text-amber-200 underline underline-offset-2"
               >
                 {t.plan.upgradeCta}

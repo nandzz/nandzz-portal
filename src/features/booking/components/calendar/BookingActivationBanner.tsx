@@ -132,7 +132,7 @@ export function BookingActivationBanner({ instanceId, hasAccess, enabled, userna
               )}
               {variant === "upgrade" && (
                 <Link
-                  href="/dashboard/credits"
+                  href="/dashboard/subscription"
                   className="group inline-flex h-10 items-center gap-1.5 rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-sm transition hover:opacity-90 active:scale-[0.97]"
                 >
                   {t.plan.upgradeToStarter}

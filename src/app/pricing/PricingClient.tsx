@@ -128,8 +128,8 @@ export function PricingClient({
                 plan.price_cents === 0
                   ? "/login?tab=signup"
                   : showAnnual
-                    ? "/dashboard/credits?interval=year"
-                    : "/dashboard/credits";
+                    ? "/dashboard/subscription?interval=year"
+                    : "/dashboard/subscription";
               return (
                 <div
                   key={plan.id}
@@ -238,7 +238,7 @@ export function PricingClient({
                   ) any time. Top-up credits never expire and are used only after your monthly allowance.
                 </p>
                 <Link
-                  href="/dashboard/credits"
+                  href="/dashboard/subscription"
                   className="text-xs font-semibold text-violet-600 dark:text-violet-400 mt-2 inline-flex items-center gap-1 hover:underline"
                 >
                   Manage your subscription →
