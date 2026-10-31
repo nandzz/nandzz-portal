@@ -244,7 +244,9 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
             </FollowersDialog>
           </>
         )}
-        {!isOwner && currentUserId && (
+        {/* Following is opt-in: the button only appears when the owner turned
+            on Settings → follow counts. */}
+        {!isOwner && currentUserId && profile.show_follow_counts && (
           <FollowButton profileId={profile.id} initialIsFollowing={isFollowing} />
         )}
       </div>

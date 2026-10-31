@@ -27,13 +27,17 @@ function buildMapsUrl(formatted: string, placeId?: string): string {
 // province>, country" shape by dropping the country and stripping postcode /
 // province tokens from the locality segment. Falls back to the full string when
 // the shape doesn't match, so the chip never ends up empty.
+// Brazilian addresses put the postcode in its own segment ("…, São Paulo - SP,
+// 04145-000, Brazil"), so a segment that cleans to nothing falls back one step.
 function shortLabel(formatted: string): string {
   const parts = formatted.split(",").map((s) => s.trim()).filter(Boolean);
   if (parts.length < 3) return formatted;
-  const city = parts[parts.length - 2]
-    .split(/\s+/)
-    .filter((tok) => !/\d/.test(tok) && !/^[A-Z]{1,3}$/.test(tok))
-    .join(" ");
+  const clean = (segment: string) =>
+    segment
+      .split(/\s+/)
+      .filter((tok) => /\p{L}/u.test(tok) && !/\d/.test(tok) && !/^[A-Z]{1,3}$/.test(tok))
+      .join(" ");
+  const city = clean(parts[parts.length - 2]) || (parts.length >= 4 ? clean(parts[parts.length - 3]) : "");
   return city || formatted;
 }
 
