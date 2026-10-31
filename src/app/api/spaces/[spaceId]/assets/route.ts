@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { IMMUTABLE_CACHE_CONTROL } from "@/lib/storageCache";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB per space
 const ALLOWED_TYPES = new Set([
@@ -103,7 +104,7 @@ export async function POST(
   const bytes = await file.arrayBuffer();
   const { error: uploadError } = await admin.storage
     .from("space-assets")
-    .upload(path, bytes, { contentType: file.type });
+    .upload(path, bytes, { contentType: file.type, cacheControl: IMMUTABLE_CACHE_CONTROL });
 
   if (uploadError) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });

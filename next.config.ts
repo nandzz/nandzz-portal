@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
     CALL_ASSIST_ENABLED: IS_DEV_ENV ? "1" : "0",
   },
   images: {
+    // Default is 4h. Every image the optimizer sees is either at a unique path
+    // or, when its path is upserted (avatars, logos, staff/location photos,
+    // space preview screenshots), stored with a `?t=`/`?v=` version query, so
+    // a changed image always gets a new cache key.
+    minimumCacheTTL: 2592000, // 30 days
     remotePatterns: [
       {
         protocol: "https",
@@ -149,19 +154,6 @@ const nextConfig: NextConfig = {
               `base-uri 'self'`,
               `form-action 'self' https:`,
             ].join("; "),
-          },
-        ],
-      },
-      // Fingerprint-free public assets (not content-hashed): modest TTL with
-      // stale-while-revalidate rather than immutable, since a rebuild can
-      // change these without the filename changing.
-      {
-        source:
-          "/:path(favicon.ico|favicon-16x16.png|favicon-32x32.png|apple-touch-icon.png|android-chrome-192x192.png|android-chrome-512x512.png|logo.png|logo.svg|site.webmanifest|pdf.worker.min.mjs)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=86400, stale-while-revalidate=604800",
           },
         ],
       },

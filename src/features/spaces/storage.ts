@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { IMMUTABLE_CACHE_CONTROL } from "@/lib/storageCache";
 
 // Client-side storage helpers for the spaces feature. Content uploads stay
 // browser → Supabase directly: PDF (10 MB), image (5 MB) and preview-image
@@ -108,7 +109,9 @@ export async function uploadSpaceHtml(
   if (error) throw error;
 }
 
-/** Uploads a regenerated preview screenshot and returns its public URL. */
+/** Uploads a regenerated preview screenshot and returns its cache-busted
+ * public URL (the path is reused on every save, so the `?t=` query defeats the
+ * browser, CDN and image-optimizer caches). */
 export async function uploadSpacePreviewScreenshot(
   userId: string,
   spaceId: string,
@@ -123,7 +126,7 @@ export async function uploadSpacePreviewScreenshot(
   const { data } = supabase.storage
     .from("space-previews")
     .getPublicUrl(previewPath);
-  return data.publicUrl;
+  return `${data.publicUrl}?t=${Date.now()}`;
 }
 
 // ─── Content builder uploads ────────────────────────────────────────────────
@@ -146,7 +149,7 @@ export async function uploadSpacePreviewImage(
   const filePath = `${userId}/${Date.now()}.${fileExt}`;
   const { error } = await supabase.storage
     .from("space-previews")
-    .upload(filePath, file);
+    .upload(filePath, file, { cacheControl: IMMUTABLE_CACHE_CONTROL });
   if (error) throw error;
   const { data } = supabase.storage
     .from("space-previews")
@@ -163,7 +166,7 @@ export async function uploadSpacePdf(
   const filePath = `${userId}/${Date.now()}.pdf`;
   const { error } = await supabase.storage
     .from("space-pdfs")
-    .upload(filePath, file, { contentType: "application/pdf", upsert: false });
+    .upload(filePath, file, { contentType: "application/pdf", upsert: false, cacheControl: IMMUTABLE_CACHE_CONTROL });
   if (error) throw error;
   const { data } = supabase.storage.from("space-pdfs").getPublicUrl(filePath);
   return data.publicUrl;
@@ -180,7 +183,11 @@ export async function uploadSpaceImage(
   const filePath = `${userId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${fileExt}`;
   const { error } = await supabase.storage
     .from("space-images")
-    .upload(filePath, file, { contentType: file.type, upsert: false });
+    .upload(filePath, file, {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
+    });
   if (error) throw error;
   const { data } = supabase.storage.from("space-images").getPublicUrl(filePath);
   return data.publicUrl;

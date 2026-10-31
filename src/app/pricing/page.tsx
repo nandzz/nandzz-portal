@@ -26,8 +26,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const revalidate = 300;
-
 export default async function PricingPage() {
   const [{ plans, packs }, { ai: aiEnabled }] = await Promise.all([
     getPublicPricing(),

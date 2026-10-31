@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { IMMUTABLE_CACHE_CONTROL } from "@/lib/storageCache";
 
 // Client-side storage helpers for the profile feature. Uploads intentionally
 // stay browser → Supabase directly (unchanged from the previous implementation):
@@ -39,7 +40,7 @@ export async function uploadBackground(
   const filePath = `${profileId}/background-${Date.now()}.${ext}`;
   const { error } = await supabase.storage
     .from("profile-backgrounds")
-    .upload(filePath, file);
+    .upload(filePath, file, { cacheControl: IMMUTABLE_CACHE_CONTROL });
   if (error) throw error;
 
   const { data } = supabase.storage
