@@ -45,7 +45,7 @@ export function ShareBookingLinkModal({ urls, onClose }: { urls: ShareUrls; onCl
   const tt = t.bookingToday;
 
   const [tab, setTab] = useState<Tab>("share");
-  const [target, setTarget] = useState<Target>("booking");
+  const [target, setTarget] = useState<Target>("profile");
   const [lang, setLang] = useState<Locale>(locale);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const [instagramHint, setInstagramHint] = useState(false);
@@ -57,11 +57,14 @@ export function ShareBookingLinkModal({ urls, onClose }: { urls: ShareUrls; onCl
   useEffect(() => { setCanNativeShare(typeof navigator.share === "function"); }, []);
 
   const fullUrl = new URL(urls[target], window.location.origin).href;
+  // What people see and paste: no scheme (WhatsApp, Instagram and mail apps
+  // still turn it into a link). The QR code and the copy button use fullUrl.
+  const shortUrl = fullUrl.replace(/^https?:\/\/(www\.)?/, "");
   const texts = SHARE_MESSAGES[lang];
-  const [message, setMessage] = useState(() => fillUrl(texts.message, fullUrl));
+  const [message, setMessage] = useState(() => fillUrl(texts.message, shortUrl));
   // Picking another language or link resets the editable message.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setMessage(fillUrl(texts.message, fullUrl)); }, [texts, fullUrl]);
+  useEffect(() => { setMessage(fillUrl(texts.message, shortUrl)); }, [texts, shortUrl]);
 
   const open = (href: string) => window.open(href, "_blank", "noopener,noreferrer");
 
@@ -110,8 +113,8 @@ export function ShareBookingLinkModal({ urls, onClose }: { urls: ShareUrls; onCl
   ];
 
   const readyTexts = [
-    { key: "away", label: tt.shareTextAway, hint: tt.shareTextAwayHint, text: fillUrl(texts.away, fullUrl) },
-    { key: "bio", label: tt.shareTextBio, hint: tt.shareTextBioHint, text: fillUrl(texts.instagramBio, fullUrl) },
+    { key: "away", label: tt.shareTextAway, hint: tt.shareTextAwayHint, text: fillUrl(texts.away, shortUrl) },
+    { key: "bio", label: tt.shareTextBio, hint: tt.shareTextBioHint, text: fillUrl(texts.instagramBio, shortUrl) },
   ];
 
   const languagePicker = (
@@ -137,7 +140,7 @@ export function ShareBookingLinkModal({ urls, onClose }: { urls: ShareUrls; onCl
 
       {/* Which page the link opens */}
       <div className="mb-3 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-sm" role="radiogroup" aria-label={tt.shareTargetLabel}>
-        {(["booking", "profile"] as const).map((key) => (
+        {(["profile", "booking"] as const).map((key) => (
           <button
             key={key}
             type="button"
@@ -156,7 +159,7 @@ export function ShareBookingLinkModal({ urls, onClose }: { urls: ShareUrls; onCl
 
       {/* The link itself, always visible */}
       <div className="flex items-center gap-2 rounded-lg border border-border py-1 pl-3 pr-1">
-        <span className="min-w-0 flex-1 truncate text-sm">{fullUrl}</span>
+        <span className="min-w-0 flex-1 truncate text-sm">{shortUrl}</span>
         <button
           type="button"
           onClick={() => copy("link", fullUrl)}
