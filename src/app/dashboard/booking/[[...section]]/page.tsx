@@ -145,6 +145,7 @@ async function CalendarWorkspaceLoader({
 
   const canShare = hasAccess && enabled && !!username;
   const shareUrl = canShare ? `/${username}/booking` : null;
+  const profileUrl = canShare ? `/${username}` : null;
 
   // Default the first-paint scope to the first location — this matches the
   // client's first render (before localStorage restores a prior pick), so the
@@ -189,6 +190,7 @@ async function CalendarWorkspaceLoader({
         initial={{ locationId, today, overview, calendar, list, customers }}
         currencySymbol={symbol}
         shareUrl={shareUrl}
+        profileUrl={profileUrl}
         initialTab={initialTab ?? "today"}
         basePath={BASE_PATH}
         siteDefaults={siteDefaults}

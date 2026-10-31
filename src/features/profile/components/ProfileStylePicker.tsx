@@ -9,7 +9,7 @@ import {
   resolveBookingButtonStyle,
   type ResolvedBookingButtonStyle,
 } from "@/lib/bookingButtonStyle";
-import { InstagramIcon, LinkedinIcon } from "./BrandIcons";
+import { InstagramIcon, LinkedinIcon } from "@/components/icons/BrandIcons";
 import {
   INSTAGRAM_FILL,
   SocialLinkButtons,

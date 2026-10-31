@@ -32,7 +32,7 @@ import {
   XIcon,
   GithubIcon,
   YoutubeIcon,
-} from "./BrandIcons";
+} from "@/components/icons/BrandIcons";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import {
   PHONE_COUNTRIES,

@@ -98,6 +98,8 @@ interface Props {
   initial: InitialDashboard;
   currencySymbol: string;
   shareUrl: string | null;
+  // Public profile path, offered next to the booking page in the share dialog.
+  profileUrl: string | null;
   initialTab: string;
   // Dashboard base path this workspace is mounted at (e.g. "/dashboard/booking").
   // Tab segments hang off it (`${basePath}/{segment}`); no instance id in the URL
@@ -114,6 +116,7 @@ export function WidgetWorkspace({
   initial,
   currencySymbol,
   shareUrl,
+  profileUrl,
   initialTab,
   basePath,
   siteDefaults,
@@ -383,6 +386,7 @@ export function WidgetWorkspace({
               staff: manualBookingScope.staff,
               timezone: effectiveTimezone,
             }}
+            shareUrls={shareUrl && profileUrl ? { booking: shareUrl, profile: profileUrl } : undefined}
             onChanged={dash.refetchAll}
           />
         </TabsContent>

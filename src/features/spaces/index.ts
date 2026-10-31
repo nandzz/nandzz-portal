@@ -11,6 +11,7 @@ export { SpaceOwnerMenu } from "./components/SpaceOwnerMenu";
 export { DeleteSpaceButton } from "./components/DeleteSpaceButton";
 export { ShareButton } from "./components/ShareButton";
 export { ShareMenu } from "./components/ShareMenu";
+export { useQrDownload } from "./hooks/useQrDownload";
 
 export { deleteSpace } from "./actions/delete-space";
 export type { DeleteSpaceResult } from "./actions/delete-space";

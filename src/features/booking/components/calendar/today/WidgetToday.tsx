@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { CalendarSearch, ChevronDown, Sparkles } from "lucide-react";
+import { CalendarSearch, ChevronDown, Share2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { TodayBooking, TodayData } from "@/features/booking/dashboardTypes";
@@ -9,6 +9,7 @@ import { CustomerAvatar } from "../CustomerIdentity";
 import { TodayRibbon } from "./TodayRibbon";
 import { TodayFocusPanel } from "./TodayFocusPanel";
 import { CheckAvailabilityModal, type AvailabilityScope } from "./CheckAvailabilityModal";
+import { ShareBookingLinkModal, type ShareUrls } from "./ShareBookingLinkModal";
 import { phaseOf, serviceLines, useTodayFormat, type TodayFormat } from "./todayFormat";
 
 // The Today tab: how the business's day is going right now. A one-line status,
@@ -27,11 +28,14 @@ export function WidgetToday({
   data,
   loading,
   availability,
+  shareUrls,
   onChanged,
 }: {
   data: TodayData;
   loading: boolean;
   availability?: AvailabilityScope;
+  // Present once the booking page is live; drives the "Share link" button.
+  shareUrls?: ShareUrls;
   // Refetch after the owner reschedules/reassigns/cancels from the focus panel.
   onChanged?: () => void;
 }) {
@@ -49,6 +53,7 @@ export function WidgetToday({
   const [showDone, setShowDone] = useState(false);
   const [showCancelled, setShowCancelled] = useState(false);
   const [availOpen, setAvailOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const agendaId = useId();
 
@@ -159,19 +164,32 @@ export function WidgetToday({
             {nextLine && <> {nextLine}</>}
           </p>
         </div>
-        {availability && (
-          <button
-            type="button"
-            onClick={() => setAvailOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <CalendarSearch className="h-4 w-4" /> {tt.checkAvailability}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {shareUrls && (
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              aria-label={tt.shareLink}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-semibold transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4"
+            >
+              <Share2 className="h-4 w-4" /> <span className="hidden sm:inline">{tt.shareLink}</span>
+            </button>
+          )}
+          {availability && (
+            <button
+              type="button"
+              onClick={() => setAvailOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <CalendarSearch className="h-4 w-4" /> {tt.checkAvailability}
+            </button>
+          )}
+        </div>
       </header>
       {availability && availOpen && (
         <CheckAvailabilityModal open onClose={() => setAvailOpen(false)} scope={availability} />
       )}
+      {shareUrls && shareOpen && <ShareBookingLinkModal urls={shareUrls} onClose={() => setShareOpen(false)} />}
 
       {/* Summary: the day ribbon + four figures */}
       <section className="rounded-2xl border border-border bg-background">

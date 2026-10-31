@@ -21,7 +21,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { InstagramIcon, YoutubeIcon } from "@/features/profile/components/BrandIcons";
+import { InstagramIcon, YoutubeIcon } from "@/components/icons/BrandIcons";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { ShowcaseCopy } from "./content";
 import { GALLERY_SIZES, PHOTOS, Photo, type PhotoId } from "./Photo";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Share2, Link2, QrCode, Check, Download, Send } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
@@ -13,9 +13,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import QRCode from "react-qr-code";
-
-const PNG_SIZE = 1024;
-const PNG_MARGIN = 64;
+import { useQrDownload } from "../hooks/useQrDownload";
 
 interface ShareMenuProps {
   url: string;
@@ -27,21 +25,12 @@ interface ShareMenuProps {
   triggerContent?: ReactNode;
 }
 
-function triggerDownload(href: string, filename: string) {
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = filename;
-  a.click();
-  // Revoke after the click is handled — revoking synchronously can cancel the download in Safari.
-  setTimeout(() => URL.revokeObjectURL(href), 1000);
-}
-
 export function ShareMenu({ url, title, size = "sm", triggerClassName, triggerContent }: ShareMenuProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const { t } = useLanguage();
-  const qrId = `qr-${useId().replace(/:/g, "")}`;
+  const { qrId, downloadPng, downloadSvg } = useQrDownload(title);
 
   // navigator.share only exists client-side; checking after mount avoids a hydration mismatch.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -51,8 +40,6 @@ export function ShareMenu({ url, title, size = "sm", triggerClassName, triggerCo
     typeof window !== "undefined"
       ? new URL(url, window.location.origin).href
       : url;
-
-  const fileBase = `qr-${title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "nandzz"}`;
 
   const copyLink = async () => {
     try {
@@ -70,45 +57,6 @@ export function ShareMenu({ url, title, size = "sm", triggerClassName, triggerCo
     } catch {
       // User cancelled
     }
-  };
-
-  const serializeQR = () => {
-    const svg = document.getElementById(qrId);
-    return svg ? new XMLSerializer().serializeToString(svg) : null;
-  };
-
-  const downloadSvg = () => {
-    const svgStr = serializeQR();
-    if (!svgStr) return;
-    const href = URL.createObjectURL(new Blob([svgStr], { type: "image/svg+xml" }));
-    triggerDownload(href, `${fileBase}.svg`);
-  };
-
-  const downloadPng = () => {
-    const svgStr = serializeQR();
-    if (!svgStr) return;
-    const svgUrl = URL.createObjectURL(new Blob([svgStr], { type: "image/svg+xml" }));
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = PNG_SIZE;
-      canvas.height = PNG_SIZE;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // White quiet zone so the code scans on any background it's placed on.
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, PNG_SIZE, PNG_SIZE);
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img, PNG_MARGIN, PNG_MARGIN, PNG_SIZE - PNG_MARGIN * 2, PNG_SIZE - PNG_MARGIN * 2);
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const href = URL.createObjectURL(blob);
-          triggerDownload(href, `${fileBase}.png`);
-        }, "image/png");
-      }
-      URL.revokeObjectURL(svgUrl);
-    };
-    img.src = svgUrl;
   };
 
   const iconClass = size === "md" ? "h-4 w-4" : "h-3.5 w-3.5";

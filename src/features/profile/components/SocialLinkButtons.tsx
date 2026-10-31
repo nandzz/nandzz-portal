@@ -6,7 +6,7 @@ import {
   XIcon,
   GithubIcon,
   YoutubeIcon,
-} from "./BrandIcons";
+} from "@/components/icons/BrandIcons";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import type { Profile, SocialLinksStyle } from "@/lib/types";
 import { isColorDark } from "@/lib/color";
