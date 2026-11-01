@@ -577,6 +577,7 @@ export type Translations = {
     watchVideo: string;
     tapForSound: string;
     mute: string;
+    replay: string;
     videoCta: string;
     whyButton: string;
     whyTitle: string;

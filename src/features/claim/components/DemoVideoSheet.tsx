@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Play, Volume2, VolumeX, X } from "lucide-react";
+import { Play, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { demoNotice, useDemoNotice } from "../lib/demo-notice-store";
 
@@ -67,6 +67,13 @@ function VideoDialog({ src }: { src: string }) {
     setMuted(v.muted);
   };
 
+  const replay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = 0;
+    void v.play();
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={close} />
@@ -108,14 +115,24 @@ function VideoDialog({ src }: { src: string }) {
           >
             <X className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            onClick={toggleSound}
-            className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-black/75"
-          >
-            {muted ? <VolumeX className="h-4 w-4" aria-hidden /> : <Volume2 className="h-4 w-4" aria-hidden />}
-            {muted ? c.tapForSound : c.mute}
-          </button>
+          <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={replay}
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-black/75"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden />
+              {c.replay}
+            </button>
+            <button
+              type="button"
+              onClick={toggleSound}
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-black/60 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-black/75"
+            >
+              {muted ? <VolumeX className="h-4 w-4" aria-hidden /> : <Volume2 className="h-4 w-4" aria-hidden />}
+              {muted ? c.tapForSound : c.mute}
+            </button>
+          </div>
         </div>
         <button
           type="button"
