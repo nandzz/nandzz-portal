@@ -178,6 +178,12 @@ const TZ_REGION: Record<string, string> = {
   "Africa/Dar_es_Salaam": "TZ",
 };
 
+// Phone region for an IANA timezone, or null when unmapped (incl. "UTC").
+export function regionForTimeZone(timeZone: string | null | undefined): string | null {
+  const region = timeZone ? TZ_REGION[timeZone] : undefined;
+  return region && KNOWN_REGIONS.has(region) ? region : null;
+}
+
 function browserTimeZone(): string | null {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null;
@@ -197,8 +203,8 @@ export function inferPhoneRegion(
   fallbackLocale: string,
   timeZone: string | null = browserTimeZone()
 ): string {
-  const tzRegion = timeZone ? TZ_REGION[timeZone] : undefined;
-  if (tzRegion && KNOWN_REGIONS.has(tzRegion)) return tzRegion;
+  const tzRegion = regionForTimeZone(timeZone);
+  if (tzRegion) return tzRegion;
   for (const tag of [navLang, fallbackLocale]) {
     if (!tag) continue;
     try {

@@ -11,6 +11,7 @@ import {
   PHONE_COUNTRIES,
   dialForRegion,
   inferPhoneRegion,
+  regionForTimeZone,
   isPossiblePhoneNumber,
   isValidEmail,
   regionName,
@@ -188,14 +189,14 @@ export function CalendarBookingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Infer the phone country (browser timezone, then browser language →
-  // likely region), then prefill contact details if the visitor already has a
+  // Infer the phone country: the BUSINESS's country first (its customers are
+  // overwhelmingly local — a visitor abroad shouldn't get their travel
+  // country's prefix), then browser timezone / language, then prefill contact details if the visitor already has a
   // Nandzz session. Guests just keep the inferred country. Runs once on mount.
   useEffect(() => {
-    const inferred = inferPhoneRegion(
-      typeof navigator !== "undefined" ? navigator.language : null,
-      locale
-    );
+    const inferred =
+      regionForTimeZone(tz) ??
+      inferPhoneRegion(typeof navigator !== "undefined" ? navigator.language : null, locale);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync of the phone country from the browser language (an external signal only readable on the client), mirroring LanguageContext's locale detection
     setPhoneRegion(inferred);
     // Returning from an OAuth sign-in mid-booking: put the visitor back on the
@@ -1079,8 +1080,8 @@ export function CalendarBookingFlow({
               <SummaryRow
                 icon={<MapPin className="h-4 w-4" />}
                 label={t.booking.summaryLocation}
-                value={location.name}
-                meta={location.address || null}
+                value={location.name || location.address || ""}
+                sub={location.name ? location.address || null : null}
               />
             )}
           </div>
@@ -1247,7 +1248,9 @@ export function CalendarBookingFlow({
       />
 
       <p className="pt-2 text-center text-[10px] text-muted-foreground">
-        {t.booking.poweredBy.replace("{business}", businessName).replace("{tz}", tz)}
+        {t.booking.poweredBy
+          .replace("{business}", businessName)
+          .replace("{tz}", tz.split("/").pop()!.replace(/_/g, " "))}
       </p>
     </div>
   );
@@ -1261,6 +1264,7 @@ function SummaryRow({
   bareIcon = false,
   label,
   value,
+  sub,
   meta,
 }: {
   icon: ReactNode;
@@ -1269,6 +1273,9 @@ function SummaryRow({
   bareIcon?: boolean;
   label: string;
   value: string;
+  // Secondary line under the value that WRAPS instead of truncating (e.g. a
+  // location's full address).
+  sub?: string | null;
   meta?: string | null;
 }) {
   return (
@@ -1285,8 +1292,13 @@ function SummaryRow({
           {label}
         </p>
         <p className="truncate text-sm font-medium">{value}</p>
+        {sub && <p className="text-xs leading-snug text-muted-foreground">{sub}</p>}
       </div>
-      {meta && <span className="shrink-0 text-xs text-muted-foreground">{meta}</span>}
+      {meta && (
+        <span className="max-w-[40%] shrink-0 truncate text-right text-xs text-muted-foreground">
+          {meta}
+        </span>
+      )}
     </div>
   );
 }
