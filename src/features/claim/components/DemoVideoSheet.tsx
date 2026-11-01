@@ -6,11 +6,9 @@ import { Volume2, VolumeX, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { demoNotice, useDemoNotice } from "../lib/demo-notice-store";
 
-const SEEN_KEY = "nandzz-demo-video-seen:";
-
 /**
  * The demo's pitch video (their own back-office, narrated), shown when the
- * business first opens its demo page. Opens by itself once per browser, then
+ * business opens its demo page. Opens by itself on every visit, and again
  * from the "Watch the video" link in DemoNoticeSheet. Gone after the claim
  * (the video is deleted with the demo).
  *
@@ -19,14 +17,9 @@ const SEEN_KEY = "nandzz-demo-video-seen:";
 export function DemoVideoSheet({ username, src }: { username: string; src: string }) {
   const { videoOpen } = useDemoNotice();
 
-  // First visit in this browser: open it once.
+  // Every visit to the demo page. The layout stays mounted while moving between
+  // the profile's own routes, so it doesn't reopen on each of those.
   useEffect(() => {
-    try {
-      if (localStorage.getItem(SEEN_KEY + username)) return;
-      localStorage.setItem(SEEN_KEY + username, "1");
-    } catch {
-      // Storage blocked: still show it, it just may show again next time.
-    }
     demoNotice.openVideo();
   }, [username]);
 
