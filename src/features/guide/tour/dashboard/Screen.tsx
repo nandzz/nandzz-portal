@@ -12,7 +12,8 @@ import { WidgetBookings, type ManualBookingScope } from "@/features/booking/comp
 import { WidgetCustomers } from "@/features/booking/components/calendar/WidgetCustomers";
 import type { StaffMember } from "@/lib/types";
 import type { TourScreenProps } from "../types";
-import { buildBookings, buildCustomers, buildOverview, buildToday, tourNow, tourTimezone, TOUR_STAFF } from "./data";
+import { useTourBusiness } from "../business";
+import { buildBookings, buildCustomers, buildOverview, buildToday, castOf, tourNow, tourTimezone } from "./data";
 import { stepTab, type DashboardTab } from "./steps";
 
 const noop = () => {};
@@ -27,9 +28,11 @@ function anchorFor(step: number, root: HTMLElement): HTMLElement | null {
 }
 
 // The /dashboard/booking page, built from the real page header + tab bar and
-// the real tab components, fed sample data for Studio Lume.
+// the real tab components, fed sample data for Studio Lume (or the business
+// the kit renders, see TourBusiness).
 export default function DashboardScreen({ step }: TourScreenProps) {
   const { t } = useLanguage();
+  const business = useTourBusiness();
   const reduce = useReduceMotion();
   const tab = stepTab(step);
 
@@ -96,7 +99,7 @@ export default function DashboardScreen({ step }: TourScreenProps) {
           </div>
           <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-xs font-medium text-emerald-700 md:inline-flex dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
             <MapPin className="h-3.5 w-3.5" />
-            {t.booking.currentLocationPillLabel.replace("{name}", "Studio Lume")}
+            {t.booking.currentLocationPillLabel.replace("{name}", business?.location.name ?? "Studio Lume")}
             <ChevronDown className="h-3.5 w-3.5" />
           </span>
         </div>
@@ -126,14 +129,16 @@ export default function DashboardScreen({ step }: TourScreenProps) {
 
 function TabBody({ tab }: { tab: DashboardTab }) {
   const { t, locale } = useLanguage();
+  const business = useTourBusiness();
   const sample = t.guidePage.tour.sample;
   const now = useMemo(() => tourNow(), []);
   const timezone = useMemo(() => tourTimezone(), []);
+  const cast = useMemo(() => castOf(sample, business), [sample, business]);
 
-  const today = useMemo(() => buildToday(now, sample), [now, sample]);
-  const overview = useMemo(() => buildOverview(now, locale, sample), [now, locale, sample]);
-  const bookings = useMemo(() => buildBookings(now, sample), [now, sample]);
-  const customers = useMemo(() => buildCustomers(now), [now]);
+  const today = useMemo(() => buildToday(now, sample, cast), [now, sample, cast]);
+  const overview = useMemo(() => buildOverview(now, locale, cast), [now, locale, cast]);
+  const bookings = useMemo(() => buildBookings(now, sample, cast), [now, sample, cast]);
+  const customers = useMemo(() => buildCustomers(now, cast), [now, cast]);
 
   // The booking list only needs to know there is staff (it unlocks the row actions).
   const manual = useMemo<ManualBookingScope>(
@@ -142,10 +147,10 @@ function TabBody({ tab }: { tab: DashboardTab }) {
       locationId: null,
       services: [],
       categories: [],
-      staff: TOUR_STAFF.map((s) => ({ id: s.id, name: s.name, availability: {} }) as StaffMember),
+      staff: cast.staff.map((s) => ({ id: s.id, name: s.name, availability: {} }) as StaffMember),
       showPrices: true,
     }),
-    []
+    [cast]
   );
 
   switch (tab) {
@@ -157,7 +162,7 @@ function TabBody({ tab }: { tab: DashboardTab }) {
       return (
         <WidgetBookings
           timezone={timezone}
-          currencySymbol="€"
+          currencySymbol={cast.currency}
           now={now}
           calendar={bookings.calendar}
           monthKey={bookings.calendar.monthKey}

@@ -3,7 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 import { CalendarDays, Check, ChevronRight, Clock, LayoutDashboard, MapPin, ChevronDown, Settings, Sun, Tag, UserCog, Users } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { todayInZone } from "@/features/booking/domain/calendar";
 import { useCalendarConfig } from "@/features/booking/components/calendar/useCalendarConfig";
@@ -12,7 +12,9 @@ import { StaffManager } from "@/features/booking/components/calendar/StaffManage
 import { AvailabilityManager } from "@/features/booking/components/calendar/AvailabilityManager";
 import { LocationManager } from "@/features/booking/components/calendar/LocationManager";
 import { MonthCalendar } from "@/features/booking/components/calendar/MonthCalendar";
+import { currencySymbol } from "@/features/booking/domain/messages";
 import type { TourScreenProps } from "../types";
+import { useTourBusiness } from "../business";
 import { CURRENT_LOCATION_ID, LOCATION_NAME, SAMPLE_TIMES, bookableDates, buildConfig, servicesOf } from "./data";
 
 const TAB_BY_STEP = [null, "services", "staff", "availability"] as const;
@@ -27,8 +29,10 @@ export function BookingScreen({ step }: TourScreenProps) {
   // The real config controller: pure local state until "save" is pressed, which
   // never happens in the inert frame.
   const sample = t.guidePage.tour.sample;
-  const config = useMemo(() => buildConfig(sample), [sample]);
+  const business = useTourBusiness();
+  const config = useMemo(() => buildConfig(sample, business), [sample, business]);
   const controller = useCalendarConfig("tour", config, true);
+  const locationId = business?.location.id ?? CURRENT_LOCATION_ID;
   const client = step >= 4;
   const tab = TAB_BY_STEP[step] ?? null;
 
@@ -86,17 +90,17 @@ export function BookingScreen({ step }: TourScreenProps) {
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
                   <MapPin className="h-3.5 w-3.5" />
-                  {t.booking.currentLocationPillLabel.replace("{name}", LOCATION_NAME)}
+                  {t.booking.currentLocationPillLabel.replace("{name}", business?.location.name ?? LOCATION_NAME)}
                   <ChevronDown className="h-3.5 w-3.5" />
                 </span>
               </div>
 
-              {tab === "services" && <ServicesManager controller={controller} currentLocationId={CURRENT_LOCATION_ID} />}
-              {tab === "staff" && <StaffManager controller={controller} currentLocationId={CURRENT_LOCATION_ID} />}
+              {tab === "services" && <ServicesManager controller={controller} currentLocationId={locationId} />}
+              {tab === "staff" && <StaffManager controller={controller} currentLocationId={locationId} />}
               {/* Opening hours: skip the timezone/buffer card so the weekly list fits the window */}
               {tab === "availability" && (
                 <div className="[&>div>section:first-child]:hidden [&>div>section:last-of-type]:hidden">
-                  <AvailabilityManager controller={controller} currentLocationId={CURRENT_LOCATION_ID} />
+                  <AvailabilityManager controller={controller} currentLocationId={locationId} />
                 </div>
               )}
             </Tabs>
@@ -119,8 +123,12 @@ function ClientView({ step }: { step: number }) {
     return { todayKey: today, dates: set, selected: sorted[1] ?? sorted[0], maxKey: sorted[sorted.length - 1] };
   }, []);
 
-  const services = servicesOf(t.guidePage.tour.sample).slice(0, 3);
-  const picked = new Set(["svc_cut", "svc_blow"]);
+  const business = useTourBusiness();
+  const services = (business?.location.services ?? servicesOf(t.guidePage.tour.sample)).slice(0, 3);
+  // Studio Lume's client picks a cut + blow-dry; a business's, its first one or two.
+  const picked = new Set(business ? services.slice(0, 2).map((s) => s.id) : ["svc_cut", "svc_blow"]);
+  const name = business?.name ?? "Studio Lume";
+  const money = (cents: number) => `${currencySymbol(business?.currency ?? "eur")}${(cents / 100).toFixed(2)}`;
   const chosen = services.filter((s) => picked.has(s.id));
   const totalMin = chosen.reduce((n, s) => n + s.duration_min, 0);
   const totalPrice = chosen.reduce((n, s) => n + (s.price_cents ?? 0), 0);
@@ -132,10 +140,13 @@ function ClientView({ step }: { step: number }) {
     <div className="mx-auto max-w-lg space-y-4">
       <div className="flex items-center gap-3">
         <Avatar size="lg">
-          <AvatarFallback className="bg-violet-100 font-semibold text-violet-700 dark:bg-violet-900 dark:text-violet-300">S</AvatarFallback>
+          {business?.avatarUrl && <AvatarImage src={business.avatarUrl} alt="" />}
+          <AvatarFallback className="bg-violet-100 font-semibold text-violet-700 dark:bg-violet-900 dark:text-violet-300">
+            {name.charAt(0).toUpperCase()}
+          </AvatarFallback>
         </Avatar>
         <div>
-          <p className="text-lg font-bold leading-tight tracking-tight">Studio Lume</p>
+          <p className="text-lg font-bold leading-tight tracking-tight">{name}</p>
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <CalendarDays className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> {t.mobileTab.booking}
           </span>
@@ -169,7 +180,7 @@ function ClientView({ step }: { step: number }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium">{s.name}</span>
-                        <span className="text-sm text-muted-foreground">€{((s.price_cents ?? 0) / 100).toFixed(2)}</span>
+                        <span className="text-sm text-muted-foreground">{money(s.price_cents ?? 0)}</span>
                       </div>
                       <span className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" /> {t.booking.durationMin.replace("{min}", String(s.duration_min))}
@@ -186,7 +197,7 @@ function ClientView({ step }: { step: number }) {
                   <span className="inline-flex items-center gap-1 text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> {t.booking.durationMin.replace("{min}", String(totalMin))}
                   </span>
-                  <span className="font-semibold tabular-nums">€{(totalPrice / 100).toFixed(2)}</span>
+                  <span className="font-semibold tabular-nums">{money(totalPrice)}</span>
                 </span>
               </div>
               <div className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white">

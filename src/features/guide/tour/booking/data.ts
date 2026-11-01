@@ -1,6 +1,7 @@
 import type { AvailabilityWindows, CalendarConfig, CalendarService, Location, StaffMember } from "@/lib/types";
 import { defaultCalendarConfig } from "@/features/booking/domain/calendar";
 import type { GuideTourSample } from "../../content";
+import type { TourBusiness } from "../business";
 
 // Sample business for the whole tour: Studio Lume, a hair & beauty salon.
 // People's names are data; the salon's own words (services, roles…) come from
@@ -76,7 +77,17 @@ function locationsOf(s: GuideTourSample): Location[] {
 
 export const CURRENT_LOCATION_ID = "loc_centro";
 
-export function buildConfig(s: GuideTourSample): CalendarConfig {
+// The setup screens' config: Studio Lume's two locations, or the business's own
+// location as it set it up.
+export function buildConfig(s: GuideTourSample, business: TourBusiness | null): CalendarConfig {
+  if (business) {
+    return {
+      ...defaultCalendarConfig(),
+      timezone: business.timezone,
+      currency: business.currency,
+      locations: [business.location],
+    };
+  }
   return {
     ...defaultCalendarConfig(),
     timezone: "Europe/Rome",

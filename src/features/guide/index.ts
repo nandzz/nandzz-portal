@@ -2,3 +2,4 @@
 export type { GuideCopy, GuideStepId } from "./content";
 export { GuidePage } from "./components/GuidePage";
 export { GuidePageSkeleton } from "./components/GuidePageSkeleton";
+export { KitTour } from "./tour/KitTour";

@@ -17,8 +17,12 @@ const IMMERSIVE_ROUTE_RE = /^\/(?:[^/]+\/)?space\/[^/]+/;
 // route and is also not matched.
 const WIDGET_ROUTE_RE = /^\/(?!dashboard(?:\/|$))[^/]+\/booking(?:\/|$)/;
 
+// Product-capture screens ("/kit/..."): a single dashboard screen, full-bleed,
+// for videos and ads. Chromeless like the booking widget page.
+const KIT_ROUTE_RE = /^\/kit(?:\/|$)/;
+
 export function isImmersiveRoute(pathname: string): boolean {
-  return IMMERSIVE_ROUTE_RE.test(pathname) || WIDGET_ROUTE_RE.test(pathname);
+  return IMMERSIVE_ROUTE_RE.test(pathname) || isWidgetRoute(pathname);
 }
 
 // Post-signup onboarding steps (e.g. choose-a-username). The user is technically
@@ -52,9 +56,10 @@ export const SIDEBAR_COLLAPSED_COOKIE = "sidebar_collapsed";
 // OAuth keeps sessionStorage intact across the redirect.
 export const AUTH_RETURN_TO_KEY = "nandzz.auth.returnTo";
 
-// The public booking widget page owns its whole viewport — no app chrome.
+// The public booking widget page (and the /kit capture screens) owns its whole
+// viewport — no app chrome.
 export function isWidgetRoute(pathname: string): boolean {
-  return WIDGET_ROUTE_RE.test(pathname);
+  return WIDGET_ROUTE_RE.test(pathname) || KIT_ROUTE_RE.test(pathname);
 }
 
 // Reserved single-segment routes that are NOT a user profile page.
@@ -83,6 +88,7 @@ const RESERVED_TOP_SEGMENTS = new Set([
   "space",
   "api",
   "explore",
+  "kit",
 ]);
 
 // A username equal to a top-level route would be shadowed by that route, so
