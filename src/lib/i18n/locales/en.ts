@@ -1178,6 +1178,7 @@ export const en: Translations = {
     availViewMonth: "Month",
     availNoServices: "No services to check yet.",
     availError: "Couldn't load availability.",
+    availDisabled: "Online booking is turned off. Turn it on to check availability.",
     availSlotsCount: "{count} free",
     availNoSlotsWindow: "No free slots in the next {months} months.",
     availNoSlotsDay: "No free slots on this day.",

@@ -1347,6 +1347,7 @@ export type Translations = {
     availViewMonth: string;
     availNoServices: string;
     availError: string;
+    availDisabled: string;
     availSlotsCount: string;
     availNoSlotsWindow: string;
     availNoSlotsDay: string;

@@ -1178,6 +1178,7 @@ export const ja: Translations = {
     availViewMonth: "月",
     availNoServices: "確認できるサービスがまだありません。",
     availError: "空き状況を読み込めませんでした。",
+    availDisabled: "オンライン予約がオフになっています。空き状況を確認するにはオンにしてください。",
     availSlotsCount: "空き{count}件",
     availNoSlotsWindow: "今後{months}か月間に空きはありません。",
     availNoSlotsDay: "この日は空きがありません。",

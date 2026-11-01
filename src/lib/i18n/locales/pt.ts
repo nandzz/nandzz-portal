@@ -1178,6 +1178,7 @@ export const pt: Translations = {
     availViewMonth: "Mês",
     availNoServices: "Ainda não há serviços para consultar.",
     availError: "Não foi possível carregar a disponibilidade.",
+    availDisabled: "O agendamento online está desativado. Ative-o para verificar a disponibilidade.",
     availSlotsCount: "{count} livres",
     availNoSlotsWindow: "Nenhum horário livre nos próximos {months} meses.",
     availNoSlotsDay: "Nenhum horário livre neste dia.",

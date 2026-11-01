@@ -83,7 +83,7 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
   const [staffId, setStaffId] = useState("");
   const [view, setView] = useState<"days" | "month">("days");
   // Last fetched result, tagged with its query; loading = the tag is stale.
-  const [result, setResult] = useState<{ query: string; slots: Slot[]; error: boolean } | null>(null);
+  const [result, setResult] = useState<{ query: string; slots: Slot[]; error: false | "disabled" | "failed" } | null>(null);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
   const [pickedSlot, setPickedSlot] = useState<Slot | null>(null);
   // Time the caller asked for (from the call draft) — preselects the closest slot.
@@ -124,8 +124,11 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
       .then((parts) => {
         if (!cancelled) setResult({ query, slots: parts.flat(), error: false });
       })
-      .catch(() => {
-        if (!cancelled) setResult({ query, slots: [], error: true });
+      .catch((e: unknown) => {
+        // The route 404s when the widget is turned off — say so instead of a
+        // generic failure.
+        const disabled = e instanceof Error && e.message === "404";
+        if (!cancelled) setResult({ query, slots: [], error: disabled ? "disabled" : "failed" });
       });
     return () => {
       cancelled = true;
@@ -134,7 +137,7 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
 
   const loading = !!serviceId && result?.query !== query;
   const slots = useMemo(() => (loading ? [] : (result?.slots ?? [])), [loading, result]);
-  const error = !loading && !!result?.error;
+  const error = loading ? false : (result?.error ?? false);
 
   const fmt = useMemo(
     () => ({
@@ -376,7 +379,11 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
           {!service ? (
             <p className="text-sm text-muted-foreground">{tt.availNoServices}</p>
           ) : error ? (
-            <p className="text-sm text-rose-600 dark:text-rose-400">{tt.availError}</p>
+            error === "disabled" ? (
+              <p className="text-sm text-muted-foreground">{tt.availDisabled}</p>
+            ) : (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{tt.availError}</p>
+            )
           ) : view === "month" ? (
             // Month: a compact calendar with the chosen day's times beside it.
             <div className="grid gap-4 sm:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
