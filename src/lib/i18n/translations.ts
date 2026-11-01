@@ -594,6 +594,27 @@ export type Translations = {
     success: string;
     failed: string;
   };
+  // Post-claim setup checklist on the booking Today tab (ClaimWelcomeGuide).
+  claimWelcome: {
+    badge: string;
+    title: string;
+    desc: string;
+    progress: string;
+    servicesTitle: string;
+    servicesDesc: string;
+    hoursTitle: string;
+    hoursDesc: string;
+    staffTitle: string;
+    staffDesc: string;
+    pageTitle: string;
+    pageDesc: string;
+    shareTitle: string;
+    shareDesc: string;
+    tourLink: string;
+    hide: string;
+    doneTitle: string;
+    doneDesc: string;
+  };
   hashtag: {
     spacesSingular: string;
     spacesPlural: string;

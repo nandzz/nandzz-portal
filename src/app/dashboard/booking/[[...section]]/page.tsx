@@ -23,6 +23,19 @@ import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { tabFromSegment } from "@/features/booking/widgetTabs";
 
 const BASE_PATH = "/dashboard/booking";
+const CLAIM_GUIDE_DAYS = 30;
+
+// A demo page claimed in the last CLAIM_GUIDE_DAYS ⇒ show the setup checklist.
+function fetchRecentClaim(admin: ReturnType<typeof createAdminClient>, userId: string) {
+  const since = new Date(Date.now() - CLAIM_GUIDE_DAYS * 86_400_000).toISOString();
+  return admin
+    .from("demo_claim_codes")
+    .select("id")
+    .eq("redeemed_by", userId)
+    .gte("redeemed_at", since)
+    .limit(1)
+    .maybeSingle();
+}
 
 // The Booking feature page. Booking is a single per-owner surface, so there's no
 // instance id in the URL — the owner's calendar instance is fetched (and
@@ -51,10 +64,11 @@ export default async function BookingDashboardPage({
   if (!widget) notFound();
 
   const admin = createAdminClient();
-  const [t, locale, { data: profile }] = await Promise.all([
+  const [t, locale, { data: profile }, { data: recentClaim }] = await Promise.all([
     getServerTranslations(),
     getCurrentLocale(),
     admin.from("profiles").select("username, display_name, address").eq("id", userId).maybeSingle(),
+    fetchRecentClaim(admin, userId),
   ]);
   // No location yet ⇒ first-run setup: the header explains the page instead of
   // reporting a live status, and settings stay out of the way until it's done.
@@ -116,6 +130,7 @@ export default async function BookingDashboardPage({
         locale={locale}
         initialTab={initialTab}
         siteDefaults={siteDefaults}
+        claimGuide={recentClaim && profile?.username ? { pagePath: `/${profile.username}` } : null}
       />
     </div>
   );
@@ -130,6 +145,7 @@ async function CalendarWorkspaceLoader({
   locale,
   initialTab,
   siteDefaults,
+  claimGuide,
 }: {
   instanceId: string;
   hasAccess: boolean;
@@ -139,6 +155,7 @@ async function CalendarWorkspaceLoader({
   locale: Awaited<ReturnType<typeof getCurrentLocale>>;
   initialTab: string;
   siteDefaults: { name?: string; address?: string };
+  claimGuide: { pagePath: string } | null;
 }) {
   const normalizedConfig = normalizeCalendarConfig(config);
   const symbol = currencySymbol(normalizedConfig.currency);
@@ -194,6 +211,7 @@ async function CalendarWorkspaceLoader({
         initialTab={initialTab ?? "today"}
         basePath={BASE_PATH}
         siteDefaults={siteDefaults}
+        claimGuide={claimGuide}
       />
     </Suspense>
   );

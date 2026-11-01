@@ -12,6 +12,7 @@ import { LocationManager } from "@/features/booking/components/calendar/Location
 import { LocationGate } from "@/features/booking/components/calendar/LocationGate";
 import { useCalendarConfig } from "@/features/booking/components/calendar/useCalendarConfig";
 import { WidgetToday } from "@/features/booking/components/calendar/today/WidgetToday";
+import { ClaimWelcomeGuide } from "@/features/booking/components/calendar/today/ClaimWelcomeGuide";
 import { WidgetOverview } from "@/features/booking/components/calendar/WidgetOverview";
 import { WidgetBookings } from "@/features/booking/components/calendar/WidgetBookings";
 import { WidgetCustomers } from "@/features/booking/components/calendar/WidgetCustomers";
@@ -107,6 +108,9 @@ interface Props {
   basePath: string;
   // Prefill for the owner's first location (business name + address).
   siteDefaults?: { name?: string; address?: string };
+  // Set for an owner who recently claimed a demo page: shows the setup
+  // checklist on Today (pagePath = their public page).
+  claimGuide?: { pagePath: string } | null;
 }
 
 export function WidgetWorkspace({
@@ -120,6 +124,7 @@ export function WidgetWorkspace({
   initialTab,
   basePath,
   siteDefaults,
+  claimGuide,
 }: Props) {
   const { t } = useLanguage();
   const pathname = usePathname();
@@ -376,6 +381,14 @@ export function WidgetWorkspace({
         </div>
 
         <TabsContent value="today">
+          {claimGuide && (
+            <ClaimWelcomeGuide
+              instanceId={instanceId}
+              pagePath={claimGuide.pagePath}
+              shareUrls={shareUrl && profileUrl ? { booking: shareUrl, profile: profileUrl } : undefined}
+              onGoToTab={handleTabChange}
+            />
+          )}
           <WidgetToday
             data={dash.today}
             loading={dash.todayLoading}

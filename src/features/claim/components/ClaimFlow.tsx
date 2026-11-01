@@ -83,7 +83,8 @@ export function ClaimFlow({
       setDone(true);
       document.cookie = `${PENDING_CLAIM_COOKIE}=; path=/; max-age=0; samesite=lax`;
       // Full navigation so middleware + layout re-read the brand-new profile.
-      window.location.assign("/dashboard/contents");
+      // Booking's Today tab opens with the setup checklist (ClaimWelcomeGuide).
+      window.location.assign("/dashboard/booking");
     } catch {
       setError(t.claim.failed);
     } finally {
