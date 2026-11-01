@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, X } from "lucide-react";
+import { Loader2, Play, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { demoNotice, useDemoNotice } from "../lib/demo-notice-store";
@@ -23,9 +23,11 @@ function sanitize(v: string) {
  * the visitor pill's "Demo page · Claim it" chip opens it (see
  * demo-notice-store).
  *
+ * With a pitch video (DemoVideoSheet), a "Watch the video" link reopens it.
+ *
  * Same look as ClaimPageSheet: bottom sheet on phones, centered card from md up.
  */
-export function DemoNoticeSheet({ username }: { username: string }) {
+export function DemoNoticeSheet({ username, hasVideo = false }: { username: string; hasVideo?: boolean }) {
   const router = useRouter();
   const { t } = useLanguage();
   const c = t.demoNotice;
@@ -120,6 +122,16 @@ export function DemoNoticeSheet({ username }: { username: string }) {
             {c.titleLead} <span className="text-violet-200">{c.titleAccent}</span>
           </h2>
           <p className="mt-3 text-base leading-relaxed text-violet-100">{c.desc}</p>
+          {hasVideo && (
+            <button
+              type="button"
+              onClick={demoNotice.openVideo}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/25"
+            >
+              <Play className="h-4 w-4 fill-current" aria-hidden />
+              {c.watchVideo}
+            </button>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="relative mt-6">

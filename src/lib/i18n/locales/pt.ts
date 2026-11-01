@@ -405,6 +405,10 @@ export const pt: Translations = {
     pillCta: "Reivindique",
     explore: "Continuar para a página",
     close: "Fechar",
+    watchVideo: "Ver o vídeo",
+    tapForSound: "Toque para ouvir",
+    mute: "Sem som",
+    videoCta: "Ativar minha página",
   },
   claim: {
     title: "Reivindique sua página e seu painel",

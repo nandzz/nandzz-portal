@@ -405,6 +405,10 @@ export const de: Translations = {
     pillCta: "Beanspruchen",
     explore: "Weiter zur Seite",
     close: "Schließen",
+    watchVideo: "Video ansehen",
+    tapForSound: "Für Ton tippen",
+    mute: "Stumm",
+    videoCta: "Meine Seite aktivieren",
   },
   claim: {
     title: "Beanspruche deine Seite und dein Dashboard",

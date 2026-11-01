@@ -574,6 +574,10 @@ export type Translations = {
     pillCta: string;
     explore: string;
     close: string;
+    watchVideo: string;
+    tapForSound: string;
+    mute: string;
+    videoCta: string;
   };
   claim: {
     title: string;

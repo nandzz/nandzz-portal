@@ -405,6 +405,10 @@ export const es: Translations = {
     pillCta: "Reclámala",
     explore: "Continuar a la página",
     close: "Cerrar",
+    watchVideo: "Ver el vídeo",
+    tapForSound: "Toca para activar el sonido",
+    mute: "Silenciar",
+    videoCta: "Activar mi página",
   },
   claim: {
     title: "Reclama tu página y tu panel",

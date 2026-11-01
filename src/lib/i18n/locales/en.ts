@@ -405,6 +405,10 @@ export const en: Translations = {
     pillCta: "Claim it",
     explore: "Continue to the page",
     close: "Close",
+    watchVideo: "Watch the video",
+    tapForSound: "Tap for sound",
+    mute: "Mute",
+    videoCta: "Claim my page",
   },
   claim: {
     title: "Claim your page and dashboard",

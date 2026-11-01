@@ -405,6 +405,10 @@ export const it: Translations = {
     pillCta: "Rivendicala",
     explore: "Continua alla pagina",
     close: "Chiudi",
+    watchVideo: "Guarda il video",
+    tapForSound: "Tocca per l’audio",
+    mute: "Disattiva audio",
+    videoCta: "Attiva la mia pagina",
   },
   claim: {
     title: "Rivendica la tua pagina e il gestionale",

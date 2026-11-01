@@ -405,6 +405,10 @@ export const ja: Translations = {
     pillCta: "受け取る",
     explore: "ページを見る",
     close: "閉じる",
+    watchVideo: "動画を見る",
+    tapForSound: "タップで音声オン",
+    mute: "ミュート",
+    videoCta: "ページを有効にする",
   },
   claim: {
     title: "ページとダッシュボードを受け取る",

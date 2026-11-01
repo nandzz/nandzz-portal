@@ -11,5 +11,6 @@ export {
   fetchPublicProfile,
   getPublicProfile,
   getIsDemoProfile,
+  getDemoVideoUrl,
   redirectToCanonicalUsername,
 } from "./data/public-profile";

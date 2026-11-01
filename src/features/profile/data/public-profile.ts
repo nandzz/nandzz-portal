@@ -84,6 +84,28 @@ export const getIsDemoProfile = cache((username: string) =>
   )()
 );
 
+// The demo's pitch video (public `demo-videos` bucket, `<profile_id>.mp4`), or
+// null. Only demos have one: the row cascades away on claim.
+export const getDemoVideoUrl = cache((username: string) =>
+  unstable_cache(
+    async () => {
+      const admin = createAdminClient();
+      const { data } = await admin
+        .from("profiles")
+        .select("id, demo_videos(updated_at)")
+        .eq("username", username.toLowerCase())
+        .eq("is_demo", true)
+        .maybeSingle();
+      const video = data?.demo_videos as { updated_at: string } | null | undefined;
+      if (!data || !video) return null;
+      const { publicUrl } = admin.storage.from("demo-videos").getPublicUrl(`${data.id}.mp4`).data;
+      return `${publicUrl}?v=${new Date(video.updated_at).getTime()}`;
+    },
+    ["profile-demo-video", username.toLowerCase()],
+    { revalidate: 60, tags: [`profile:${username.toLowerCase()}`] }
+  )()
+);
+
 // Usernames are stored lowercase; send `/MarioSalon/...` to `/mariosalon/...`
 // instead of 404ing links shared with capitals (e.g. an Instagram bio).
 export function redirectToCanonicalUsername(username: string, rest = "") {

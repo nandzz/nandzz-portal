@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { acceptCurrentTerms } from "@/features/legal/actions/accept-terms";
 
 export type ClaimDemoProfileResult =
@@ -42,5 +43,13 @@ export async function claimDemoProfile(code: string, merge = false): Promise<Cla
   await acceptCurrentTerms().catch(() => undefined);
 
   const row = Array.isArray(data) ? data[0] : data;
+
+  // The demo's pitch video is only for the pre-claim page: its row cascaded
+  // away with the demo profile, the file goes through the Storage API.
+  if (row?.demo_id) {
+    const { error: rmError } = await createAdminClient().storage.from("demo-videos").remove([`${row.demo_id}.mp4`]);
+    if (rmError) console.error("[claim] demo video cleanup failed:", rmError.message);
+  }
+
   return { ok: true, username: String(row?.username ?? "") };
 }

@@ -405,6 +405,10 @@ export const fr: Translations = {
     pillCta: "Réclamez-la",
     explore: "Continuer vers la page",
     close: "Fermer",
+    watchVideo: "Voir la vidéo",
+    tapForSound: "Touchez pour le son",
+    mute: "Couper le son",
+    videoCta: "Activer ma page",
   },
   claim: {
     title: "Réclamez votre page et votre tableau de bord",
