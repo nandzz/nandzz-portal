@@ -64,7 +64,7 @@ export type LegalDocKey =
 
 export const LEGAL_DOCS: Record<LegalDocKey, { path: string; version: string; effectiveDate: string }> = {
   terms: { path: "/terms", version: "2026-10-06", effectiveDate: "2026-10-06" },
-  privacy: { path: "/privacy", version: "2026-10-06", effectiveDate: "2026-10-06" },
+  privacy: { path: "/privacy", version: "2026-11-01", effectiveDate: "2026-11-01" },
   cookies: { path: "/cookies", version: "2026-10-06", effectiveDate: "2026-10-06" },
   dpa: { path: "/dpa", version: "2026-10-06", effectiveDate: "2026-10-06" },
   acceptableUse: { path: "/acceptable-use", version: "2026-10-06", effectiveDate: "2026-10-06" },

@@ -162,6 +162,48 @@ export const privacyEn: LegalDocument = {
       ),
     },
     {
+      id: "demo-pages",
+      title: "Preview pages we prepare for businesses",
+      body: (
+        <>
+          <P>
+            To show a business what Nandzz looks like, we sometimes prepare a <B>preview page</B> for it before it
+            has an account, and send the owner one message with the link. This section is the information owed
+            under Art. 14 GDPR when data is not collected from you directly.
+          </P>
+          <Ul>
+            <li>
+              <B>Data used:</B> only information the business has made public itself: business name, logo,
+              photos, address, opening hours, phone, WhatsApp, email and social links, from its public Instagram
+              profile, website or Google listing. Services, prices and hours may be examples.
+            </li>
+            <li>
+              <B>Purpose and legal basis:</B> presenting our service to the business, under our legitimate
+              interest in direct marketing to businesses (Art. 6(1)(f) GDPR, Recital 47).
+            </li>
+            <li>
+              <B>Who can see it:</B> the page is not indexed by search engines, not listed on Nandzz and not in
+              the sitemap. Only people with the link can open it.
+            </li>
+            <li>
+              <B>Contact:</B> one message to a contact the business publishes for enquiries. We do not send
+              follow-ups to a business that does not reply, and we stop at once if asked.
+            </li>
+            <li>
+              <B>Retention:</B> if the business does not activate the page (it then becomes its own account), we
+              delete it automatically 30 days after our message, photos included. On request we delete it sooner,
+              with any data about the business, and we do not contact it again.
+            </li>
+            <li>
+              <B>Your rights:</B> you can object, ask for access or deletion at any time by writing to{" "}
+              <Mail to={C.emails.privacy} />, or with the &quot;Delete this page&quot; button on the page
+              itself. You can also complain to the <A href={GARANTE_URL}>Garante</A>.
+            </li>
+          </Ul>
+        </>
+      ),
+    },
+    {
       id: "bookings",
       title: "If you book through a Nandzz page",
       body: (

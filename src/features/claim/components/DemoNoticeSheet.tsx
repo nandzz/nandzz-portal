@@ -169,6 +169,13 @@ export function DemoNoticeSheet({ username, hasVideo = false }: { username: stri
           </p>
           <button
             type="button"
+            onClick={demoNotice.openWhy}
+            className="self-start text-left text-violet-100 underline underline-offset-4 hover:text-white"
+          >
+            {c.whyButton}
+          </button>
+          <button
+            type="button"
             onClick={close}
             className="self-start text-violet-100 underline underline-offset-4 hover:text-white"
           >

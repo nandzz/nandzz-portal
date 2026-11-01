@@ -163,6 +163,51 @@ export const privacyIt: LegalDocument = {
       ),
     },
     {
+      id: "demo-pages",
+      title: "Pagine di anteprima che prepariamo per le attività",
+      body: (
+        <>
+          <P>
+            Per mostrare a un&apos;attività come funziona Nandzz, a volte prepariamo una{" "}
+            <B>pagina di anteprima</B> prima che abbia un account, e inviamo al titolare un messaggio con il
+            link. Questa sezione contiene le informazioni dovute ai sensi dell&apos;art. 14 GDPR, quando i dati
+            non sono raccolti direttamente presso di te.
+          </P>
+          <Ul>
+            <li>
+              <B>Dati utilizzati:</B> solo informazioni rese pubbliche dall&apos;attività stessa: nome, logo,
+              foto, indirizzo, orari, telefono, WhatsApp, email e link social, dal profilo Instagram pubblico, dal
+              sito o dalla scheda Google. Servizi, prezzi e orari possono essere di esempio.
+            </li>
+            <li>
+              <B>Finalità e base giuridica:</B> presentare il nostro servizio all&apos;attività, sulla base del
+              nostro legittimo interesse al marketing diretto verso le imprese (art. 6, par. 1, lett. f GDPR,
+              considerando 47).
+            </li>
+            <li>
+              <B>Chi può vederla:</B> la pagina non è indicizzata dai motori di ricerca, non è elencata su Nandzz
+              né nella sitemap. Può aprirla solo chi ha il link.
+            </li>
+            <li>
+              <B>Contatto:</B> un solo messaggio a un recapito che l&apos;attività pubblica per essere
+              contattata. Non inviamo solleciti a chi non risponde e smettiamo subito se ce lo chiedi.
+            </li>
+            <li>
+              <B>Conservazione:</B> se l&apos;attività non attiva la pagina (che diventa così il suo account), la
+              eliminiamo automaticamente 30 giorni dopo il nostro messaggio, foto comprese. Su richiesta la
+              eliminiamo prima, con ogni dato sull&apos;attività, e non la contattiamo più.
+            </li>
+            <li>
+              <B>I tuoi diritti:</B> puoi opporti, chiedere l&apos;accesso o la cancellazione in qualsiasi
+              momento scrivendo a <Mail to={C.emails.privacy} />, oppure con il pulsante &quot;Elimina questa
+              pagina&quot; sulla pagina stessa. Puoi anche proporre reclamo al{" "}
+              <A href={GARANTE_URL}>Garante</A>.
+            </li>
+          </Ul>
+        </>
+      ),
+    },
+    {
       id: "bookings",
       title: "Se prenoti tramite una pagina Nandzz",
       body: (

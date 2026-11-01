@@ -6,12 +6,14 @@ import { useSyncExternalStore } from "react";
 // the page is a demo) and ProfileVisitorCta (mounted by AppChrome, which
 // doesn't): the sheet registers the demo username, the pill swaps its CTA for
 // a "Demo page · Claim it" chip that reopens the sheet. `videoOpen` is the
-// demo's pitch video (DemoVideoSheet), when it has one.
-type State = { username: string | null; open: boolean; videoOpen: boolean };
+// demo's pitch video (DemoVideoSheet), when it has one. `whyOpen` is the
+// "why am I seeing this page?" disclosure (DemoWhySheet).
+type State = { username: string | null; open: boolean; videoOpen: boolean; whyOpen: boolean };
 
-let state: State = { username: null, open: false, videoOpen: false };
+const CLOSED = { open: false, videoOpen: false, whyOpen: false };
+let state: State = { username: null, ...CLOSED };
 const listeners = new Set<() => void>();
-const SERVER_STATE: State = { username: null, open: false, videoOpen: false };
+const SERVER_STATE: State = { username: null, ...CLOSED };
 
 function set(next: Partial<State>) {
   state = { ...state, ...next };
@@ -24,12 +26,14 @@ function subscribe(l: () => void) {
 }
 
 export const demoNotice = {
-  register: (username: string) => set({ username, open: false, videoOpen: false }),
-  unregister: () => set({ username: null, open: false, videoOpen: false }),
-  open: () => set({ open: true, videoOpen: false }),
+  register: (username: string) => set({ username, ...CLOSED }),
+  unregister: () => set({ username: null, ...CLOSED }),
+  open: () => set({ ...CLOSED, open: true }),
   close: () => set({ open: false }),
-  openVideo: () => set({ videoOpen: true, open: false }),
+  openVideo: () => set({ ...CLOSED, videoOpen: true }),
   closeVideo: () => set({ videoOpen: false }),
+  openWhy: () => set({ ...CLOSED, whyOpen: true }),
+  closeWhy: () => set({ whyOpen: false }),
 };
 
 export function useDemoNotice(): State {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Volume2, VolumeX, X } from "lucide-react";
+import { Play, Volume2, VolumeX, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { demoNotice, useDemoNotice } from "../lib/demo-notice-store";
 
@@ -13,6 +13,8 @@ import { demoNotice, useDemoNotice } from "../lib/demo-notice-store";
  * (the video is deleted with the demo).
  *
  * Browsers only autoplay muted: it starts muted with a "Tap for sound" chip.
+ * When the browser still refuses (iOS Low Power Mode, data saver, site
+ * settings), a play button starts it with sound on the visitor's tap.
  */
 export function DemoVideoSheet({ username, src }: { username: string; src: string }) {
   const { videoOpen } = useDemoNotice();
@@ -32,7 +34,18 @@ function VideoDialog({ src }: { src: string }) {
   const c = t.demoNotice;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
+  const [blocked, setBlocked] = useState(false);
   const close = demoNotice.closeVideo;
+
+  // React sets `muted` only as a property, never as the attribute, and Safari
+  // won't autoplay a video without it. Mute it for real and start it ourselves.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.defaultMuted = true;
+    v.muted = true;
+    v.play().catch(() => setBlocked(true));
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
@@ -71,9 +84,22 @@ function VideoDialog({ src }: { src: string }) {
             muted
             playsInline
             preload="auto"
+            onPlay={() => setBlocked(false)}
             onClick={toggleSound}
             className="h-full w-full cursor-pointer object-cover"
           />
+          {blocked && (
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={c.watchVideo}
+              className="absolute inset-0 flex items-center justify-center bg-black/30"
+            >
+              <span className="rounded-full bg-white/90 p-5 text-black shadow-xl transition-transform active:scale-95">
+                <Play className="h-8 w-8 translate-x-0.5 fill-current" aria-hidden />
+              </span>
+            </button>
+          )}
           <button
             type="button"
             onClick={close}
@@ -97,6 +123,13 @@ function VideoDialog({ src }: { src: string }) {
           className="h-12 rounded-full bg-violet-600 px-6 text-base font-semibold text-white shadow-lg transition-[transform,background-color] hover:bg-violet-500 active:scale-[0.98]"
         >
           {c.videoCta}
+        </button>
+        <button
+          type="button"
+          onClick={demoNotice.openWhy}
+          className="-mt-1 text-sm text-white/80 underline underline-offset-4 transition-colors hover:text-white"
+        >
+          {c.whyButton}
         </button>
       </div>
     </div>,

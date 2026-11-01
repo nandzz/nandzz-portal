@@ -37,8 +37,19 @@ export function ProfileVisitorCta() {
           "pointer-events-none", // only the pill itself is interactive
           "transition-transform duration-300 ease-out motion-reduce:transition-none will-change-transform",
           isHidden && "translate-y-[calc(100%+1rem)]",
+          demoUsername && "flex-col items-center gap-2",
         )}
       >
+        {/* Demo page: the "why am I seeing this?" disclosure, always one tap away. */}
+        {demoUsername && (
+          <button
+            type="button"
+            onClick={demoNotice.openWhy}
+            className="pointer-events-auto max-w-full rounded-full border bg-background/80 px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-md backdrop-blur-xl transition-colors hover:text-foreground supports-[backdrop-filter]:bg-background/60"
+          >
+            {t.demoNotice.whyButton}
+          </button>
+        )}
         <div className="pointer-events-auto flex items-center gap-2 rounded-full border bg-background/80 py-1.5 pl-3 pr-1.5 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
           {/* Wordmark — the "powered by Nandzz" signal; links home. */}
           <Link

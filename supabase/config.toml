@@ -57,6 +57,10 @@ verify_jwt = false
 [functions.booking-notifications]
 verify_jwt = false
 
+# Daily pg_cron sweep; shared-secret auth like booking-notifications.
+[functions.demo-retention]
+verify_jwt = false
+
 # MCP server uses its own PAT-based auth (mcp_tokens table), not Supabase JWTs.
 [functions.mcp]
 verify_jwt = false

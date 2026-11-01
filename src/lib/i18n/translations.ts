@@ -578,6 +578,15 @@ export type Translations = {
     tapForSound: string;
     mute: string;
     videoCta: string;
+    whyButton: string;
+    whyTitle: string;
+    whyIntro: string;
+    whyItems: { title: string; body: string }[];
+    whyDelete: string;
+    whyDeleteSubject: string;
+    whyDeleteBody: string;
+    whyPrivacy: string;
+    whyGotIt: string;
   };
   claim: {
     title: string;
