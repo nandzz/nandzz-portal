@@ -74,6 +74,7 @@ export type Profile = {
   booking_button_style: BookingButtonStyle | null;
   social_links_style: SocialLinksStyle | null;
   header_layout?: HeaderLayout | null;
+  header_animated?: boolean | null;
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;

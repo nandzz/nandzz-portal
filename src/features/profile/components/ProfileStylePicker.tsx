@@ -18,6 +18,7 @@ import {
   type SocialLink,
 } from "./SocialLinkButtons";
 import { Sheet, useSheetLayout } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
@@ -388,6 +389,8 @@ interface ProfileStylePickerProps {
   onTextChange: (color: string | null) => void;
   headerLayout: HeaderLayout;
   onHeaderLayoutChange: (layout: HeaderLayout) => void;
+  headerAnimated: boolean;
+  onHeaderAnimatedChange: (animated: boolean) => void;
   social: {
     links: SocialLink[];
     style: SocialLinksStyle | null;
@@ -411,6 +414,8 @@ export function ProfileStylePicker({
   onTextChange,
   headerLayout,
   onHeaderLayoutChange,
+  headerAnimated,
+  onHeaderAnimatedChange,
   social,
   booking,
   onReset,
@@ -445,6 +450,7 @@ export function ProfileStylePicker({
     buttonColor !== null ||
     textColor !== null ||
     headerLayout !== "centered" ||
+    headerAnimated ||
     social.style !== null ||
     (booking?.style ?? null) !== null;
 
@@ -537,6 +543,7 @@ export function ProfileStylePicker({
         )}
 
         {activeTab === "header" && (
+          <>
           <section>
             <p className="mb-2 text-xs font-medium text-foreground">{t.profile.headerLayoutLabel}</p>
             <div className="grid grid-cols-2 gap-1.5">
@@ -571,6 +578,15 @@ export function ProfileStylePicker({
               })}
             </div>
           </section>
+
+          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border/60 px-3 py-2.5">
+            <span className="leading-tight">
+              <span className="block text-xs font-medium text-foreground">{t.profile.headerAnimation}</span>
+              <span className="block text-[10px] text-muted-foreground">{t.profile.headerAnimationHint}</span>
+            </span>
+            <Switch checked={headerAnimated} onCheckedChange={(checked) => onHeaderAnimatedChange(checked)} />
+          </label>
+          </>
         )}
 
         {activeTab === "buttons" && (
@@ -670,10 +686,10 @@ export function ProfileStylePicker({
               />
               <p className="text-[10px] leading-relaxed text-muted-foreground">
                 {socialStyle.tone === "filled"
-                  ? "Filled links use brand colors, which also tint the address pill."
+                  ? "Filled links use brand colors."
                   : socialStyle.layout === "minimal"
-                    ? "Tints the icons and the address pill."
-                    : "Tints the link buttons and the address pill."}
+                    ? "Tints the icons."
+                    : "Tints the link buttons."}
               </p>
             </div>
           </>

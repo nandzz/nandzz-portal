@@ -113,6 +113,7 @@ export const updateProfileStyleSchema = z
     bookingButtonStyle: bookingButtonStyleSchema.optional(),
     socialLinksStyle: socialLinksStyleSchema.optional(),
     headerLayout: z.enum(["centered", "banner", "card", "hero"]).nullable().optional(),
+    headerAnimated: z.boolean().optional(),
   })
   .strict();
 

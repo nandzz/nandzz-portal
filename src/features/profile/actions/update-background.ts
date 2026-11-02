@@ -84,6 +84,7 @@ export type ProfileStylePatch = {
   bookingButtonStyle?: BookingButtonStyle | null;
   socialLinksStyle?: SocialLinksStyle | null;
   headerLayout?: HeaderLayout | null;
+  headerAnimated?: boolean;
 };
 
 const STYLE_COLUMNS = {
@@ -93,6 +94,7 @@ const STYLE_COLUMNS = {
   bookingButtonStyle: "booking_button_style",
   socialLinksStyle: "social_links_style",
   headerLayout: "header_layout",
+  headerAnimated: "header_animated",
 } as const;
 
 // Saves any subset of the Style picker fields in ONE write (the client coalesces

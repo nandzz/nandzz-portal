@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { avatarImageProps } from "@/lib/avatarImage";
-import { Camera } from "lucide-react";
+import { Camera, Share2 } from "lucide-react";
 import type { Profile, SocialLinksStyle, WidgetInstanceWithCatalog } from "@/lib/types";
 import { SocialLinkButtons, buildSocialLinks, resolveSocialLinksStyle } from "./SocialLinkButtons";
 import { FollowButton } from "@/features/social/components/FollowButton";
@@ -18,6 +18,8 @@ import { isColorDark } from "@/lib/color";
 import { resolveBookingButtonStyle } from "@/lib/bookingButtonStyle";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProfileStyle } from "@/contexts/ProfileStyleContext";
+import { useChrome } from "@/contexts/ChromeContext";
+import { ShareMenu } from "@/features/spaces/components/ShareMenu";
 import {
   BANNER_OFFSET,
   CARD_OFFSET,
@@ -60,6 +62,9 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   const socialLinksStyle = live ? live.socialLinksStyle : socialLinksStyleProp;
   const bookingButtonStyle = live ? live.bookingButtonStyle : profile.booking_button_style;
   const headerLayout = resolveHeaderLayout(live ? live.headerLayout : profile.header_layout);
+  // Opt-in entrance motion (globals.css: data-header-anim). Toggling it on in
+  // the Style picker replays it, since the rule starts matching again.
+  const anim = (live ? live.headerAnimated : !!profile.header_animated) ? { "data-header-anim": "" } : {};
   const pageColor = live?.backgroundColor ?? null;
   // Banner/card avatars sit on the cover's edge: ring them in the page color.
   const edgeRing: React.CSSProperties | undefined = pageColor ? { borderColor: pageColor } : undefined;
@@ -69,11 +74,10 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   // Hidden by default; the owner always sees their own counts.
   const showFollowCounts = isOwner || !!profile.show_follow_counts;
 
-  // When the owner tints the buttons, override the surface + a readable text
-  // color inline (inline wins over the theme `bg-background` / hover classes).
-  const buttonStyle: React.CSSProperties | undefined = buttonColor
-    ? { backgroundColor: buttonColor, color: isColorDark(buttonColor) ? "#ffffff" : "#111827", borderColor: "transparent" }
-    : undefined;
+  // Visitors get Share in the header's action row; the owner has it in their
+  // toolbar, so it only shows for them in Preview.
+  const { profilePreview } = useChrome();
+  const showShare = !isOwner || profilePreview;
 
   // Header text color. Primary elements use the full color; secondary ones
   // (handle, bio, labels) drop to 65% opacity to keep the visual hierarchy.
@@ -161,6 +165,30 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     FEATURES.widgets && widgets.length > 0 ? (
       <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} align={align} className={className} />
     ) : null;
+
+  // Primary action row: the booking CTA (when placed under the name) plus a
+  // quiet, secondary Share icon button that never mimics the CTA.
+  const actions = (className: string, onImage = false) => {
+    const cta = bookingPlacement === "username" ? widgetStrip("", "start") : null;
+    if (!cta && !showShare) return null;
+    return (
+      <div className={`${className} flex flex-wrap items-center gap-2`}>
+        {cta}
+        {showShare && (
+          <ShareMenu
+            url={`/${profile.username}`}
+            title={`${name} on Nandzz`}
+            triggerClassName={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+              onImage
+                ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
+                : "border-border/70 bg-background/60 text-foreground/75 hover:bg-background hover:text-foreground"
+            }`}
+            triggerContent={<Share2 className="h-4 w-4" aria-label={t.share.share} />}
+          />
+        )}
+      </div>
+    );
+  };
 
   // ── Shared pieces, arranged per header layout below ──────────────────────
 
@@ -253,7 +281,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     <AddressMenu
       address={profile.address}
       shareTitle={name}
-      style={buttonStyle}
+      style={textMutedStyle}
     />
   );
 
@@ -313,7 +341,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   // ── Banner: short cover strip, avatar on its edge, everything left-aligned.
   if (headerLayout === "banner") {
     return (
-      <div className={`flex flex-col items-start text-left ${BANNER_OFFSET}`}>
+      <div className={`flex flex-col items-start text-left ${BANNER_OFFSET}`} {...anim}>
         <div className="relative">
           {/* Cover edge = the avatar's vertical centre. */}
           <span data-cover-edge aria-hidden className="pointer-events-none absolute top-12 md:top-14" />
@@ -321,9 +349,9 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
         </div>
         {avatarExtras}
         {nameAndHandle("mt-3")}
-        {/* CTA under the name (LinkedIn-style): beside the avatar it drifted to
-            the far edge of the wide page. */}
-        {bookingPlacement === "username" && widgetStrip("mt-4", "start")}
+        {/* Actions under the name (LinkedIn-style): beside the avatar they
+            drifted to the far edge of the wide page. */}
+        {actions("mt-4")}
         {tagline}
         {details("start")}
       </div>
@@ -341,13 +369,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       >
         {/* Cover edge: the panel overlaps the cover's bottom 3.5rem. */}
         <span data-cover-edge aria-hidden className="pointer-events-none absolute top-14" />
-        <div className="flex flex-col items-center text-center">
+        <div className="flex flex-col items-center text-center" {...anim}>
           <div className="-mt-12 md:-mt-14">
             {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
           </div>
           {avatarExtras}
           {nameAndHandle("mt-4")}
-          {bookingPlacement === "username" && widgetStrip("mt-4")}
+          {actions("mt-4 justify-center")}
           {tagline}
           {details("center")}
         </div>
@@ -360,7 +388,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   if (headerLayout === "hero") {
     return (
       <>
-        <div className={`relative flex flex-col justify-end pb-6 text-left ${HERO_MIN_HEIGHT}`}>
+        <div className={`relative flex flex-col justify-end pb-6 text-left ${HERO_MIN_HEIGHT}`} {...anim}>
           {/* Cover edge: the bottom of the identity block. */}
           <span data-cover-edge aria-hidden className="pointer-events-none absolute bottom-0" />
           <div className="flex items-end gap-4">
@@ -376,9 +404,9 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
           {profile.tagline && (
             <p className="mt-3 max-w-xl text-sm font-medium text-white/90">{profile.tagline}</p>
           )}
-          {bookingPlacement === "username" && widgetStrip("mt-4", "start")}
+          {actions("mt-4", true)}
         </div>
-        <div className="flex flex-col items-start text-left">
+        <div className="flex flex-col items-start text-left" {...anim}>
           {details("start")}
         </div>
       </>
@@ -387,11 +415,11 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
 
   // ── Centered (default): avatar, info and links stacked in the middle.
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="flex flex-col items-center text-center" {...anim}>
       {avatar("h-28 w-28", 112, "text-3xl")}
       {avatarExtras}
       {nameAndHandle("mt-5")}
-      {bookingPlacement === "username" && widgetStrip("mt-4")}
+      {actions("mt-4 justify-center")}
       {tagline}
       {details("center")}
     </div>

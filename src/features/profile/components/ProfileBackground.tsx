@@ -39,8 +39,6 @@ interface ProfileBackgroundProps {
   backgroundPosition: string | null;
   hasBookingWidget: boolean;
   isOwner: boolean;
-  /** Signed-in viewers get the sticky mobile navbar, so floating controls must clear it. */
-  isAuthenticated: boolean;
   profileId: string;
   username: string;
   displayName: string;
@@ -52,7 +50,6 @@ export function ProfileBackground({
   backgroundPosition,
   hasBookingWidget,
   isOwner,
-  isAuthenticated,
   profileId,
   username,
   displayName,
@@ -84,6 +81,7 @@ export function ProfileBackground({
   const localColor = style.backgroundColor;
   const localTextColor = style.textColor;
   const headerLayout = resolveHeaderLayout(style.headerLayout);
+  const coverAnim = style.headerAnimated ? { "data-cover-anim": "" } : {};
   // "centered" keeps the original 18rem cover that fades into the page; the
   // other layouts get a crisp, layout-sized cover block.
   const coverHeight = headerLayout === "centered" ? "h-[calc(18rem+env(safe-area-inset-top))]" : COVER_HEIGHT;
@@ -112,7 +110,13 @@ export function ProfileBackground({
     ro.observe(layer);
     const edgeParent = root.querySelector("[data-cover-edge]")?.parentElement;
     if (edgeParent) ro.observe(edgeParent);
-    return () => ro.disconnect();
+    // The entrance animation moves the header with transforms, which
+    // ResizeObserver doesn't see: settle the measurement when it ends.
+    root.addEventListener("animationend", measure);
+    return () => {
+      ro.disconnect();
+      root.removeEventListener("animationend", measure);
+    };
   }, [headerLayout]);
   const coverSize = coverPx !== null ? { height: coverPx } : undefined;
 
@@ -312,6 +316,7 @@ export function ProfileBackground({
         {headerLayout !== "centered" ? (
           <div
             className={`absolute inset-x-0 top-0 ${coverHeight} ${localUrl ? "" : COVER_FALLBACK[headerLayout]}`}
+            {...coverAnim}
             style={
               localUrl
                 ? { ...coverSize, backgroundImage: `url(${localUrl})`, backgroundSize: "cover", backgroundPosition: savedPosStr }
@@ -327,6 +332,7 @@ export function ProfileBackground({
           <>
             <div
               className="absolute inset-x-0 top-0 h-[calc(18rem+env(safe-area-inset-top))]"
+              {...coverAnim}
               style={{
                 backgroundImage: `url(${localUrl})`,
                 backgroundSize: "cover",
@@ -475,6 +481,8 @@ export function ProfileBackground({
                   headerLayout={headerLayout}
                   // "centered" is the default, stored as NULL.
                   onHeaderLayoutChange={(layout) => updateStyle({ headerLayout: layout === "centered" ? null : layout })}
+                  headerAnimated={style.headerAnimated}
+                  onHeaderAnimatedChange={(headerAnimated) => updateStyle({ headerAnimated })}
                   social={{
                     links: buildSocialLinks(profile),
                     style: style.socialLinksStyle,
@@ -515,26 +523,6 @@ export function ProfileBackground({
               {error || t.common.error}
             </p>
           )}
-        </div>
-      )}
-
-      {/* ── Visitor share — same corner as the owner's controls (mirrors the
-          booking page). Also shown in owner Preview so it matches what visitors
-          see. Logged-out visitors have no navbar to clear, just the notch. ── */}
-      {(!isOwner || profilePreview) && (
-        <div
-          className={`absolute right-4 z-10 ${
-            isAuthenticated
-              ? "top-[calc(5rem+env(safe-area-inset-top))] md:top-4"
-              : "top-[calc(1rem+env(safe-area-inset-top))]"
-          }`}
-        >
-          <ShareMenu
-            url={`/${username}`}
-            title={`${displayName} on Nandzz`}
-            triggerClassName="flex h-9 w-9 items-center justify-center rounded-full bg-background/70 backdrop-blur-md border border-border/60 text-foreground/80 hover:text-foreground hover:bg-background/90 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"
-            triggerContent={<Share2 className="h-4 w-4" />}
-          />
         </div>
       )}
 

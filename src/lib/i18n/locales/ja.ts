@@ -750,6 +750,8 @@ export const ja: Translations = {
     headerLayoutCardHint: "浮かぶパネル",
     headerLayoutHero: "ヒーロー",
     headerLayoutHeroHint: "大きな写真",
+    headerAnimation: "さりげないアニメーション",
+    headerAnimationHint: "ページを開いたときに控えめに表示",
   },
   agent: {
     suggestWhoAreYou: "あなたは誰ですか？",

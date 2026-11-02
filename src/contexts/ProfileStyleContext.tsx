@@ -14,6 +14,8 @@ export type ProfileStyle = {
   bookingButtonStyle: BookingButtonStyle | null;
   socialLinksStyle: SocialLinksStyle | null;
   headerLayout: HeaderLayout | null;
+  /** Opt-in, discreet entrance motion for the header. */
+  headerAnimated: boolean;
 };
 
 export const EMPTY_PROFILE_STYLE: ProfileStyle = {
@@ -23,6 +25,7 @@ export const EMPTY_PROFILE_STYLE: ProfileStyle = {
   bookingButtonStyle: null,
   socialLinksStyle: null,
   headerLayout: null,
+  headerAnimated: false,
 };
 
 export type ProfileStyleCtx = {

@@ -750,6 +750,8 @@ export const en: Translations = {
     headerLayoutCardHint: "Floating panel",
     headerLayoutHero: "Hero",
     headerLayoutHeroHint: "Big photo first",
+    headerAnimation: "Subtle animation",
+    headerAnimationHint: "A gentle entrance when your page opens",
   },
   agent: {
     suggestWhoAreYou: "Who are you?",

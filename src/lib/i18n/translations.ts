@@ -912,6 +912,8 @@ export type Translations = {
     headerLayoutCardHint: string;
     headerLayoutHero: string;
     headerLayoutHeroHint: string;
+    headerAnimation: string;
+    headerAnimationHint: string;
   };
   agent: {
     suggestWhoAreYou: string;
