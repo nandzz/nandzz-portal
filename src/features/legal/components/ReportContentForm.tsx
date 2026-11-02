@@ -75,6 +75,34 @@ const COPY = {
   },
 } as const;
 
+// Emails the saved report to the team inbox via Web3Forms (same service and key
+// as the contact form). Browser-side because the free plan rejects server-side
+// submissions. Fire-and-forget: the report is already stored in content_reports,
+// so a failed notification never fails the submission.
+function notifyInbox(
+  id: string,
+  r: { url: string; reason: ReportReason; details: string; name: string; email: string }
+) {
+  const accessKey = process.env.NEXT_PUBLIC_FORM_ACCESS_KEY;
+  if (!accessKey) return;
+  fetch("https://api.web3forms.com/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      access_key: accessKey,
+      subject: `[Report ${r.reason}] ${r.url}`,
+      from_name: "Nandzz content report",
+      ...(r.email ? { replyto: r.email } : {}),
+      report_id: id,
+      reason: r.reason,
+      url: r.url,
+      details: r.details,
+      reporter_name: r.name || "(anonymous)",
+      reporter_email: r.email || "(not provided)",
+    }),
+  }).catch(() => {});
+}
+
 export function ReportContentForm({ locale, initialUrl }: { locale: LegalLocale; initialUrl?: string }) {
   const c = COPY[locale];
   const [url, setUrl] = useState(initialUrl ?? "");
@@ -94,8 +122,10 @@ export function ReportContentForm({ locale, initialUrl }: { locale: LegalLocale;
     setError(null);
     try {
       const res = await submitContentReport({ url, reason, details, name, email, goodFaith: true });
-      if (res.ok) setDoneId(res.id);
-      else setError(c.errors[res.error]);
+      if (res.ok) {
+        setDoneId(res.id);
+        notifyInbox(res.id, { url, reason, details, name, email });
+      } else setError(c.errors[res.error]);
     } catch {
       setError(c.errors.FAILED);
     } finally {
