@@ -11,6 +11,7 @@ import { TodayFocusPanel } from "./TodayFocusPanel";
 import { CheckAvailabilityModal, type AvailabilityScope } from "./CheckAvailabilityModal";
 import { ShareBookingLinkModal, type ShareUrls } from "./ShareBookingLinkModal";
 import { phaseOf, serviceLines, useTodayFormat, type TodayFormat } from "./todayFormat";
+import { bookingRevenueCents } from "@/features/booking/domain/calendar";
 
 // The Today tab: how the business's day is going right now. A one-line status,
 // a summary card (the day ribbon + four figures), the agenda with free time
@@ -70,8 +71,8 @@ export function WidgetToday({
   }, [data.bookings, now]);
 
   const confirmed = groups.done.length + groups.live.length + groups.upcoming.length;
-  const totalCents = [...groups.done, ...groups.live, ...groups.upcoming].reduce((s, b) => s + (b.price_cents ?? 0), 0);
-  const earnedCents = groups.done.reduce((s, b) => s + (b.price_cents ?? 0), 0);
+  const totalCents = [...groups.done, ...groups.live, ...groups.upcoming].reduce((s, b) => s + bookingRevenueCents(b), 0);
+  const earnedCents = groups.done.reduce((s, b) => s + bookingRevenueCents(b), 0);
   const occupancy = data.openMin > 0 ? Math.round((data.bookedMin / data.openMin) * 100) : null;
 
   // Free time from now on (gaps arrive for the whole day).

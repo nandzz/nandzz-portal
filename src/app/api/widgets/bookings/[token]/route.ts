@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
-import { normalizeCalendarConfig, resolveSegmentPlan, timezoneForLocation } from "@/features/booking/domain/calendar";
+import { getSessionUserId } from "@/features/booking/data/session-owner";
+import {
+  customerCanChange,
+  normalizeCalendarConfig,
+  resolveSegmentPlan,
+  timezoneForLocation,
+} from "@/features/booking/domain/calendar";
 import { BOOKING_ERROR_STATUS } from "@/features/booking/domain/booking-errors";
 import { loadRescheduleContext, isLoadError } from "./_shared";
 import type { WidgetBooking } from "@/lib/types";
@@ -34,16 +39,13 @@ async function loadBooking(token: string) {
 // have no session, and a customer managing their own booking isn't the owner).
 // Mirrors create_booking_tx's created_by == owner heuristic.
 async function resolveActor(ownerUserId: string): Promise<"business" | "customer"> {
-  try {
-    const ssr = await createClient();
-    const {
-      data: { user },
-    } = await ssr.auth.getUser();
-    return user?.id && user.id === ownerUserId ? "business" : "customer";
-  } catch {
-    return "customer";
-  }
+  const userId = await getSessionUserId();
+  return userId && userId === ownerUserId ? "business" : "customer";
 }
+
+// A customer may only cancel / reschedule before the appointment starts and
+// outside the business's cancellation cutoff. The owner is never blocked.
+const CHANGE_CLOSED = { error: "CHANGE_CLOSED" } as const;
 
 function present(booking: WidgetBooking, instance: { owner?: { display_name?: string; username?: string } | null; config?: unknown }) {
   const owner = instance?.owner as { display_name?: string; username?: string } | null;
@@ -57,6 +59,12 @@ function present(booking: WidgetBooking, instance: { owner?: { display_name?: st
     business_name: owner?.display_name || owner?.username || "your provider",
     business_username: owner?.username ?? null,
     timezone: timezoneForLocation(normalizeCalendarConfig(instance?.config), booking.location_id),
+    // Whether the customer can still cancel/reschedule it themselves (the
+    // manage page hides those actions otherwise; the routes enforce it).
+    can_change:
+      booking.status === "confirmed" &&
+      customerCanChange(normalizeCalendarConfig(instance?.config), booking.starts_at),
+    cancel_cutoff_hours: normalizeCalendarConfig(instance?.config).cancel_cutoff_hours,
     instance_id: booking.instance_id,
     service_id: booking.service_id,
     location_id: booking.location_id,
@@ -91,6 +99,7 @@ export async function DELETE(
   if (!data) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
   const booking = data as unknown as WidgetBooking;
+  if (booking.status === "cancelled") return NextResponse.json({ ok: true, status: "cancelled" });
 
   // Record who is cancelling in the same UPDATE: the DB trigger reads
   // notify_actor to decide the email recipient (owner ⇒ tell the customer;
@@ -98,6 +107,10 @@ export async function DELETE(
   // calls the edge function. The trigger's OLD.status guard suppresses a repeat
   // cancel, so writing notify_actor on a double-cancel is harmless.
   const actor = await resolveActor(booking.owner_user_id);
+  if (actor === "customer") {
+    const config = normalizeCalendarConfig((data as { instance?: { config?: unknown } }).instance?.config);
+    if (!customerCanChange(config, booking.starts_at)) return NextResponse.json(CHANGE_CLOSED, { status: 409 });
+  }
   const { error } = await admin
     .from("widget_bookings")
     .update({ status: "cancelled", notify_actor: actor })
@@ -122,7 +135,9 @@ export async function PATCH(
     staff_by_service?: Record<string, string>;
     service_ids?: string[];
   };
-  if (!starts_at) return NextResponse.json({ error: "starts_at is required" }, { status: 400 });
+  if (!starts_at || !Number.isFinite(new Date(starts_at).getTime())) {
+    return NextResponse.json({ error: "starts_at must be a valid date" }, { status: 400 });
+  }
   if (service_ids !== undefined && !Array.isArray(service_ids)) {
     return NextResponse.json({ error: "service_ids must be an array" }, { status: 400 });
   }
@@ -133,6 +148,13 @@ export async function PATCH(
 
   if (booking.status === "cancelled") {
     return NextResponse.json({ error: "This booking was cancelled." }, { status: 409 });
+  }
+
+  // Record who is rescheduling: the DB trigger reads notify_actor (written inside
+  // reschedule_booking_tx's single UPDATE) to pick the email recipient.
+  const actor = await resolveActor(booking.owner_user_id);
+  if (actor === "customer" && !customerCanChange(config, booking.starts_at)) {
+    return NextResponse.json(CHANGE_CLOSED, { status: 409 });
   }
 
   const requestedIso = new Date(starts_at).toISOString();
@@ -158,16 +180,14 @@ export async function PATCH(
     startIso: requestedIso,
     existingBusy: busy ?? [],
     location,
-    now: new Date(),
+    // Customers also respect the minimum notice; the owner only can't move a
+    // booking into the past.
+    now: new Date(Date.now() + (actor === "customer" ? config.min_notice_min : 0) * 60_000),
   });
   if (!plan.ok) {
     const status = BOOKING_ERROR_STATUS[plan.reason] ?? 409;
     return NextResponse.json({ error: "That time isn't available." }, { status });
   }
-
-  // Record who is rescheduling: the DB trigger reads notify_actor (written inside
-  // reschedule_booking_tx's single UPDATE) to pick the email recipient.
-  const actor = await resolveActor(booking.owner_user_id);
 
   const { data: row, error } = await admin
     .rpc("reschedule_booking_tx", {

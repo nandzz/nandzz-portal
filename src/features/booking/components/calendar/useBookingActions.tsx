@@ -5,19 +5,37 @@ import { useRouter } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { ReschedulePicker } from "./ReschedulePicker";
 import { AssignStaffDialog } from "./AssignStaffDialog";
+import { ExtendBookingDialog } from "./ExtendBookingDialog";
 import type { Slot } from "@/features/booking/domain/calendar";
+import type { BookingAttendance } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // The owner's actions on one booking — reschedule (date, time, services and
-// staff), reassign staff, cancel — shared by every surface that shows a
-// booking (the Bookings list/calendar rows and the Today focus panel) so they
-// stay identical. Returns the triggers plus the dialogs to render once.
+// staff), reassign staff, extend, mark attendance, cancel — shared by every
+// surface that shows a booking (the Bookings list/calendar rows and the Today
+// focus panel) so they stay identical. Returns the triggers plus the dialogs to
+// render once.
 
 type ActionBooking = {
   manage_token: string;
   customer_name: string;
   service_name: string;
 };
+
+type TimedBooking = { status: string; starts_at: string; ends_at: string };
+
+// How long after a booking ends the owner can still extend it (e.g. logging
+// that the client stayed on, after the fact).
+const EXTEND_GRACE_MS = 12 * 3_600_000;
+
+export function canExtend(b: TimedBooking, now: number): boolean {
+  return b.status === "confirmed" && Date.parse(b.ends_at) + EXTEND_GRACE_MS >= now;
+}
+
+// Attendance can be marked once the appointment has started.
+export function canMarkAttendance(b: TimedBooking, now: number): boolean {
+  return b.status === "confirmed" && Date.parse(b.starts_at) <= now;
+}
 
 export function useBookingActions({
   b,
@@ -38,6 +56,7 @@ export function useBookingActions({
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
+  const [extending, setExtending] = useState(false);
 
   const changed = () => (onChanged ? onChanged() : router.refresh());
 
@@ -93,6 +112,26 @@ export function useBookingActions({
     }
   }
 
+  async function markAttendance(attendance: BookingAttendance | null) {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/widgets/bookings/${b.manage_token}/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attendance }),
+      });
+      if (!res.ok) {
+        alert(t.booking.attendanceError);
+        return;
+      }
+      changed();
+    } catch {
+      alert(t.booking.attendanceError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function openReschedule() {
     setRescheduleError(null);
     setRescheduling(true);
@@ -117,6 +156,18 @@ export function useBookingActions({
         />
       </Dialog>
 
+      {extending && (
+        <ExtendBookingDialog
+          token={b.manage_token}
+          open
+          onClose={() => setExtending(false)}
+          onDone={changed}
+          customerName={b.customer_name}
+          serviceName={b.service_name}
+          when={when}
+        />
+      )}
+
       <AssignStaffDialog
         token={b.manage_token}
         timezone={timezone}
@@ -131,6 +182,8 @@ export function useBookingActions({
     busy,
     openReschedule,
     openAssign: () => setAssigning(true),
+    openExtend: () => setExtending(true),
+    markAttendance: (a: BookingAttendance | null) => void markAttendance(a),
     cancel: () => void cancel(),
     dialogs,
   };

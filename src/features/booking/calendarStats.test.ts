@@ -321,3 +321,25 @@ describe("buildTodaySchedule — with staff", () => {
     expect(day.lanes.map((l) => l.id)).toEqual(["s1", "s2", "s3"]);
   });
 });
+
+describe("buildOverview — no-shows", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(MON_8AM));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("counts a no-show as a booking but not as revenue", () => {
+    const came = bk("2026-10-02T10:00:00Z", "2026-10-02T10:30:00Z", { attendance: "attended" });
+    const noShow = bk("2026-10-02T11:00:00Z", "2026-10-02T11:30:00Z", { attendance: "no_show" });
+    const data = buildOverview([came, noShow], "UTC", "€", null, "en-US", "month", {
+      config: cfg(),
+      locationId: null,
+      now: new Date(MON_8AM),
+    });
+    expect(data.totals.confirmedInPeriod).toBe(2);
+    expect(data.totals.revenueCents).toBe(1000);
+    expect(data.services).toEqual([{ name: "Nails", count: 2, revenueCents: 1000 }]);
+    expect(data.forecast.earnedCents).toBe(1000);
+  });
+});

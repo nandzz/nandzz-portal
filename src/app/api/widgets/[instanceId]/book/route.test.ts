@@ -31,6 +31,8 @@ const bookConfig: CalendarConfig = {
   timezone: "UTC",
   currency: "usd",
   buffer_min: 0,
+  min_notice_min: 60,
+  cancel_cutoff_hours: 0,
   show_prices: true,
   collect_address: false,
   address_required: false,

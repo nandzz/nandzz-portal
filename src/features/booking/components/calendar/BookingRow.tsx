@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Ban, CalendarClock, Clock, Loader2, MapPin, Users } from "lucide-react";
+import { Ban, CalendarClock, Clock, ClockPlus, Loader2, MapPin, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { whatsappLink } from "@/features/booking/domain/contact";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { BookingDetailsDialog } from "./BookingDetailsDialog";
 import { CustomerAvatar } from "./CustomerIdentity";
-import { useBookingActions } from "./useBookingActions";
+import { canExtend, canMarkAttendance, useBookingActions } from "./useBookingActions";
 import { BookingCustomerCard } from "./CustomerDetailsDialog";
-import type { BookingServiceSnapshot } from "@/lib/types";
+import type { BookingAttendance, BookingServiceSnapshot } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // The booker's public Nandzz profile — present only when they booked while
@@ -31,6 +31,7 @@ export type BookingRowData = {
   ends_at: string; // ISO — reserved span end, drives the in-progress/completed tag
   price_cents: number | null;
   status: "confirmed" | "cancelled";
+  attendance?: BookingAttendance | null; // owner-marked outcome once it started
   customer_phone: string | null;
   customer_address?: string | null;
   staff_id: string | null;
@@ -52,6 +53,7 @@ export type BookingRowData = {
 // light and dark themes.
 const TAG_STYLES = {
   cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+  noShow: "bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300",
   completed: "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300",
   inProgress: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
   soon: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
@@ -115,10 +117,15 @@ export function BookingRow({
     const end = new Date(b.ends_at).getTime();
     if (b.status === "cancelled")
       return { label: t.booking.tagCancelled, className: TAG_STYLES.cancelled };
+    if (b.attendance === "no_show")
+      return { label: t.booking.tagNoShow, className: TAG_STYLES.noShow };
     if (now >= start && now < end)
       return { label: t.booking.tagInProgress, className: TAG_STYLES.inProgress, live: true };
     if (now >= end)
-      return { label: t.booking.tagCompleted, className: TAG_STYLES.completed };
+      return {
+        label: b.attendance === "attended" ? t.booking.tagAttended : t.booking.tagCompleted,
+        className: TAG_STYLES.completed,
+      };
 
     const delta = start - now; // upcoming
     if (delta <= 4 * HOUR_MS) {
@@ -145,7 +152,7 @@ export function BookingRow({
     if (startKey === dayFmt.format(new Date(now + 24 * HOUR_MS)))
       return { label: t.booking.tagTomorrow, className: TAG_STYLES.tomorrow };
     return null;
-  }, [b.starts_at, b.ends_at, b.status, now, timezone, t]);
+  }, [b.starts_at, b.ends_at, b.status, b.attendance, now, timezone, t]);
 
   const wa = b.customer_phone
     ? whatsappLink(
@@ -157,7 +164,14 @@ export function BookingRow({
       )
     : null;
 
-  const { busy, openReschedule, openAssign, cancel, dialogs } = useBookingActions({ b, when, timezone, onChanged });
+  const { busy, openReschedule, openAssign, openExtend, markAttendance, cancel, dialogs } = useBookingActions({
+    b,
+    when,
+    timezone,
+    onChanged,
+  });
+  const extendable = canExtend(b, now);
+  const attendable = canMarkAttendance(b, now);
 
   // Row icon buttons sit inside the clickable row — keep their clicks from also
   // opening the details modal.
@@ -258,6 +272,17 @@ export function BookingRow({
               <Users className="h-4 w-4" />
             </button>
           )}
+          {extendable && !cancellable && (
+            <button
+              onClick={stop(openExtend)}
+              disabled={busy}
+              className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-950/30"
+              aria-label={t.booking.extendAria.replace("{name}", b.customer_name)}
+              title={t.booking.extendTitle}
+            >
+              <ClockPlus className="h-4 w-4" />
+            </button>
+          )}
           {cancellable && (
             <button
               onClick={stop(openReschedule)}
@@ -317,6 +342,15 @@ export function BookingRow({
               }
             : undefined
         }
+        onExtend={
+          extendable
+            ? () => {
+                setDetails(false);
+                openExtend();
+              }
+            : undefined
+        }
+        onAttendance={attendable ? markAttendance : undefined}
         onCancel={
           cancellable
             ? () => {

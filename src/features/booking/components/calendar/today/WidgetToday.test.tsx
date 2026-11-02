@@ -40,6 +40,7 @@ function insight(patch: Partial<TodayCustomerInsight> = {}): TodayCustomerInsigh
     pastVisits: 0,
     spentCents: 0,
     cancelled: 0,
+    noShows: 0,
     firstVisit: null,
     lastVisit: null,
     nextVisit: null,

@@ -38,12 +38,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // The BookingRowData column set, plus the two ids used to resolve the booker's
 // account (they never cross the wire — toRow drops them).
 const ROW_COLUMNS =
-  "id, instance_id, service_id, customer_name, customer_email, service_name, starts_at, ends_at, price_cents, status, customer_phone, customer_address, staff_id, staff_name, services, location_id, manage_token, notes, created_by_user_id, owner_user_id";
+  "id, instance_id, service_id, customer_name, customer_email, service_name, starts_at, ends_at, price_cents, status, attendance, customer_phone, customer_address, staff_id, staff_name, services, location_id, manage_token, notes, created_by_user_id, owner_user_id";
 
 type RowRecord = Pick<
   WidgetBooking,
   | "id" | "instance_id" | "service_id" | "customer_name" | "customer_email"
-  | "service_name" | "starts_at" | "ends_at" | "price_cents" | "status"
+  | "service_name" | "starts_at" | "ends_at" | "price_cents" | "status" | "attendance"
   | "customer_phone" | "customer_address" | "staff_id" | "staff_name"
   | "services" | "location_id" | "manage_token" | "notes" | "owner_user_id" | "created_by_user_id"
 >;
@@ -94,6 +94,7 @@ function toRow(r: RowRecord): BookingRowData {
     ends_at: r.ends_at,
     price_cents: r.price_cents,
     status: r.status,
+    attendance: r.attendance ?? null,
     customer_phone: r.customer_phone,
     customer_address: r.customer_address,
     staff_id: r.staff_id,
@@ -234,7 +235,7 @@ export async function fetchListData(
 // Staffed scopes additionally read the per-staff segments, but only for the
 // short live horizon those two sections need.
 const OVERVIEW_COLUMNS =
-  "id, status, starts_at, ends_at, price_cents, service_name, service_id, duration_min, staff_id, services";
+  "id, status, attendance, starts_at, ends_at, price_cents, service_name, service_id, duration_min, staff_id, services";
 
 export async function fetchOverviewData(
   supabase: SupabaseClient,

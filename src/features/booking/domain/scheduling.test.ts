@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeSegmentedSlots,
   layoutServiceSegments,
+  customerCanChange,
   resolveSegmentPlan,
   staffAvailabilityForWindow,
   type ServiceChoice,
@@ -326,5 +327,71 @@ describe("computeSegmentedSlots — single-resource business", () => {
       "2026-08-10T10:00:00.000Z",
       "2026-08-10T11:00:00.000Z",
     ]);
+  });
+});
+
+describe("resolveSegmentPlan — owner override", () => {
+  it("allows a start outside opening hours, in the past and on a blackout day", () => {
+    const res = resolveSegmentPlan({
+      config: cfg({ blackout_dates: [MONDAY] }),
+      choices: [anyChoice(haircut), anyChoice(color)],
+      startIso: "2026-08-10T18:00:00.000Z", // after close
+      existingBusy: [],
+      now: new Date("2026-08-10T18:10:00.000Z"), // already under way
+      override: true,
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.segments[0].staff_ids).toEqual([alice.id]);
+    expect(res.segments[1].staff_ids).toEqual([bob.id]);
+  });
+
+  it("still refuses a clash with another booking", () => {
+    const res = resolveSegmentPlan({
+      config: cfg(),
+      choices: [anyChoice(haircut)],
+      startIso: "2026-08-10T18:00:00.000Z",
+      existingBusy: [
+        { staff_id: alice.id, starts_at: "2026-08-10T18:15:00.000Z", ends_at: "2026-08-10T18:45:00.000Z" },
+      ],
+      override: true,
+    });
+    expect(res).toEqual({ ok: false, reason: "STAFF_UNAVAILABLE" });
+  });
+
+  it("without override, the same start is out of hours", () => {
+    const res = resolveSegmentPlan({
+      config: cfg(),
+      choices: [anyChoice(haircut)],
+      startIso: "2026-08-10T18:00:00.000Z",
+      existingBusy: [],
+      now: farPast,
+    });
+    expect(res).toEqual({ ok: false, reason: "OUT_OF_HOURS" });
+  });
+});
+
+describe("customerCanChange", () => {
+  const start = "2026-08-10T10:00:00.000Z";
+  it("allows changes before the start when there's no cutoff", () => {
+    expect(customerCanChange({ cancel_cutoff_hours: 0 }, start, new Date("2026-08-10T09:59:00.000Z"))).toBe(true);
+    expect(customerCanChange({ cancel_cutoff_hours: 0 }, start, new Date("2026-08-10T10:00:00.000Z"))).toBe(false);
+  });
+  it("closes changes inside the cutoff", () => {
+    expect(customerCanChange({ cancel_cutoff_hours: 24 }, start, new Date("2026-08-09T09:00:00.000Z"))).toBe(true);
+    expect(customerCanChange({ cancel_cutoff_hours: 24 }, start, new Date("2026-08-09T11:00:00.000Z"))).toBe(false);
+  });
+});
+
+describe("normalizeCalendarConfig — booking policy", () => {
+  it("defaults min notice to 60 min and the cutoff to none", () => {
+    const c = normalizeCalendarConfig({});
+    expect(c.min_notice_min).toBe(60);
+    expect(c.cancel_cutoff_hours).toBe(0);
+  });
+  it("clamps out-of-range values", () => {
+    const c = normalizeCalendarConfig({ min_notice_min: -5, cancel_cutoff_hours: 9999 });
+    expect(c.min_notice_min).toBe(0);
+    expect(c.cancel_cutoff_hours).toBe(168);
   });
 });

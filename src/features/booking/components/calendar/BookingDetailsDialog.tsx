@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { Ban, CalendarClock, ChevronRight, Clock, Loader2, Mail, MapPin, Phone, StickyNote, Users } from "lucide-react";
+import { Ban, CalendarClock, ChevronRight, Clock, ClockPlus, Loader2, Mail, MapPin, Phone, StickyNote, UserCheck, UserX, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { Dialog } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { BookingRowData } from "@/features/booking/components/calendar/BookingRow";
+import type { BookingAttendance } from "@/lib/types";
 import { CustomerAvatar, ViewProfileLink } from "@/features/booking/components/calendar/CustomerIdentity";
 
 // Detail modal for one booking (opened by clicking a row in the Bookings tab or
@@ -27,6 +28,10 @@ type Props = {
   onOpenCustomer?: () => void;
   onReschedule?: () => void;
   onAssign?: () => void;
+  onExtend?: () => void;
+  // Present once the appointment has started: mark (or clear, by picking the
+  // current value again) whether the client showed up.
+  onAttendance?: (a: BookingAttendance | null) => void;
   onCancel?: () => void;
 };
 
@@ -43,6 +48,8 @@ export function BookingDetailsDialog({
   onOpenCustomer,
   onReschedule,
   onAssign,
+  onExtend,
+  onAttendance,
   onCancel,
 }: Props) {
   const { t, locale } = useLanguage();
@@ -63,7 +70,8 @@ export function BookingDetailsDialog({
   const profile = b.customer_profile ?? null;
   const email = b.customer_email?.trim() || null;
   const phone = b.customer_phone?.trim() || null;
-  const hasActions = Boolean(onReschedule || onAssign || onCancel);
+  const hasActions = Boolean(onReschedule || onAssign || onExtend || onAttendance || onCancel);
+  const attendance = b.attendance ?? null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidthClass="max-w-lg">
@@ -123,6 +131,31 @@ export function BookingDetailsDialog({
           {onAssign && (
             <ActionButton onClick={onAssign} disabled={busy} icon={<Users className="h-4 w-4" />}>
               {t.booking.assignStaff}
+            </ActionButton>
+          )}
+          {onExtend && (
+            <ActionButton onClick={onExtend} disabled={busy} icon={<ClockPlus className="h-4 w-4" />}>
+              {t.booking.extendTitle}
+            </ActionButton>
+          )}
+          {onAttendance && (
+            <ActionButton
+              onClick={() => onAttendance(attendance === "attended" ? null : "attended")}
+              disabled={busy}
+              active={attendance === "attended"}
+              icon={<UserCheck className="h-4 w-4" />}
+            >
+              {t.booking.markAttended}
+            </ActionButton>
+          )}
+          {onAttendance && (
+            <ActionButton
+              onClick={() => onAttendance(attendance === "no_show" ? null : "no_show")}
+              disabled={busy}
+              active={attendance === "no_show"}
+              icon={<UserX className="h-4 w-4" />}
+            >
+              {t.booking.markNoShow}
             </ActionButton>
           )}
           {onCancel && (
@@ -205,12 +238,14 @@ function ActionButton({
   onClick,
   disabled,
   danger,
+  active,
   icon,
   children,
 }: {
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
+  active?: boolean;
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -219,10 +254,13 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={active}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
         danger
           ? "border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
-          : "border-border hover:bg-muted"
+          : active
+            ? "border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300"
+            : "border-border hover:bg-muted"
       }`}
     >
       {icon}

@@ -4,6 +4,10 @@ import { Plus, Trash2 } from "lucide-react";
 import { SaveBar } from "@/features/booking/components/calendar/SaveBar";
 import type { CalendarConfig, WeekdayKey } from "@/lib/types";
 import { WEEKDAYS, getLocationScope, withLocationScope } from "@/features/booking/domain/calendar";
+
+// Owner-selectable booking policy steps (minutes / hours).
+const MIN_NOTICE_OPTIONS = [0, 15, 30, 60, 120, 240, 720, 1440, 2880];
+const CANCEL_CUTOFF_OPTIONS = [0, 1, 2, 4, 12, 24, 48];
 import type { CalendarConfigController } from "@/features/booking/components/calendar/useCalendarConfig";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TimezoneSelect } from "@/features/booking/components/calendar/TimezoneSelect";
@@ -98,6 +102,44 @@ export function AvailabilityManager({ controller, currentLocationId = null }: Pr
               value={config.buffer_min}
               onChange={(e) => patch({ buffer_min: Math.max(0, Number(e.target.value)) })}
             />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm text-muted-foreground">{t.booking.minNoticeLabel}</span>
+            <select
+              className={`${inputCls} w-full`}
+              value={config.min_notice_min}
+              onChange={(e) => patch({ min_notice_min: Number(e.target.value) })}
+            >
+              {[...new Set([...MIN_NOTICE_OPTIONS, config.min_notice_min])]
+                .sort((a, b) => a - b)
+                .map((m) => (
+                  <option key={m} value={m}>
+                    {m === 0
+                      ? t.booking.minNoticeNone
+                      : m < 60
+                        ? t.booking.durationMin.replace("{min}", String(m))
+                        : t.booking.hoursShort.replace("{n}", String(Math.round((m / 60) * 10) / 10))}
+                  </option>
+                ))}
+            </select>
+            <span className="mt-1 block text-xs text-muted-foreground">{t.booking.minNoticeHint}</span>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm text-muted-foreground">{t.booking.cancelCutoffLabel}</span>
+            <select
+              className={`${inputCls} w-full`}
+              value={config.cancel_cutoff_hours}
+              onChange={(e) => patch({ cancel_cutoff_hours: Number(e.target.value) })}
+            >
+              {[...new Set([...CANCEL_CUTOFF_OPTIONS, config.cancel_cutoff_hours])]
+                .sort((a, b) => a - b)
+                .map((h) => (
+                  <option key={h} value={h}>
+                    {h === 0 ? t.booking.cancelCutoffAny : t.booking.hoursShort.replace("{n}", String(h))}
+                  </option>
+                ))}
+            </select>
+            <span className="mt-1 block text-xs text-muted-foreground">{t.booking.cancelCutoffHint}</span>
           </label>
         </div>
       </section>

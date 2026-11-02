@@ -63,6 +63,8 @@ const config: CalendarConfig = {
   timezone: "UTC",
   currency: "eur",
   buffer_min: 0,
+  min_notice_min: 60,
+  cancel_cutoff_hours: 0,
   show_prices: true,
   collect_address: false,
   address_required: false,
@@ -179,6 +181,15 @@ describe("GET /api/widgets/bookings/[token]", () => {
 });
 
 describe("DELETE /api/widgets/bookings/[token]", () => {
+  // The fixture booking starts 2026-08-10 09:00 — freeze "now" before it.
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date("2026-08-05T00:00:00.000Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("404s when the token doesn't match any booking", async () => {
     mockLoadMaybeSingle.mockResolvedValue({ data: null });
     const res = await DELETE(new Request("http://x") as never, params());
@@ -209,6 +220,38 @@ describe("DELETE /api/widgets/bookings/[token]", () => {
     expect(res.status).toBe(500);
     expect(body.error).toBe("db exploded");
   });
+  it("refuses a customer cancelling once the appointment has started", async () => {
+    vi.setSystemTime(new Date("2026-08-10T09:05:00.000Z"));
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
+    const res = await DELETE(new Request("http://x") as never, params());
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("CHANGE_CLOSED");
+    expect(mockUpdatePatch).not.toHaveBeenCalled();
+  });
+
+  it("refuses a customer cancelling inside the business's cutoff", async () => {
+    vi.setSystemTime(new Date("2026-08-10T07:00:00.000Z"));
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({}, { config: { ...config, cancel_cutoff_hours: 4 } }) });
+    const res = await DELETE(new Request("http://x") as never, params());
+    expect(res.status).toBe(409);
+  });
+
+  it("lets the owner cancel even after the start", async () => {
+    vi.setSystemTime(new Date("2026-08-10T09:05:00.000Z"));
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user_1" } } } as never);
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow() });
+    mockUpdateStatusResult.mockReturnValue({ error: null });
+    const res = await DELETE(new Request("http://x") as never, params());
+    expect(res.status).toBe(200);
+    expect(mockUpdatePatch).toHaveBeenCalledWith(expect.objectContaining({ notify_actor: "business" }));
+  });
+
+  it("is a no-op for an already-cancelled booking", async () => {
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({ status: "cancelled" }) });
+    const res = await DELETE(new Request("http://x") as never, params());
+    expect(res.status).toBe(200);
+    expect(mockUpdatePatch).not.toHaveBeenCalled();
+  });
 });
 
 describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
@@ -225,6 +268,20 @@ describe("PATCH /api/widgets/bookings/[token] (reschedule)", () => {
   it("400s when starts_at is missing", async () => {
     const res = await PATCH(patchReq({}), params());
     expect(res.status).toBe(400);
+  });
+
+  it("400s on an unparseable starts_at instead of throwing", async () => {
+    const res = await PATCH(patchReq({ starts_at: "not-a-date" }), params());
+    expect(res.status).toBe(400);
+  });
+
+  it("refuses a customer reschedule inside the business's cutoff", async () => {
+    mockLoadMaybeSingle.mockResolvedValue({ data: loadRow({}, { config: { ...config, cancel_cutoff_hours: 24 } }) });
+    vi.setSystemTime(new Date("2026-08-09T12:00:00.000Z"));
+    const res = await PATCH(patchReq({ starts_at: "2026-08-11T09:00:00.000Z" }), params());
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("CHANGE_CLOSED");
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it("404s when the token doesn't match any booking", async () => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUserId } from "@/features/booking/data/session-owner";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BOOKING_ERROR_STATUS, mapBookingError } from "@/features/booking/domain/booking-errors";
 import { normalizeCalendarConfig, resolveSegmentPlan, type ServiceChoice } from "@/features/booking/domain/calendar";
@@ -32,6 +32,9 @@ export async function POST(
     locale?: string;
     // Booking-funnel consent to a WhatsApp reminder before the appointment.
     whatsapp_opt_in?: boolean;
+    // Owner manual booking: allow "right now" / under-way / outside-hours
+    // times. Honored only when the session IS the widget's owner.
+    owner_override?: boolean;
   };
 
   // Multi-service: prefer the explicit list, falling back to the single
@@ -62,18 +65,13 @@ export async function POST(
       { status: 400 }
     );
   }
+  const startMs = new Date(body.starts_at).getTime();
+  if (!Number.isFinite(startMs)) {
+    return NextResponse.json({ error: "INVALID_DATE" }, { status: 400 });
+  }
 
   // Best-effort: attribute the booking to a signed-in Portal user if there is one.
-  let createdBy: string | null = null;
-  try {
-    const ssr = await createClient();
-    const {
-      data: { user },
-    } = await ssr.auth.getUser();
-    createdBy = user?.id ?? null;
-  } catch {
-    createdBy = null;
-  }
+  const createdBy = await getSessionUserId();
 
   const admin = createAdminClient();
 
@@ -95,13 +93,14 @@ export async function POST(
   // a single unstaffed / auto-assigned segment when the business has no staff.
   const { data: instance } = await admin
     .from("widget_instances")
-    .select("config, owner:profiles(display_name, username)")
+    .select("config, user_id, owner:profiles(display_name, username)")
     .eq("id", instanceId)
     .maybeSingle();
   if (!instance) {
     return NextResponse.json({ error: "WIDGET_UNAVAILABLE" }, { status: 404 });
   }
   const config = normalizeCalendarConfig(instance.config);
+  const isOwner = !!createdBy && createdBy === instance.user_id;
   const locationId = body.location_id ?? null;
   const location = locationId ? config.locations.find((l) => l.id === locationId) : undefined;
   if (locationId && !location) {
@@ -124,7 +123,6 @@ export async function POST(
 
   // Existing confirmed segments around the requested start, scoped to the
   // location bucket (same rule as the availability route).
-  const startMs = new Date(body.starts_at).getTime();
   let busyQuery = admin
     .from("widget_booking_segments")
     .select("staff_id, starts_at, ends_at")
@@ -141,7 +139,11 @@ export async function POST(
     startIso: new Date(body.starts_at).toISOString(),
     existingBusy: busy ?? [],
     location,
-    now: new Date(),
+    // Customers can't book inside the business's minimum notice; the owner can
+    // book any time from now, or anything (incl. under way / after hours) with
+    // the manual-booking override.
+    now: new Date(Date.now() + (isOwner ? 0 : config.min_notice_min) * 60_000),
+    override: isOwner && body.owner_override === true,
   });
   if (!plan.ok) {
     return NextResponse.json({ error: plan.reason }, { status: BOOKING_ERROR_STATUS[plan.reason] ?? 409 });
@@ -152,7 +154,7 @@ export async function POST(
       p_instance_id: instanceId,
       p_service_id: serviceIds[0],
       p_service_ids: serviceIds,
-      p_starts_at: body.starts_at,
+      p_starts_at: new Date(startMs).toISOString(),
       p_customer_name: body.customer_name,
       p_customer_email: body.customer_email?.trim() || null,
       p_customer_phone: body.customer_phone ?? null,

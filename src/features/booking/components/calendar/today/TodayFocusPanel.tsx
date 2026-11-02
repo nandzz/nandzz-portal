@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   CalendarClock,
   CalendarPlus,
+  ClockPlus,
   Contact,
   Loader2,
   Mail,
@@ -13,6 +14,8 @@ import {
   StickyNote,
   TriangleAlert,
   Sparkles,
+  UserCheck,
+  UserX,
   Users,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
@@ -22,7 +25,7 @@ import { cn } from "@/lib/utils";
 import type { TodayBooking, TodayCustomerInsight } from "@/features/booking/dashboardTypes";
 import { CustomerAvatar, ViewProfileLink } from "../CustomerIdentity";
 import { BookingCustomerCard } from "../CustomerDetailsDialog";
-import { useBookingActions } from "../useBookingActions";
+import { canExtend, canMarkAttendance, useBookingActions } from "../useBookingActions";
 import { phaseOf, serviceLines, type TodayFormat } from "./todayFormat";
 
 // The right-hand focus of the Today tab: one appointment in detail (by default
@@ -342,6 +345,11 @@ function CustomerInsight({
             {(c.cancelled === 1 ? tt.cancelledOnce : tt.cancelledTimes).replace("{count}", String(c.cancelled))}
           </Signal>
         )}
+        {c.noShows > 0 && (
+          <Signal tone="warn" icon={<TriangleAlert className="h-4 w-4" />}>
+            {(c.noShows === 1 ? tt.noShowOnce : tt.noShowTimes).replace("{count}", String(c.noShows))}
+          </Signal>
+        )}
       </div>
     </div>
   );
@@ -414,19 +422,43 @@ function FocusActions({
   const { t } = useLanguage();
   const tt = t.bookingToday;
   const when = `${fmt.longDate(b.starts_at)}, ${fmt.time(b.starts_at)}`;
-  const { busy, openReschedule, openAssign, cancel, dialogs } = useBookingActions({
+  const { busy, openReschedule, openAssign, openExtend, markAttendance, cancel, dialogs } = useBookingActions({
     b,
     when,
     timezone: scope.timezone,
     onChanged: scope.onChanged,
   });
   const editable = b.status === "confirmed" && Date.parse(b.starts_at) >= now;
+  const extendable = canExtend(b, now);
+  const attendable = canMarkAttendance(b, now);
+  const attendance = b.attendance ?? null;
 
   return (
     <>
       <div className="mt-4 flex flex-wrap gap-2">
         {editable && (
           <ActionButton onClick={openReschedule} disabled={busy} icon={<CalendarClock className="h-4 w-4" />} label={tt.actionReschedule} />
+        )}
+        {extendable && (
+          <ActionButton onClick={openExtend} disabled={busy} icon={<ClockPlus className="h-4 w-4" />} label={t.booking.extendTitle} />
+        )}
+        {attendable && (
+          <ActionButton
+            onClick={() => markAttendance(attendance === "attended" ? null : "attended")}
+            disabled={busy}
+            active={attendance === "attended"}
+            icon={<UserCheck className="h-4 w-4" />}
+            label={t.booking.markAttended}
+          />
+        )}
+        {attendable && (
+          <ActionButton
+            onClick={() => markAttendance(attendance === "no_show" ? null : "no_show")}
+            disabled={busy}
+            active={attendance === "no_show"}
+            icon={<UserX className="h-4 w-4" />}
+            label={t.booking.markNoShow}
+          />
         )}
         {editable && scope.hasStaff && (
           <ActionButton onClick={openAssign} disabled={busy} icon={<Users className="h-4 w-4" />} label={t.booking.assignStaff} />
@@ -453,12 +485,14 @@ function ActionButton({
   onClick,
   disabled,
   danger,
+  active,
   icon,
   label,
 }: {
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
+  active?: boolean;
   icon: ReactNode;
   label: string;
 }) {
@@ -467,11 +501,14 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-pressed={active}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50",
         danger
           ? "text-red-600 hover:border-red-200 hover:bg-red-50 dark:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/30"
-          : "hover:bg-muted"
+          : active
+            ? "border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300"
+            : "hover:bg-muted"
       )}
     >
       <span className={danger ? "" : "text-muted-foreground"}>{icon}</span>

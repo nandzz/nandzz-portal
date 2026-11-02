@@ -9,6 +9,7 @@ import {
   Clock,
   Loader2,
   Pencil,
+  Repeat,
   Search,
   Sparkles,
   Tag,
@@ -16,7 +17,13 @@ import {
   X,
 } from "lucide-react";
 import type { CalendarCategory, CalendarService, StaffMember } from "@/lib/types";
-import { eligibleStaffForServices, todayInZone, type Slot } from "@/features/booking/domain/calendar";
+import {
+  addDays,
+  eligibleStaffForServices,
+  todayInZone,
+  zonedWallTimeToUtc,
+  type Slot,
+} from "@/features/booking/domain/calendar";
 import { BOOKING_ERROR_KEYS } from "@/features/booking/domain/booking-errors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
@@ -34,10 +41,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 // Owner-only: the details step can prefill from an existing client. The list
 // comes from the owner-scoped dashboard endpoint (ownership enforced there and
 // in widget_customers_summary), so it is never reachable from the public funnel.
+//
+// Owner override: besides the open slots, the owner can type any date/time (or
+// "Now", for a walk-in) — outside opening hours or already under way. The /book
+// route honors `owner_override` only for the real owner; clashes still block.
+// Repeat: "weekly × N" books the same wall-clock time on the following weeks,
+// one booking each, and reports any week that couldn't be booked.
 
 const CLIENT_MATCH_LIMIT = 5;
 
 const BOOKING_WINDOW_DAYS = 60;
+const REPEAT_OPTIONS = [1, 2, 3, 4, 6, 8, 10, 12];
+const FIVE_MIN_MS = 5 * 60_000;
 
 type Step = "service" | "staff" | "slot" | "details" | "done";
 
@@ -91,6 +106,11 @@ export function ManualBookingModal({
   const [pickedClient, setPickedClient] = useState<CustomerSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Owner-typed time (override) + weekly repeat.
+  const [customDate, setCustomDate] = useState("");
+  const [customTime, setCustomTime] = useState("");
+  const [repeatTimes, setRepeatTimes] = useState(1);
+  const [result, setResult] = useState<{ created: number; failed: string[] } | null>(null);
 
   // The modal is mounted only while open (see the caller), so this component's
   // state starts fresh on every open — no reset-on-open effect needed. A second
@@ -149,6 +169,8 @@ export function ManualBookingModal({
         days: String(BOOKING_WINDOW_DAYS),
       });
       if (forStaffId) params.set("staff_id", forStaffId);
+      // Owner session ⇒ the business's minimum notice doesn't apply.
+      params.set("owner", "1");
       if (locationId) params.set("location_id", locationId);
       const res = await fetch(`/api/widgets/${instanceId}/availability?${params.toString()}`);
       const data = await res.json();
@@ -192,6 +214,38 @@ export function ManualBookingModal({
     setStep("details");
   }
 
+  function slotAt(startMs: number): Slot {
+    return {
+      start: new Date(startMs).toISOString(),
+      end: new Date(startMs + totalDuration * 60_000).toISOString(),
+    };
+  }
+
+  function pickCustomTime(date: string) {
+    if (!customTime) return;
+    const startMs = zonedWallTimeToUtc(date, customTime, timezone).getTime();
+    if (!Number.isFinite(startMs)) return;
+    pickSlot(slotAt(startMs));
+  }
+
+  // Walk-in: right now, rounded down to the 5 minutes.
+  function pickNow() {
+    pickSlot(slotAt(Math.floor(Date.now() / FIVE_MIN_MS) * FIVE_MIN_MS));
+  }
+
+  // The same owner-local wall-clock time `weeks` weeks after `iso` (DST-safe).
+  function sameTimeWeeksLater(iso: string, weeks: number): string {
+    const d = new Date(iso);
+    const date = dateKeyFmt.format(d);
+    const time = new Intl.DateTimeFormat("en-GB", {
+      timeZone: timezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d);
+    return zonedWallTimeToUtc(addDays(date, weeks * 7), time, timezone).toISOString();
+  }
+
   async function submit() {
     if (selectedServices.length === 0 || !slot) return;
     if (!form.name.trim() || !form.phone.trim()) {
@@ -200,27 +254,43 @@ export function ManualBookingModal({
     }
     setSubmitting(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/widgets/${instanceId}/book`, {
+    const book = (startsAt: string) =>
+      fetch(`/api/widgets/${instanceId}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           service_ids: selectedServices.map((s) => s.id),
-          starts_at: slot.start,
+          starts_at: startsAt,
           staff_id: staffId,
           location_id: locationId ?? undefined,
           customer_name: form.name.trim(),
           customer_email: form.email.trim() || undefined,
           customer_phone: form.phone.trim(),
           notes: form.notes.trim() || undefined,
+          owner_override: true,
         }),
       });
+    try {
+      const res = await book(slot.start);
       const data = await res.json();
       if (!res.ok) {
         const key = BOOKING_ERROR_KEYS[data.error as string] as keyof typeof t.booking | undefined;
         setError(key ? t.booking[key] : t.booking.errorGeneric);
         return;
       }
+      // Follow-up weeks: sequential so each sees the previous one's segments;
+      // a clash on one week doesn't stop the rest.
+      let created = 1;
+      const failed: string[] = [];
+      for (let week = 1; week < repeatTimes; week++) {
+        const startsAt = sameTimeWeeksLater(slot.start, week);
+        const ok = await book(startsAt)
+          .then((r) => r.ok)
+          .catch(() => false);
+        if (ok) created += 1;
+        else failed.push(`${fmtDay(startsAt)}, ${fmtTime(startsAt)}`);
+      }
+      setResult({ created, failed });
       setStep("done");
       onBooked();
     } catch {
@@ -600,6 +670,47 @@ export function ManualBookingModal({
                 </div>
               </>
             )}
+
+            {/* Owner override: any time, incl. walk-ins and outside opening hours */}
+            {!loadingSlots && (
+              <div className="space-y-2 rounded-xl border border-dashed border-border p-3">
+                <p className="text-xs font-medium text-muted-foreground">{t.booking.manualCustomTimeLabel}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="date"
+                    aria-label={t.booking.manualCustomDateAria}
+                    className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm"
+                    value={customDate || activeDate || minDate}
+                    onChange={(e) => setCustomDate(e.target.value)}
+                  />
+                  <input
+                    type="time"
+                    step={300}
+                    aria-label={t.booking.manualCustomTimeAria}
+                    className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-sm"
+                    value={customTime}
+                    onChange={(e) => setCustomTime(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => pickCustomTime(customDate || activeDate || minDate)}
+                    disabled={!customTime}
+                    className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition hover:bg-muted disabled:opacity-50"
+                  >
+                    {t.booking.manualUseTime}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={pickNow}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    {t.booking.manualNow}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">{t.booking.manualCustomTimeHint}</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -732,6 +843,23 @@ export function ManualBookingModal({
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                <Repeat className="h-4 w-4" />
+                {t.booking.manualRepeatLabel}
+              </span>
+              <select
+                className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+                value={repeatTimes}
+                onChange={(e) => setRepeatTimes(Number(e.target.value))}
+              >
+                {REPEAT_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n === 1 ? t.booking.manualRepeatNone : t.booking.manualRepeatWeekly.replace("{n}", String(n))}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button
               onClick={submit}
               disabled={submitting}
@@ -750,7 +878,21 @@ export function ManualBookingModal({
               <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h3 className="text-base font-semibold">{t.booking.manualBookingCreatedTitle}</h3>
-            <p className="text-sm text-muted-foreground">{t.booking.manualBookingCreatedDesc}</p>
+            <p className="text-sm text-muted-foreground">
+              {result && result.created > 1
+                ? t.booking.manualRepeatCreated.replace("{n}", String(result.created))
+                : t.booking.manualBookingCreatedDesc}
+            </p>
+            {result && result.failed.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+                <p className="font-medium">{t.booking.manualRepeatFailed}</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {result.failed.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <button
               onClick={onClose}
               className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted"

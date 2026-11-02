@@ -7,11 +7,11 @@ import type { TodayCustomerInsight } from "@/features/booking/dashboardTypes";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // The booking columns a customer's history is read with (see fetchTodayData).
-export const HISTORY_COLUMNS = "id, starts_at, status, service_id, service_name, services, staff_name, price_cents, notes";
+export const HISTORY_COLUMNS = "id, starts_at, status, attendance, service_id, service_name, services, staff_name, price_cents, notes";
 
 export type HistoryRow = Pick<
   WidgetBooking,
-  "id" | "starts_at" | "status" | "service_id" | "service_name" | "services" | "staff_name" | "price_cents" | "notes"
+  "id" | "starts_at" | "status" | "attendance" | "service_id" | "service_name" | "services" | "staff_name" | "price_cents" | "notes"
 >;
 
 const WEEKDAY_INDEX: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
@@ -29,7 +29,8 @@ export function buildCustomerInsight(
   const dayEnd = Date.parse(opts.dayEnd);
   const at = (r: HistoryRow) => Date.parse(r.starts_at);
   const confirmed = rows.filter((r) => r.status === "confirmed");
-  const past = confirmed.filter((r) => at(r) < dayStart);
+  // A no-show isn't a visit (nor revenue).
+  const past = confirmed.filter((r) => at(r) < dayStart && r.attendance !== "no_show");
   const future = confirmed.filter((r) => at(r) >= dayEnd);
 
   const lines = (r: HistoryRow) =>
@@ -82,6 +83,7 @@ export function buildCustomerInsight(
     pastVisits: past.length,
     spentCents: past.reduce((sum, r) => sum + (r.price_cents ?? 0), 0),
     cancelled: rows.filter((r) => r.status === "cancelled").length,
+    noShows: confirmed.filter((r) => r.attendance === "no_show").length,
     firstVisit: past[past.length - 1]?.starts_at ?? null,
     lastVisit: past[0]?.starts_at ?? null,
     nextVisit: future[future.length - 1]?.starts_at ?? null,

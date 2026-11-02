@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeCalendarConfig, timezoneForLocation } from "@/features/booking/domain/calendar";
+import { customerCanChange, normalizeCalendarConfig, timezoneForLocation } from "@/features/booking/domain/calendar";
 import { ManageBooking, type ManageBookingData } from "@/features/booking";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +26,7 @@ export default async function BookingManagePage({
   const instance = (data as { instance?: { config?: unknown; owner?: { display_name?: string; username?: string } | null } })
     .instance;
   const owner = instance?.owner ?? null;
+  const config = normalizeCalendarConfig(instance?.config);
 
   const initial: ManageBookingData = {
     service_name: data.service_name as string,
@@ -36,11 +37,10 @@ export default async function BookingManagePage({
     status: data.status as "confirmed" | "cancelled",
     business_name: owner?.display_name || owner?.username || "your provider",
     business_username: owner?.username ?? null,
-    timezone: timezoneForLocation(
-      normalizeCalendarConfig(instance?.config),
-      (data.location_id as string | null) ?? null
-    ),
+    timezone: timezoneForLocation(config, (data.location_id as string | null) ?? null),
     staff_name: (data.staff_name as string | null) ?? null,
+    can_change: data.status === "confirmed" && customerCanChange(config, data.starts_at as string),
+    cancel_cutoff_hours: config.cancel_cutoff_hours,
   };
 
   return <ManageBooking token={token} initial={initial} />;

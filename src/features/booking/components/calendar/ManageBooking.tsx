@@ -18,6 +18,10 @@ export type ManageBookingData = {
   timezone: string;
   // Assigned specialist, when the instance uses staff. Null ⇒ nothing shown.
   staff_name?: string | null;
+  // Can the customer still cancel/reschedule online? False once the appointment
+  // has started or inside the business's cancellation cutoff (server-enforced).
+  can_change?: boolean;
+  cancel_cutoff_hours?: number;
 };
 
 export function ManageBooking({ token, initial }: { token: string; initial: ManageBookingData }) {
@@ -53,6 +57,11 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data?.error === "CHANGE_CLOSED") {
+          setBooking({ ...booking, can_change: false });
+          setMode("view");
+          return;
+        }
         setError(t.booking.errorReschedule);
         return;
       }
@@ -78,6 +87,11 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
     try {
       const res = await fetch(`/api/widgets/bookings/${token}`, { method: "DELETE" });
       if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.error === "CHANGE_CLOSED") {
+          setBooking({ ...booking, can_change: false });
+          return;
+        }
         setError(t.booking.errorCancel);
         return;
       }
@@ -129,7 +143,19 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
           </p>
         )}
 
-        {booking.status === "confirmed" && mode === "view" && (
+        {booking.status === "confirmed" && booking.can_change === false && (
+          <div className="mt-6 rounded-xl bg-muted px-4 py-3 text-sm text-muted-foreground">
+            {t.booking.changeClosedNotice.replace("{business}", booking.business_name)}
+          </div>
+        )}
+
+        {booking.status === "confirmed" && booking.can_change !== false && mode === "view" && (booking.cancel_cutoff_hours ?? 0) > 0 && (
+          <p className="mt-4 text-xs text-muted-foreground">
+            {t.booking.changePolicyHint.replace("{hours}", String(booking.cancel_cutoff_hours))}
+          </p>
+        )}
+
+        {booking.status === "confirmed" && booking.can_change !== false && mode === "view" && (
           <div className="mt-6 flex gap-2">
             <button
               onClick={() => {

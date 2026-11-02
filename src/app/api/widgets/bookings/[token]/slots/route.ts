@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { computeSegmentedSlots, todayInZone } from "@/features/booking/domain/calendar";
+import { isSessionOwner } from "@/features/booking/data/session-owner";
 import { loadRescheduleContext, isLoadError, parseServicesParam, parseStaffParam } from "../_shared";
 
 // Open start times a booking can be RESCHEDULED to — the whole booking (its
@@ -52,7 +53,8 @@ export async function GET(
     fromDate,
     days,
     existingBusy: busy ?? [],
-    minLeadMinutes: 60,
+    // The owner reschedules without the customer's minimum notice.
+    minLeadMinutes: (await isSessionOwner(booking.owner_user_id)) ? 0 : config.min_notice_min,
     location,
   });
 

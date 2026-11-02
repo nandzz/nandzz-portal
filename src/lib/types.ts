@@ -439,6 +439,8 @@ export type CalendarConfig = {
   timezone: string;
   currency: string; // ISO 4217 code (lowercase) the owner prices this widget in
   buffer_min: number;
+  min_notice_min: number; // customers can't book (or reschedule into) a slot sooner than this from now (default 60)
+  cancel_cutoff_hours: number; // customers can't cancel/reschedule within this many hours of the start (0 ⇒ any time before it)
   show_prices: boolean; // whether service prices are shown on the public booking widget
   collect_address: boolean; // whether the public booking widget asks the customer for an address
   address_required: boolean; // whether that address field must be filled (only meaningful when collect_address)
@@ -474,6 +476,9 @@ export type WidgetInstanceWithCatalog = WidgetInstance & {
 };
 
 export type WidgetBookingStatus = "confirmed" | "cancelled";
+
+// Owner-marked outcome of a confirmed booking (null ⇒ not marked).
+export type BookingAttendance = "attended" | "no_show";
 
 // One line of a multi-service booking's breakdown. Present on `WidgetBooking.services`
 // only when more than one service was booked; single-service bookings leave it null
@@ -519,6 +524,7 @@ export type WidgetBooking = {
   customer_address: string | null; // optional mailing/service address (owner-controlled capture)
   notes: string | null;
   status: WidgetBookingStatus;
+  attendance?: BookingAttendance | null;
   manage_token: string;
   created_by_user_id: string | null;
   created_at: string;

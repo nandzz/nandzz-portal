@@ -33,6 +33,40 @@ export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   sun: "Sunday",
 };
 
+// Customer-side booking policy bounds (owner settings).
+export const DEFAULT_MIN_NOTICE_MIN = 60;
+export const MAX_MIN_NOTICE_MIN = 7 * 24 * 60;
+export const MAX_CANCEL_CUTOFF_HOURS = 7 * 24;
+
+function clampInt(raw: unknown, min: number, max: number, fallback: number): number {
+  const n = Number(raw);
+  if (raw === null || raw === undefined || raw === "" || !Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+// Revenue a booking actually brings in: nothing for an owner-marked no-show
+// (it still counts as a booking and still occupied its slot). Every revenue
+// total — overview, calendar, Today, customer card — goes through this.
+export function bookingRevenueCents(b: {
+  price_cents: number | null;
+  attendance?: "attended" | "no_show" | null;
+}): number {
+  return b.attendance === "no_show" ? 0 : b.price_cents ?? 0;
+}
+
+// Is a customer still allowed to cancel / reschedule this booking themselves?
+// Not once it has started, nor inside the business's cancellation cutoff. The
+// owner is never bound by this (they act from the dashboard).
+export function customerCanChange(
+  config: Pick<CalendarConfig, "cancel_cutoff_hours">,
+  startsAt: string,
+  now: Date = new Date()
+): boolean {
+  const start = new Date(startsAt).getTime();
+  if (!Number.isFinite(start)) return false;
+  return now.getTime() < start - (config.cancel_cutoff_hours || 0) * 3_600_000;
+}
+
 export function defaultCalendarConfig(): CalendarConfig {
   return {
     timezone:
@@ -41,6 +75,8 @@ export function defaultCalendarConfig(): CalendarConfig {
         : "UTC",
     currency: DEFAULT_WIDGET_CURRENCY,
     buffer_min: 0,
+    min_notice_min: DEFAULT_MIN_NOTICE_MIN,
+    cancel_cutoff_hours: 0,
     show_prices: true,
     collect_address: false,
     address_required: false,
@@ -130,6 +166,8 @@ export function normalizeCalendarConfig(raw: unknown): CalendarConfig {
     timezone: typeof c.timezone === "string" && c.timezone ? c.timezone : base.timezone,
     currency: typeof c.currency === "string" && c.currency ? c.currency.toLowerCase() : base.currency,
     buffer_min: Number.isFinite(c.buffer_min) ? Number(c.buffer_min) : 0,
+    min_notice_min: clampInt(c.min_notice_min, 0, MAX_MIN_NOTICE_MIN, DEFAULT_MIN_NOTICE_MIN),
+    cancel_cutoff_hours: clampInt(c.cancel_cutoff_hours, 0, MAX_CANCEL_CUTOFF_HOURS, 0),
     show_prices: typeof c.show_prices === "boolean" ? c.show_prices : true,
     collect_address: typeof c.collect_address === "boolean" ? c.collect_address : false,
     address_required: typeof c.address_required === "boolean" ? c.address_required : false,
@@ -727,8 +765,11 @@ function feasibleAtStart(args: {
   staffSource: StaffMember[];
   busy: BusyRange[];
   padMs: number;
+  // Owner override: staff shifts don't filter candidates (working staff are
+  // still tried first); eligibility and time clashes stay hard rules.
+  ignoreHours?: boolean;
 }): (string | null)[][] | null {
-  const { segments, totalMin, startMs, dateStr, weekday, winStartMin, winEndMin, startMin, hasStaff, staffSource, busy, padMs } = args;
+  const { segments, totalMin, startMs, dateStr, weekday, winStartMin, winEndMin, startMin, hasStaff, staffSource, busy, padMs, ignoreHours } = args;
 
   // The whole booking must fit inside this single availability window.
   if (startMin < winStartMin || startMin + totalMin > winEndMin) return null;
@@ -750,9 +791,12 @@ function feasibleAtStart(args: {
     }
 
     const allowed = allowedStaffForSegment(seg, staffSource);
-    const free = allowed
-      .filter((st) => staffWorksSlot(st, weekday, dateStr, segStartMin, segEndMin) && !clashes(st.id))
-      .map((st) => st.id);
+    const works = (st: StaffMember) => staffWorksSlot(st, weekday, dateStr, segStartMin, segEndMin);
+    const free = ignoreHours
+      ? [...allowed.filter(works), ...allowed.filter((st) => !works(st))]
+          .filter((st) => !clashes(st.id))
+          .map((st) => st.id)
+      : allowed.filter((st) => works(st) && !clashes(st.id)).map((st) => st.id);
     if (free.length === 0) return null;
     perSegment.push(free);
   }
@@ -863,9 +907,15 @@ export function resolveSegmentPlan(input: {
   existingBusy: ExistingSegmentBusy[];
   location?: Location;
   // When set, a start at or before this instant is rejected (SLOT_PAST). The
-  // book/reschedule routes pass the current time: a slot list left open in a
-  // tab goes stale, and nothing else stops it booking a time that has passed.
+  // book/reschedule routes pass the current time (plus the business's minimum
+  // notice for customers): a slot list left open in a tab goes stale, and
+  // nothing else stops it booking a time that has passed.
   now?: Date;
+  // Owner override (manual bookings by the business itself): walk-ins "right
+  // now", times already under way and times outside opening hours / staff
+  // shifts / blackout days are allowed. Service eligibility and clashes with
+  // other bookings still block.
+  override?: boolean;
 }): SegmentPlanResult {
   const { config, choices, startIso, existingBusy, location } = input;
   const buffer = Math.max(0, config.buffer_min || 0);
@@ -878,12 +928,13 @@ export function resolveSegmentPlan(input: {
 
   const { segments, totalMin } = layoutServiceSegments(choices, hasStaff);
   const startMs = new Date(startIso).getTime();
-  if (input.now && startMs <= input.now.getTime()) return { ok: false, reason: "SLOT_PAST" };
+  if (!Number.isFinite(startMs) || totalMin <= 0) return { ok: false, reason: "OUT_OF_HOURS" };
+  if (!input.override && input.now && startMs <= input.now.getTime()) return { ok: false, reason: "SLOT_PAST" };
 
   // Owner-local wall clock of the requested start, to test it against the day's
   // windows / blackout the same way computeSegmentedSlots generates them.
   const dateStr = todayInZone(timezone, new Date(startMs));
-  if (blackoutDates.includes(dateStr)) return { ok: false, reason: "BLACKOUT" };
+  if (!input.override && blackoutDates.includes(dateStr)) return { ok: false, reason: "BLACKOUT" };
   const weekday = weekdayOf(dateStr);
   // Reconstruct the owner-local start-minute from the instant.
   const localMinutesFmt = new Intl.DateTimeFormat("en-GB", {
@@ -902,14 +953,19 @@ export function resolveSegmentPlan(input: {
   }));
 
   // Find the availability window containing the whole booking.
+  // (The override uses the booking's own span as its "window".)
   const windows = availability[weekday] ?? [];
-  const win = windows.find(([s, e]) => startMin >= minutesOf(s) && startMin + totalMin <= minutesOf(e));
-  if (!win) return { ok: false, reason: "OUT_OF_HOURS" };
+  const win: [string, string] | undefined = input.override
+    ? undefined
+    : windows.find(([s, e]) => startMin >= minutesOf(s) && startMin + totalMin <= minutesOf(e));
+  if (!input.override && !win) return { ok: false, reason: "OUT_OF_HOURS" };
 
   const perSegment = feasibleAtStart({
     segments, totalMin, startMs, dateStr, weekday,
-    winStartMin: minutesOf(win[0]), winEndMin: minutesOf(win[1]),
+    winStartMin: win ? minutesOf(win[0]) : startMin,
+    winEndMin: win ? minutesOf(win[1]) : startMin + totalMin,
     startMin, hasStaff, staffSource, busy, padMs,
+    ignoreHours: input.override,
   });
   if (!perSegment) return { ok: false, reason: "STAFF_UNAVAILABLE" };
 

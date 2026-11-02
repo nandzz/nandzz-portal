@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays, Plus } from "lucide-react";
 import { BookingRow, type BookingRowData } from "./BookingRow";
+import { bookingRevenueCents } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // The Bookings tab's overview calendar — a navigator for past, present and
@@ -201,7 +202,7 @@ export function BookingsCalendar({
         }
         confirmed += 1;
         dayCount += 1;
-        revenueCents += b.price_cents ?? 0;
+        revenueCents += bookingRevenueCents(b);
         customers.add((b.customer_email || b.customer_name).trim().toLowerCase());
       }
       if (dayCount && (!busiest || dayCount > busiest.count)) busiest = { key, count: dayCount };

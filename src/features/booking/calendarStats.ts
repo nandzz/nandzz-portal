@@ -3,6 +3,7 @@ import type { WidgetOverviewData } from "@/features/booking/components/calendar/
 import { buildPeriodBuckets, type StatsPeriod } from "@/lib/period";
 import {
   addDays,
+  bookingRevenueCents,
   eligibleStaffForService,
   getLocationScope,
   todayInZone,
@@ -24,8 +25,10 @@ const CAPACITY_DAYS = 7;
 // The booking columns the overview reads (see fetchOverviewData).
 export type OverviewBookingRow = Pick<
   WidgetBooking,
-  "id" | "status" | "starts_at" | "ends_at" | "price_cents" | "service_name" | "service_id" | "duration_min" | "staff_id" | "services"
+  | "id" | "status" | "attendance" | "starts_at" | "ends_at" | "price_cents" | "service_name" | "service_id"
+  | "duration_min" | "staff_id" | "services"
 >;
+
 
 // A per-staff busy slice from widget_booking_segments. Only needed for staffed
 // scopes — it carries the real per-service staff/sub-window of multi-service
@@ -427,7 +430,7 @@ export function buildForecast(
   let pricedMin = 0;
   for (const b of confirmed) {
     const t = Date.parse(b.starts_at);
-    const price = b.price_cents ?? 0;
+    const price = bookingRevenueCents(b);
     if (t >= monthStart && t < monthEnd) {
       if (t < nowMs) earnedCents += price;
       else bookedCents += price;
@@ -502,7 +505,7 @@ export function buildOverview(
     return t >= rangeStart && t < rangeEnd;
   });
   const upcomingCount = inRange.filter((b) => new Date(b.starts_at).getTime() >= now).length;
-  const revenueCents = inRange.reduce((sum, b) => sum + (b.price_cents ?? 0), 0);
+  const revenueCents = inRange.reduce((sum, b) => sum + bookingRevenueCents(b), 0);
   const cancelled = bookings.filter((b) => {
     if (b.status !== "cancelled") return false;
     const t = new Date(b.starts_at).getTime();
@@ -515,7 +518,7 @@ export function buildOverview(
     for (const line of bookingServiceLines(b)) {
       const cur = byService.get(line.name) ?? { count: 0, revenueCents: 0 };
       cur.count += 1;
-      cur.revenueCents += line.priceCents;
+      if (b.attendance !== "no_show") cur.revenueCents += line.priceCents;
       byService.set(line.name, cur);
     }
   }

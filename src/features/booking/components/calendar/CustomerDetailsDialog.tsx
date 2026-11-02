@@ -7,6 +7,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { whatsappLink } from "@/features/booking/domain/contact";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { BookingRowData } from "@/features/booking/components/calendar/BookingRow";
+import { bookingRevenueCents } from "@/features/booking/domain/calendar";
 import type { CustomerSummary } from "@/features/booking/components/calendar/WidgetCustomers";
 import { CustomerAvatar, ViewProfileLink } from "@/features/booking/components/calendar/CustomerIdentity";
 
@@ -322,7 +323,7 @@ function withDerivedStats(c: CustomerSummary, rows: BookingRowData[] | null, now
       continue;
     }
     bookings += 1;
-    revenueCents += r.price_cents ?? 0;
+    revenueCents += bookingRevenueCents(r);
     if (Date.parse(r.starts_at) >= now) upcoming += 1;
   }
   return { ...c, bookings, upcoming, cancelled, revenueCents };

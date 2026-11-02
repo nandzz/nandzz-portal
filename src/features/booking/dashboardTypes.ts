@@ -28,6 +28,7 @@ export type TodayCustomerInsight = {
   pastVisits: number; // confirmed, started before today
   spentCents: number; // across those visits
   cancelled: number; // all time
+  noShows: number; // all time, owner-marked
   firstVisit: string | null; // ISO
   lastVisit: string | null; // ISO, most recent confirmed before today
   nextVisit: string | null; // ISO, soonest confirmed after today

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
+import { isSessionOwner } from "@/features/booking/data/session-owner";
 import {
   computeSegmentedSlots,
   normalizeCalendarConfig,
@@ -20,6 +21,8 @@ import {
 //                  commas; an empty staffId (`svcId:`) or an omitted service ⇒
 //                  "any available" (auto-assigned). e.g. `s1:st_a,s2:`.
 //   location_id  — the location subtree, when the instance uses locations.
+//   owner        — "1" from the owner's manual-booking modal: when the session
+//                  really is the owner, the minimum-notice rule is skipped.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ instanceId: string }> }
@@ -115,7 +118,12 @@ export async function GET(
     fromDate,
     days,
     existingBusy: busy ?? [],
-    minLeadMinutes: 60,
+    // Customers can't book sooner than the business's minimum notice; the
+    // owner (verified, not just asked for) can fill any open slot from now on.
+    minLeadMinutes:
+      url.searchParams.get("owner") === "1" && (await isSessionOwner(instance.user_id as string))
+        ? 0
+        : config.min_notice_min,
     location,
   });
 
