@@ -257,7 +257,10 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     />
   );
 
-  const counts = (
+  // Nothing to show for most visitors (counts are opt-in): skip the row so it
+  // doesn't leave an empty gap above the links.
+  const showCountsRow = showFollowCounts || (!isOwner && !!currentUserId && !!profile.show_follow_counts);
+  const counts = showCountsRow && (
     <div className="mt-4 flex items-center gap-5">
       {showFollowCounts && (
         <>
@@ -311,12 +314,16 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   if (headerLayout === "banner") {
     return (
       <div className={`flex flex-col items-start text-left ${BANNER_OFFSET}`}>
-        <div className="flex w-full items-end justify-between gap-3">
+        <div className="relative">
+          {/* Cover edge = the avatar's vertical centre. */}
+          <span data-cover-edge aria-hidden className="pointer-events-none absolute top-12 md:top-14" />
           {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
-          {bookingPlacement === "username" && widgetStrip("mb-1", "start")}
         </div>
         {avatarExtras}
         {nameAndHandle("mt-3")}
+        {/* CTA under the name (LinkedIn-style): beside the avatar it drifted to
+            the far edge of the wide page. */}
+        {bookingPlacement === "username" && widgetStrip("mt-4", "start")}
         {tagline}
         {details("start")}
       </div>
@@ -327,9 +334,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   if (headerLayout === "card") {
     return (
       <div
-        className={`mx-auto max-w-2xl rounded-3xl border border-border/50 bg-background px-5 pb-7 shadow-xl sm:px-8 ${CARD_OFFSET}`}
-        style={pageColor ? { backgroundColor: pageColor } : undefined}
+        className={`relative mx-auto max-w-2xl rounded-3xl border border-border/50 bg-background px-5 pb-7 shadow-xl sm:px-8 ${CARD_OFFSET}`}
+        // On a custom page color, lift the panel a step off the page (lighter
+        // on dark pages, darker on light ones) so it still reads as a card.
+        style={pageColor ? { backgroundColor: `color-mix(in srgb, ${pageColor} 93%, ${isColorDark(pageColor) ? "#ffffff" : "#000000"})` } : undefined}
       >
+        {/* Cover edge: the panel overlaps the cover's bottom 3.5rem. */}
+        <span data-cover-edge aria-hidden className="pointer-events-none absolute top-14" />
         <div className="flex flex-col items-center text-center">
           <div className="-mt-12 md:-mt-14">
             {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
@@ -349,7 +360,9 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   if (headerLayout === "hero") {
     return (
       <>
-        <div className={`flex flex-col justify-end pb-6 text-left ${HERO_MIN_HEIGHT}`}>
+        <div className={`relative flex flex-col justify-end pb-6 text-left ${HERO_MIN_HEIGHT}`}>
+          {/* Cover edge: the bottom of the identity block. */}
+          <span data-cover-edge aria-hidden className="pointer-events-none absolute bottom-0" />
           <div className="flex items-end gap-4">
             {avatar("h-20 w-20 md:h-24 md:w-24", 96, "text-2xl", { borderColor: "rgb(255 255 255 / 0.85)" })}
             <div className="min-w-0 pb-1">

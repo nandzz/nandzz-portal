@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import { Camera, X, Move, Check, Share2, Pencil, Trash2, UserPen, Eye, EyeOff } from "lucide-react";
 import {
@@ -87,6 +87,34 @@ export function ProfileBackground({
   // "centered" keeps the original 18rem cover that fades into the page; the
   // other layouts get a crisp, layout-sized cover block.
   const coverHeight = headerLayout === "centered" ? "h-[calc(18rem+env(safe-area-inset-top))]" : COVER_HEIGHT;
+
+  // The non-centered covers end exactly on the edge the header marks
+  // (`data-cover-edge`: the avatar's centre, the card's overlap, the hero's
+  // bottom). Measured rather than derived, so navbar/preview/safe-area changes
+  // can never push the avatar off the edge. COVER_HEIGHT is only the first
+  // paint estimate.
+  const layerRef = useRef<HTMLDivElement>(null);
+  const [coverPx, setCoverPx] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    const root = layer?.parentElement;
+    if (headerLayout === "centered" || !layer || !root) {
+      setCoverPx(null);
+      return;
+    }
+    const measure = () => {
+      const edge = root.querySelector<HTMLElement>("[data-cover-edge]");
+      if (!edge) return setCoverPx(null);
+      setCoverPx(Math.round(edge.getBoundingClientRect().top - layer.getBoundingClientRect().top));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(layer);
+    const edgeParent = root.querySelector("[data-cover-edge]")?.parentElement;
+    if (edgeParent) ro.observe(edgeParent);
+    return () => ro.disconnect();
+  }, [headerLayout]);
+  const coverSize = coverPx !== null ? { height: coverPx } : undefined;
 
   // Escape leaves preview mode.
   useEffect(() => {
@@ -280,14 +308,14 @@ export function ProfileBackground({
       )}
 
       {/* ── Decorative background — kept at -z-10, never interactive ── */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
+      <div ref={layerRef} className="absolute inset-0 -z-10 overflow-hidden">
         {headerLayout !== "centered" ? (
           <div
             className={`absolute inset-x-0 top-0 ${coverHeight} ${localUrl ? "" : COVER_FALLBACK[headerLayout]}`}
             style={
               localUrl
-                ? { backgroundImage: `url(${localUrl})`, backgroundSize: "cover", backgroundPosition: savedPosStr }
-                : undefined
+                ? { ...coverSize, backgroundImage: `url(${localUrl})`, backgroundSize: "cover", backgroundPosition: savedPosStr }
+                : coverSize
             }
           >
             {/* Hero: darken the bottom so the white name/handle stay legible. */}
@@ -333,6 +361,7 @@ export function ProfileBackground({
           ref={overlayRef}
           className={`absolute inset-x-0 top-0 ${coverHeight} z-20 cursor-grab active:cursor-grabbing select-none touch-none`}
           style={{
+            ...(headerLayout !== "centered" ? coverSize : undefined),
             backgroundImage: `url(${localUrl})`,
             backgroundSize: "cover",
             backgroundPosition: livePosStr,
