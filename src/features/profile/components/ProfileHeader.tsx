@@ -166,26 +166,33 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} align={align} className={className} />
     ) : null;
 
-  // Primary action row: the booking CTA (when placed under the name) plus a
-  // quiet, secondary Share icon button that never mimics the CTA.
-  const actions = (className: string, onImage = false) => {
+  // Share is a quiet utility icon, never styled like the booking CTA. The
+  // framed layouts park it in their own top-right corner (banner: the avatar
+  // row, card: the panel, hero: the photo); centered keeps it beside the CTA.
+  const share = (onImage = false) =>
+    showShare && (
+      <ShareMenu
+        url={`/${profile.username}`}
+        title={`${name} on Nandzz`}
+        triggerClassName={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
+          onImage
+            ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
+            : "border-border/70 bg-background/60 text-foreground/75 hover:bg-background hover:text-foreground"
+        }`}
+        triggerContent={<Share2 className="h-4 w-4" aria-label={t.share.share} />}
+      />
+    );
+
+  // Primary action row: the booking CTA when it's placed under the name (plus
+  // Share, for the centered layout only).
+  const actions = (className: string, withShare = false) => {
     const cta = bookingPlacement === "username" ? widgetStrip("", "start") : null;
-    if (!cta && !showShare) return null;
+    const shareButton = withShare ? share() : null;
+    if (!cta && !shareButton) return null;
     return (
       <div className={`${className} flex flex-wrap items-center gap-2`}>
         {cta}
-        {showShare && (
-          <ShareMenu
-            url={`/${profile.username}`}
-            title={`${name} on Nandzz`}
-            triggerClassName={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border backdrop-blur-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
-              onImage
-                ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
-                : "border-border/70 bg-background/60 text-foreground/75 hover:bg-background hover:text-foreground"
-            }`}
-            triggerContent={<Share2 className="h-4 w-4" aria-label={t.share.share} />}
-          />
-        )}
+        {shareButton}
       </div>
     );
   };
@@ -342,10 +349,11 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   if (headerLayout === "banner") {
     return (
       <div className={`flex flex-col items-start text-left ${BANNER_OFFSET}`} {...anim}>
-        <div className="relative">
+        <div className="relative flex w-full items-end justify-between gap-3">
           {/* Cover edge = the avatar's vertical centre. */}
           <span data-cover-edge aria-hidden className="pointer-events-none absolute top-12 md:top-14" />
           {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
+          <div className="mb-1">{share()}</div>
         </div>
         {avatarExtras}
         {nameAndHandle("mt-3")}
@@ -369,6 +377,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       >
         {/* Cover edge: the panel overlaps the cover's bottom 3.5rem. */}
         <span data-cover-edge aria-hidden className="pointer-events-none absolute top-14" />
+        {showShare && <div className="absolute right-3 top-3 sm:right-4 sm:top-4">{share()}</div>}
         <div className="flex flex-col items-center text-center" {...anim}>
           <div className="-mt-12 md:-mt-14">
             {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
@@ -391,6 +400,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
         <div className={`relative flex flex-col justify-end pb-6 text-left ${HERO_MIN_HEIGHT}`} {...anim}>
           {/* Cover edge: the bottom of the identity block. */}
           <span data-cover-edge aria-hidden className="pointer-events-none absolute bottom-0" />
+          {showShare && <div className="absolute right-0 top-0">{share(true)}</div>}
           <div className="flex items-end gap-4">
             {avatar("h-20 w-20 md:h-24 md:w-24", 96, "text-2xl", { borderColor: "rgb(255 255 255 / 0.85)" })}
             <div className="min-w-0 pb-1">
@@ -404,7 +414,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
           {profile.tagline && (
             <p className="mt-3 max-w-xl text-sm font-medium text-white/90">{profile.tagline}</p>
           )}
-          {actions("mt-4", true)}
+          {actions("mt-4")}
         </div>
         <div className="flex flex-col items-start text-left" {...anim}>
           {details("start")}
@@ -419,7 +429,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       {avatar("h-28 w-28", 112, "text-3xl")}
       {avatarExtras}
       {nameAndHandle("mt-5")}
-      {actions("mt-4 justify-center")}
+      {actions("mt-4 justify-center", true)}
       {tagline}
       {details("center")}
     </div>
