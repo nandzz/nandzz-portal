@@ -21,6 +21,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { isColorDark } from "@/lib/color";
 import { CHROME_TINT_EVENT } from "@/components/theme-color-sync";
+import { COVER_FALLBACK, COVER_HEIGHT, resolveHeaderLayout } from "../domain/header-layout";
 
 // Owner-only and mounted only while open: stays out of the page visitors load.
 const EditProfileDialog = dynamic(() => import("./EditProfileDialog").then((m) => m.EditProfileDialog));
@@ -82,6 +83,10 @@ export function ProfileBackground({
   const updateStyle = styleCtx?.update;
   const localColor = style.backgroundColor;
   const localTextColor = style.textColor;
+  const headerLayout = resolveHeaderLayout(style.headerLayout);
+  // "centered" keeps the original 18rem cover that fades into the page; the
+  // other layouts get a crisp, layout-sized cover block.
+  const coverHeight = headerLayout === "centered" ? "h-[calc(18rem+env(safe-area-inset-top))]" : COVER_HEIGHT;
 
   // Escape leaves preview mode.
   useEffect(() => {
@@ -276,7 +281,21 @@ export function ProfileBackground({
 
       {/* ── Decorative background — kept at -z-10, never interactive ── */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        {localUrl ? (
+        {headerLayout !== "centered" ? (
+          <div
+            className={`absolute inset-x-0 top-0 ${coverHeight} ${localUrl ? "" : COVER_FALLBACK[headerLayout]}`}
+            style={
+              localUrl
+                ? { backgroundImage: `url(${localUrl})`, backgroundSize: "cover", backgroundPosition: savedPosStr }
+                : undefined
+            }
+          >
+            {/* Hero: darken the bottom so the white name/handle stay legible. */}
+            {headerLayout === "hero" && (
+              <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
+            )}
+          </div>
+        ) : localUrl ? (
           <>
             <div
               className="absolute inset-x-0 top-0 h-[calc(18rem+env(safe-area-inset-top))]"
@@ -312,7 +331,7 @@ export function ProfileBackground({
       {repositioning && localUrl && (
         <div
           ref={overlayRef}
-          className="absolute inset-x-0 top-0 h-[calc(18rem+env(safe-area-inset-top))] z-20 cursor-grab active:cursor-grabbing select-none touch-none"
+          className={`absolute inset-x-0 top-0 ${coverHeight} z-20 cursor-grab active:cursor-grabbing select-none touch-none`}
           style={{
             backgroundImage: `url(${localUrl})`,
             backgroundSize: "cover",
@@ -424,6 +443,9 @@ export function ProfileBackground({
                   onButtonChange={(buttonColor) => updateStyle({ buttonColor })}
                   textColor={style.textColor}
                   onTextChange={(textColor) => updateStyle({ textColor })}
+                  headerLayout={headerLayout}
+                  // "centered" is the default, stored as NULL.
+                  onHeaderLayoutChange={(layout) => updateStyle({ headerLayout: layout === "centered" ? null : layout })}
                   social={{
                     links: buildSocialLinks(profile),
                     style: style.socialLinksStyle,

@@ -8,6 +8,7 @@ import {
 } from "@/contexts/ProfileStyleContext";
 import { updateProfileStyle } from "../actions/update-background";
 import { isColorDark } from "@/lib/color";
+import { COVER_BASE, resolveHeaderLayout } from "../domain/header-layout";
 
 // How long the picker must sit idle before the coalesced patch is written.
 // Dragging the native color input fires ~60 events/s: without this every tick
@@ -123,9 +124,11 @@ export function ProfileStyleRoot({ initial, isOwner, className = "", children }:
   const bg = safeHex(style.backgroundColor);
   const theme = bg ? (isColorDark(bg) ? "dark" : "light") : "";
 
+  const coverBase = COVER_BASE[resolveHeaderLayout(style.headerLayout)];
+
   return (
     <ProfileStyleContext.Provider value={ctx}>
-      <div data-profile-root className={`${className} ${theme}`}>
+      <div data-profile-root className={`${className} ${theme} ${coverBase}`}>
         {/* Paint the document itself with the profile color so overscroll, the
             area behind the floating CTA / Safari toolbars and any space below
             the content never flashes the app's white (or dark-mode) body.

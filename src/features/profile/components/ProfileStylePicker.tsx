@@ -3,7 +3,7 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { Palette, Check, Ban, RotateCcw, CalendarDays, X, Mail } from "lucide-react";
-import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
+import type { BookingButtonStyle, HeaderLayout, SocialLinksStyle } from "@/lib/types";
 import {
   bookingButtonPresentation,
   resolveBookingButtonStyle,
@@ -323,6 +323,53 @@ const TONE_VISUAL: Record<ResolvedSocialLinksStyle["tone"], React.ReactNode> = {
   filled: <span className="h-3.5 w-3.5 rounded-[4px] bg-gradient-to-br from-amber-400 via-pink-500 to-blue-600" />,
 };
 
+// Mini mock-ups of each header layout: cover (tinted block), avatar (circle),
+// info (bars). Same neutral-bar language as the link layouts above.
+const COVER = "bg-violet-400/45";
+const DOT = "rounded-full bg-current opacity-60 ring-2 ring-background";
+const HEADER_VISUAL: Record<HeaderLayout, React.ReactNode> = {
+  centered: (
+    <span className={`relative flex h-14 w-full flex-col items-center justify-center gap-1 rounded-md ${COVER}`}>
+      <span className={`h-4 w-4 ${DOT}`} />
+      <span className={`h-1 w-8 rounded-full ${BAR}`} />
+      <span className={`h-1 w-5 rounded-full ${BAR}`} />
+    </span>
+  ),
+  banner: (
+    <span className="flex h-14 w-full flex-col overflow-hidden rounded-md border border-current/15">
+      <span className={`h-5 w-full ${COVER}`} />
+      <span className="-mt-2 flex items-end justify-between px-1.5">
+        <span className={`h-4 w-4 ${DOT}`} />
+        <span className="h-1.5 w-5 rounded-full bg-current opacity-50" />
+      </span>
+      <span className={`mx-1.5 mt-1 h-1 w-8 rounded-full ${BAR}`} />
+      <span className={`mx-1.5 mt-0.5 h-1 w-5 rounded-full ${BAR}`} />
+    </span>
+  ),
+  card: (
+    <span className="relative flex h-14 w-full flex-col overflow-hidden rounded-md border border-current/15">
+      <span className={`h-6 w-full ${COVER}`} />
+      <span className="absolute inset-x-2 top-3.5 bottom-1 flex flex-col items-center gap-1 rounded-[5px] border border-current/20 bg-background">
+        <span className={`-mt-1.5 h-3.5 w-3.5 ${DOT}`} />
+        <span className={`h-1 w-8 rounded-full ${BAR}`} />
+        <span className={`h-1 w-5 rounded-full ${BAR}`} />
+      </span>
+    </span>
+  ),
+  hero: (
+    <span className="flex h-14 w-full flex-col overflow-hidden rounded-md border border-current/15">
+      <span className="flex h-10 w-full items-end gap-1 bg-violet-700/70 px-1.5 pb-1">
+        <span className="h-3.5 w-3.5 rounded-full bg-white/80" />
+        <span className="mb-0.5 flex flex-col gap-0.5">
+          <span className="h-1 w-7 rounded-full bg-white/80" />
+          <span className="h-1 w-4 rounded-full bg-white/50" />
+        </span>
+      </span>
+      <span className={`mx-1.5 mt-1 h-1 w-8 rounded-full ${BAR}`} />
+    </span>
+  ),
+};
+
 // Shown in the preview when the owner hasn't added any links yet.
 const SAMPLE_LINKS: SocialLink[] = [
   { key: "instagram", href: "#", label: "Instagram", icon: InstagramIcon, hoverClass: "", brandColor: "#e4405f", brandFill: INSTAGRAM_FILL },
@@ -330,7 +377,7 @@ const SAMPLE_LINKS: SocialLink[] = [
   { key: "email", href: "#", label: "Email", icon: Mail, hoverClass: "", brandColor: null, brandFill: "#475569" },
 ];
 
-type Tab = "page" | "buttons" | "booking";
+type Tab = "page" | "header" | "buttons" | "booking";
 
 interface ProfileStylePickerProps {
   backgroundColor: string | null;
@@ -339,6 +386,8 @@ interface ProfileStylePickerProps {
   onButtonChange: (color: string | null) => void;
   textColor: string | null;
   onTextChange: (color: string | null) => void;
+  headerLayout: HeaderLayout;
+  onHeaderLayoutChange: (layout: HeaderLayout) => void;
   social: {
     links: SocialLink[];
     style: SocialLinksStyle | null;
@@ -360,6 +409,8 @@ export function ProfileStylePicker({
   onButtonChange,
   textColor,
   onTextChange,
+  headerLayout,
+  onHeaderLayoutChange,
   social,
   booking,
   onReset,
@@ -393,11 +444,13 @@ export function ProfileStylePicker({
     backgroundColor !== null ||
     buttonColor !== null ||
     textColor !== null ||
+    headerLayout !== "centered" ||
     social.style !== null ||
     (booking?.style ?? null) !== null;
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "page", label: "Page" },
+    { id: "header", label: t.profile.headerLayout },
     { id: "buttons", label: "Buttons" },
     ...(booking ? [{ id: "booking" as const, label: "Booking" }] : []),
   ];
@@ -481,6 +534,43 @@ export function ProfileStylePicker({
               onChange={onTextChange}
             />
           </>
+        )}
+
+        {activeTab === "header" && (
+          <section>
+            <p className="mb-2 text-xs font-medium text-foreground">{t.profile.headerLayoutLabel}</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {(
+                [
+                  { value: "centered", label: t.profile.headerLayoutCentered, hint: t.profile.headerLayoutCenteredHint },
+                  { value: "banner", label: t.profile.headerLayoutBanner, hint: t.profile.headerLayoutBannerHint },
+                  { value: "card", label: t.profile.headerLayoutCard, hint: t.profile.headerLayoutCardHint },
+                  { value: "hero", label: t.profile.headerLayoutHero, hint: t.profile.headerLayoutHeroHint },
+                ] as const
+              ).map((o) => {
+                const active = headerLayout === o.value;
+                return (
+                  <button
+                    type="button"
+                    key={o.value}
+                    onClick={() => onHeaderLayoutChange(o.value)}
+                    aria-pressed={active}
+                    className={`flex flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+                      active
+                        ? "border-violet-500 bg-violet-500/10 text-foreground"
+                        : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
+                    }`}
+                  >
+                    {HEADER_VISUAL[o.value]}
+                    <span className="text-center leading-tight">
+                      <span className="block text-[11px] font-medium">{o.label}</span>
+                      <span className="block text-[10px] opacity-70">{o.hint}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {activeTab === "buttons" && (

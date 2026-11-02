@@ -18,6 +18,13 @@ import { isColorDark } from "@/lib/color";
 import { resolveBookingButtonStyle } from "@/lib/bookingButtonStyle";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProfileStyle } from "@/contexts/ProfileStyleContext";
+import {
+  BANNER_OFFSET,
+  CARD_OFFSET,
+  HERO_MIN_HEIGHT,
+  rememberHeaderLayout,
+  resolveHeaderLayout,
+} from "../domain/header-layout";
 
 // Owner-only, mounted once a picture is picked: the cropper stays out of the
 // page every visitor loads.
@@ -52,6 +59,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   const textColor = live ? live.textColor : textColorProp;
   const socialLinksStyle = live ? live.socialLinksStyle : socialLinksStyleProp;
   const bookingButtonStyle = live ? live.bookingButtonStyle : profile.booking_button_style;
+  const headerLayout = resolveHeaderLayout(live ? live.headerLayout : profile.header_layout);
+  const pageColor = live?.backgroundColor ?? null;
+  // Banner/card avatars sit on the cover's edge: ring them in the page color.
+  const edgeRing: React.CSSProperties | undefined = pageColor ? { borderColor: pageColor } : undefined;
+
+  // Lets the loading skeleton match this layout on the next visit.
+  useEffect(() => { rememberHeaderLayout(profile.username, headerLayout); }, [profile.username, headerLayout]);
   // Hidden by default; the owner always sees their own counts.
   const showFollowCounts = isOwner || !!profile.show_follow_counts;
 
@@ -139,56 +153,65 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
   };
 
   const links = buildSocialLinks(profile);
+  const name = profile.display_name || profile.username;
 
   // The widget strip (Book now CTA) moves to the owner-chosen spot in the header.
   const bookingPlacement = resolveBookingButtonStyle(bookingButtonStyle).placement;
-  const widgetStrip = (className: string) =>
+  const widgetStrip = (className: string, align: "center" | "start" = "center") =>
     FEATURES.widgets && widgets.length > 0 ? (
-      <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} className={className} />
+      <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} align={align} className={className} />
     ) : null;
 
-  return (
-    <div className="flex flex-col items-center text-center">
-      <div className="relative group">
-        <Avatar className="h-28 w-28 border-4 border-background shadow-xl ring-2 ring-violet-200/50 dark:ring-violet-800/30">
-          {/* h-28 = 112px */}
-          <AvatarImage {...avatarImageProps(localAvatarUrl, 112)} alt={profile.display_name || profile.username} />
-          <AvatarFallback className="text-3xl bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300">
-            {profile.display_name?.[0]?.toUpperCase() ||
-              profile.username[0]?.toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+  // ── Shared pieces, arranged per header layout below ──────────────────────
 
-        {isOwner && (
-          <>
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="hidden"
-              onChange={handleAvatarFileChange}
-            />
-            <button
-              type="button"
-              data-owner-only
-              onClick={() => avatarInputRef.current?.click()}
-              disabled={avatarUploading}
-              aria-label="Change profile picture"
-              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 disabled:cursor-not-allowed"
-            >
-              {avatarUploading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
-              ) : (
-                <div className="flex flex-col items-center gap-0.5">
-                  <Camera className="h-5 w-5" />
-                  <span className="text-[10px] font-medium">Edit</span>
-                </div>
-              )}
-            </button>
-          </>
-        )}
-      </div>
+  // `ringStyle` lets the avatar's border match whatever it overlaps (the page
+  // color on the banner/card edge, white on the hero photo).
+  const avatar = (sizeClass: string, px: number, fallbackClass: string, ringStyle?: React.CSSProperties) => (
+    <div className="relative group shrink-0">
+      <Avatar
+        className={`${sizeClass} border-4 border-background shadow-xl ring-2 ring-violet-200/50 dark:ring-violet-800/30`}
+        style={ringStyle}
+      >
+        <AvatarImage {...avatarImageProps(localAvatarUrl, px)} alt={name} />
+        <AvatarFallback className={`${fallbackClass} bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300`}>
+          {profile.display_name?.[0]?.toUpperCase() ||
+            profile.username[0]?.toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
 
+      {isOwner && (
+        <>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={handleAvatarFileChange}
+          />
+          <button
+            type="button"
+            data-owner-only
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={avatarUploading}
+            aria-label="Change profile picture"
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 disabled:cursor-not-allowed"
+          >
+            {avatarUploading ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/60 border-t-transparent" />
+            ) : (
+              <div className="flex flex-col items-center gap-0.5">
+                <Camera className="h-5 w-5" />
+                <span className="text-[10px] font-medium">Edit</span>
+              </div>
+            )}
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  const avatarExtras = (
+    <>
       {avatarError && (
         <p className="mt-2 text-xs text-destructive">{avatarError}</p>
       )}
@@ -200,67 +223,164 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
           onCrop={handleCroppedAvatar}
         />
       )}
-      <h1 className="mt-5 text-2xl font-bold tracking-tight" style={textStyle}>
-        {profile.display_name || profile.username}
+    </>
+  );
+
+  const nameAndHandle = (h1Class: string) => (
+    <>
+      <h1 className={`${h1Class} text-2xl font-bold tracking-tight`} style={textStyle}>
+        {name}
       </h1>
       <p className="mt-0.5 text-sm text-muted-foreground" style={textMutedStyle}>
         @{profile.username}
       </p>
-      {bookingPlacement === "username" && widgetStrip("mt-4")}
-      {profile.tagline && (
-        <p className="mt-2 text-sm font-medium text-violet-600 dark:text-violet-400" style={textStyle}>
-          {profile.tagline}
-        </p>
-      )}
-      {profile.bio && (
-        <p className="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed break-words" style={textMutedStyle}>
-          {profile.bio}
-        </p>
-      )}
-      {bookingPlacement === "description" && widgetStrip("mt-4")}
+    </>
+  );
 
-      {profile.address?.formatted && (
-        <AddressMenu
-          address={profile.address}
-          shareTitle={profile.display_name || profile.username}
-          style={buttonStyle}
-        />
-      )}
+  const tagline = profile.tagline && (
+    <p className="mt-2 text-sm font-medium text-violet-600 dark:text-violet-400" style={textStyle}>
+      {profile.tagline}
+    </p>
+  );
 
-      <div className="mt-4 flex items-center gap-5">
-        {showFollowCounts && (
-          <>
-            <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
-              <div className="flex items-center gap-1.5 text-sm">
-                <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
-                <span className="text-muted-foreground" style={textMutedStyle}>{(profile.followers_count ?? 0) === 1 ? t.profile.follower : t.profile.followers}</span>
-              </div>
-            </FollowersDialog>
-            <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
-              <div className="flex items-center gap-1.5 text-sm">
-                <span className="font-semibold" style={textStyle}>{profile.following_count ?? 0}</span>
-                <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.following}</span>
-              </div>
-            </FollowersDialog>
-          </>
-        )}
-        {/* Following is opt-in: the button only appears when the owner turned
-            on Settings → follow counts. */}
-        {!isOwner && currentUserId && profile.show_follow_counts && (
-          <FollowButton profileId={profile.id} initialIsFollowing={isFollowing} />
-        )}
+  const bio = profile.bio && (
+    <p className="mt-3 max-w-lg text-sm text-muted-foreground leading-relaxed break-words" style={textMutedStyle}>
+      {profile.bio}
+    </p>
+  );
+
+  const address = profile.address?.formatted && (
+    <AddressMenu
+      address={profile.address}
+      shareTitle={name}
+      style={buttonStyle}
+    />
+  );
+
+  const counts = (
+    <div className="mt-4 flex items-center gap-5">
+      {showFollowCounts && (
+        <>
+          <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
+              <span className="text-muted-foreground" style={textMutedStyle}>{(profile.followers_count ?? 0) === 1 ? t.profile.follower : t.profile.followers}</span>
+            </div>
+          </FollowersDialog>
+          <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
+            <div className="flex items-center gap-1.5 text-sm">
+              <span className="font-semibold" style={textStyle}>{profile.following_count ?? 0}</span>
+              <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.following}</span>
+            </div>
+          </FollowersDialog>
+        </>
+      )}
+      {/* Following is opt-in: the button only appears when the owner turned
+          on Settings → follow counts. */}
+      {!isOwner && currentUserId && profile.show_follow_counts && (
+        <FollowButton profileId={profile.id} initialIsFollowing={isFollowing} />
+      )}
+    </div>
+  );
+
+  const socialLinks = (align: "center" | "start") =>
+    links.length > 0 && (
+      <SocialLinkButtons
+        links={links}
+        style={socialLinksStyle}
+        buttonColor={buttonColor}
+        align={align}
+        className={resolveSocialLinksStyle(socialLinksStyle).layout === "stack" ? "mt-6" : "mt-5"}
+      />
+    );
+
+  // Bio → address → counts → links, with the CTA in its chosen slot. Shared by
+  // every layout; hero renders the identity part on the cover instead.
+  const details = (align: "center" | "start") => (
+    <>
+      {bio}
+      {bookingPlacement === "description" && widgetStrip("mt-4", align)}
+      {address}
+      {counts}
+      {socialLinks(align)}
+      {bookingPlacement === "social" && widgetStrip("mt-5", align)}
+    </>
+  );
+
+  // ── Banner: short cover strip, avatar on its edge, everything left-aligned.
+  if (headerLayout === "banner") {
+    return (
+      <div className={`flex flex-col items-start text-left ${BANNER_OFFSET}`}>
+        <div className="flex w-full items-end justify-between gap-3">
+          {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
+          {bookingPlacement === "username" && widgetStrip("mb-1", "start")}
+        </div>
+        {avatarExtras}
+        {nameAndHandle("mt-3")}
+        {tagline}
+        {details("start")}
       </div>
+    );
+  }
 
-      {links.length > 0 && (
-        <SocialLinkButtons
-          links={links}
-          style={socialLinksStyle}
-          buttonColor={buttonColor}
-          className={resolveSocialLinksStyle(socialLinksStyle).layout === "stack" ? "mt-6" : "mt-5"}
-        />
-      )}
+  // ── Card: the identity sits on a panel floating over the cover's edge.
+  if (headerLayout === "card") {
+    return (
+      <div
+        className={`mx-auto max-w-2xl rounded-3xl border border-border/50 bg-background px-5 pb-7 shadow-xl sm:px-8 ${CARD_OFFSET}`}
+        style={pageColor ? { backgroundColor: pageColor } : undefined}
+      >
+        <div className="flex flex-col items-center text-center">
+          <div className="-mt-12 md:-mt-14">
+            {avatar("h-24 w-24 md:h-28 md:w-28", 112, "text-3xl", edgeRing)}
+          </div>
+          {avatarExtras}
+          {nameAndHandle("mt-4")}
+          {bookingPlacement === "username" && widgetStrip("mt-4")}
+          {tagline}
+          {details("center")}
+        </div>
+      </div>
+    );
+  }
 
-      {bookingPlacement === "social" && widgetStrip("mt-5")}
+  // ── Hero: big photo, identity overlaid on its darkened bottom edge (always
+  // white text — the cover, or its dark fallback, is behind it).
+  if (headerLayout === "hero") {
+    return (
+      <>
+        <div className={`flex flex-col justify-end pb-6 text-left ${HERO_MIN_HEIGHT}`}>
+          <div className="flex items-end gap-4">
+            {avatar("h-20 w-20 md:h-24 md:w-24", 96, "text-2xl", { borderColor: "rgb(255 255 255 / 0.85)" })}
+            <div className="min-w-0 pb-1">
+              <h1 className="truncate text-2xl font-bold tracking-tight text-white drop-shadow-sm md:text-3xl">
+                {name}
+              </h1>
+              <p className="mt-0.5 truncate text-sm text-white/80">@{profile.username}</p>
+            </div>
+          </div>
+          {avatarExtras}
+          {profile.tagline && (
+            <p className="mt-3 max-w-xl text-sm font-medium text-white/90">{profile.tagline}</p>
+          )}
+          {bookingPlacement === "username" && widgetStrip("mt-4", "start")}
+        </div>
+        <div className="flex flex-col items-start text-left">
+          {details("start")}
+        </div>
+      </>
+    );
+  }
+
+  // ── Centered (default): avatar, info and links stacked in the middle.
+  return (
+    <div className="flex flex-col items-center text-center">
+      {avatar("h-28 w-28", 112, "text-3xl")}
+      {avatarExtras}
+      {nameAndHandle("mt-5")}
+      {bookingPlacement === "username" && widgetStrip("mt-4")}
+      {tagline}
+      {details("center")}
     </div>
   );
 }

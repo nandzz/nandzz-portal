@@ -112,6 +112,7 @@ export const updateProfileStyleSchema = z
     textColor: hexColor.optional(),
     bookingButtonStyle: bookingButtonStyleSchema.optional(),
     socialLinksStyle: socialLinksStyleSchema.optional(),
+    headerLayout: z.enum(["centered", "banner", "card", "hero"]).nullable().optional(),
   })
   .strict();
 

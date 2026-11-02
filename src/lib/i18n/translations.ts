@@ -902,6 +902,16 @@ export type Translations = {
     bookingPositionUsername: string;
     bookingPositionDescription: string;
     bookingPositionSocial: string;
+    headerLayout: string;
+    headerLayoutLabel: string;
+    headerLayoutCentered: string;
+    headerLayoutCenteredHint: string;
+    headerLayoutBanner: string;
+    headerLayoutBannerHint: string;
+    headerLayoutCard: string;
+    headerLayoutCardHint: string;
+    headerLayoutHero: string;
+    headerLayoutHeroHint: string;
   };
   agent: {
     suggestWhoAreYou: string;

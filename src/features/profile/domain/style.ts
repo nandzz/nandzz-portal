@@ -8,7 +8,7 @@ export const safeHex = (c: string | null | undefined) => (c && HEX_COLOR.test(c)
 export function profileStyleFromRow(
   profile: Pick<
     Profile,
-    "background_color" | "button_color" | "text_color" | "booking_button_style" | "social_links_style"
+    "background_color" | "button_color" | "text_color" | "booking_button_style" | "social_links_style" | "header_layout"
   >
 ): ProfileStyle {
   return {
@@ -17,5 +17,6 @@ export function profileStyleFromRow(
     textColor: safeHex(profile.text_color),
     bookingButtonStyle: profile.booking_button_style ?? null,
     socialLinksStyle: profile.social_links_style ?? null,
+    headerLayout: profile.header_layout ?? null,
   };
 }

@@ -33,6 +33,9 @@ export type BookingButtonStyle = {
 
 // Owner-chosen look for the social link buttons on the public profile. Any
 // missing field falls back to the default (small rounded icon tiles, neutral).
+/** Public profile header arrangement (cover, avatar, info). null = "centered". */
+export type HeaderLayout = "centered" | "banner" | "card" | "hero";
+
 export type SocialLinksStyle = {
   layout?: "icons" | "chips" | "stack" | "minimal";
   shape?: "pill" | "rounded" | "square";
@@ -70,6 +73,7 @@ export type Profile = {
   text_color: string | null;
   booking_button_style: BookingButtonStyle | null;
   social_links_style: SocialLinksStyle | null;
+  header_layout?: HeaderLayout | null;
   website_url: string | null;
   social_links: SocialLinks | null;
   address: ProfileAddress | null;

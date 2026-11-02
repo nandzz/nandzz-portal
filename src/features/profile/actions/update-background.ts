@@ -7,7 +7,7 @@ import {
   updateProfileStyleSchema,
 } from "../schemas";
 import { isOwnStorageUrl, revalidatePublicProfile } from "../revalidate";
-import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
+import type { BookingButtonStyle, HeaderLayout, SocialLinksStyle } from "@/lib/types";
 
 export type UpdateBackgroundResult =
   | { ok: true }
@@ -83,6 +83,7 @@ export type ProfileStylePatch = {
   textColor?: string | null;
   bookingButtonStyle?: BookingButtonStyle | null;
   socialLinksStyle?: SocialLinksStyle | null;
+  headerLayout?: HeaderLayout | null;
 };
 
 const STYLE_COLUMNS = {
@@ -91,10 +92,11 @@ const STYLE_COLUMNS = {
   textColor: "text_color",
   bookingButtonStyle: "booking_button_style",
   socialLinksStyle: "social_links_style",
+  headerLayout: "header_layout",
 } as const;
 
 // Saves any subset of the Style picker fields in ONE write (the client coalesces
-// rapid changes into a single debounced patch). All five as null = Reset.
+// rapid changes into a single debounced patch). All of them as null = Reset.
 // Revalidates the public profile itself, so visitors never see a stale style
 // even if the owner closes the tab right after.
 export async function updateProfileStyle(

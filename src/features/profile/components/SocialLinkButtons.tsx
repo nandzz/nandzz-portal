@@ -103,10 +103,10 @@ const SHAPE_CLASS = {
 } as const;
 
 const CONTAINER_CLASS = {
-  icons: { md: "flex flex-wrap items-center justify-center gap-2", lg: "flex flex-wrap items-center justify-center gap-3" },
-  chips: { md: "flex flex-wrap items-center justify-center gap-2", lg: "flex flex-wrap items-center justify-center gap-2.5" },
+  icons: { md: "flex flex-wrap items-center gap-2", lg: "flex flex-wrap items-center gap-3" },
+  chips: { md: "flex flex-wrap items-center gap-2", lg: "flex flex-wrap items-center gap-2.5" },
   stack: { md: "flex w-full max-w-sm flex-col gap-2.5", lg: "flex w-full max-w-md flex-col gap-3" },
-  minimal: { md: "flex flex-wrap items-center justify-center gap-4", lg: "flex flex-wrap items-center justify-center gap-5" },
+  minimal: { md: "flex flex-wrap items-center gap-4", lg: "flex flex-wrap items-center gap-5" },
 } as const;
 
 const ITEM_CLASS = {
@@ -177,6 +177,8 @@ interface SocialLinkButtonsProps {
   buttonColor?: string | null;
   /** Render inert spans instead of links (Style picker preview). */
   preview?: boolean;
+  /** Row alignment for the wrapping layouts (left-aligned header layouts use "start"). */
+  align?: "center" | "start";
   className?: string;
 }
 
@@ -185,13 +187,14 @@ export function SocialLinkButtons({
   style,
   buttonColor = null,
   preview = false,
+  align = "center",
   className = "",
 }: SocialLinkButtonsProps) {
   const r = resolveSocialLinksStyle(style);
   const showLabel = r.layout === "chips" || r.layout === "stack";
 
   return (
-    <div className={`${CONTAINER_CLASS[r.layout][r.size]} ${className}`}>
+    <div className={`${CONTAINER_CLASS[r.layout][r.size]} ${align === "start" ? "justify-start" : "justify-center"} ${className}`}>
       {links.map((link) => {
         const Icon = link.icon;
         const { className: itemClass, style: itemStyle, iconStyle } = presentLink(link, r, buttonColor);

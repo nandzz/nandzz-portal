@@ -220,9 +220,11 @@ export default async function ProfilePage({
   // branded page), so no pull-up — their floating-pill clearance lives in <main>.
   // The navbar grows by the status-bar inset (viewport-fit=cover), so the
   // pull-up does too. Logged-out visitors have no bar: just clear the notch.
+  // --cover-top mirrors that pull-up so header layouts can size their cover
+  // and align the header to it (see features/profile/domain/header-layout).
   const coverUnderNav = user
-    ? "-mt-[calc(4rem+env(safe-area-inset-top))] pt-[calc(4rem+env(safe-area-inset-top))] md:mt-0 md:pt-0"
-    : "pt-[env(safe-area-inset-top)]";
+    ? "-mt-[calc(4rem+env(safe-area-inset-top))] pt-[calc(4rem+env(safe-area-inset-top))] md:mt-0 md:pt-0 [--cover-top:calc(4rem+env(safe-area-inset-top))] md:[--cover-top:0px]"
+    : "pt-[env(safe-area-inset-top)] [--cover-top:env(safe-area-inset-top)]";
 
   return (
     <ProfileStyleRoot

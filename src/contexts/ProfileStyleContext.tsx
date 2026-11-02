@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { BookingButtonStyle, SocialLinksStyle } from "@/lib/types";
+import type { BookingButtonStyle, HeaderLayout, SocialLinksStyle } from "@/lib/types";
 
 // The owner-customizable look of a public profile. Lives in one client store
 // (ProfileStyleRoot) so the Style picker previews on EVERY surface instantly —
@@ -13,6 +13,7 @@ export type ProfileStyle = {
   textColor: string | null;
   bookingButtonStyle: BookingButtonStyle | null;
   socialLinksStyle: SocialLinksStyle | null;
+  headerLayout: HeaderLayout | null;
 };
 
 export const EMPTY_PROFILE_STYLE: ProfileStyle = {
@@ -21,6 +22,7 @@ export const EMPTY_PROFILE_STYLE: ProfileStyle = {
   textColor: null,
   bookingButtonStyle: null,
   socialLinksStyle: null,
+  headerLayout: null,
 };
 
 export type ProfileStyleCtx = {

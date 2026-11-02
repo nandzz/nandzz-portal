@@ -26,6 +26,7 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "text_color",
   "booking_button_style",
   "social_links_style",
+  "header_layout",
   "website_url",
   "social_links",
   "address",
