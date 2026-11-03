@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navbar, Sidebar, MobileTabBar, ProfileVisitorCta } from "@/features/analytics";
@@ -8,6 +9,12 @@ import { ConditionalFooter } from "./ConditionalFooter";
 import { SIDEBAR_COLLAPSED_COOKIE, isAuthRoute, isBareAuthRoute, isImmersiveRoute, isProfilePage, isWidgetRoute } from "@/lib/layout/appShell";
 import { cn } from "@/lib/utils";
 import { useChrome } from "@/contexts/ChromeContext";
+
+// Post-signup "business or client?" prompt; loaded lazily since it only ever
+// opens once per account.
+const WelcomeAccountTypeDialog = dynamic(() =>
+  import("@/features/profile/components/WelcomeAccountTypeDialog").then((m) => m.WelcomeAccountTypeDialog),
+);
 
 // Pre-cookie home of the collapse preference (see SIDEBAR_COLLAPSED_COOKIE).
 const LEGACY_STORAGE_KEY = "sidebar:collapsed";
@@ -145,6 +152,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
           in the space viewer, on the widget page (which owns its whole viewport), and during
           post-signup onboarding. */}
       {!isVisitorProfile && !isVisitorImmersive && !isVisitorHome && !onWidgetPage && !onBareAuthPage && !onAuthPage && !previewing && <MobileTabBar />}
+      {userId && !previewing && <WelcomeAccountTypeDialog />}
 
       {/* The lone Nandzz affordance on a clean, logged-out profile page:
           a floating "Sign in / Create your page" pill. */}

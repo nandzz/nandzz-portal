@@ -131,8 +131,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       },
     ];
 
-    // Business — only for business accounts. Personal accounts see the
-    // "Switch to Business Account" CTA instead (rendered below the group).
+    // Business — only for business accounts. Personal accounts get a compact
+    // "Business account" chip in the profile header instead of a whole group.
     const business: NavItem[] = [];
     // Booking (the calendar/booking feature at /dashboard/booking) is shown to
     // every business account regardless of plan. Accounts without the
@@ -204,7 +204,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     const groups: NavGroup[] = [
       { id: "account", label: t.nav.groupAccount, items: account },
     ];
-    groups.push({ id: "business", label: t.nav.groupBusiness, items: business });
+    if (isBusiness) groups.push({ id: "business", label: t.nav.groupBusiness, items: business });
     groups.push({ id: "settings", label: t.nav.groupSettings, items: settings });
     return groups;
   }, [t, entitlements, isBusiness]);
@@ -242,7 +242,21 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </AvatarFallback>
             </Avatar>
           </Link>
-        ) : (
+        ) : null}
+
+        {collapsed && userId && !isBusiness && (
+          <button
+            type="button"
+            onClick={() => setSwitchOpen(true)}
+            title={t.nav.switchToBusiness}
+            aria-label={t.nav.switchToBusiness}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-violet-200 text-violet-600 hover:bg-violet-50 transition-colors dark:border-violet-900 dark:text-violet-400 dark:hover:bg-violet-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Briefcase aria-hidden className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+        {!collapsed && (
           <div className="flex flex-col gap-2">
             {/* Name + picture on the left, bell on the right */}
             <div className="flex items-center gap-2.5">
@@ -267,6 +281,20 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </div>
               )}
             </div>
+
+            {/* Personal accounts: a small chip to switch to Business (opens the
+                category + address dialog), kept out of the nav groups. */}
+            {userId && !isBusiness && (
+              <button
+                type="button"
+                onClick={() => setSwitchOpen(true)}
+                title={t.nav.switchToBusiness}
+                className="inline-flex w-fit items-center gap-1.5 rounded-full border border-violet-200 px-2.5 py-1 text-xs font-medium text-violet-600 hover:bg-violet-50 transition-colors dark:border-violet-900 dark:text-violet-400 dark:hover:bg-violet-950/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Briefcase aria-hidden className="h-3.5 w-3.5 shrink-0" />
+                {t.nav.switchToBusinessShort}
+              </button>
+            )}
 
             {/* View profile */}
             <Link
@@ -323,25 +351,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </Link>
               );
             })}
-
-            {/* Personal accounts see a CTA to upgrade into a Business account,
-                which reveals the Widgets / Brand tools and hides Bookings. */}
-            {group.id === "business" && userId && !isBusiness && (
-              <button
-                type="button"
-                onClick={() => setSwitchOpen(true)}
-                title={t.nav.switchToBusiness}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                  "text-violet-600 hover:bg-sidebar-accent",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  collapsed && "justify-center"
-                )}
-              >
-                <Briefcase aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2} />
-                {!collapsed && <span className="truncate">{t.nav.switchToBusiness}</span>}
-              </button>
-            )}
           </div>
         ))}
       </nav>

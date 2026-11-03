@@ -19,6 +19,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { MailCheck } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { markWelcomePending } from "@/lib/onboarding/welcomeFlag";
 
 function GoogleIcon() {
   return (
@@ -177,6 +178,7 @@ export function AuthForm({
       return;
     }
     if (destination) {
+      if (result.mode === "signup") markWelcomePending();
       window.location.assign(destination);
       return;
     }

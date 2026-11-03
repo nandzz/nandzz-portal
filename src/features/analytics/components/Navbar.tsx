@@ -298,11 +298,11 @@ export function Navbar() {
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
 
-                  <DropdownMenuSeparator />
+                  {isBusiness && <DropdownMenuSeparator />}
 
                   {/* Business — the whole menu leads with the account's headline
-                      action. For a personal account that's the conversion CTA
-                      (the single most valuable thing they can do here); for a
+                      action. For a personal account that's a compact conversion
+                      chip right under the user info; for a
                       business it's the Business tools. Everyday navigation
                       (Profile, Bookings, Feed, Content) lives in the bottom tab
                       bar; Followers/Following are tappable counts on the profile —
@@ -312,10 +312,10 @@ export function Navbar() {
                       <DropdownMenuGroup>
                         <DropdownMenuItem
                           onClick={() => setSwitchOpen(true)}
-                          className="gap-2 font-medium text-violet-600 focus:text-violet-600 focus:bg-violet-50 dark:focus:bg-violet-950/40"
+                          className="mx-2 mb-1 w-fit gap-1.5 rounded-full border border-violet-200 px-2.5 py-1 text-xs font-medium text-violet-600 focus:text-violet-600 focus:bg-violet-50 dark:border-violet-900 dark:text-violet-400 dark:focus:bg-violet-950/40"
                         >
-                          <Briefcase aria-hidden className="h-4 w-4" />
-                          {t.nav.switchToBusiness}
+                          <Briefcase aria-hidden className="h-3.5 w-3.5" />
+                          {t.nav.switchToBusinessShort}
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
 

@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { markWelcomePending } from "@/lib/onboarding/welcomeFlag";
 
 export default function SetupUsernamePage() {
   return (
@@ -111,6 +112,7 @@ function SetupUsernameForm() {
         // A client-side transition here stalls on the fresh profile's RSC fetch
         // and never commits — the page just appears to "do nothing".
         clearPendingUsername();
+        markWelcomePending();
         window.location.assign(`/${trimmed}`);
       }
     } catch {

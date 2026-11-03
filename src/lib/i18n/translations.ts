@@ -232,6 +232,14 @@ export type Translations = {
     groupBusiness: string;
     groupSettings: string;
     switchToBusiness: string;
+    switchToBusinessShort: string;
+    welcomeTitle: string;
+    welcomeDesc: string;
+    welcomeBusiness: string;
+    welcomeBusinessDesc: string;
+    welcomePersonal: string;
+    welcomePersonalDesc: string;
+    welcomeLater: string;
     switchToBusinessTitle: string;
     switchToBusinessDesc: string;
     switchToBusinessConfirm: string;
