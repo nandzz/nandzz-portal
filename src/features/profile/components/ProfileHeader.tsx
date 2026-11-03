@@ -167,8 +167,8 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     ) : null;
 
   // Share is a quiet utility icon, never styled like the booking CTA. The
-  // framed layouts park it in their own top-right corner (banner: the avatar
-  // row, card: the panel, hero: the photo); centered keeps it beside the CTA.
+  // layouts park it in their own top-right corner (banner: the avatar row,
+  // card: the panel, hero: the photo, centered: the header block).
   const share = (onImage = false) =>
     showShare && (
       <ShareMenu
@@ -183,18 +183,11 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       />
     );
 
-  // Primary action row: the booking CTA when it's placed under the name (plus
-  // Share, for the centered layout only).
-  const actions = (className: string, withShare = false) => {
+  // Primary action row: the booking CTA when it's placed under the name.
+  const actions = (className: string) => {
     const cta = bookingPlacement === "username" ? widgetStrip("", "start") : null;
-    const shareButton = withShare ? share() : null;
-    if (!cta && !shareButton) return null;
-    return (
-      <div className={`${className} flex flex-wrap items-center gap-2`}>
-        {cta}
-        {shareButton}
-      </div>
-    );
+    if (!cta) return null;
+    return <div className={`${className} flex flex-wrap items-center gap-2`}>{cta}</div>;
   };
 
   // ── Shared pieces, arranged per header layout below ──────────────────────
@@ -425,11 +418,12 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
 
   // ── Centered (default): avatar, info and links stacked in the middle.
   return (
-    <div className="flex flex-col items-center text-center" {...anim}>
+    <div className="relative flex flex-col items-center text-center" {...anim}>
+      {showShare && <div className="absolute right-0 top-0">{share()}</div>}
       {avatar("h-28 w-28", 112, "text-3xl")}
       {avatarExtras}
       {nameAndHandle("mt-5")}
-      {actions("mt-4 justify-center", true)}
+      {actions("mt-4 justify-center")}
       {tagline}
       {details("center")}
     </div>
