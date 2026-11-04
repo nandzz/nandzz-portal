@@ -2263,6 +2263,7 @@ export const es: Translations = {
     cta: "Crear mi página",
     pricingLink: "Ver precios",
     stepsLabel: "Pasos",
+    sectionNav: { label: "En esta página", what: "Qué incluye", tour: "Recorrido del panel", steps: "Pasos para empezar", faq: "Preguntas" },
     steps: [
       {
         id: "claim",

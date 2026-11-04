@@ -25,6 +25,10 @@ export function GuidePage({ copy }: { copy: GuideCopy }) {
     { ...copy.what.clients, Icon: CalendarCheck },
     { ...copy.what.business, Icon: LayoutDashboard },
   ];
+  const sections = (["what", "tour", "steps", "faq"] as const).map((id) => ({
+    id,
+    label: copy.sectionNav[id],
+  }));
 
   return (
     <div className="home-clay">
@@ -38,6 +42,25 @@ export function GuidePage({ copy }: { copy: GuideCopy }) {
       />
 
       <PageShell width="medium" className="pt-4 pb-0">
+        {/* Plain anchor links to each section: Google reads these for sitelinks */}
+        <nav
+          aria-label={copy.sectionNav.label}
+          className="scrollbar-hide -mx-4 mb-16 overflow-x-auto px-4"
+        >
+          <ul className="flex min-w-max gap-2 text-sm">
+            {sections.map(({ id, label }) => (
+              <li key={id}>
+                <a
+                  href={`#${id}`}
+                  className="flex rounded-full border px-3 py-1.5 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+                >
+                  {label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
         <section id="what" className="scroll-mt-24">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             {copy.what.title}
@@ -180,7 +203,7 @@ export function GuidePage({ copy }: { copy: GuideCopy }) {
           </div>
         </section>
 
-        <section className="mt-10 rounded-3xl bg-foreground px-6 py-12 text-background sm:px-12">
+        <section id="get-started" className="mt-10 scroll-mt-24 rounded-3xl bg-foreground px-6 py-12 text-background sm:px-12">
           <h2 className="text-3xl font-bold tracking-tight">
             {copy.closingTitle}
           </h2>

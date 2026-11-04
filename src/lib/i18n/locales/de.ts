@@ -2260,6 +2260,7 @@ export const de: Translations = {
     cta: "Seite erstellen",
     pricingLink: "Preise ansehen",
     stepsLabel: "Schritte",
+    sectionNav: { label: "Auf dieser Seite", what: "Was du bekommst", tour: "Dashboard-Tour", steps: "Einrichtung", faq: "Fragen" },
     steps: [
       {
         id: "claim",

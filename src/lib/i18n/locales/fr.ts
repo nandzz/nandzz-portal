@@ -2272,6 +2272,7 @@ export const fr: Translations = {
     cta: "Créer ma page",
     pricingLink: "Voir les tarifs",
     stepsLabel: "Étapes",
+    sectionNav: { label: "Sur cette page", what: "Ce que vous obtenez", tour: "Visite du tableau de bord", steps: "Étapes de configuration", faq: "Questions" },
     steps: [
       {
         id: "claim",

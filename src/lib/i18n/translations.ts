@@ -158,6 +158,8 @@ export type GuideCopy = {
   cta: string;
   pricingLink: string;
   stepsLabel: string;
+  /** In-page jump menu under the hero; Google can lift these as sitelinks. */
+  sectionNav: { label: string; what: string; tour: string; steps: string; faq: string };
   steps: GuideStep[];
   paidNote: string;
   closingTitle: string;

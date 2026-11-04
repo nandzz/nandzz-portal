@@ -2239,6 +2239,7 @@ export const ja: Translations = {
     cta: "ページを作成",
     pricingLink: "料金を見る",
     stepsLabel: "ステップ",
+    sectionNav: { label: "このページの内容", what: "できること", tour: "ダッシュボード紹介", steps: "設定ステップ", faq: "よくある質問" },
     steps: [
       {
         id: "claim",
