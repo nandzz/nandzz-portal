@@ -122,7 +122,9 @@ export function ProfileStyleRoot({ initial, isOwner, className = "", children }:
   const ctx = useMemo<ProfileStyleCtx>(() => ({ style, update, saveError }), [style, update, saveError]);
 
   const bg = safeHex(style.backgroundColor);
-  const theme = bg ? (isColorDark(bg) ? "dark" : "light") : "";
+  // Re-apply text-foreground with the lock: inherited text (e.g. the name)
+  // would otherwise keep the body's color from the visitor's device theme.
+  const theme = bg ? `${isColorDark(bg) ? "dark" : "light"} text-foreground` : "";
 
   const coverBase = COVER_BASE[resolveHeaderLayout(style.headerLayout)];
 
