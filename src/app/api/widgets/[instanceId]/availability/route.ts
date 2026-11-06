@@ -64,12 +64,24 @@ export async function GET(
     .eq("id", instanceId)
     .maybeSingle();
 
-  if (!instance || !instance.enabled) {
+  if (!instance) {
     return NextResponse.json({ error: "Booking unavailable" }, { status: 404 });
   }
 
+  // Owner (verified, not just asked for) — skips the minimum notice and gets a
+  // specific "plan_required" error so the dashboard can point to the trial.
+  const isOwner =
+    url.searchParams.get("owner") === "1" && (await isSessionOwner(instance.user_id as string));
+
   // Entitlement gate — the owner's plan must include widgets, else nothing bookable.
   const entitlements = await getUserEntitlements(instance.user_id as string);
+  if (!entitlements.hasWidgets && isOwner) {
+    return NextResponse.json({ error: "plan_required" }, { status: 402 });
+  }
+
+  if (!instance.enabled) {
+    return NextResponse.json({ error: "Booking unavailable" }, { status: 404 });
+  }
   if (!entitlements.hasWidgets) return NextResponse.json({ slots: [] });
 
   const config = normalizeCalendarConfig(instance.config);
@@ -120,10 +132,7 @@ export async function GET(
     existingBusy: busy ?? [],
     // Customers can't book sooner than the business's minimum notice; the
     // owner (verified, not just asked for) can fill any open slot from now on.
-    minLeadMinutes:
-      url.searchParams.get("owner") === "1" && (await isSessionOwner(instance.user_id as string))
-        ? 0
-        : config.min_notice_min,
+    minLeadMinutes: isOwner ? 0 : config.min_notice_min,
     location,
   });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   CalendarDays,
   Check,
@@ -106,6 +107,7 @@ export function ManualBookingModal({
   const [pickedClient, setPickedClient] = useState<CustomerSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planRequired, setPlanRequired] = useState(false);
   // Owner-typed time (override) + weekly repeat.
   const [customDate, setCustomDate] = useState("");
   const [customTime, setCustomTime] = useState("");
@@ -175,7 +177,9 @@ export function ManualBookingModal({
       const res = await fetch(`/api/widgets/${instanceId}/availability?${params.toString()}`);
       const data = await res.json();
       setSlots(res.ok ? data.slots ?? [] : []);
-      if (!res.ok) setError(t.booking.errorLoadAvailability);
+      // 402 ⇒ the owner isn't on a plan with booking yet: point to the trial.
+      setPlanRequired(res.status === 402);
+      if (!res.ok) setError(res.status === 402 ? t.booking.errorPlanRequired : t.booking.errorLoadAvailability);
     } catch {
       setError(t.booking.errorLoadAvailability);
     } finally {
@@ -474,6 +478,14 @@ export function ManualBookingModal({
             className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
           >
             {error}
+            {planRequired && error === t.booking.errorPlanRequired && (
+              <>
+                {" "}
+                <Link href="/dashboard/subscription" className="font-medium underline underline-offset-2">
+                  {t.booking.planRequiredCta}
+                </Link>
+              </>
+            )}
           </p>
         )}
 

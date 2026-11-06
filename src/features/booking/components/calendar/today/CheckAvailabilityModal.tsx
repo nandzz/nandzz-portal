@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { CalendarDays, Check, FileText, Loader2, Mic, PhoneCall, RotateCcw, Square, Wand2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FEATURES } from "@/lib/flags";
@@ -83,7 +84,7 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
   const [staffId, setStaffId] = useState("");
   const [view, setView] = useState<"days" | "month">("days");
   // Last fetched result, tagged with its query; loading = the tag is stale.
-  const [result, setResult] = useState<{ query: string; slots: Slot[]; error: false | "disabled" | "failed" } | null>(null);
+  const [result, setResult] = useState<{ query: string; slots: Slot[]; error: false | "disabled" | "plan" | "failed" } | null>(null);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
   const [pickedSlot, setPickedSlot] = useState<Slot | null>(null);
   // Time the caller asked for (from the call draft) — preselects the closest slot.
@@ -99,7 +100,9 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
   const windowDays = useMemo(() => daysBetween(today, maxDate) + 1, [today, maxDate]);
 
   const query = useMemo(() => {
-    const params = new URLSearchParams({ service_ids: serviceId });
+    // owner=1 ⇒ the route answers 402 when the plan lacks booking (instead of
+    // empty slots) and skips the minimum notice, like the manual-booking modal.
+    const params = new URLSearchParams({ service_ids: serviceId, owner: "1" });
     if (staffId) params.set("staff_id", staffId);
     if (locationId) params.set("location_id", locationId);
     return params.toString();
@@ -125,10 +128,11 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
         if (!cancelled) setResult({ query, slots: parts.flat(), error: false });
       })
       .catch((e: unknown) => {
-        // The route 404s when the widget is turned off — say so instead of a
-        // generic failure.
-        const disabled = e instanceof Error && e.message === "404";
-        if (!cancelled) setResult({ query, slots: [], error: disabled ? "disabled" : "failed" });
+        // The route 404s when the widget is turned off and 402s when the plan
+        // lacks booking — say so instead of a generic failure.
+        const status = e instanceof Error ? e.message : "";
+        const error = status === "402" ? "plan" : status === "404" ? "disabled" : "failed";
+        if (!cancelled) setResult({ query, slots: [], error });
       });
     return () => {
       cancelled = true;
@@ -379,7 +383,14 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
           {!service ? (
             <p className="text-sm text-muted-foreground">{tt.availNoServices}</p>
           ) : error ? (
-            error === "disabled" ? (
+            error === "plan" ? (
+              <p className="text-sm text-muted-foreground">
+                {t.booking.errorPlanRequired}{" "}
+                <Link href="/dashboard/subscription" className="font-medium text-foreground underline underline-offset-2">
+                  {t.booking.planRequiredCta}
+                </Link>
+              </p>
+            ) : error === "disabled" ? (
               <p className="text-sm text-muted-foreground">{tt.availDisabled}</p>
             ) : (
               <p className="text-sm text-rose-600 dark:text-rose-400">{tt.availError}</p>

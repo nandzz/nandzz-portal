@@ -1518,6 +1518,8 @@ export type Translations = {
     manageBookingLink: string;
     poweredBy: string;
     errorLoadAvailability: string;
+    errorPlanRequired: string;
+    planRequiredCta: string;
     errorRequiredFields: string;
     errorAddressRequired: string;
     errorBookingFailed: string;

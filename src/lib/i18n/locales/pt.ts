@@ -1353,6 +1353,8 @@ export const pt: Translations = {
     manageBookingLink: "Gerenciar seu agendamento",
     poweredBy: "Agenda de {business} · horários em {tz}",
     errorLoadAvailability: "Não foi possível carregar a disponibilidade.",
+    errorPlanRequired: "O agendamento online faz parte do Pro. Comece seu teste gratuito para testar o fluxo de agendamento: você não será cobrado durante o teste.",
+    planRequiredCta: "Começar teste gratuito",
     errorRequiredFields: "Nome e telefone são obrigatórios.",
     errorAddressRequired: "Informe seu endereço.",
     errorBookingFailed: "Não foi possível concluir o agendamento.",

@@ -1353,6 +1353,8 @@ export const de: Translations = {
     manageBookingLink: "Buchung verwalten",
     poweredBy: "Kalender von {business} · Zeiten in {tz}",
     errorLoadAvailability: "Verfügbarkeit konnte nicht geladen werden.",
+    errorPlanRequired: "Online-Buchung ist Teil von Pro. Starte deine kostenlose Testphase, um den Buchungsablauf zu testen – während der Testphase wird dir nichts berechnet.",
+    planRequiredCta: "Kostenlos testen",
     errorRequiredFields: "Name und Telefon sind erforderlich.",
     errorAddressRequired: "Bitte gib deine Adresse ein.",
     errorBookingFailed: "Buchung konnte nicht abgeschlossen werden.",

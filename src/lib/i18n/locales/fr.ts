@@ -1353,6 +1353,8 @@ export const fr: Translations = {
     manageBookingLink: "Gérer votre réservation",
     poweredBy: "Agenda de {business} · horaires en {tz}",
     errorLoadAvailability: "Impossible de charger les disponibilités.",
+    errorPlanRequired: "La réservation en ligne fait partie de Pro. Lancez votre essai gratuit pour tester le parcours de réservation : rien ne vous sera facturé pendant l'essai.",
+    planRequiredCta: "Commencer l'essai gratuit",
     errorRequiredFields: "Le nom et le téléphone sont requis.",
     errorAddressRequired: "Veuillez saisir votre adresse.",
     errorBookingFailed: "Impossible de finaliser la réservation.",

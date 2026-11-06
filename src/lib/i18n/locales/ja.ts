@@ -1353,6 +1353,8 @@ export const ja: Translations = {
     manageBookingLink: "予約を管理",
     poweredBy: "{business}のカレンダー · タイムゾーン：{tz}",
     errorLoadAvailability: "空き状況を読み込めませんでした。",
+    errorPlanRequired: "オンライン予約はProプランの機能です。無料トライアルを開始して予約フローをお試しください。トライアル期間中は料金はかかりません。",
+    planRequiredCta: "無料トライアルを開始",
     errorRequiredFields: "氏名と電話番号は必須です。",
     errorAddressRequired: "住所を入力してください。",
     errorBookingFailed: "予約を完了できませんでした。",

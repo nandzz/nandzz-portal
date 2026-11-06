@@ -1353,6 +1353,8 @@ export const en: Translations = {
     manageBookingLink: "Manage your booking",
     poweredBy: "Powered by {business}'s calendar · times in {tz}",
     errorLoadAvailability: "Could not load availability.",
+    errorPlanRequired: "Online booking is part of Pro. Start your free trial to test the booking flow — you won't be charged during the trial.",
+    planRequiredCta: "Start free trial",
     errorRequiredFields: "Name and phone are required.",
     errorAddressRequired: "Please enter your address.",
     errorBookingFailed: "Could not complete the booking.",
