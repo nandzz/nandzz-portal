@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CalendarDays, Clock, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles, Tag, MapPin } from "lucide-react";
+import { CalendarDays, Clock, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles, Tag, MapPin, Info } from "lucide-react";
 import type { CalendarCategory, CalendarService, Location, StaffMember } from "@/lib/types";
 import { eligibleStaffForService, todayInZone, type Slot } from "@/features/booking/domain/calendar";
 import { AUTH_RETURN_TO_KEY } from "@/lib/layout/appShell";
@@ -64,6 +64,9 @@ interface Props {
   // the list scrolls, so it's always visible. For full-page hosts on a bg-card
   // surface; inline embeds (agent chat) keep the in-flow button.
   stickyActions?: boolean;
+  // Admin-built demo page: services, days, times and staff are illustrative, so
+  // every step carries a notice that they may not match the real business.
+  isDemo?: boolean;
   initialServiceId?: string;
   onBooked?: (manageUrl: string) => void;
 }
@@ -84,6 +87,7 @@ export function CalendarBookingFlow({
   addressRequired = false,
   offerWhatsAppReminder = false,
   stickyActions = false,
+  isDemo = false,
   initialServiceId,
   onBooked,
 }: Props) {
@@ -690,6 +694,19 @@ export function CalendarBookingFlow({
 
   return (
     <div className="space-y-4">
+      {/* Rendered outside the per-step blocks so it stays on every step, done included. */}
+      {isDemo && (
+        <p
+          role="note"
+          className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
+        >
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            <span className="font-semibold">{t.booking.demoNoticeTitle}</span> {t.booking.demoNoticeBody}
+          </span>
+        </p>
+      )}
+
       {step !== firstStep && step !== "done" && (
         <button
           onClick={back}

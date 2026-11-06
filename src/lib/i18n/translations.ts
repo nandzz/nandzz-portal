@@ -1751,6 +1751,8 @@ export type Translations = {
     removeLocationAria: string;
     locationServicesStaffSummary: string;
     chooseLocation: string;
+    demoNoticeTitle: string;
+    demoNoticeBody: string;
     locationGateSubtitle: string;
     workingInLocationAria: string;
     manageLocationsLink: string;

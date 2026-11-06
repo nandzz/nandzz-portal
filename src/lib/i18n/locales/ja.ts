@@ -1586,6 +1586,8 @@ export const ja: Translations = {
     removeLocationAria: "{name}を削除",
     locationServicesStaffSummary: "サービス{services}件・スタッフ{staff}名",
     chooseLocation: "店舗を選択",
+    demoNoticeTitle: "デモページです。",
+    demoNoticeBody: "サービス、日付、時間、スタッフは例であり、実際の店舗の内容とは異なる場合があります。",
     locationGateSubtitle: "以降の操作はすべてこの店舗に関連付けられます。",
     workingInLocationAria: "{name}で作業する",
     manageLocationsLink: "店舗を管理",

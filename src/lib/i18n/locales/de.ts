@@ -1586,6 +1586,8 @@ export const de: Translations = {
     removeLocationAria: "{name} entfernen",
     locationServicesStaffSummary: "{services} Leistungen · {staff} Mitarbeiter",
     chooseLocation: "Wähle einen Standort",
+    demoNoticeTitle: "Demoseite.",
+    demoNoticeBody: "Leistungen, Termine, Uhrzeiten und Mitarbeitende sind Beispiele und entsprechen möglicherweise nicht den echten Angaben des Unternehmens.",
     locationGateSubtitle: "Alles Folgende ist diesem Standort zugeordnet.",
     workingInLocationAria: "In {name} arbeiten",
     manageLocationsLink: "Standorte verwalten",

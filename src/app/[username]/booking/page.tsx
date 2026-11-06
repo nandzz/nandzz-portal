@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { fetchPublicProfile } from "@/features/profile/server";
+import { fetchPublicProfile, getIsDemoProfile } from "@/features/profile/server";
 import { getPublicCalendar } from "@/features/booking/server";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
@@ -76,10 +76,11 @@ export default async function WidgetPage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const [{ profile, widget }, t, whatsappLive] = await Promise.all([
+  const [{ profile, widget }, t, whatsappLive, isDemo] = await Promise.all([
     getData(username),
     getServerTranslations(),
     isWhatsAppReminderLive(),
+    getIsDemoProfile(username),
   ]);
 
   // Not found unless the profile exists and the widget is live (enabled + entitled).
@@ -152,6 +153,7 @@ export default async function WidgetPage({
               addressRequired={config.address_required}
               offerWhatsAppReminder={whatsappLive && config.whatsapp_reminder}
               stickyActions
+              isDemo={isDemo}
             />
           ) : (
             <p className="py-12 text-center text-sm text-muted-foreground">

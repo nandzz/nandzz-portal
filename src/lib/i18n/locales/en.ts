@@ -1586,6 +1586,8 @@ export const en: Translations = {
     removeLocationAria: "Remove {name}",
     locationServicesStaffSummary: "{services} services · {staff} staff",
     chooseLocation: "Choose a location",
+    demoNoticeTitle: "Demo page.",
+    demoNoticeBody: "Services, dates, times and staff are examples and may not match the business's real ones.",
     locationGateSubtitle: "Everything below is scoped to this location.",
     workingInLocationAria: "Work in {name}",
     manageLocationsLink: "Manage locations",

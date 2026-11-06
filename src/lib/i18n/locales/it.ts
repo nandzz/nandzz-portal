@@ -1586,6 +1586,8 @@ export const it: Translations = {
     removeLocationAria: "Rimuovi {name}",
     locationServicesStaffSummary: "{services} servizi · {staff} staff",
     chooseLocation: "Scegli una sede",
+    demoNoticeTitle: "Pagina dimostrativa.",
+    demoNoticeBody: "Servizi, date, orari e operatori sono d'esempio e potrebbero non corrispondere a quelli reali dell'attività.",
     locationGateSubtitle: "Tutto ciò che segue è collegato a questa sede.",
     workingInLocationAria: "Lavora in {name}",
     manageLocationsLink: "Gestisci sedi",

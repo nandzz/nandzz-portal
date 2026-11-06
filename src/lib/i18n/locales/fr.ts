@@ -1586,6 +1586,8 @@ export const fr: Translations = {
     removeLocationAria: "Supprimer {name}",
     locationServicesStaffSummary: "{services} services · {staff} membres",
     chooseLocation: "Choisissez un établissement",
+    demoNoticeTitle: "Page de démonstration.",
+    demoNoticeBody: "Les prestations, dates, horaires et professionnels sont donnés à titre d'exemple et peuvent ne pas correspondre à ceux de l'établissement.",
     locationGateSubtitle: "Tout ce qui suit est lié à cet établissement.",
     workingInLocationAria: "Travailler dans {name}",
     manageLocationsLink: "Gérer les établissements",
