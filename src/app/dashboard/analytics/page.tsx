@@ -45,7 +45,7 @@ export default async function AnalyticsDashboardPage({
       <FeatureGate
         title={t.plan.analyticsLockedTitle}
         description={t.plan.analyticsLocked}
-        ctaLabel={t.plan.upgradeToPro}
+        ctaLabel={t.plan.upgradeToStarter}
       />
     );
   }

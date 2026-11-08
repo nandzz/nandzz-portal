@@ -711,6 +711,8 @@ export type Translations = {
     welcomeTrialDesc: string;
     welcomeActivating: string;
     welcomeCta: string;
+    welcomeCtaStyle: string;
+    welcomeCtaAnalytics: string;
     welcomeClose: string;
     paymentReceivedMsg: string;
     canceledMsg: string;

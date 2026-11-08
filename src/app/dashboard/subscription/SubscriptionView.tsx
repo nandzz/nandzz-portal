@@ -118,7 +118,19 @@ export async function SubscriptionView({
       .range(offset, offset + PAGE_SIZE - 1),
   ]);
 
-  const [{ ai: aiEnabled }, t] = await Promise.all([getFeatureFlags(), getServerTranslations()]);
+  const [{ ai: aiEnabled }, t, welcomeUsername] = await Promise.all([
+    getFeatureFlags(),
+    getServerTranslations(),
+    // Only the welcome modal needs it (Starter's "Style your page" link).
+    welcome
+      ? supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", userId)
+          .maybeSingle()
+          .then(({ data }) => (data?.username as string | null | undefined) ?? null)
+      : Promise.resolve(null),
+  ]);
   const ts = t.subscription;
   const subscriptionPlans = (plans ?? []) as SubscriptionPlan[];
   const isPaid = plan.slug !== "free";
@@ -147,6 +159,17 @@ export async function SubscriptionView({
 
       {welcome && (() => {
         const welcomePlan = subscriptionPlans.find((p) => p.slug === welcome.planSlug);
+        // Point at the headline feature the plan just unlocked: booking on Pro,
+        // the page style on Starter (never booking on a plan without it).
+        const welcomeCta = !welcomePlan
+          ? null
+          : welcomePlan.has_widgets
+            ? { href: "/dashboard/booking", label: ts.welcomeCta }
+            : welcomePlan.has_styling && welcomeUsername
+              ? { href: `/${welcomeUsername}`, label: ts.welcomeCtaStyle }
+              : welcomePlan.has_analytics
+                ? { href: "/dashboard/analytics", label: ts.welcomeCtaAnalytics }
+                : null;
         return (
           <WelcomePlanModal
             planName={welcomePlan?.name ?? plan.name}
@@ -154,6 +177,7 @@ export async function SubscriptionView({
             trialDays={welcome.trialDays}
             trialEnd={formatDate(welcome.trialEnd)}
             activated={plan.slug === welcome.planSlug}
+            cta={welcomeCta}
           />
         );
       })()}

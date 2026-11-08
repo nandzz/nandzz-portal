@@ -3,7 +3,7 @@ import type { Translations } from "../translations";
 export const en: Translations = {
   plan: {
     upgradeCta: "See plans",
-    upgradeToStarter: "Upgrade to Pro",
+    upgradeToStarter: "Upgrade to Starter",
     upgradeToPro: "Upgrade to Pro",
     includedIn: "Included in",
     subscribe: "Subscribe",
@@ -547,6 +547,8 @@ export const en: Translations = {
     welcomeTrialDesc: "Your {days}-day free trial has started. You won't be charged until {date}.",
     welcomeActivating: "Activating your plan…",
     welcomeCta: "Set up bookings",
+    welcomeCtaStyle: "Style your page",
+    welcomeCtaAnalytics: "See your analytics",
     welcomeClose: "Explore later",
     paymentReceivedMsg: "Payment received. Your credits have been added.",
     canceledMsg: "Checkout canceled. Nothing was charged.",
@@ -1787,7 +1789,7 @@ export const en: Translations = {
     activationTurnOn: "Turn on booking",
     activationTurningOn: "Turning on…",
     activationUpgradeTitle: "Unlock your booking button",
-    activationUpgradeBody: "Your booking page is all set. The “Book” button shows on your profile once you're on a paid plan.",
+    activationUpgradeBody: "Your booking page is all set. The “Book” button shows on your profile once you're on Pro.",
     activationLiveTitle: "You're live",
     activationLiveBody: "Your booking button is now visible on your profile.",
     activationViewProfile: "View profile",
@@ -1844,7 +1846,7 @@ export const en: Translations = {
     feedDescription: "Content from people you follow.",
     pricingTitle: "Pricing | Nandzz",
     pricingDescription: "Simple plans for your branded page. Start free, make it yours with Starter (€5/month), or add Booking with Pro (€27/month).",
-    pricingShortDescription: "Simple plans. Start free, upgrade for Booking and analytics.",
+    pricingShortDescription: "Simple plans. Start free, upgrade for your own style, analytics and Booking.",
     hashtagDescription: "Browse the latest content tagged #{tag} on Nandzz.",
     profileNotFoundTitle: "Profile Not Found | Nandzz",
     profileDescriptionFallback: "Check out {name}'s page on Nandzz.",
@@ -2269,7 +2271,7 @@ export const en: Translations = {
       },
       {
         q: "How much does it cost?",
-        a: "The Free plan covers your page, gallery and links. Online booking and analytics are on Pro, paid monthly or yearly (yearly costs less). Every plan is on the pricing page.",
+        a: "Free covers your page, gallery and links. Starter (€5/month) adds your own style, analytics and no Nandzz badge. Online booking is on Pro (€27/month). Every plan can be paid monthly or yearly (yearly costs less); all plans are on the pricing page.",
       },
       {
         q: "Will I be charged when the free period ends?",
@@ -2331,7 +2333,7 @@ export const en: Translations = {
         tips: ["Visitor counts are cookieless and private."],
       },
     ],
-    paidNote: "Analytics is on Starter and Pro; booking is on Pro. Everything else is free.",
+    paidNote: "Your own style and analytics are on Starter and Pro; booking is on Pro. Everything else is free.",
     closingTitle: "Ready when you are",
     closingBody: "Most businesses finish setup in under an hour.",
     tour: {

@@ -26,7 +26,7 @@ export default async function McpConnectPage() {
       <FeatureGate
         title={t.plan.mcpLockedTitle}
         description={t.plan.mcpLocked}
-        ctaLabel={t.plan.upgradeToStarter}
+        ctaLabel={t.plan.upgradeToPro}
       />
     );
   }

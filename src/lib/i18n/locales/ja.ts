@@ -3,7 +3,7 @@ import type { Translations } from "../translations";
 export const ja: Translations = {
   plan: {
     upgradeCta: "プランを見る",
-    upgradeToStarter: "Proにアップグレード",
+    upgradeToStarter: "Starterにアップグレード",
     upgradeToPro: "Proにアップグレード",
     includedIn: "対象プラン：",
     subscribe: "登録する",
@@ -547,6 +547,8 @@ export const ja: Translations = {
     welcomeTrialDesc: "{days}日間の無料トライアルが始まりました。{date}まで請求は発生しません。",
     welcomeActivating: "プランを有効化しています…",
     welcomeCta: "予約を設定する",
+    welcomeCtaStyle: "ページをカスタマイズ",
+    welcomeCtaAnalytics: "アナリティクスを見る",
     welcomeClose: "あとで見る",
     paymentReceivedMsg: "お支払いを受け付けました。クレジットが追加されました。",
     canceledMsg: "チェックアウトがキャンセルされました。請求は発生していません。",
@@ -1787,7 +1789,7 @@ export const ja: Translations = {
     activationTurnOn: "予約をオンにする",
     activationTurningOn: "オンにしています…",
     activationUpgradeTitle: "予約ボタンを有効にしましょう",
-    activationUpgradeBody: "予約ページの準備はできています。有料プランにすると、プロフィールに「予約」ボタンが表示されます。",
+    activationUpgradeBody: "予約ページの準備ができました。Proプランになると、プロフィールに「予約」ボタンが表示されます。",
     activationLiveTitle: "公開中です",
     activationLiveBody: "予約ボタンがプロフィールに表示されるようになりました。",
     activationViewProfile: "プロフィールを見る",
@@ -1844,7 +1846,7 @@ export const ja: Translations = {
     feedDescription: "フォロー中のユーザーのコンテンツ。",
     pricingTitle: "料金 | Nandzz",
     pricingDescription: "ブランドページのためのシンプルなプラン。無料で始めて、Starter（月額€5）で自分らしく、Pro（月額€27）で予約を追加できます。",
-    pricingShortDescription: "シンプルなプラン。無料で始めて、予約・アナリティクスにアップグレード。",
+    pricingShortDescription: "シンプルなプラン。無料で始めて、独自のスタイル・アナリティクス・予約にアップグレード。",
     hashtagDescription: "Nandzzで#{tag}のタグが付いた最新のコンテンツをチェック。",
     profileNotFoundTitle: "プロフィールが見つかりません | Nandzz",
     profileDescriptionFallback: "Nandzzで{name}さんのページをチェック。",
@@ -2257,7 +2259,7 @@ export const ja: Translations = {
       { q: "受け取らなかった場合は？", a: "お店のために作成したページは、7日以内に受け取られないと自動的に削除されます。" },
       {
         q: "料金はいくらですか？",
-        a: "Freeプランにはページ、ギャラリー、リンクが含まれます。オンライン予約と分析はProプランで、月払いまたは年払い(年払いの方がお得)です。すべてのプランは料金ページで確認できます。",
+        a: "Freeではページ、ギャラリー、リンクが使えます。Starter（月額€5）では独自のスタイル、アナリティクス、Nandzzバッジの非表示が追加されます。オンライン予約はPro（月額€27）です。どのプランも月払いまたは年払い（年払いがお得）で、すべてのプランは料金ページで確認できます。",
       },
       { q: "無料期間が終わったら請求されますか？", a: "いいえ。無料期間が終わっても自動で請求されることはありません。ご自身でプランを選んだ場合のみお支払いいただきます。" },
       { q: "支払いはどのように行いますか？", a: "支払いとプラン変更は、nandzz.comのダッシュボードからのみ行えます。メッセージや第三者を通じて行うことはありません。" },
@@ -2307,7 +2309,7 @@ export const ja: Translations = {
         tips: ["訪問者数はクッキーを使わず匿名で計測されます。"],
       },
     ],
-    paidNote: "分析はStarterとProに、予約はProに含まれます。それ以外はすべて無料です。",
+    paidNote: "独自のスタイルと分析はStarterとProに、予約はProに含まれます。それ以外はすべて無料です。",
     closingTitle: "準備ができたら、いつでも",
     closingBody: "ほとんどのお店が1時間以内に設定を終えています。",
     tour: {

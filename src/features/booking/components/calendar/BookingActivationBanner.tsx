@@ -135,7 +135,7 @@ export function BookingActivationBanner({ instanceId, hasAccess, enabled, userna
                   href="/dashboard/subscription"
                   className="group inline-flex h-10 items-center gap-1.5 rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-sm transition hover:opacity-90 active:scale-[0.97]"
                 >
-                  {t.plan.upgradeToStarter}
+                  {t.plan.upgradeToPro}
                   <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               )}

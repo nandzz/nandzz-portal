@@ -3,7 +3,7 @@ import type { Translations } from "../translations";
 export const de: Translations = {
   plan: {
     upgradeCta: "Tarife ansehen",
-    upgradeToStarter: "Auf Pro upgraden",
+    upgradeToStarter: "Auf Starter upgraden",
     upgradeToPro: "Auf Pro upgraden",
     includedIn: "Enthalten in",
     subscribe: "Abonnieren",
@@ -547,6 +547,8 @@ export const de: Translations = {
     welcomeTrialDesc: "Deine {days}-tägige Gratis-Testphase hat begonnen. Abgebucht wird erst am {date}.",
     welcomeActivating: "Dein Plan wird aktiviert…",
     welcomeCta: "Buchungen einrichten",
+    welcomeCtaStyle: "Seite gestalten",
+    welcomeCtaAnalytics: "Statistiken ansehen",
     welcomeClose: "Später ansehen",
     paymentReceivedMsg: "Zahlung erhalten. Deine Credits wurden hinzugefügt.",
     canceledMsg: "Checkout abgebrochen. Es wurde nichts berechnet.",
@@ -1787,7 +1789,7 @@ export const de: Translations = {
     activationTurnOn: "Buchungen aktivieren",
     activationTurningOn: "Wird aktiviert…",
     activationUpgradeTitle: "Schalte deinen Buchungsbutton frei",
-    activationUpgradeBody: "Deine Buchungsseite ist fertig. Der „Buchen“-Button erscheint auf deinem Profil mit einem kostenpflichtigen Plan.",
+    activationUpgradeBody: "Deine Buchungsseite ist fertig. Der „Buchen“-Button erscheint auf deinem Profil mit dem Pro-Tarif.",
     activationLiveTitle: "Du bist live",
     activationLiveBody: "Dein Buchungsbutton ist jetzt auf deinem Profil sichtbar.",
     activationViewProfile: "Profil ansehen",
@@ -1844,7 +1846,7 @@ export const de: Translations = {
     feedDescription: "Inhalte von Personen, denen du folgst.",
     pricingTitle: "Preise | Nandzz",
     pricingDescription: "Einfache Tarife für deine gebrandete Seite. Starte kostenlos, gestalte sie mit Starter (5 €/Monat) oder füge Buchungen mit Pro (27 €/Monat) hinzu.",
-    pricingShortDescription: "Einfache Tarife. Starte kostenlos, upgrade für Buchung und Analytics.",
+    pricingShortDescription: "Einfache Tarife. Starte kostenlos, upgrade für eigenen Stil, Analytics und Buchung.",
     hashtagDescription: "Entdecke die neuesten Inhalte mit #{tag} auf Nandzz.",
     profileNotFoundTitle: "Profil nicht gefunden | Nandzz",
     profileDescriptionFallback: "Sieh dir die Seite von {name} auf Nandzz an.",
@@ -2269,7 +2271,7 @@ export const de: Translations = {
       },
       {
         q: "Was kostet es?",
-        a: "Der Free-Plan umfasst deine Seite, Galerie und Links. Online-Buchung und Statistiken gibt es mit Pro, monatlich oder jährlich (jährlich ist günstiger). Alle Pläne findest du auf der Preisseite.",
+        a: "Free umfasst deine Seite, Galerie und Links. Starter (5 €/Monat) bietet deinen eigenen Stil, Statistiken und kein Nandzz-Badge. Online-Buchungen gibt es mit Pro (27 €/Monat). Jeder Tarif ist monatlich oder jährlich zahlbar (jährlich ist günstiger); alle Tarife findest du auf der Preisseite.",
       },
       {
         q: "Wird mir nach dem Gratiszeitraum etwas berechnet?",
@@ -2343,7 +2345,7 @@ export const de: Translations = {
         tips: ["Besucher werden ohne Cookies und anonym gezählt."],
       },
     ],
-    paidNote: "Statistiken gibt es in Starter und Pro, Buchungen in Pro. Alles andere ist kostenlos.",
+    paidNote: "Eigener Stil und Statistiken gibt es in Starter und Pro, Buchungen in Pro. Alles andere ist kostenlos.",
     closingTitle: "Bereit, wenn du es bist",
     closingBody: "Die meisten Betriebe sind in weniger als einer Stunde fertig eingerichtet.",
     tour: {

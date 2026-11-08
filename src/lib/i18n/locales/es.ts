@@ -3,7 +3,7 @@ import type { Translations } from "../translations";
 export const es: Translations = {
   plan: {
     upgradeCta: "Ver planes",
-    upgradeToStarter: "Cambiar a Pro",
+    upgradeToStarter: "Cambiar a Starter",
     upgradeToPro: "Cambiar a Pro",
     includedIn: "Incluido en",
     subscribe: "Suscribirse",
@@ -547,6 +547,8 @@ export const es: Translations = {
     welcomeTrialDesc: "Tu prueba gratuita de {days} días ha comenzado. No se te cobrará hasta el {date}.",
     welcomeActivating: "Activando tu plan…",
     welcomeCta: "Configurar reservas",
+    welcomeCtaStyle: "Personaliza tu página",
+    welcomeCtaAnalytics: "Ver tus analíticas",
     welcomeClose: "Explorar más tarde",
     paymentReceivedMsg: "Pago recibido. Tus créditos se han añadido.",
     canceledMsg: "Pago cancelado. No se ha cobrado nada.",
@@ -1787,7 +1789,7 @@ export const es: Translations = {
     activationTurnOn: "Activar reservas",
     activationTurningOn: "Activando…",
     activationUpgradeTitle: "Desbloquea tu botón de reserva",
-    activationUpgradeBody: "Tu página de reservas está lista. El botón “Reservar” aparece en tu perfil con un plan de pago.",
+    activationUpgradeBody: "Tu página de reservas está lista. El botón “Reservar” aparece en tu perfil con el plan Pro.",
     activationLiveTitle: "Ya estás en línea",
     activationLiveBody: "Tu botón de reserva ya es visible en tu perfil.",
     activationViewProfile: "Ver perfil",
@@ -1844,7 +1846,7 @@ export const es: Translations = {
     feedDescription: "Contenidos de las personas que sigues.",
     pricingTitle: "Precios | Nandzz",
     pricingDescription: "Planes sencillos para tu página con marca. Empieza gratis, hazla tuya con Starter (5 €/mes) o añade Reservas con Pro (27 €/mes).",
-    pricingShortDescription: "Planes sencillos. Empieza gratis, mejora para Reservas y analíticas.",
+    pricingShortDescription: "Planes sencillos. Empieza gratis, mejora para tu propio estilo, analíticas y Reservas.",
     hashtagDescription: "Explora los últimos contenidos etiquetados con #{tag} en Nandzz.",
     profileNotFoundTitle: "Perfil No Encontrado | Nandzz",
     profileDescriptionFallback: "Descubre la página de {name} en Nandzz.",
@@ -2272,7 +2274,7 @@ export const es: Translations = {
       },
       {
         q: "¿Cuánto cuesta?",
-        a: "El plan Free incluye tu página, galería y enlaces. Las reservas online y las estadísticas están en Pro, mensual o anual (el anual sale más barato). Todos los planes están en la página de precios.",
+        a: "Free incluye tu página, galería y enlaces. Starter (5 €/mes) añade tu propio estilo, analíticas y sin insignia de Nandzz. Las reservas online están en Pro (27 €/mes). Cada plan se paga mensual o anualmente (el anual cuesta menos); todos los planes están en la página de precios.",
       },
       {
         q: "¿Me cobrarán algo cuando termine el periodo gratuito?",
@@ -2343,7 +2345,7 @@ export const es: Translations = {
         tips: ["El recuento de visitas es sin cookies y anónimo."],
       },
     ],
-    paidNote: "Las estadísticas están en Starter y Pro; las reservas, en Pro. Todo lo demás es gratis.",
+    paidNote: "Tu propio estilo y las estadísticas están en Starter y Pro; las reservas, en Pro. Todo lo demás es gratis.",
     closingTitle: "Cuando quieras, empezamos",
     closingBody: "La mayoría de los negocios termina la configuración en menos de una hora.",
     tour: {

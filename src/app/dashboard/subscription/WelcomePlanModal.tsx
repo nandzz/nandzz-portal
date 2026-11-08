@@ -22,6 +22,7 @@ export function WelcomePlanModal({
   trialDays,
   trialEnd,
   activated,
+  cta,
 }: {
   planName: string;
   features: string[];
@@ -29,6 +30,8 @@ export function WelcomePlanModal({
   trialEnd: string | null;
   /** Whether the server already sees the paid plan (webhook processed). */
   activated: boolean;
+  /** Primary next step for what this plan unlocks (booking for Pro, styling for Starter). */
+  cta: { href: string; label: string } | null;
 }) {
   const router = useRouter();
   const { t } = useLanguage();
@@ -99,9 +102,11 @@ export function WelcomePlanModal({
       )}
 
       <div className="mt-6 flex flex-col gap-2">
-        <Link href="/dashboard/booking" className="w-full">
-          <Button className="h-11 w-full rounded-xl font-semibold">{ts.welcomeCta}</Button>
-        </Link>
+        {cta && (
+          <Link href={cta.href} className="w-full">
+            <Button className="h-11 w-full rounded-xl font-semibold">{cta.label}</Button>
+          </Link>
+        )}
         <Button variant="ghost" className="w-full" onClick={close}>
           {ts.welcomeClose}
         </Button>
