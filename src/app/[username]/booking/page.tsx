@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { fetchPublicProfile, getIsDemoProfile } from "@/features/profile/server";
+import { fetchPublicProfile, getIsDemoProfile, redirectFromPreviousUsername } from "@/features/profile/server";
 import { getPublicCalendar } from "@/features/booking/server";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
@@ -84,6 +84,7 @@ export default async function WidgetPage({
   ]);
 
   // Not found unless the profile exists and the widget is live (enabled + entitled).
+  if (!profile) await redirectFromPreviousUsername(username, "/booking");
   if (!profile || !widget) notFound();
 
   const displayName = profile.display_name || profile.username;

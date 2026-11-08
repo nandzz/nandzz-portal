@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BecomeBusinessDialog, loadMyProfile, setFollowCountsVisibility } from "@/features/profile";
+import {
+  BecomeBusinessDialog,
+  loadMyProfile,
+  setFollowCountsVisibility,
+  UsernameSettingsCard,
+} from "@/features/profile";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -179,6 +184,13 @@ export default function SettingsPage() {
             )}
 
             <TabsContent value="preferences" className="space-y-6">
+              <UsernameSettingsCard
+                username={profile.username}
+                onChanged={(username) =>
+                  setProfile((prev) => (prev ? { ...prev, username } : prev))
+                }
+              />
+
               <Card className="w-full shadow-lg shadow-black/5 dark:shadow-black/20 border-border/60">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-xl">{t.settings.accountTypeTitle}</CardTitle>

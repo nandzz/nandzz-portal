@@ -13,4 +13,5 @@ export {
   getIsDemoProfile,
   getDemoVideoUrl,
   redirectToCanonicalUsername,
+  redirectFromPreviousUsername,
 } from "./data/public-profile";

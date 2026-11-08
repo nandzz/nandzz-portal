@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isValidSocialValue, isValidWebsiteUrl, type SocialPlatform } from "./domain/social";
 import { BUSINESS_CATEGORIES } from "./domain/business-category";
+import { isReservedUsername } from "@/lib/layout/appShell";
 
 // Input schemas for the profile Server Actions. These run at the POST-reachable
 // action boundary, so they validate untrusted client input before any DB access.
@@ -148,3 +149,15 @@ export const setFollowCountsVisibilitySchema = z.object({
 
 export type UpdateProfileInfoInput = z.infer<typeof updateProfileInfoSchema>;
 export type UpdateBrandInput = z.infer<typeof updateBrandSchema>;
+
+// Username change (settings). Same rule as the signup claim
+// (`^[a-z0-9_-]{3,30}$`, not a reserved route); `change_username` re-validates
+// the format and enforces uniqueness + the 2-per-60-days limit.
+export const changeUsernameSchema = z.object({
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_-]{3,30}$/)
+    .refine((u) => !isReservedUsername(u)),
+});

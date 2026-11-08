@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getPublicProfile, redirectToCanonicalUsername } from "@/features/profile/server";
+import { getPublicProfile, redirectToCanonicalUsername, redirectFromPreviousUsername } from "@/features/profile/server";
 // Direct paths, not the barrels: from a Server Component a barrel turns every
 // client component it exports into client code for this page.
 import { ProfileStyleRoot } from "@/features/profile/components/ProfileStyleRoot";
@@ -51,6 +51,7 @@ export default async function ProfileGalleryPage({
 
   const profile = await getPublicProfile(username);
   if (!profile) {
+    await redirectFromPreviousUsername(username, "/gallery");
     notFound();
   }
   // Respect the owner's public visibility flag for the gallery.

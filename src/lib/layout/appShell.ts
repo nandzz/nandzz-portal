@@ -63,6 +63,8 @@ export function isWidgetRoute(pathname: string): boolean {
 }
 
 // Reserved single-segment routes that are NOT a user profile page.
+// Keep in sync with the reserved list in the `change_username` RPC
+// (supabase/migrations/20261108120000_username_changes.sql).
 const RESERVED_TOP_SEGMENTS = new Set([
   "dashboard",
   "pricing",

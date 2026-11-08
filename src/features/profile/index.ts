@@ -19,3 +19,6 @@ export type { SetFollowCountsVisibilityResult } from "./actions/set-follow-count
 export { BecomeBusinessDialog } from "./components/BecomeBusinessDialog";
 export { becomeBusiness } from "./actions/become-business";
 export type { BecomeBusinessResult } from "./actions/become-business";
+export { changeUsername, loadUsernameChangeStatus } from "./actions/change-username";
+export type { ChangeUsernameResult, LoadUsernameChangeStatusResult } from "./actions/change-username";
+export { UsernameSettingsCard } from "./components/UsernameSettingsCard";

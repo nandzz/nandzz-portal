@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProfileHeader } from "@/features/profile/components/ProfileHeader";
 import { ProfileBackground } from "@/features/profile/components/ProfileBackground";
 import { ProfileStyleRoot } from "@/features/profile/components/ProfileStyleRoot";
-import { getPublicProfile, redirectToCanonicalUsername } from "@/features/profile/server";
+import { getPublicProfile, redirectToCanonicalUsername, redirectFromPreviousUsername } from "@/features/profile/server";
 import { profileStyleFromRow, safeHex } from "@/features/profile/domain/style";
 import { ProfileViewTracker } from "@/features/analytics/components/ProfileViewTracker";
 import { ProfileContent } from "@/components/profile/ProfileContent";
@@ -112,6 +112,7 @@ export default async function ProfilePage({
   const profile = await getPublicProfile(username);
 
   if (!profile) {
+    await redirectFromPreviousUsername(username);
     notFound();
   }
 

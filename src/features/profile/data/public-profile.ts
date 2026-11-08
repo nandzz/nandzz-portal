@@ -2,7 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { permanentRedirect } from "next/navigation";
+import { permanentRedirect, redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/types";
 
@@ -113,4 +113,24 @@ export const getDemoVideoUrl = cache((username: string) =>
 export function redirectToCanonicalUsername(username: string, rest = "") {
   const lower = username.toLowerCase();
   if (lower !== username) permanentRedirect(`/${encodeURIComponent(lower)}${rest}`);
+}
+
+// A username that no longer belongs to anyone but was renamed away from:
+// send `/<old>/...` to the owner's current page so bio links and booking links
+// shared before a rename keep working. Temporary (307) on purpose — once
+// someone claims the old name, the redirect stops and their page wins. Call
+// only on the not-found path (after getPublicProfile returned null).
+export async function redirectFromPreviousUsername(username: string, rest = "") {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("username_changes")
+    .select("profiles(username)")
+    .eq("old_username", username.toLowerCase())
+    .order("changed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const current = (data?.profiles as { username: string } | null | undefined)?.username;
+  if (current && current !== username.toLowerCase()) {
+    redirect(`/${encodeURIComponent(current)}${rest}`);
+  }
 }
