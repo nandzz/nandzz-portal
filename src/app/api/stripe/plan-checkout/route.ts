@@ -1,7 +1,12 @@
 // Creates a Stripe Checkout Session (mode: subscription) so a user can
-// subscribe to the single paid plan (slug `pro`), monthly or annual. The
+// subscribe to a paid plan (`starter` or `pro`), monthly or annual. The
 // subscription carries { user_id, plan_slug } metadata so the webhook can map
 // lifecycle events back to the profile's plan_* fields.
+//
+// A user who ALREADY has a live plan subscription (Starter ↔ Pro, or a cadence
+// change) is never sent through a second Checkout — that would bill two
+// subscriptions. Their existing subscription's price is swapped instead (see
+// switchSubscription); the webhook maps the new price to the plan.
 // Required env: STRIPE_SECRET_KEY, NEXT_PUBLIC_SITE_URL.
 
 import { createClient } from "@/lib/supabase/server";
@@ -28,10 +33,26 @@ export async function POST(request: Request) {
   if (plan_slug === "free") {
     return Response.json({ error: "The Free plan does not require checkout." }, { status: 400 });
   }
-  // Billing cadence — annual when explicitly "year", monthly otherwise.
-  const interval: "month" | "year" = rawInterval === "year" ? "year" : "month";
-
   const admin = createAdminClient();
+
+  // Reuse / lazily create the Stripe customer, same as the credit-pack flow.
+  // has_used_trial gates the one-time free trial so it can't be farmed by
+  // cancelling and resubscribing.
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("stripe_customer_id, has_used_trial, plan_stripe_subscription_id")
+    .eq("id", user.id)
+    .single();
+
+  // Billing cadence — annual when explicitly "year", monthly otherwise.
+  // "current" (plan switches from the subscription page) keeps the cadence of
+  // the live subscription, so a yearly Pro moving to Starter stays yearly.
+  const interval: "month" | "year" =
+    rawInterval === "current"
+      ? await currentInterval(profile?.plan_stripe_subscription_id ?? null)
+      : rawInterval === "year"
+        ? "year"
+        : "month";
 
   const { data: plan, error: planErr } = await admin
     .from("subscription_plans")
@@ -58,16 +79,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // Reuse / lazily create the Stripe customer, same as the credit-pack flow.
-  // has_used_trial gates the one-time free trial so it can't be farmed by
-  // cancelling and resubscribing.
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("stripe_customer_id, has_used_trial")
-    .eq("id", user.id)
-    .single();
-
   try {
+    const switched = await switchSubscription({
+      subscriptionId: profile?.plan_stripe_subscription_id ?? null,
+      customerId: profile?.stripe_customer_id ?? null,
+      userId: user.id,
+      planSlug: plan.slug,
+      priceId,
+      interval,
+    });
+    if (switched) return switched;
     return await createSession({ admin, user, plan, priceId, interval, profile });
   } catch (err) {
     // Stripe errors (stale customer from another account, bad price, ToS not
@@ -76,6 +97,89 @@ export async function POST(request: Request) {
     console.error("[plan-checkout] failed:", err);
     return Response.json({ error: message }, { status: 500 });
   }
+}
+
+// Cadence of the user's existing plan subscription; monthly when there is none.
+async function currentInterval(subscriptionId: string | null): Promise<"month" | "year"> {
+  if (!subscriptionId) return "month";
+  const sub = await getStripe().subscriptions.retrieve(subscriptionId).catch(() => null);
+  return sub?.items.data[0]?.price.recurring?.interval === "year" ? "year" : "month";
+}
+
+// Subscription statuses that still hold a plan — switching one of these must
+// update it in place rather than start a parallel subscription.
+const LIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
+
+// Swaps the price on the user's live plan subscription. Returns null when there
+// is no live subscription (→ normal Checkout). Upgrades (higher amount) are
+// invoiced immediately and only applied once paid (`pending_if_incomplete`), so
+// a failed card can't unlock Pro; if the payment needs the customer (3DS, etc.)
+// they are sent to Stripe's hosted invoice page. Downgrades apply now and the
+// unused time is credited to the next invoice.
+async function switchSubscription({
+  subscriptionId,
+  customerId,
+  userId,
+  planSlug,
+  priceId,
+  interval,
+}: {
+  subscriptionId: string | null;
+  customerId: string | null;
+  userId: string;
+  planSlug: string;
+  priceId: string;
+  interval: "month" | "year";
+}): Promise<Response | null> {
+  if (!subscriptionId) return null;
+  const stripe = getStripe();
+  const sub = await stripe.subscriptions.retrieve(subscriptionId).catch(() => null);
+  if (!sub || !LIVE_STATUSES.has(sub.status)) return null;
+  // A stale id from another customer/account must never be modified.
+  const subCustomer = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  if (customerId && subCustomer !== customerId) return null;
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const item = sub.items.data[0];
+  if (!item) return null;
+  if (item.price.id === priceId) {
+    // Already on this exact plan + cadence: nothing to do.
+    return Response.json({ url: `${siteUrl}/dashboard/subscription` });
+  }
+
+  const newPrice = await stripe.prices.retrieve(priceId);
+  // Compare per-month amounts so a cadence change (monthly ↔ annual) is judged fairly.
+  const monthly = (p: { unit_amount: number | null; recurring: { interval: string } | null }) =>
+    (p.unit_amount ?? 0) / (p.recurring?.interval === "year" ? 12 : 1);
+  const isUpgrade = monthly(newPrice) > monthly(item.price);
+
+  const updated = isUpgrade
+    ? await stripe.subscriptions.update(subscriptionId, {
+        items: [{ id: item.id, price: priceId }],
+        proration_behavior: "always_invoice",
+        payment_behavior: "pending_if_incomplete",
+        expand: ["latest_invoice"],
+      })
+    : await stripe.subscriptions.update(subscriptionId, {
+        items: [{ id: item.id, price: priceId }],
+        proration_behavior: "create_prorations",
+        metadata: { user_id: userId, plan_slug: planSlug, interval },
+      });
+
+  if (isUpgrade) {
+    // pending_if_incomplete doesn't accept metadata; refresh it once applied.
+    if (!updated.pending_update) {
+      await stripe.subscriptions
+        .update(subscriptionId, { metadata: { user_id: userId, plan_slug: planSlug, interval } })
+        .catch((err) => console.error("[plan-checkout] metadata refresh failed:", err));
+    } else {
+      const invoice = updated.latest_invoice;
+      const hostedUrl = invoice && typeof invoice !== "string" ? invoice.hosted_invoice_url : null;
+      if (hostedUrl) return Response.json({ url: hostedUrl });
+    }
+  }
+
+  return Response.json({ url: `${siteUrl}/dashboard/subscription?switched=1` });
 }
 
 async function createSession({

@@ -31,6 +31,7 @@ export function ProfileVisitorCta() {
   return (
     <>
       <div
+        data-profile-badge
         aria-hidden={isHidden || undefined}
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2",

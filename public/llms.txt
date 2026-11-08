@@ -22,8 +22,9 @@
 
 ## Pricing
 
-- Free: a branded page with content, gallery, and links sections (up to 25 spaces).
-- One paid plan, €27/month or €270/year (2 months free), unlocks Booking, MCP access, analytics, and unlimited spaces.
+- Free: a branded page with content, gallery, and links sections (up to 25 spaces), with the Nandzz badge.
+- Starter, €5/month or €50/year (2 months free): unlimited spaces, custom page style, analytics and no Nandzz badge.
+- Pro, €27/month or €270/year (2 months free): everything in Starter plus Booking and MCP access.
 - Machine-readable pricing: https://nandzz.com/pricing.md
 - Human pricing page: https://nandzz.com/pricing
 

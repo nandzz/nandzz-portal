@@ -17,7 +17,8 @@ export function PlanCheckoutButton({
   planSlug: string;
   label: string;
   variant?: "default" | "outline";
-  interval?: "month" | "year";
+  /** "current" keeps the cadence of the user's live subscription (plan switches). */
+  interval?: "month" | "year" | "current";
   className?: string;
 }) {
   const { t } = useLanguage();

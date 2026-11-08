@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getUserEntitlements } from "@/lib/plan";
 import {
   updateBackgroundSchema,
   updateBackgroundPositionSchema,
@@ -13,7 +14,7 @@ export type UpdateBackgroundResult =
   | { ok: true }
   | {
       ok: false;
-      error: "UNAUTHENTICATED" | "INVALID_INPUT" | "FAILED";
+      error: "UNAUTHENTICATED" | "INVALID_INPUT" | "FAILED" | "UPGRADE_REQUIRED";
       message?: string;
     };
 
@@ -119,6 +120,13 @@ export async function updateProfileStyle(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  // Custom style is a Starter/Pro feature. Resetting to the defaults (null /
+  // header_animated false) stays allowed, so a downgraded owner can clear it.
+  const setsStyle = Object.values(update).some((v) => v !== null && v !== false);
+  if (setsStyle && !(await getUserEntitlements(user.id)).hasStyling) {
+    return { ok: false, error: "UPGRADE_REQUIRED" };
+  }
 
   const { data, error } = await supabase
     .from("profiles")

@@ -494,3 +494,10 @@ body[data-profile-preview] [data-profile-root] {
   /* The cover-edge marker must stay put: the cover is measured from it. */
   [data-header-anim] > [data-cover-edge] { animation: none; }
 }
+
+/* Starter/Pro owners hide the Nandzz "Create your page" pill on their profile.
+   The [username] layout renders the marker server-side (owner's plan), the pill
+   is mounted by AppChrome — see app/[username]/layout.tsx. */
+body:has([data-hide-profile-badge]) [data-profile-badge] {
+  display: none;
+}

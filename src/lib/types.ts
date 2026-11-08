@@ -89,6 +89,11 @@ export type Profile = {
   plan_credits?: number | null;
   plan_stripe_subscription_id?: string | null;
   plan_current_period_end?: string | null;
+  /**
+   * Derived on public profile reads (never a column): the owner's plan hides the
+   * Nandzz "Create your page" badge (Starter/Pro). See features/profile/data/public-profile.ts.
+   */
+  hide_branding?: boolean;
   is_admin?: boolean | null;
   followers_count?: number | null;
   following_count?: number | null;
@@ -147,7 +152,7 @@ export type CreditPack = {
 
 // The catalog has exactly two slugs: `free` and the single paid plan `pro`.
 // (The legacy `starter` slug was renamed to `pro` in 20261002130000.)
-export type PlanSlug = "free" | "pro";
+export type PlanSlug = "free" | "starter" | "pro";
 
 // A row from `subscription_plans` — the catalog of the three site-wide plans.
 export type SubscriptionPlan = {
@@ -167,6 +172,9 @@ export type SubscriptionPlan = {
   has_widgets: boolean;
   has_mcp: boolean;
   has_analytics: boolean;
+  has_styling: boolean; // custom colours, button style, Brand page, caption styles
+  hide_branding: boolean; // hides the Nandzz "Create your page" badge
+  has_google_review: boolean;
   active: boolean;
   sort_order: number;
   stripe_product_id: string | null;
@@ -181,6 +189,9 @@ export type PlanEntitlements = {
   hasWidgets: boolean;
   hasMcp: boolean;
   hasAnalytics: boolean;
+  hasStyling: boolean;
+  hideBranding: boolean;
+  hasGoogleReview: boolean;
   monthlyCredits: number;
 };
 

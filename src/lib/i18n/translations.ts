@@ -770,6 +770,14 @@ export type Translations = {
     aiCreditsDesc: string;
     mcpAccessDesc: string;
     analyticsDesc: string;
+    customStyle: string;
+    customStyleDesc: string;
+    noBadge: string;
+    noBadgeDesc: string;
+    planSwitchedMsg: string;
+    switchPlanTitle: string;
+    switchPlanDesc: string;
+    switchTo: string;
     aiCredits: string;
     monthlyPlanCredits: string;
     resetsOn: string;
@@ -939,6 +947,8 @@ export type Translations = {
     headerLayoutHeroHint: string;
     headerAnimation: string;
     headerAnimationHint: string;
+    styleUpgradeNote: string;
+    styleUpgradeCta: string;
   };
   agent: {
     suggestWhoAreYou: string;

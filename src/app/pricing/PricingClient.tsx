@@ -76,8 +76,8 @@ export function PricingClient({
         </h1>
         <p className="mt-5 text-lg text-muted-foreground max-w-md mx-auto">
           {aiEnabled
-            ? "Start free. Upgrade for Booking, AI Agent and analytics on your branded page."
-            : "Start free. Upgrade for Booking and analytics on your branded page."}
+            ? "Start free. Make the page yours with Starter, add Booking and AI Agent with Pro."
+            : "Start free. Make the page yours with Starter, add Booking with Pro."}
         </p>
       </section>
 
@@ -189,6 +189,9 @@ export function PricingClient({
                       {plan.space_limit === null ? "Unlimited spaces" : `Up to ${plan.space_limit} spaces`}
                     </Feature>
                     <Feature ok>Content, gallery &amp; links sections</Feature>
+                    <Feature ok={plan.has_styling}>Custom page style</Feature>
+                    <Feature ok={plan.hide_branding}>No Nandzz badge</Feature>
+                    <Feature ok={plan.has_analytics}>Analytics</Feature>
                     <Feature ok={plan.has_widgets}>
                       {aiEnabled ? "Booking & AI Agent" : "Booking"}
                     </Feature>
@@ -200,7 +203,6 @@ export function PricingClient({
                       </Feature>
                     )}
                     <Feature ok={plan.has_mcp}>MCP access (connect Claude)</Feature>
-                    <Feature ok={plan.has_analytics}>Analytics</Feature>
                   </ul>
 
                   <Link href={checkoutHref}>

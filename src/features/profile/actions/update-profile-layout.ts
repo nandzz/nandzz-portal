@@ -2,11 +2,12 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getUserEntitlements } from "@/lib/plan";
 import { revalidatePublicProfile } from "../revalidate";
 
 export type UpdateProfileLayoutResult =
   | { ok: true }
-  | { ok: false; error: "UNAUTHENTICATED" | "INVALID_INPUT" | "FAILED"; message?: string };
+  | { ok: false; error: "UNAUTHENTICATED" | "INVALID_INPUT" | "FAILED" | "UPGRADE_REQUIRED"; message?: string };
 
 const layout = z.enum(["carousel", "grid", "masonry", "justified", "featured", "stack", "pills"]);
 const sectionId = z.enum(["gallery", "publications", "links"]);
@@ -43,6 +44,12 @@ export async function updateProfileLayout(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "UNAUTHENTICATED" };
+
+  // Caption styles other than the plain default are a Starter/Pro feature.
+  const caption = parsed.data.gallery_caption_style;
+  if (caption && caption !== "none" && !(await getUserEntitlements(user.id)).hasStyling) {
+    return { ok: false, error: "UPGRADE_REQUIRED" };
+  }
 
   const { data, error } = await supabase
     .from("profiles")

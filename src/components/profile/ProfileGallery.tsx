@@ -11,6 +11,7 @@ import { SectionOwnerMenu } from "./SectionOwnerMenu";
 import { SeeMoreLink } from "./SeeMoreLink";
 import { updateProfileLayout } from "@/features/profile/actions/update-profile-layout";
 import { useSerialSave } from "@/lib/useSerialSave";
+import { useAuth } from "@/features/auth/AuthContext";
 import {
   GALLERY_CAPTION_STYLES,
   GALLERY_LAYOUTS,
@@ -69,6 +70,8 @@ export function ProfileGallery({
     },
   );
   const [modalOpen, setModalOpen] = useState(false);
+  // Caption styles are a Starter/Pro styling feature: Free owners don't get the choice.
+  const canStyle = useAuth().entitlements.hasStyling;
 
   const withImage = useMemo(() => images.filter((s) => imageSrc(s)), [images]);
 
@@ -99,11 +102,15 @@ export function ProfileGallery({
             layouts={GALLERY_LAYOUTS}
             layout={layout}
             onLayoutChange={handleLayoutChange}
-            captions={{
-              styles: GALLERY_CAPTION_STYLES,
-              value: captionStyle,
-              onChange: handleCaptionStyleChange,
-            }}
+            captions={
+              canStyle
+                ? {
+                    styles: GALLERY_CAPTION_STYLES,
+                    value: captionStyle,
+                    onChange: handleCaptionStyleChange,
+                  }
+                : undefined
+            }
           />
         )}
       </div>

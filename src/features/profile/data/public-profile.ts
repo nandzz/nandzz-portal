@@ -4,6 +4,7 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { permanentRedirect, redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getEntitlementsForSlug } from "@/lib/plan";
 import type { Profile } from "@/lib/types";
 
 // Columns safe to render on public profile surfaces. The admin client bypasses
@@ -47,14 +48,42 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "show_follow_counts",
 ].join(",");
 
+// Style columns that only render when the owner's plan has `hasStyling`
+// (Starter/Pro; demos as a perk). Everything the Style picker writes, plus the
+// gallery caption style. Stored values are kept — a Free owner who styled their
+// page (or downgraded) gets it back on upgrade — but rendered as the defaults.
+const PAID_STYLE_DEFAULTS = {
+  background_color: null,
+  button_color: null,
+  text_color: null,
+  booking_button_style: null,
+  social_links_style: null,
+  header_layout: null,
+  header_animated: false,
+  gallery_caption_style: "none",
+} as const;
+
 export async function fetchPublicProfile(username: string): Promise<Profile | null> {
   const admin = createAdminClient();
+  // plan_slug / is_demo are read here only to derive what the page may render;
+  // they are stripped before the row leaves this function (see the note above).
   const { data } = await admin
     .from("profiles")
-    .select(PUBLIC_PROFILE_COLUMNS)
+    .select(`${PUBLIC_PROFILE_COLUMNS},plan_slug,is_demo`)
     .eq("username", username.toLowerCase())
     .maybeSingle();
-  return (data as unknown as Profile) ?? null;
+  if (!data) return null;
+
+  const { plan_slug, is_demo, ...row } = data as unknown as Profile & {
+    plan_slug: string | null;
+    is_demo: boolean | null;
+  };
+  const entitlements = await getEntitlementsForSlug(plan_slug, is_demo);
+  return {
+    ...row,
+    ...(entitlements.hasStyling ? {} : PAID_STYLE_DEFAULTS),
+    hide_branding: entitlements.hideBranding,
+  } as Profile;
 }
 
 // Per-username tag so a single profile can be invalidated with

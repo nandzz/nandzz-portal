@@ -641,3 +641,48 @@ Deno.test("unknown events are acked with 200 without touching the DB", async () 
   assertEquals(rpcCalls.length, 0);
   assertEquals(lookupCalls.length, 0);
 });
+
+// ---- Three-tier pricing: Starter ↔ Pro switches ------------------------------
+// plan-checkout swaps the price on the existing subscription (never a second
+// Checkout); the resulting subscription.updated must move the profile to the
+// plan of the NEW price, even when the metadata still names the old slug.
+
+Deno.test("subscription.updated Starter → Pro: maps the new price, ignores stale metadata", async () => {
+  const { admin, rpcCalls, lookupCalls } = makeAdmin({
+    lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
+  });
+  const result = await handleStripeEvent(
+    subscriptionEvent({
+      type: "customer.subscription.updated",
+      priceId: "price_pro",
+      metadata: { user_id: "user-1", plan_slug: "starter" },
+    }),
+    admin,
+  );
+
+  assertEquals(result.status, 200);
+  assertEquals(result.body.plan_slug, "pro");
+  assertEquals(lookupCalls[0].filters, [["or", "stripe_price_id.eq.price_pro,stripe_annual_price_id.eq.price_pro"]]);
+  assertObjectMatch(rpcCalls[0].args, { p_user_id: "user-1", p_plan_slug: "pro", p_sub_id: "sub_test_123" });
+});
+
+Deno.test("subscription.updated Pro → Starter (annual price): maps to starter", async () => {
+  const { admin, rpcCalls, lookupCalls } = makeAdmin({
+    lookups: { subscription_plans: { data: { slug: "starter" }, error: null } },
+  });
+  const result = await handleStripeEvent(
+    subscriptionEvent({
+      type: "customer.subscription.updated",
+      priceId: "price_starter_year",
+      metadata: { user_id: "user-1", plan_slug: "pro" },
+    }),
+    admin,
+  );
+
+  assertEquals(result.status, 200);
+  assertEquals(result.body.plan_slug, "starter");
+  assertEquals(lookupCalls[0].filters, [
+    ["or", "stripe_price_id.eq.price_starter_year,stripe_annual_price_id.eq.price_starter_year"],
+  ]);
+  assertObjectMatch(rpcCalls[0].args, { p_user_id: "user-1", p_plan_slug: "starter", p_status: "active" });
+});

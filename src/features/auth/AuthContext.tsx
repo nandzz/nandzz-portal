@@ -20,6 +20,9 @@ export const FREE_ENTITLEMENTS: PlanEntitlements = {
   hasWidgets: false,
   hasMcp: false,
   hasAnalytics: false,
+  hasStyling: false,
+  hideBranding: false,
+  hasGoogleReview: false,
   monthlyCredits: 0,
 };
 
@@ -83,7 +86,7 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
       const slug = planSlug ?? "free";
       const { data: plan } = await supabase
         .from("subscription_plans")
-        .select("has_widgets, has_mcp, has_analytics, space_limit, monthly_credits")
+        .select("has_widgets, has_mcp, has_analytics, has_styling, hide_branding, has_google_review, space_limit, monthly_credits")
         .eq("slug", slug)
         .maybeSingle();
       if (!plan) return FREE_ENTITLEMENTS;
@@ -92,6 +95,9 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
         hasWidgets: !!plan.has_widgets,
         hasMcp: !!plan.has_mcp,
         hasAnalytics: !!plan.has_analytics,
+        hasStyling: !!plan.has_styling,
+        hideBranding: !!plan.hide_branding,
+        hasGoogleReview: !!plan.has_google_review,
         monthlyCredits: plan.monthly_credits ?? 0,
       };
     },

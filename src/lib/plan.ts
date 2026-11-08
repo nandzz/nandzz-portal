@@ -10,7 +10,8 @@ import type {
 // Hardcoded Free-plan fallback so gating stays correct even before the
 // `subscription_plans` catalog is seeded, or when a profile points at a slug
 // that has no matching (active) plan row. Mirrors the product spec:
-// 25 spaces, no widgets, no MCP, no analytics, zero AI credits.
+// 25 spaces, no widgets, no MCP, no analytics, no styling, Nandzz badge shown,
+// no Google review button, zero AI credits.
 const FREE_FALLBACK: { name: string; entitlements: PlanEntitlements } = {
   name: "Free",
   entitlements: {
@@ -18,6 +19,9 @@ const FREE_FALLBACK: { name: string; entitlements: PlanEntitlements } = {
     hasWidgets: false,
     hasMcp: false,
     hasAnalytics: false,
+    hasStyling: false,
+    hideBranding: false,
+    hasGoogleReview: false,
     monthlyCredits: 0,
   },
 };
@@ -28,8 +32,18 @@ function entitlementsFromPlan(plan: SubscriptionPlan): PlanEntitlements {
     hasWidgets: plan.has_widgets,
     hasMcp: plan.has_mcp,
     hasAnalytics: plan.has_analytics,
+    hasStyling: plan.has_styling ?? false,
+    hideBranding: plan.hide_branding ?? false,
+    hasGoogleReview: plan.has_google_review ?? false,
     monthlyCredits: plan.monthly_credits,
   };
+}
+
+// Unclaimed demo profiles get booking (widgets) and styling as demo perks,
+// independent of plan — mirrors user_has_entitlement('widgets'|'styling') in the
+// DB. Demos are admin-built pitches, so they must render fully styled.
+function withDemoPerks(base: PlanEntitlements, isDemo: boolean | null | undefined): PlanEntitlements {
+  return isDemo ? { ...base, hasWidgets: true, hasStyling: true } : base;
 }
 
 type ProfilePlanRow = {
@@ -49,9 +63,7 @@ function resolve(
 ): UserPlan {
   const slug = (profile?.plan_slug ?? "free") as PlanSlug;
   const base = plan ? entitlementsFromPlan(plan) : FREE_FALLBACK.entitlements;
-  // Unclaimed demo profiles get booking (widgets) as a demo perk, independent
-  // of plan — mirrors user_has_entitlement('widgets') in the DB.
-  const entitlements = profile?.is_demo ? { ...base, hasWidgets: true } : base;
+  const entitlements = withDemoPerks(base, profile?.is_demo);
   const name = plan?.name ?? FREE_FALLBACK.name;
   return {
     slug,
@@ -130,4 +142,17 @@ export async function getEntitlementsLookup(): Promise<
     const plan = bySlug.get(slug ?? "free");
     return plan ? entitlementsFromPlan(plan) : FREE_FALLBACK.entitlements;
   };
+}
+
+// Entitlements for a plan slug alone (no profile read) — for callers that already
+// selected `plan_slug` / `is_demo` alongside other columns, e.g. the public
+// profile loader. Served from the in-process catalog cache.
+export async function getEntitlementsForSlug(
+  planSlug: string | null | undefined,
+  isDemo?: boolean | null
+): Promise<PlanEntitlements> {
+  const plansBySlug = await loadPlansBySlug(createAdminClient());
+  const plan = plansBySlug.get(planSlug ?? "free") ?? null;
+  const base = plan ? entitlementsFromPlan(plan) : FREE_FALLBACK.entitlements;
+  return withDemoPerks(base, isDemo);
 }

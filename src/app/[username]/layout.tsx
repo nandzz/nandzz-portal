@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getIsDemoProfile, getDemoVideoUrl } from "@/features/profile/server";
+import { getIsDemoProfile, getDemoVideoUrl, getPublicProfile } from "@/features/profile/server";
 import { DemoNoticeSheet } from "@/features/claim/components/DemoNoticeSheet";
 import { DemoVideoSheet } from "@/features/claim/components/DemoVideoSheet";
 import { DemoWhySheet } from "@/features/claim/components/DemoWhySheet";
@@ -36,10 +36,19 @@ export default async function UsernameLayout({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const isDemo = await getIsDemoProfile(username);
+  const [isDemo, profile] = await Promise.all([
+    getIsDemoProfile(username),
+    getPublicProfile(username),
+  ]);
   const videoUrl = isDemo ? await getDemoVideoUrl(username) : null;
+  // Starter/Pro owners hide the Nandzz "Create your page" pill (ProfileVisitorCta,
+  // mounted by AppChrome, which can't see the owner's plan). A server-rendered
+  // marker + a `:has()` rule in globals.css hides it with no flash on load.
+  // Demo pages keep the pill: it carries their "Claim it" chip.
+  const hideBadge = !isDemo && profile?.hide_branding === true;
   return (
     <>
+      {hideBadge && <span data-hide-profile-badge hidden />}
       {children}
       {isDemo && <DemoNoticeSheet username={username.toLowerCase()} hasVideo={!!videoUrl} />}
       {isDemo && <DemoWhySheet username={username.toLowerCase()} />}

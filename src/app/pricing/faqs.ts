@@ -8,16 +8,16 @@ export type PricingFaq = { q: string; a: string; ai?: boolean };
 export const pricingFaqs: PricingFaq[] = [
   {
     q: "What's included?",
-    a: "The Free plan lets you build a branded page with up to 25 spaces and content sections. The paid plan (€27/month or €270/year, 2 months free) unlocks Booking, analytics, MCP access and unlimited spaces.",
+    a: "Free lets you build a page with up to 25 spaces and content sections, with the Nandzz badge. Starter (€5/month or €50/year) adds unlimited spaces, your own page style, analytics and removes the Nandzz badge. Pro (€27/month or €270/year) adds Booking and MCP access on top. Annual billing gives you 2 months free.",
   },
   {
     q: "How do AI credits work?",
     ai: true,
-    a: "The paid plan includes a monthly AI credit allowance that resets each billing period. Credits are spent on AI features: chatting with your agent and editing pages with AI. Need more? Buy top-up packs that never expire; they're only used after your monthly allowance runs out.",
+    a: "Paid plans can include a monthly AI credit allowance that resets each billing period. Credits are spent on AI features: chatting with your agent and editing pages with AI. Need more? Buy top-up packs that never expire; they're only used after your monthly allowance runs out.",
   },
   {
     q: "Can I change or cancel my plan?",
-    a: "Yes. Switch between monthly and annual billing or cancel anytime from your subscription page. Cancelling drops you back to the Free plan at the end of the billing period.",
+    a: "Yes. Move between Starter and Pro, switch between monthly and annual billing, or cancel anytime from your subscription page. Upgrades are charged pro rata right away; when you move down, the unused time is credited to your next invoice. Cancelling drops you back to the Free plan at the end of the billing period.",
   },
   {
     q: "Do purchased credits expire?",

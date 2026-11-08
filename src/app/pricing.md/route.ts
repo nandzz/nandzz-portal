@@ -44,6 +44,8 @@ export async function GET() {
         `- Spaces: ${plan.space_limit === null ? "Unlimited" : `Up to ${plan.space_limit}`}`
       );
       lines.push(`- Content, gallery & links sections: Yes`);
+      lines.push(`- Custom page style (colours, buttons, layout): ${plan.has_styling ? "Yes" : "No"}`);
+      lines.push(`- Nandzz badge on the page: ${plan.hide_branding ? "Hidden" : "Shown"}`);
       lines.push(
         `- Booking${aiEnabled ? " & AI Agent" : ""}: ${plan.has_widgets ? "Yes" : "No"}`
       );
@@ -64,7 +66,7 @@ export async function GET() {
     if (aiEnabled && packs.length > 0) {
       lines.push("## Top-up AI credit packs");
       lines.push(
-        "Available on the paid plan. Purchased credits never expire and are used only after the monthly plan allowance runs out."
+        "Available on paid plans. Purchased credits never expire and are used only after the monthly plan allowance runs out."
       );
       lines.push("");
       for (const pack of packs) {

@@ -15,6 +15,8 @@ import {
   Plug,
   BarChart3,
   ShieldCheck,
+  Palette,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 import { BuyCreditsButton } from "./BuyCreditsButton";
@@ -58,6 +60,8 @@ function formatDate(iso: string | null): string | null {
 export type SubscriptionSearchParams = {
   success?: string;
   canceled?: string;
+  // Set by plan-checkout after swapping the price on an existing subscription.
+  switched?: string;
   page?: string;
   interval?: string;
 };
@@ -128,6 +132,7 @@ export async function SubscriptionView({
   const isCanceling = isPaid && !isComp && plan.cancelAtPeriodEnd;
   const showSuccess = params.success === "1";
   const showCanceled = params.canceled === "1";
+  const showSwitched = params.switched === "1";
 
   const currentPlanRow = subscriptionPlans.find((p) => p.slug === plan.slug);
   const currentSort = currentPlanRow?.sort_order ?? 0;
@@ -171,6 +176,14 @@ export async function SubscriptionView({
             <Check className="h-5 w-5 text-green-600 shrink-0" />
             <p className="text-sm font-medium text-green-700 dark:text-green-400">
               {ts.paymentReceivedMsg}
+            </p>
+          </div>
+        )}
+        {showSwitched && (
+          <div className="mb-6 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 flex items-center gap-3">
+            <Check className="h-5 w-5 text-green-600 shrink-0" />
+            <p className="text-sm font-medium text-green-700 dark:text-green-400">
+              {ts.planSwitchedMsg}
             </p>
           </div>
         )}
@@ -255,9 +268,9 @@ export async function SubscriptionView({
         </div>
 
         {/* Plan chooser — only ever surfaces plans *above* the current tier.
-            Downgrading or cancelling is handled through the Stripe portal
-            ("Manage / cancel" on the current-plan card), so we never re-list the
-            active plan or lower tiers here. A paid user on the top tier sees a
+            Lower paid tiers are offered in the compact "Switch plan" block below
+            (swapped in place by plan-checkout); cancelling stays in the Stripe
+            portal ("Manage / cancel" on the current-plan card). A paid user on the top tier sees a
             "top plan" state instead of an empty grid. */}
         {subscriptionPlans.length > 0 && (() => {
           const upgradePlans = subscriptionPlans.filter(
@@ -397,8 +410,11 @@ export async function SubscriptionView({
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {upgradePlans.map((p, idx) => {
-                    // Draw the eye to the immediate next tier.
-                    const recommended = idx === 0;
+                    // Draw the eye to Pro (the full plan) when it's on offer,
+                    // else to the immediate next tier.
+                    const recommended = upgradePlans.some((x) => x.slug === "pro")
+                      ? p.slug === "pro"
+                      : idx === 0;
                     // Honor the cadence the user picked on /pricing when an annual
                     // price exists for this plan.
                     const showAnnual =
@@ -453,6 +469,9 @@ export async function SubscriptionView({
                         )}
                         <ul className="mt-4 mb-6 space-y-2 text-sm flex-1">
                           <PlanFeature ok>{p.space_limit === null ? ts.unlimitedSpaces : ts.spacesCount.replace("{count}", String(p.space_limit))}</PlanFeature>
+                          <PlanFeature ok={p.has_styling}>{ts.customStyle}</PlanFeature>
+                          <PlanFeature ok={p.hide_branding}>{ts.noBadge}</PlanFeature>
+                          <PlanFeature ok={p.has_analytics}>{ts.analytics}</PlanFeature>
                           <PlanFeature ok={p.has_widgets}>{aiEnabled ? ts.bookingAndAgent : ts.booking}</PlanFeature>
                           {aiEnabled && (
                             <PlanFeature ok={p.monthly_credits > 0}>
@@ -460,7 +479,6 @@ export async function SubscriptionView({
                             </PlanFeature>
                           )}
                           <PlanFeature ok={p.has_mcp}>{ts.mcpAccess}</PlanFeature>
-                          <PlanFeature ok={p.has_analytics}>{ts.analytics}</PlanFeature>
                         </ul>
                         <div className="mt-auto">
                           <PlanCheckoutButton
@@ -481,6 +499,36 @@ export async function SubscriptionView({
                   })}
                 </div>
               )}
+            </div>
+          );
+        })()}
+
+        {/* Downgrade to a lower paid tier (e.g. Pro → Starter). plan-checkout
+            swaps the price on the existing subscription and credits the unused
+            time — never a second subscription. Hidden for comp access (no Stripe
+            subscription) and while the plan is already winding down. */}
+        {isPaid && !isComp && !isCanceling && (() => {
+          const lowerPlans = subscriptionPlans.filter(
+            (p) => p.price_cents > 0 && p.sort_order < currentSort,
+          );
+          if (lowerPlans.length === 0) return null;
+          return (
+            <div className="mb-10 rounded-2xl border border-border/60 bg-card p-6">
+              <p className="font-semibold">{ts.switchPlanTitle}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{ts.switchPlanDesc}</p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                {lowerPlans.map((p) => (
+                  <div key={p.id} className="sm:w-56">
+                    <PlanCheckoutButton
+                      planSlug={p.slug}
+                      // Keeps the cadence the subscription is on.
+                      interval="current"
+                      variant="outline"
+                      label={ts.switchTo.replace("{plan}", p.name)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           );
         })()}
@@ -698,6 +746,24 @@ function buildPlanFeatures(
       ok: true,
     },
     {
+      icon: Palette,
+      title: ts.customStyle,
+      description: ts.customStyleDesc,
+      ok: p.has_styling,
+    },
+    {
+      icon: BadgeCheck,
+      title: ts.noBadge,
+      description: ts.noBadgeDesc,
+      ok: p.hide_branding,
+    },
+    {
+      icon: BarChart3,
+      title: ts.analytics,
+      description: ts.analyticsDesc,
+      ok: p.has_analytics,
+    },
+    {
       icon: CalendarCheck,
       title: aiEnabled ? ts.bookingAndAgent : ts.booking,
       description: aiEnabled ? ts.bookingAgentDesc : ts.bookingDesc,
@@ -718,12 +784,6 @@ function buildPlanFeatures(
       title: ts.mcpAccess,
       description: ts.mcpAccessDesc,
       ok: p.has_mcp,
-    },
-    {
-      icon: BarChart3,
-      title: ts.analytics,
-      description: ts.analyticsDesc,
-      ok: p.has_analytics,
     },
   );
   return items;

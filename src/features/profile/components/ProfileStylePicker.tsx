@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/features/auth/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { Palette, Check, Ban, RotateCcw, CalendarDays, X, Mail } from "lucide-react";
 import type { BookingButtonStyle, HeaderLayout, SocialLinksStyle } from "@/lib/types";
@@ -421,6 +423,9 @@ export function ProfileStylePicker({
   onReset,
 }: ProfileStylePickerProps) {
   const { t } = useLanguage();
+  // Free owners can try styles live (ProfileStyleRoot skips the save), but only
+  // Starter/Pro keep them.
+  const { entitlements } = useAuth();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("page");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -500,6 +505,18 @@ export function ProfileStylePicker({
           </button>
         </div>
       </div>
+
+      {!entitlements.hasStyling && (
+        <div className="mx-4 mb-3 flex items-center justify-between gap-2 rounded-lg bg-violet-500/10 px-3 py-2">
+          <p className="text-[11px] leading-snug text-foreground">{t.profile.styleUpgradeNote}</p>
+          <Link
+            href="/dashboard/subscription"
+            className="shrink-0 rounded-md bg-violet-600 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-violet-700"
+          >
+            {t.profile.styleUpgradeCta}
+          </Link>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="px-4 pb-3">

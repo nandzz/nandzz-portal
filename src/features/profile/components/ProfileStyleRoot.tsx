@@ -7,6 +7,7 @@ import {
   type ProfileStyleCtx,
 } from "@/contexts/ProfileStyleContext";
 import { updateProfileStyle } from "../actions/update-background";
+import { useAuth } from "@/features/auth/AuthContext";
 import { isColorDark } from "@/lib/color";
 import { COVER_BASE, resolveHeaderLayout } from "../domain/header-layout";
 
@@ -39,6 +40,8 @@ interface ProfileStyleRootProps {
 // legible while previewing (the server computes the same class for first paint).
 export function ProfileStyleRoot({ initial, isOwner, className = "", children }: ProfileStyleRootProps) {
   const [style, setStyle] = useState<ProfileStyle>(initial);
+  // Custom style is Starter/Pro: Free owners get a live, unsaved preview.
+  const canSave = useAuth().entitlements.hasStyling;
   const [saveError, setSaveError] = useState(false);
 
   const lastSaved = useRef<ProfileStyle>(initial);
@@ -90,11 +93,12 @@ export function ProfileStyleRoot({ initial, isOwner, className = "", children }:
     (patch: Partial<ProfileStyle>) => {
       if (!isOwner) return;
       setStyle((s) => ({ ...s, ...patch }));
+      if (!canSave) return;
       Object.assign(pending.current, patch);
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => void flush(), SAVE_DEBOUNCE_MS);
     },
-    [isOwner, flush]
+    [isOwner, canSave, flush]
   );
 
   // Leaving the page with an unsaved patch: write it now instead of dropping it.
