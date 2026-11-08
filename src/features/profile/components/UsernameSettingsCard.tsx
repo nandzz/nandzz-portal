@@ -22,7 +22,7 @@ import {
   type UsernameChangeStatus,
 } from "../domain/username-change";
 
-const FORMAT = /^[a-z0-9_-]{3,30}$/;
+const FORMAT = /^[a-z0-9_-]{2,30}$/;
 
 export function UsernameSettingsCard({
   username,

@@ -151,13 +151,13 @@ export type UpdateProfileInfoInput = z.infer<typeof updateProfileInfoSchema>;
 export type UpdateBrandInput = z.infer<typeof updateBrandSchema>;
 
 // Username change (settings). Same rule as the signup claim
-// (`^[a-z0-9_-]{3,30}$`, not a reserved route); `change_username` re-validates
+// (`^[a-z0-9_-]{2,30}$`, not a reserved route); `change_username` re-validates
 // the format and enforces uniqueness + the 2-per-60-days limit.
 export const changeUsernameSchema = z.object({
   username: z
     .string()
     .trim()
     .toLowerCase()
-    .regex(/^[a-z0-9_-]{3,30}$/)
+    .regex(/^[a-z0-9_-]{2,30}$/)
     .refine((u) => !isReservedUsername(u)),
 });

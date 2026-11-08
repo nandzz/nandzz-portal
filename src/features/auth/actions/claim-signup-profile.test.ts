@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe("claimSignupProfile", () => {
   it("rejects an invalid username without hitting the RPC", async () => {
-    const res = await claimSignupProfile({ username: "ab", displayName: null });
+    const res = await claimSignupProfile({ username: "a", displayName: null });
     expect(res).toEqual({ ok: false, error: "INVALID_USERNAME" });
     expect(rpcName).toBeNull();
   });

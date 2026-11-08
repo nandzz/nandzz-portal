@@ -24,7 +24,7 @@ export function readPendingUsername(): string {
     const parsed: unknown = JSON.parse(raw);
     const { username, at } = (parsed ?? {}) as { username?: unknown; at?: unknown };
     const fresh = typeof at === "number" && Date.now() - at < MAX_AGE_MS;
-    if (fresh && typeof username === "string" && /^[a-z0-9_-]{3,30}$/.test(username)) return username;
+    if (fresh && typeof username === "string" && /^[a-z0-9_-]{2,30}$/.test(username)) return username;
     localStorage.removeItem(KEY);
     return "";
   } catch {

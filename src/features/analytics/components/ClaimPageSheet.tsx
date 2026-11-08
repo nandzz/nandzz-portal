@@ -13,7 +13,7 @@ import {
 } from "@/features/auth/actions/check-username";
 import { savePendingUsername } from "@/features/auth/lib/pending-username";
 
-const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
+const USERNAME_RE = /^[a-z0-9_-]{2,30}$/;
 const CHECK_DEBOUNCE_MS = 350;
 
 type Status = "idle" | "checking" | UsernameAvailability;

@@ -200,15 +200,15 @@ describe("AuthForm", () => {
 
   describe("username validation (setup step)", () => {
     // "must be" scopes this to the error copy (the username *hint* also mentions
-    // "3–30 characters").
-    const invalid = /must be 3.30 characters/i;
+    // "2–30 characters").
+    const invalid = /must be 2.30 characters/i;
 
-    it("rejects a username that is too short (< 3 chars)", async () => {
+    it("rejects a username that is too short (< 2 chars)", async () => {
       const user = userEvent.setup();
       render(<AuthForm />);
       await reachUsernameStep(user);
 
-      await user.type(screen.getByLabelText(/username/i), "ab");
+      await user.type(screen.getByLabelText(/username/i), "a");
       await user.click(screen.getByRole("button", { name: "Get started" }));
       expect(await screen.findByText(invalid)).toBeInTheDocument();
       expect(mockClaim).not.toHaveBeenCalled();

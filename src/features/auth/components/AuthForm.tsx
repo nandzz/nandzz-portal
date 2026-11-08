@@ -204,7 +204,7 @@ export function AuthForm({
     setError("");
     setLoading(true);
     const trimmed = username.trim().toLowerCase();
-    if (!/^[a-z0-9_-]{3,30}$/.test(trimmed)) {
+    if (!/^[a-z0-9_-]{2,30}$/.test(trimmed)) {
       setError(t.setup.usernameInvalid);
       setLoading(false);
       return;
