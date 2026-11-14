@@ -60,6 +60,7 @@ export function WidgetBookings({
   onQueryChange,
   manual,
   onBooked,
+  initialView = "calendar",
 }: {
   timezone: string;
   currencySymbol: string;
@@ -78,6 +79,8 @@ export function WidgetBookings({
   onQueryChange: (q: string) => void;
   manual: ManualBookingScope;
   onBooked: () => void;
+  // The section opens on the calendar; tests pin the list view.
+  initialView?: View;
 }) {
   const { t, locale } = useLanguage();
   const FILTERS: { key: BookingsFilter; label: string }[] = [
@@ -91,8 +94,30 @@ export function WidgetBookings({
     { key: "confirmed", label: t.booking.statusConfirmed },
     { key: "cancelled", label: t.booking.filterCancelled },
   ];
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>(initialView);
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus>("all");
+  // The calendar only holds one month, so a search there would miss most
+  // bookings. Typing switches to the server-searched list; clearing the search
+  // returns to the calendar when that's where the search started.
+  const [searchFromCalendar, setSearchFromCalendar] = useState(false);
+
+  function handleQueryChange(value: string) {
+    const searching = value.trim() !== "";
+    if (searching && view === "calendar") {
+      setSearchFromCalendar(true);
+      setView("list");
+      if (calendarStatus === "cancelled") onFilterChange("cancelled");
+    } else if (!searching && searchFromCalendar) {
+      setSearchFromCalendar(false);
+      setView("calendar");
+    }
+    onQueryChange(value);
+  }
+
+  function chooseView(next: View) {
+    setSearchFromCalendar(false);
+    setView(next);
+  }
   // Manual booking modal: `modalDate` seeds the day when opened from a calendar
   // cell (null ⇒ the flow picks the first open day itself).
   const [modalOpen, setModalOpen] = useState(false);
@@ -196,7 +221,7 @@ export function WidgetBookings({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             placeholder={t.booking.searchBookingsPlaceholder}
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-400"
           />
@@ -233,7 +258,7 @@ export function WidgetBookings({
           </div>
           <div className="flex items-center gap-0.5 rounded-lg border border-border p-0.5">
             <button
-              onClick={() => setView("list")}
+              onClick={() => chooseView("list")}
               aria-label={t.booking.listView}
               aria-pressed={view === "list"}
               className={`inline-flex items-center justify-center rounded-md p-1.5 transition ${
@@ -245,7 +270,7 @@ export function WidgetBookings({
               <List className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setView("calendar")}
+              onClick={() => chooseView("calendar")}
               aria-label={t.booking.calendarView}
               aria-pressed={view === "calendar"}
               className={`inline-flex items-center justify-center rounded-md p-1.5 transition ${

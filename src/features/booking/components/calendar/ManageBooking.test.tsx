@@ -16,6 +16,7 @@ function makeInitial(overrides: Partial<ManageBookingData> = {}): ManageBookingD
     location_id: null,
     instance_id: "inst_1",
     starts_at: "2026-08-10T09:00:00.000Z",
+    ends_at: "2026-08-10T09:30:00.000Z",
     status: "confirmed",
     business_name: "Acme Studio",
     business_username: "acme",

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, CalendarDays, Plus } from "lucide-react";
 import { BookingRow, type BookingRowData } from "./BookingRow";
+import { Dialog } from "@/components/ui/dialog";
 import { bookingRevenueCents } from "@/features/booking/domain/calendar";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -162,7 +163,8 @@ export function BookingsCalendar({
   }, [monthKey]);
   const [mode, setMode] = useState<Mode>("month");
   const [selected, setSelected] = useState<string>(todayKey);
-  const agendaRef = useRef<HTMLDivElement>(null);
+  // Day whose full list is open in the modal (null ⇒ closed).
+  const [modalOpen, setModalOpen] = useState(false);
 
   const grid = useMemo(() => gridDays(view.y, view.m), [view.y, view.m]);
   const weekStart = mondayOf(selected);
@@ -222,11 +224,10 @@ export function BookingsCalendar({
   // Moves the selection, refetching the month when the target falls outside the
   // loaded grid. A week is always inside the grid of its Thursday's month (the
   // ISO-week rule), so that's the month to load for week navigation.
-  function selectDay(key: string, opts: { scroll?: boolean } = {}) {
+  function selectDay(key: string, opts: { open?: boolean } = {}) {
     setSelected(key);
     if (!grid.includes(key)) onMonthChange(monthOfKey(addDaysKey(mondayOf(key), 3)));
-    if (opts.scroll && window.matchMedia("(max-width: 1023px)").matches)
-      agendaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (opts.open) setModalOpen(true);
   }
 
   function goMonthKey(key: string) {
@@ -356,7 +357,7 @@ export function BookingsCalendar({
           {stats.busiest ? (
             <button
               type="button"
-              onClick={() => selectDay(stats.busiest!.key, { scroll: true })}
+              onClick={() => selectDay(stats.busiest!.key, { open: true })}
               className="-m-1.5 rounded-lg p-1.5 text-left transition hover:bg-muted/60"
             >
               <Stat
@@ -396,11 +397,11 @@ export function BookingsCalendar({
                 key={key}
                 role="button"
                 tabIndex={0}
-                onClick={() => selectDay(key, { scroll: true })}
+                onClick={() => selectDay(key, { open: true })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    selectDay(key, { scroll: true });
+                    selectDay(key, { open: true });
                   }
                 }}
                 aria-label={`${labelForKey(locale, key)}, ${countLabel(events.length)}`}
@@ -452,10 +453,15 @@ export function BookingsCalendar({
         </div>
       </div>
 
-      {/* Selected-day agenda */}
-      <div ref={agendaRef} className="scroll-mt-4 overflow-hidden rounded-2xl border border-border bg-background">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-4">
-          <div className="flex min-w-0 items-center gap-1">
+      {/* Day modal: opened from a day cell, the "+N" chip or the busiest-day stat */}
+      <Dialog
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={labelForKey(locale, selected)}
+        maxWidthClass="max-w-lg"
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => prevBusy && selectDay(prevBusy)}
@@ -466,7 +472,7 @@ export function BookingsCalendar({
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <h3 className="truncate text-sm font-semibold first-letter:uppercase">{labelForKey(locale, selected)}</h3>
+            <span className="text-xs text-muted-foreground tabular-nums">{countLabel(selectedList.length)}</span>
             <button
               type="button"
               onClick={() => nextBusy && selectDay(nextBusy)}
@@ -478,46 +484,48 @@ export function BookingsCalendar({
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground tabular-nums">{countLabel(selectedList.length)}</span>
-            {onNewBooking && (
-              <button
-                type="button"
-                onClick={() => onNewBooking(selected)}
-                className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:border-emerald-300 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
-              >
-                <Plus className="h-3.5 w-3.5" /> {t.booking.manualAddOnDay}
-              </button>
-            )}
-          </div>
+          {onNewBooking && (
+            <button
+              type="button"
+              onClick={() => {
+                setModalOpen(false);
+                onNewBooking(selected);
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2.5 py-1 text-xs font-medium text-emerald-700 transition hover:border-emerald-300 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t.booking.manualAddOnDay}
+            </button>
+          )}
         </div>
-        {selectedList.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <CalendarDays className="mx-auto h-7 w-7 text-muted-foreground/50" />
-            <p className="mt-2 text-sm text-muted-foreground">{t.booking.noBookingsOnDay}</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {selectedList.map((b) => {
-              const upcoming = b.status === "confirmed" && new Date(b.starts_at).getTime() >= now;
-              return (
-                <BookingRow
-                  key={b.id}
-                  b={b}
-                  money={money}
-                  fmt={fmtDate}
-                  timezone={timezone}
-                  now={now}
-                  cancellable={upcoming}
-                  dim={!upcoming}
-                  hasStaff={hasStaff}
-                  onChanged={onChanged}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
+        <div className="-mx-2 max-h-[60vh] overflow-y-auto">
+          {selectedList.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <CalendarDays className="mx-auto h-7 w-7 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">{t.booking.noBookingsOnDay}</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {selectedList.map((b) => {
+                const upcoming = b.status === "confirmed" && new Date(b.starts_at).getTime() >= now;
+                return (
+                  <BookingRow
+                    key={b.id}
+                    b={b}
+                    money={money}
+                    fmt={fmtDate}
+                    timezone={timezone}
+                    now={now}
+                    cancellable={upcoming}
+                    dim={!upcoming}
+                    hasStaff={hasStaff}
+                    onChanged={onChanged}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Dialog>
     </div>
   );
 }

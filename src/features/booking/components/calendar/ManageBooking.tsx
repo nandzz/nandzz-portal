@@ -5,6 +5,7 @@ import { CalendarDays, Clock, User, X } from "lucide-react";
 import type { Slot } from "@/features/booking/domain/calendar";
 import { ReschedulePicker } from "./ReschedulePicker";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { AddToCalendar } from "./AddToCalendar";
 
 export type ManageBookingData = {
   service_name: string;
@@ -12,6 +13,9 @@ export type ManageBookingData = {
   location_id: string | null;
   instance_id: string;
   starts_at: string;
+  ends_at: string;
+  // Customer-visible place (location address, else its name) for calendar events.
+  location_label?: string | null;
   status: "confirmed" | "cancelled";
   business_name: string;
   business_username: string | null;
@@ -68,6 +72,7 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
       setBooking({
         ...booking,
         starts_at: data.starts_at,
+        ends_at: data.ends_at ?? booking.ends_at,
         staff_name: data.staff_name ?? null,
         service_id: data.service_id ?? booking.service_id,
         service_name: data.service_name ?? booking.service_name,
@@ -173,6 +178,18 @@ export function ManageBooking({ token, initial }: { token: string; initial: Mana
             >
               <X className="h-4 w-4" /> {t.booking.cancel}
             </button>
+          </div>
+        )}
+
+        {booking.status === "confirmed" && mode === "view" && new Date(booking.ends_at) > new Date() && (
+          <div className="mt-6">
+            <AddToCalendar
+              calendarUrl={`/api/widgets/bookings/${token}/ics`}
+              title={`${booking.service_name} · ${booking.business_name}`}
+              startIso={booking.starts_at}
+              endIso={booking.ends_at}
+              location={booking.location_label ?? undefined}
+            />
           </div>
         )}
 

@@ -25,6 +25,7 @@ import { AuthModal, type AuthResult } from "@/features/auth";
 import { getBookingViewer, getBookingSession, type BookingViewer } from "../../viewer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { BookingPrivacyNotice } from "@/features/legal/components/BookingPrivacyNotice";
+import { AddToCalendar } from "./AddToCalendar";
 
 // How far out the calendar lets visitors book. Wider than the old flat list so
 // the month grid feels real; the availability API caps `days` at 60.
@@ -164,6 +165,8 @@ export function CalendarBookingFlow({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manageUrl, setManageUrl] = useState<string | null>(null);
+  // Confirmed booking times + .ics URL for the done step's "Add to calendar".
+  const [calendar, setCalendar] = useState<{ url: string; startsAt: string; endsAt: string } | null>(null);
 
   // Running totals for the selected services — the summed duration reserves the
   // whole slot, the summed price is what the visitor will pay.
@@ -601,6 +604,9 @@ export function CalendarBookingFlow({
         return;
       }
       setManageUrl(data.manage_url);
+      if (data.calendar_url && data.booking?.starts_at && data.booking?.ends_at) {
+        setCalendar({ url: data.calendar_url, startsAt: data.booking.starts_at, endsAt: data.booking.ends_at });
+      }
       setStep("done");
       onBooked?.(data.manage_url);
     } catch {
@@ -1226,6 +1232,18 @@ export function CalendarBookingFlow({
               ? t.booking.confirmationSent.replace("{email}", form.email.trim())
               : t.booking.bookedNoEmail}
           </p>
+          {calendar && (
+            <div className="pt-2">
+              <AddToCalendar
+                calendarUrl={calendar.url}
+                title={`${selectedServices.map((s) => s.name).join(", ")} · ${businessName}`}
+                startIso={calendar.startsAt}
+                endIso={calendar.endsAt}
+                location={location ? location.address?.trim() || location.name : undefined}
+                details={manageUrl ?? undefined}
+              />
+            </div>
+          )}
           {/* Signed-in bookers get a direct route into their bookings section;
               guests keep just the manage link (their booking lives at the token
               URL emailed to them). */}

@@ -28,12 +28,19 @@ export default async function BookingManagePage({
   const owner = instance?.owner ?? null;
   const config = normalizeCalendarConfig(instance?.config);
 
+  const loc = data.location_id
+    ? config.locations.find((l) => l.id === data.location_id)
+    : undefined;
+  const locationLabel = loc ? loc.address?.trim() || loc.name : null;
+
   const initial: ManageBookingData = {
     service_name: data.service_name as string,
     service_id: data.service_id as string,
     location_id: (data.location_id as string | null) ?? null,
     instance_id: data.instance_id as string,
     starts_at: data.starts_at as string,
+    ends_at: data.ends_at as string,
+    location_label: locationLabel,
     status: data.status as "confirmed" | "cancelled",
     business_name: owner?.display_name || owner?.username || "your provider",
     business_username: owner?.username ?? null,

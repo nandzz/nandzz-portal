@@ -1543,6 +1543,10 @@ export type Translations = {
     confirmationSent: string;
     bookedNoEmail: string;
     manageBookingLink: string;
+    addToCalendar: string;
+    addToAppleCalendar: string;
+    addToGoogleCalendar: string;
+    calendarRemindersNote: string;
     poweredBy: string;
     errorLoadAvailability: string;
     errorPlanRequired: string;

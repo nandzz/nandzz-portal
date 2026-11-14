@@ -79,6 +79,7 @@ function renderBookings(over: {
   };
   render(
     <WidgetBookings
+      initialView="list"
       timezone="UTC"
       currencySymbol="$"
       now={NOW}

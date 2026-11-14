@@ -200,6 +200,7 @@ export async function POST(
         ends_at: booking.ends_at,
       },
       manage_url: manageUrl,
+      calendar_url: `${siteUrl}/api/widgets/bookings/${booking.manage_token}/ics`,
     },
     { status: 201 }
   );
