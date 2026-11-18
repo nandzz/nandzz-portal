@@ -10,7 +10,6 @@
 export { CalendarWidgetEmbed } from "./components/calendar/CalendarWidgetEmbed";
 export { WidgetWorkspace } from "./components/calendar/WidgetWorkspace";
 export { WidgetInstanceSettings } from "./components/calendar/WidgetInstanceSettings";
-export { WebsiteEmbedCard } from "./components/calendar/WebsiteEmbedCard";
 export { BookingActivationBanner } from "./components/calendar/BookingActivationBanner";
 
 // ── Public booking surfaces ─────────────────────────────────────────────────
