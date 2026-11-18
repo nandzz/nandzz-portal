@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
-import { getFeatureFlags } from "@/lib/featureFlags";
 import { defaultCalendarConfig } from "@/features/booking/domain/calendar";
 import { suggestedCurrencyForLocale } from "@/features/booking/domain/messages";
 import { getCurrentLocale } from "@/lib/i18n/server";
@@ -57,11 +56,6 @@ export async function createWidgetInstance(input: {
     return { ok: false, error: "NOT_AVAILABLE" };
   }
 
-  // The agent widget is an AI surface — unavailable while the AI flag is off.
-  if (widget.slug === "agent" && !(await getFeatureFlags()).ai) {
-    return { ok: false, error: "NOT_AVAILABLE" };
-  }
-
   // One instance per (owner, widget type) — return the existing one if present.
   const { data: existing } = await admin
     .from("widget_instances")
@@ -76,9 +70,7 @@ export async function createWidgetInstance(input: {
   const seedConfig =
     widget.slug === "calendar"
       ? { ...defaultCalendarConfig(), currency: suggestedCurrencyForLocale(await getCurrentLocale()) }
-      : widget.slug === "agent"
-        ? { enabled: true }
-        : {};
+      : {};
 
   const { data: created, error: createErr } = await admin
     .from("widget_instances")

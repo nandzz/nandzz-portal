@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Plug, CalendarDays, BarChart3, Palette, Briefcase, Plus, Bot } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
-import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
 import { cn } from "@/lib/utils";
@@ -37,7 +36,7 @@ export function Navbar() {
   const { resolvedTheme: theme, setTheme } = useTheme();
   const { t } = useLanguage();
   const { isHidden } = useChrome();
-  const { userId, profile, entitlements, flags } = useAuth();
+  const { userId, profile, entitlements } = useAuth();
   const [switchOpen, setSwitchOpen] = useState(false);
   // The bar blends into the page (same color, no border) until the content
   // scrolls under it; then it turns translucent with a hairline.
@@ -150,7 +149,6 @@ export function Navbar() {
           )}
 
           {/* AI jobs indicator + notification bell */}
-          {userId && flags.ai && <AiJobsIndicator userId={userId} />}
           {userId && <NotificationBell userId={userId} />}
 
           {/* Mobile-only avatar → profile. On desktop the avatar is the account

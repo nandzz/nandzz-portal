@@ -69,7 +69,7 @@ describe("updateWidgetInstance", () => {
   });
 
   it("passes non-calendar config straight through", async () => {
-    existing = { id: INSTANCE_ID, catalog: { slug: "agent" } };
+    existing = { id: INSTANCE_ID, catalog: { slug: "other" } };
     const res = await updateWidgetInstance({
       instanceId: INSTANCE_ID,
       config: { enabled: false, foo: "bar" },

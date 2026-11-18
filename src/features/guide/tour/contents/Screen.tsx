@@ -273,7 +273,7 @@ const PICKER_ICONS: Partial<Record<ContentTypeId, typeof FileText>> = {
   link: Globe,
 };
 // The AI builder is hidden while its flag is off, like the real picker.
-const PICKER_TYPES = Object.values(CONTENT_TYPES).filter((c) => c.creatable && c.id !== "ai");
+const PICKER_TYPES = Object.values(CONTENT_TYPES).filter((c) => c.creatable);
 
 function PickerView() {
   const { t } = useLanguage();

@@ -33,7 +33,7 @@ export function MetadataOnlyEditor({ space }: BuilderFieldsProps) {
   return (
     <ContentBuilderShell contentType="html" space={space} form={form}>
       <p className="text-xs text-muted-foreground rounded-lg bg-muted/40 border border-border/50 px-3 py-2.5">
-        {t.contentMetadataEditor.note.replace("{edit}", t.space.edit).replace("{aiEdit}", t.aiAssistant.buttonLabel)}
+        {t.contentMetadataEditor.note.replace("{edit}", t.space.edit)}
       </p>
     </ContentBuilderShell>
   );

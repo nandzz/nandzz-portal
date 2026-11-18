@@ -11,39 +11,6 @@ import { IMMUTABLE_CACHE_CONTROL } from "@/lib/storageCache";
 // This module lives OUTSIDE `components/` so it does not trip the
 // `no-restricted-imports` guardrail that bans `@/lib/supabase/*` there.
 
-/** Escape user-controlled text before interpolating it into HTML markup. */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-/**
- * The minimal placeholder page uploaded for a brand-new "AI Generated" space.
- * Content is filled in later via the AI Edit assistant (HtmlSpaceEditor).
- * Pure template — no network calls. The title is user-controlled and this HTML
- * is served from a public bucket, so it must be HTML-escaped to prevent stored
- * XSS.
- */
-function buildAiStubHtml(title: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(title)}</title>
-<style>
-  body { margin: 0; background: #09090b; color: #ffffff; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-  p { opacity: 0.35; font-size: 14px; letter-spacing: 0.01em; }
-</style>
-</head>
-<body><p>Use the AI assistant to generate content ✦</p></body>
-</html>`;
-}
-
 /** Returns the current authenticated user id, or null. Used by the builder hook
  * to prefix per-user storage paths before the row-write action runs. */
 export async function getCurrentUserId(): Promise<string | null> {
@@ -61,31 +28,7 @@ function extractStoragePath(publicUrl: string, bucket: string): string | null {
   return publicUrl.slice(idx + marker.length).split("?")[0];
 }
 
-// ─── AI stub HTML ──────────────────────────────────────────────────────────
-
-/**
- * Uploads the AI stub HTML to the `space-html` bucket and returns its public
- * URL. Throws on upload failure — callers surface `error.message` to the user.
- */
-export async function uploadAiStubHtml(
-  userId: string,
-  title: string
-): Promise<string> {
-  const supabase = createClient();
-  const stub = buildAiStubHtml(title);
-  const stubBlob = new Blob([stub], { type: "text/html" });
-  const filePath = `${userId}/${Date.now()}.html`;
-  const { error: uploadError } = await supabase.storage
-    .from("space-html")
-    .upload(filePath, stubBlob, { contentType: "text/html", upsert: false });
-  if (uploadError) {
-    throw new Error("Failed to create content: " + uploadError.message);
-  }
-  const { data } = supabase.storage.from("space-html").getPublicUrl(filePath);
-  return data.publicUrl;
-}
-
-// ─── HTML editor (GrapeJS save + AI-edit approval) ──────────────────────────
+// ─── HTML editor (GrapeJS save) ──────────────────────────
 
 /** Extract the `space-html` storage path from a public html_url. */
 export function htmlStoragePath(publicUrl: string): string {

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/account/server";
 import { FEATURES } from "@/lib/flags";
-import { embedAgentDocument } from "@/features/agent/actions/embed-agent-document";
+import { embedAgentDocument } from "./embed-agent-document";
 import { rowFromSettings } from "../settings";
 import type { AgentSettings } from "../types";
 

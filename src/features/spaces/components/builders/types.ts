@@ -3,7 +3,7 @@ import type { Space } from "@/lib/types";
 
 /** The content types that have a builder. Excludes legacy `html` (metadata-only
  * editor) and `video` (merged into the unified `link` builder). */
-export type CreatableContentTypeId = Exclude<ContentTypeId, "html" | "video">;
+export type CreatableContentTypeId = Exclude<ContentTypeId, "html" | "video" | "ai">;
 
 /** Props every per-type builder component (registry entry) receives. */
 export interface BuilderFieldsProps {

@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
-import { AiJobsIndicator } from "./AiJobsIndicator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -59,7 +58,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const { t } = useLanguage();
-  const { userId, profile, entitlements, flags } = useAuth();
+  const { userId, profile, entitlements } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [switchOpen, setSwitchOpen] = useState(false);
 
@@ -249,7 +248,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </div>
               {userId && (
                 <div className="flex items-center gap-0.5 shrink-0">
-                  {flags.ai && <AiJobsIndicator userId={userId} />}
                   <NotificationBell userId={userId} />
                 </div>
               )}

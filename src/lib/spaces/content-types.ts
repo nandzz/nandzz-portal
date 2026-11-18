@@ -33,11 +33,13 @@ export const CONTENT_TYPES: Record<
     creatable: boolean;
   }
 > = {
+  // Legacy-only: the AI page generator was removed (2026-11-18). Kept so any
+  // old row still renders; never offered in the create picker.
   ai: {
     id: "ai",
     section: "informative",
     icon: Sparkles,
-    creatable: true,
+    creatable: false,
   },
   pdf: {
     id: "pdf",
@@ -169,7 +171,7 @@ export function getSectionDescription(t: Translations, id: SectionId): string {
  * Mirrors `detectInitialMode` in SpaceForm.tsx exactly (same precedence
  * order), except the ambiguous/no-match case resolves to "html" here to
  * match the DB backfill and `publish_space_tx` behavior, rather than
- * SpaceForm's UI-only default of "ai" for a blank new-space form.
+ * SpaceForm's UI-only default for a blank new-space form.
  */
 function legacyDetectContentType(
   space: Pick<

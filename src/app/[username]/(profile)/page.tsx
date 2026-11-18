@@ -245,7 +245,6 @@ export default async function ProfilePage({
         <ProfileHeader
           profile={profile}
           isOwner={isOwner}
-          currentUserId={user?.id ?? null}
           widgets={widgets}
         />
         <ProfileSections

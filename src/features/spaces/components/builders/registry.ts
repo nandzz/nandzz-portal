@@ -1,5 +1,4 @@
 import type { ComponentType } from "react";
-import { AiBuilder } from "./AiBuilder";
 import { PdfBuilder } from "./PdfBuilder";
 import { NotesBuilder } from "./NotesBuilder";
 import { ImageBuilder } from "./ImageBuilder";
@@ -15,7 +14,6 @@ export type { CreatableContentTypeId, BuilderFieldsProps };
  * `BUILDER_REGISTRY[type].component`.
  */
 export const BUILDER_REGISTRY: Record<CreatableContentTypeId, { component: ComponentType<BuilderFieldsProps> }> = {
-  ai: { component: AiBuilder },
   pdf: { component: PdfBuilder },
   notes: { component: NotesBuilder },
   image: { component: ImageBuilder },

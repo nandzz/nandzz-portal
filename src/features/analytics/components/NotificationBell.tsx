@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useId, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CalendarClock, CalendarDays, CalendarX2, Clock, Sparkles } from "lucide-react";
+import { Bell, CalendarClock, CalendarDays, CalendarX2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -71,12 +71,11 @@ const KIND_STYLE = {
   booking: { icon: CalendarDays, tint: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300", badge: "bg-emerald-500" },
   rescheduled: { icon: CalendarClock, tint: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300", badge: "bg-amber-500" },
   cancelled: { icon: CalendarX2, tint: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300", badge: "bg-rose-500" },
-  ai: { icon: Sparkles, tint: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300", badge: "bg-violet-500" },
 } as const;
 
 interface NotificationView {
   kind: keyof typeof KIND_STYLE;
-  // Person the notification is about; null for system events (AI edits).
+  // Person the notification is about; null for system events.
   actor: string | null;
   text: ReactNode[];
   detail: ReactNode;
@@ -84,17 +83,6 @@ interface NotificationView {
 
 function describe(n: Notification, t: T, locale: Locale): NotificationView {
   switch (n.type) {
-    case "ai_edit_ready": {
-      const { space_title, instruction } = n.payload as { space_title: string; instruction?: string };
-      return {
-        kind: "ai",
-        actor: null,
-        text: fill(t.notifications.aiEditReady, { title: space_title }),
-        detail: instruction ? (
-          <p className="line-clamp-1 text-xs text-muted-foreground">{instruction}</p>
-        ) : null,
-      };
-    }
     case "new_booking":
     case "booking_cancelled":
     case "booking_rescheduled": {
@@ -263,18 +251,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   key={n.id}
                   type="button"
                   onClick={() => {
-                    if (n.type !== "ai_edit_ready") {
-                      // Booking is a single per-owner feature now, so the received
-                      // appointments live at a fixed path (no instance id).
-                      router.push("/dashboard/booking/bookings");
-                      setOpen(false);
-                      return;
-                    }
-                    const { space_owner_username, space_id } = n.payload as {
-                      space_owner_username: string;
-                      space_id: string;
-                    };
-                    router.push(`/${space_owner_username}/space/${space_id}`);
+                    // Booking is a single per-owner feature now, so the received
+                    // appointments live at a fixed path (no instance id).
+                    router.push("/dashboard/booking/bookings");
                     setOpen(false);
                   }}
                   className={cn(

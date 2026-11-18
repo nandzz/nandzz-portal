@@ -39,7 +39,6 @@ const MAX_AVATAR_INPUT_SIZE = 25 * 1024 * 1024;
 interface ProfileHeaderProps {
   profile: Profile;
   isOwner?: boolean;
-  currentUserId?: string | null;
   widgets?: WidgetInstanceWithCatalog[];
   // Style props are fallbacks for use outside a ProfileStyleRoot; on the profile
   // page the live (owner-editable) style from context wins.
@@ -51,7 +50,7 @@ interface ProfileHeaderProps {
   socialLinksStyle?: SocialLinksStyle | null;
 }
 
-export function ProfileHeader({ profile, isOwner, currentUserId, widgets = [], buttonColor: buttonColorProp = null, textColor: textColorProp = null, socialLinksStyle: socialLinksStyleProp = null }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, widgets = [], buttonColor: buttonColorProp = null, textColor: textColorProp = null, socialLinksStyle: socialLinksStyleProp = null }: ProfileHeaderProps) {
   const { t } = useLanguage();
   const live = useProfileStyle()?.style;
   const buttonColor = live ? live.buttonColor : buttonColorProp;
@@ -158,7 +157,7 @@ export function ProfileHeader({ profile, isOwner, currentUserId, widgets = [], b
   const bookingPlacement = resolveBookingButtonStyle(bookingButtonStyle).placement;
   const widgetStrip = (className: string, align: "center" | "start" = "center") =>
     FEATURES.widgets && widgets.length > 0 ? (
-      <WidgetStrip widgets={widgets} profile={profile} isAuthenticated={!!currentUserId} align={align} className={className} />
+      <WidgetStrip widgets={widgets} profile={profile} align={align} className={className} />
     ) : null;
 
   // Share is a quiet utility icon, never styled like the booking CTA. The

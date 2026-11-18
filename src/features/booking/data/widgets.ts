@@ -1,7 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserEntitlements } from "@/lib/plan";
-import { getFeatureFlags } from "@/lib/featureFlags";
 import { defaultCalendarConfig } from "@/features/booking/domain/calendar";
 import { suggestedCurrencyForLocale } from "@/features/booking/domain/messages";
 import { getCurrentLocale } from "@/lib/i18n/server";
@@ -184,14 +183,10 @@ export async function ownerHasWidgetAccess(ownerId: string): Promise<boolean> {
 // it's filtered out of the catalog while the AI feature flag is off.
 export async function getWidgetCatalog(): Promise<WidgetCatalogEntry[]> {
   const admin = createAdminClient();
-  const [{ data }, { ai }] = await Promise.all([
-    admin
-      .from("widget_catalog")
-      .select("*")
-      .eq("active", true)
-      .order("sort_order", { ascending: true }),
-    getFeatureFlags(),
-  ]);
-  const catalog = (data ?? []) as WidgetCatalogEntry[];
-  return ai ? catalog : catalog.filter((c) => c.slug !== "agent");
+  const { data } = await admin
+    .from("widget_catalog")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+  return (data ?? []) as WidgetCatalogEntry[];
 }

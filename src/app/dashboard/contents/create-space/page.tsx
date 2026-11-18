@@ -7,7 +7,6 @@ import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CONTENT_TYPES, getContentTypeLabel, getContentTypeDescription } from "@/lib/spaces/content-types";
 import { getServerTranslations } from "@/lib/i18n/server";
-import { getFeatureFlags } from "@/lib/featureFlags";
 
 const CREATABLE_TYPES = Object.values(CONTENT_TYPES).filter((t) => t.creatable);
 
@@ -26,11 +25,7 @@ export default async function CreateSpacePage({
   const { collectionId } = await searchParams;
   const t = await getServerTranslations();
 
-  // The "ai" builder generates a page with AI — hidden while the AI flag is off.
-  const { ai } = await getFeatureFlags();
-  const creatableTypes = ai
-    ? CREATABLE_TYPES
-    : CREATABLE_TYPES.filter((type) => type.id !== "ai");
+  const creatableTypes = CREATABLE_TYPES;
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">

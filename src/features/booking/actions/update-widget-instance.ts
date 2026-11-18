@@ -58,11 +58,6 @@ export async function updateWidgetInstance(input: {
         return { ok: false, error: "INVALID_CONFIG", message: errors.join(" ") };
       }
       update.config = normalized;
-    } else if (slug === "agent") {
-      // Agent knowledge lives in agent_documents/agent_suggested_questions —
-      // the instance config is just a minimal pass-through, no validation.
-      const raw = config as { enabled?: boolean } | null | undefined;
-      update.config = { ...(raw ?? {}), enabled: raw?.enabled ?? true };
     } else {
       update.config = config;
     }

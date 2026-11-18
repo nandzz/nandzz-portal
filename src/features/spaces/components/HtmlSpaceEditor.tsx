@@ -2,24 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Pencil, X, Save, Loader2, Sparkles, Check, AlertCircle, ArrowRight } from "lucide-react";
+import { Pencil, X, Save, Loader2 } from "lucide-react";
 import { sandboxHtml } from "@/lib/sandbox-html";
-import { AiAssistantPanel } from "./AiAssistantPanel";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useFeatureFlags } from "@/features/auth/AuthContext";
-import { cn } from "@/lib/utils";
-import {
-  fetchPendingAiEditJob,
-  subscribeToAiEditApprovals,
-  type AiEditJobUpdate,
-} from "../realtime";
 import {
   htmlStoragePath,
   uploadSpaceHtml,
   uploadSpacePreviewScreenshot,
   getCurrentUserId,
 } from "../storage";
-import { resolveAiEditJob } from "../actions/resolve-ai-edit-job";
 import { updateSpace } from "../actions/update-space";
 
 /** Render HTML in a hidden iframe and capture a screenshot using html2canvas */
@@ -62,93 +53,19 @@ interface HtmlSpaceEditorProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type GrapesjsEditor = any;
 
-type PendingJob = { id: string; instruction: string; result_html: string };
-type FailedJob = { id: string; instruction: string; errorCode: string };
-
 export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEditorProps) {
   const { t } = useLanguage();
-  const ai = t.aiAssistant;
-  // AI page editor is hidden while the AI master flag is off.
-  const { ai: aiEnabled } = useFeatureFlags();
 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [iframeVersion, setIframeVersion] = useState(0);
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [proposedLoaded, setProposedLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAssistant, setShowAssistant] = useState(false);
-  const [pendingJob, setPendingJob] = useState<PendingJob | null>(null);
-  const [failedJob, setFailedJob] = useState<FailedJob | null>(null);
-  const [showingProposed, setShowingProposed] = useState(false);
-  const [isApplying, setIsApplying] = useState(false);
 
-  const errMap: Record<string, string> = {
-    ai_unavailable: ai.errorUnavailable,
-    ai_invalid_output: ai.errorInvalid,
-    html_too_large: ai.errorTooLarge,
-    html_not_found: ai.errorGeneric,
-  };
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const grapesjsRef = useRef<GrapesjsEditor>(null);
   const htmlAtEditStartRef = useRef("");
-
-  // Check for pending AI edit jobs on mount and subscribe to new completions via Realtime
-  useEffect(() => {
-    fetchPendingAiEditJob(spaceId).then((job) => {
-      if (job) setPendingJob(job);
-    });
-
-    const unsubscribe = subscribeToAiEditApprovals(spaceId, {
-      onUpdate: (job: AiEditJobUpdate) => {
-        if (job.status === "done" && job.result_html) {
-          setPendingJob({ id: job.id, instruction: job.instruction, result_html: job.result_html });
-        } else if (job.status === "error") {
-          setFailedJob({ id: job.id, instruction: job.instruction, errorCode: job.error_code ?? "ai_unavailable" });
-        }
-      },
-    });
-
-    return () => { unsubscribe(); };
-  }, [spaceId]);
-
-  const handleApproveAiEdit = useCallback(async () => {
-    if (!pendingJob) return;
-    setIsApplying(true);
-    try {
-      const storagePath = htmlStoragePath(htmlUrl);
-      await uploadSpaceHtml(storagePath, pendingJob.result_html);
-      await resolveAiEditJob({ jobId: pendingJob.id });
-      setPendingJob(null);
-      setShowingProposed(false);
-      setIframeLoaded(false);
-      setIframeVersion((v) => v + 1);
-    } catch (err) {
-      console.error("[ai-edit] approve failed", err);
-    } finally {
-      setIsApplying(false);
-    }
-  }, [pendingJob, htmlUrl]);
-
-  const handleDismissAiEdit = useCallback(async () => {
-    if (!pendingJob) return;
-    await resolveAiEditJob({ jobId: pendingJob.id });
-    setPendingJob(null);
-    setShowingProposed(false);
-  }, [pendingJob]);
-
-  const handleDismissFailedAiEdit = useCallback(async () => {
-    if (!failedJob) return;
-    await resolveAiEditJob({ jobId: failedJob.id });
-    setFailedJob(null);
-  }, [failedJob]);
-
-  // Reset proposed-iframe loaded flag whenever a new job arrives
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets a derived flag when the pending job changes
-    setProposedLoaded(false);
-  }, [pendingJob?.id]);
 
   // Inject GrapeJS CSS once on mount
   useEffect(() => {
@@ -354,107 +271,25 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
     );
   }
 
-  const bannerOffsetPx = (pendingJob ? 42 : 0) + (failedJob ? 42 : 0);
-  const bannerPadding = bannerOffsetPx > 0 ? `${bannerOffsetPx}px` : 0;
-
   return (
     <div className="relative h-full w-full">
-      <div className="absolute top-0 inset-x-0 z-20 flex flex-col">
-        {/* AI edit error banner */}
-        {failedJob && (
-          <div className="flex items-center gap-2 bg-destructive/10 backdrop-blur border-b border-destructive/20 px-3 py-2 shadow-sm">
-            <AlertCircle className="size-4 text-destructive shrink-0" />
-            <p className="text-xs flex-1 min-w-0">
-              <span className="font-semibold text-destructive">{ai.errorTitle}:</span>{" "}
-              <span className="text-muted-foreground truncate">{errMap[failedJob.errorCode] ?? ai.errorGeneric}</span>
-            </p>
-            <button
-              onClick={handleDismissFailedAiEdit}
-              className="text-muted-foreground hover:text-foreground shrink-0"
-              aria-label={ai.approvalDismiss}
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-        )}
-
-        {/* AI edit approval banner */}
-        {pendingJob && (
-          <div className="flex items-center gap-2 bg-background/95 backdrop-blur border-b px-3 py-2 shadow-sm">
-            <Sparkles className="size-4 text-primary shrink-0" />
-            <p className="text-xs flex-1 min-w-0">
-              <span className="font-semibold">{ai.approvalTitle}:</span>{" "}
-              <span className="text-muted-foreground truncate">&quot;{pendingJob.instruction}&quot;</span>
-            </p>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs px-2 shrink-0"
-              onClick={() => setShowingProposed((v) => !v)}
-            >
-              {showingProposed ? ai.approvalShowOriginal : ai.approvalPreview}
-            </Button>
-            <Button
-              size="sm"
-              className="h-7 text-xs px-2 gap-1 shrink-0"
-              onClick={handleApproveAiEdit}
-              disabled={isApplying}
-            >
-              {isApplying ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
-              {ai.approvalApply}
-            </Button>
-            <button
-              onClick={handleDismissAiEdit}
-              className="text-muted-foreground hover:text-foreground shrink-0"
-              aria-label={ai.approvalDismiss}
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {((!showingProposed && !iframeLoaded) || (showingProposed && !proposedLoaded)) && (
-        <div className="absolute flex items-center justify-center bg-background z-10" style={{ inset: 0, top: bannerPadding }}>
+      {!iframeLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
-      {/* Original — always mounted so it stays ready when toggling back */}
       <iframe
         key={`original-${iframeVersion}`}
         src={`/sandbox/${spaceId}?v=${iframeVersion}`}
         className="absolute inset-0 h-full w-full border-0"
         sandbox="allow-scripts allow-forms allow-downloads allow-popups"
         title={spaceTitle}
-        style={{ opacity: !showingProposed && iframeLoaded ? 1 : 0, paddingTop: bannerPadding, pointerEvents: showingProposed ? "none" : "auto" }}
+        style={{ opacity: iframeLoaded ? 1 : 0 }}
         onLoad={() => setIframeLoaded(true)}
       />
-      {/* Proposed — pre-loads in background while showing original */}
-      {pendingJob && (
-        <iframe
-          key={`proposed-${pendingJob.id}`}
-          srcDoc={sandboxHtml(pendingJob.result_html)}
-          className="absolute inset-0 h-full w-full border-0"
-          sandbox="allow-scripts allow-forms allow-downloads allow-popups"
-          title={`${spaceTitle} – proposed`}
-          style={{ opacity: showingProposed && proposedLoaded ? 1 : 0, paddingTop: bannerPadding, pointerEvents: !showingProposed ? "none" : "auto" }}
-          onLoad={() => setProposedLoaded(true)}
-        />
-      )}
 
-      {/* Desktop buttons */}
+      {/* Desktop button */}
       <div className="absolute bottom-4 right-4 hidden lg:flex gap-2">
-        {aiEnabled && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowAssistant(true)}
-            className="gap-1.5"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            AI Edit
-          </Button>
-        )}
         <Button
           size="sm"
           onClick={handleEdit}
@@ -469,42 +304,6 @@ export function HtmlSpaceEditor({ spaceId, htmlUrl, spaceTitle }: HtmlSpaceEdito
           Edit Page
         </Button>
       </div>
-
-      {/* Mobile prompt pill — replaces the icon-only FAB so the affordance is
-          obvious and readable. Doubles as the AI panel opener. Hidden while a
-          proposal is under review (top banner takes over) or the panel is open. */}
-      {aiEnabled && !pendingJob && !showAssistant && (
-        <button
-          type="button"
-          onClick={() => setShowAssistant(true)}
-          aria-label={ai.buttonLabel}
-          className={cn(
-            "lg:hidden absolute bottom-3 left-3 right-3 z-30",
-            "flex items-center gap-2.5 rounded-full",
-            "bg-background/95 backdrop-blur-xl",
-            "border border-violet-500/30",
-            "shadow-lg shadow-violet-500/15",
-            "pl-1.5 pr-3 py-1.5",
-            "text-sm text-left",
-            "transition-transform duration-150 active:scale-[0.98]",
-          )}
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm">
-            <Sparkles className="h-4 w-4" />
-          </span>
-          <span className="flex-1 truncate text-muted-foreground">{ai.placeholder}</span>
-          <ArrowRight className="h-4 w-4 shrink-0 text-violet-600" />
-        </button>
-      )}
-
-      {aiEnabled && (
-        <AiAssistantPanel
-          spaceId={spaceId}
-          htmlUrl={htmlUrl}
-          isOpen={showAssistant}
-          onClose={() => setShowAssistant(false)}
-        />
-      )}
     </div>
   );
 }

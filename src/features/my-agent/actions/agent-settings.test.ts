@@ -57,7 +57,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const embedAgentDocument = vi.fn<(id: string) => Promise<{ ok: boolean }>>(async () => ({ ok: true }));
-vi.mock("@/features/agent/actions/embed-agent-document", () => ({ embedAgentDocument: (id: string) => embedAgentDocument(id) }));
+vi.mock("./embed-agent-document", () => ({ embedAgentDocument: (id: string) => embedAgentDocument(id) }));
 
 import { deleteKnowledgeEntry, saveAgentSettings, saveKnowledgeEntry, setAgentEnabled } from "./agent-settings";
 

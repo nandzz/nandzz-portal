@@ -19,7 +19,6 @@ export type { DeleteSpaceResult } from "./actions/delete-space";
 // ── Editors, viewers, builders (4b) ─────────────────────────────────────────
 export { HtmlSpaceEditor } from "./components/HtmlSpaceEditor";
 export { MarkdownSpaceEditor } from "./components/MarkdownSpaceEditor";
-export { AiAssistantPanel } from "./components/AiAssistantPanel";
 export { MarkdownViewer } from "./components/MarkdownViewer";
 // NOTE: The raw `PdfViewer` is intentionally NOT re-exported here. It imports
 // `react-pdf` (pdf.js) at module scope, which touches browser-only globals like
@@ -51,6 +50,4 @@ export type {
 } from "./actions/publish-space";
 export { updateSpace } from "./actions/update-space";
 export type { UpdateSpaceResult } from "./actions/update-space";
-export { resolveAiEditJob } from "./actions/resolve-ai-edit-job";
-export type { ResolveAiEditJobResult } from "./actions/resolve-ai-edit-job";
 export { loadHashtagSuggestions } from "./actions/load-hashtag-suggestions";

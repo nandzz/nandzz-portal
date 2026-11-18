@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// space_views / spaces / notifications / ai_edit_jobs IDs are all Postgres
+// space_views / spaces / notifications IDs are all Postgres
 // `gen_random_uuid()` values — validate every action input as an RFC-4122 v4.
 
 // A space view recorded by the immersive viewer (any visitor, incl. anonymous).
@@ -24,10 +24,3 @@ export const markNotificationsReadSchema = z.object({
 export type MarkNotificationsReadInput = z.infer<
   typeof markNotificationsReadSchema
 >;
-
-// Dismiss one of the owner's AI-edit jobs from the indicator.
-export const deleteAiJobSchema = z.object({
-  jobId: z.uuid(),
-});
-
-export type DeleteAiJobInput = z.infer<typeof deleteAiJobSchema>;

@@ -31,7 +31,7 @@ export default async function EditSpacePage({
   }
 
   const contentType = resolveContentType(space);
-  const Builder = contentType === "html" ? MetadataOnlyEditor : BUILDER_REGISTRY[contentType].component;
+  const Builder = contentType === "html" || contentType === "ai" ? MetadataOnlyEditor : BUILDER_REGISTRY[contentType].component;
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">

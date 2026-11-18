@@ -1,7 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { embedAgentDocumentSchema } from "../schemas";
+import { z } from "zod";
+
+const embedAgentDocumentSchema = z.object({ id: z.uuid() });
 
 export type EmbedAgentDocumentResult =
   | { ok: true }
@@ -9,8 +11,7 @@ export type EmbedAgentDocumentResult =
 
 // Kick off (re)embedding of a document. Ownership is verified here; the actual
 // chunking + embedding + DB writes happen in the `embed-document` edge function.
-// Callers fire-and-forget after a create/update. Folded in from
-// `POST /api/agent/documents/[id]/embed`.
+// Callers fire-and-forget after a create/update.
 export async function embedAgentDocument(
   id: string
 ): Promise<EmbedAgentDocumentResult> {

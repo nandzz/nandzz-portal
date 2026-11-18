@@ -114,7 +114,7 @@ export function GalleryModal({ onClose, profileId, username, totalCount }: Galle
             </h2>
             <button
               onClick={onClose}
-              aria-label={t.agent.close}
+              aria-label={t.common.close}
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="h-4 w-4" />

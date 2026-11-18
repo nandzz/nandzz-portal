@@ -15,7 +15,6 @@ export { Sidebar } from "./components/Sidebar";
 export { MobileTabBar } from "./components/MobileTabBar";
 export { ProfileVisitorCta } from "./components/ProfileVisitorCta";
 export { NotificationBell } from "./components/NotificationBell";
-export { AiJobsIndicator } from "./components/AiJobsIndicator";
 
 // ── Analytics surfaces ───────────────────────────────────────────────────────
 export { ViewsChart } from "./components/ViewsChart";
@@ -29,5 +28,3 @@ export { recordProfileView } from "./actions/record-profile-view";
 export type { RecordProfileViewResult } from "./actions/record-profile-view";
 export { markNotificationsRead } from "./actions/mark-notifications-read";
 export type { MarkNotificationsReadResult } from "./actions/mark-notifications-read";
-export { deleteAiJob } from "./actions/delete-ai-job";
-export type { DeleteAiJobResult } from "./actions/delete-ai-job";

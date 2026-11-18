@@ -1,51 +1,24 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import type { Profile, WidgetInstanceWithCatalog } from "@/lib/types";
-import { useFeatureFlags } from "@/features/auth/AuthContext";
-// Direct paths: the feature barrels drag their whole UI (booking flow, agent
-// chat + markdown) into every profile.
+// Direct path: the feature barrel drags the whole booking UI into every profile.
 import { CalendarWidgetEmbed } from "@/features/booking/components/calendar/CalendarWidgetEmbed";
-
-// Only profiles with a live agent widget (and the AI flag on) render it.
-const AgentWidgetCard = dynamic(() =>
-  import("@/features/agent/components/AgentWidgetCard").then((m) => m.AgentWidgetCard),
-);
 
 interface WidgetStripProps {
   widgets: WidgetInstanceWithCatalog[];
   profile: Profile;
-  isAuthenticated?: boolean;
   align?: "center" | "start";
   className?: string;
 }
 
 // Renders the row of widget triggers that sit on top of a profile. Each widget
 // type maps to its own embed component; unknown types are skipped.
-export function WidgetStrip({ widgets, profile, isAuthenticated = false, align = "center", className = "mt-5" }: WidgetStripProps) {
-  const { ai } = useFeatureFlags();
+export function WidgetStrip({ widgets, profile, align = "center", className = "mt-5" }: WidgetStripProps) {
   return (
     <div className={`${className} flex flex-wrap gap-2 ${align === "start" ? "justify-start" : "w-full justify-center"}`}>
-      {widgets.map((w) => {
-        switch (w.catalog.slug) {
-          case "calendar":
-            return <CalendarWidgetEmbed key={w.id} instance={w} profile={profile} />;
-          case "agent":
-            // The agent is an AI surface — hidden while the AI flag is off even
-            // if an owner still has a live agent widget instance.
-            if (!ai) return null;
-            return (
-              <AgentWidgetCard
-                key={w.id}
-                instance={w}
-                profile={profile}
-                isAuthenticated={isAuthenticated}
-              />
-            );
-          default:
-            return null;
-        }
-      })}
+      {widgets.map((w) =>
+        w.catalog.slug === "calendar" ? <CalendarWidgetEmbed key={w.id} instance={w} profile={profile} /> : null,
+      )}
     </div>
   );
 }

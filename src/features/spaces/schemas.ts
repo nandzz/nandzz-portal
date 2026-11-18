@@ -5,10 +5,6 @@ export const spaceIdSchema = z.object({ id: z.uuid() });
 
 export type SpaceIdInput = z.infer<typeof spaceIdSchema>;
 
-// The AI-edit job rows live in `ai_edit_jobs` (also `gen_random_uuid()`).
-export const aiEditJobIdSchema = z.object({ jobId: z.uuid() });
-
-export type AiEditJobIdInput = z.infer<typeof aiEditJobIdSchema>;
 
 // In-place edit of an existing space row. `id` identifies the row; every other
 // field is an optional column write. RLS guards ownership — the action only

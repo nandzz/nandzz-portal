@@ -31,22 +31,10 @@ project_id = "nandzz"
 # message_service_sid = "VA…"         # Twilio Verify Service SID
 # auth_token = "env(TWILIO_AUTH_TOKEN)"
 
-[functions.agent-chat]
-verify_jwt = true
-
 [functions.embed-document]
 verify_jwt = true
 
 [functions.whatsapp-webhook]
-verify_jwt = false
-
-[functions.space-ai-edit]
-verify_jwt = true
-
-[functions.call-booking]
-verify_jwt = true
-
-[functions.anthropic-webhook]
 verify_jwt = false
 
 [functions.stripe-webhook]

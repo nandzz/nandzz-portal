@@ -4,6 +4,30 @@ import { IS_DEV_ENV } from "./src/lib/flags";
 // Supabase project host — used in CSP directives
 const supabaseHost = "*.supabase.co";
 
+// Site-wide Content-Security-Policy: restrict resource origins to known safe
+// sources. 'unsafe-inline' is needed for Tailwind/shadcn runtime styles.
+// frame-src is open because user spaces embed arbitrary iframes.
+const SITE_CSP = [
+  `default-src 'self'`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+  `style-src 'self' 'unsafe-inline'`,
+  `img-src 'self' data: blob: https://${supabaseHost} https://api.producthunt.com https://cdn.buymeacoffee.com https://img.youtube.com https://i.vimeocdn.com https://icons.duckduckgo.com`,
+  `font-src 'self'`,
+  // Demo pitch videos stream from the public `demo-videos` bucket.
+  `media-src 'self' blob: https://${supabaseHost}`,
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://api.web3forms.com https://vimeo.com https://places.googleapis.com`,
+  `worker-src 'self'`,
+  `frame-src *`,
+  `object-src 'none'`,
+  `base-uri 'self'`,
+  `form-action 'self'`,
+];
+
+// The embeddable booking page ("/<username>/booking/embed") is the one route
+// any website may frame — businesses paste it into their own site. Every other
+// route keeps X-Frame-Options: SAMEORIGIN (clickjacking protection).
+const EMBED_ROUTE = "/:username/booking/embed";
+
 
 const nextConfig: NextConfig = {
   // Turbopack's on-disk dev cache (.next/dev/cache/turbopack) isn't pruned and
@@ -24,8 +48,6 @@ const nextConfig: NextConfig = {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     // Drives FEATURES.businessAgent (My Agent, dev only) — see src/lib/flags.ts.
     BUSINESS_AGENT_ENABLED: IS_DEV_ENV ? "1" : "0",
-    // Drives FEATURES.callAssist (Today call assistant prototype, dev only).
-    CALL_ASSIST_ENABLED: IS_DEV_ENV ? "1" : "0",
   },
   images: {
     // Default is 4h. Every image the optimizer sees is either at a unique path
@@ -84,19 +106,13 @@ const nextConfig: NextConfig = {
             value: "nosniff",
           },
           {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-          {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
           {
             key: "Permissions-Policy",
             value:
-              // Mic allowed for our own origin in dev only: the Today tab's call
-              // assistant prototype (FEATURES.callAssist) records the call.
-              `camera=(), microphone=${IS_DEV_ENV ? "(self)" : "()"}, geolocation=(), browsing-topics=(), payment=(), usb=(), serial=(), compute-pressure=()`,
+              "camera=(), microphone=(), geolocation=(), browsing-topics=(), payment=(), usb=(), serial=(), compute-pressure=()",
           },
           {
             key: "X-DNS-Prefetch-Control",
@@ -107,25 +123,26 @@ const nextConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           {
-            // Content-Security-Policy: restrict resource origins to known safe sources.
-            // 'unsafe-inline' is needed for Tailwind/shadcn runtime styles.
-            // frame-src is open because user spaces embed arbitrary iframes.
             key: "Content-Security-Policy",
-            value: [
-              `default-src 'self'`,
-              `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
-              `style-src 'self' 'unsafe-inline'`,
-              `img-src 'self' data: blob: https://${supabaseHost} https://api.producthunt.com https://cdn.buymeacoffee.com https://img.youtube.com https://i.vimeocdn.com https://icons.duckduckgo.com`,
-              `font-src 'self'`,
-              // Demo pitch videos stream from the public `demo-videos` bucket.
-              `media-src 'self' blob: https://${supabaseHost}`,
-              `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://api.web3forms.com https://vimeo.com https://places.googleapis.com`,
-              `worker-src 'self'`,
-              `frame-src *`,
-              `object-src 'none'`,
-              `base-uri 'self'`,
-              `form-action 'self'`,
-            ].join("; "),
+            value: SITE_CSP.join("; "),
+          },
+        ],
+      },
+      // Framing protection on every route except the booking embed. Kept in
+      // its own entry because a later entry can override a header but never
+      // remove it.
+      {
+        source: "/:path((?!.+/booking/embed$).*)",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      // Booking embed: framable from any site (see EMBED_ROUTE). Overrides
+      // the site-wide CSP above, which is otherwise identical.
+      {
+        source: EMBED_ROUTE,
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: [...SITE_CSP, `frame-ancestors *`].join("; "),
           },
         ],
       },
