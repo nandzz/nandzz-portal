@@ -43,7 +43,6 @@ const base: PlanEntitlements = {
   hasStyling: false,
   hideBranding: false,
   hasGoogleReview: false,
-  monthlyCredits: 0,
 };
 
 describe("fetchPublicProfile plan gating", () => {

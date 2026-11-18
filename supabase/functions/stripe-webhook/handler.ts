@@ -2,13 +2,10 @@
 // it can be unit-tested without spinning up an HTTP server, Deno.env, or a
 // real Supabase / Stripe client.
 //
-// Two payment shapes flow through here:
-//   * credit-pack one-off purchases  → checkout.session.completed / charge.refunded
-//   * site-wide plan subscriptions   → customer.subscription.* / invoice.paid
-//
-// Plan events map the subscription's Stripe price id → subscription_plans.slug
-// (looked up in the DB) and then drive the profile's plan state via set_user_plan
-// (+ refill_plan_credits when a billing period advances / an invoice is paid).
+// Site-wide plan subscriptions flow through here (customer.subscription.* /
+// invoice.paid). Plan events map the subscription's Stripe price id →
+// subscription_plans.slug (looked up in the DB) and then drive the profile's
+// plan state via set_user_plan. Any other event is acknowledged and ignored.
 //
 // NOTE: widget access is now gated by the site plan — the old per-instance widget
 // subscription model is gone. Legacy per-instance subscriptions can still exist
@@ -41,11 +38,6 @@ export interface AdminClientLike {
   from(table: string): QueryBuilder;
 }
 
-export interface LedgerRow {
-  user_id: string;
-  delta: number;
-}
-
 export interface HandlerResult {
   status: number;
   body: Record<string, unknown>;
@@ -69,10 +61,6 @@ export async function handleStripeEvent(
   logger: Logger = noopLogger,
 ): Promise<HandlerResult> {
   switch (event.type) {
-    case "checkout.session.completed":
-      return handleCheckoutCompleted(event, admin, logger);
-    case "charge.refunded":
-      return handleChargeRefunded(event, admin, logger);
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
@@ -122,7 +110,7 @@ function invoiceSubscriptionMetadata(inv: any): Record<string, string> {
 // Map a Stripe recurring price id → our plan slug. A plan can have two Prices —
 // monthly (stripe_price_id) and annual (stripe_annual_price_id) — so we match
 // either. Returns null when the price isn't one of our known plans (e.g. a stale
-// price, or a credit-pack price).
+// price).
 async function lookupPlanSlugByPrice(
   admin: AdminClientLike,
   priceId: string,
@@ -253,7 +241,7 @@ async function handlePlanSubscription(
   return { status: 200, body: { received: true, plan_slug: slug, plan_status: status } };
 }
 
-// ── invoice.paid → refill the monthly allowance ──────────────────────────────
+// ── invoice.paid → keep the period end current ──────────────────────────────
 
 async function handleInvoicePaid(
   event: Stripe.Event,
@@ -291,7 +279,7 @@ async function handleInvoicePaid(
   const periodEndUnix: number | null = line.period?.end ?? null;
   const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null;
 
-  // Keep plan state current (period end), then refill this period's allowance.
+  // Keep plan state current (period end).
   const { error: planErr } = await admin.rpc("set_user_plan", {
     p_user_id: userId,
     p_plan_slug: slug,
@@ -304,131 +292,6 @@ async function handleInvoicePaid(
     return { status: 500, body: { error: "plan_update_failed" } };
   }
 
-  const { error: refillErr } = await admin.rpc("refill_plan_credits", {
-    p_user_id: userId,
-    p_plan_slug: slug,
-  });
-  if (refillErr) {
-    logger.error(`refill_plan_credits failed`, refillErr);
-    return { status: 500, body: { error: "refill_failed" } };
-  }
-
-  logger.info(`invoice ${inv.id} paid → user=${userId} slug=${slug} refilled`);
-  return { status: 200, body: { received: true, refilled: slug } };
-}
-
-// ── checkout.session.completed → credit-pack grant ───────────────────────────
-
-async function handleCheckoutCompleted(
-  event: Stripe.Event,
-  admin: AdminClientLike,
-  logger: Logger,
-): Promise<HandlerResult> {
-  const session = event.data.object as Stripe.Checkout.Session;
-  const userId = session.metadata?.user_id;
-  const packId = session.metadata?.credit_pack_id;
-  const credits = Number(session.metadata?.credits ?? 0);
-  const paymentIntentId =
-    typeof session.payment_intent === "string"
-      ? session.payment_intent
-      : session.payment_intent?.id ?? null;
-
-  // Plan-subscription checkouts also emit this event but carry no credit_pack_id;
-  // they're handled via customer.subscription.* / invoice.paid, so skip here.
-  if (!userId || !packId || !credits) {
-    logger.warn(
-      `session=${session.id} missing credit-pack metadata — skipping (userId:${!!userId} packId:${!!packId} credits:${credits})`,
-    );
-    return { status: 200, body: { received: true, skipped: "missing_metadata" } };
-  }
-
-  const { error: grantErr } = await admin.rpc("grant_credits", {
-    p_user_id: userId,
-    p_bucket: "paid",
-    p_amount: credits,
-    p_reason: "stripe_purchase",
-    p_stripe_event_id: event.id,
-    p_payment_intent_id: paymentIntentId,
-    p_metadata: {
-      credit_pack_id: packId,
-      pack_name: session.metadata?.pack_name,
-      pack_price_cents: Number(session.metadata?.pack_price_cents ?? 0),
-      currency: session.currency,
-      session_id: session.id,
-    },
-  });
-
-  if (grantErr) {
-    logger.error(`grant_credits failed`, grantErr);
-    return { status: 500, body: { error: "grant_failed" } };
-  }
-
-  logger.info(`granted ${credits} credits to user=${userId}`);
-  return { status: 200, body: { received: true, granted: credits } };
-}
-
-async function handleChargeRefunded(
-  event: Stripe.Event,
-  admin: AdminClientLike,
-  logger: Logger,
-): Promise<HandlerResult> {
-  const charge = event.data.object as Stripe.Charge;
-  const paymentIntentId =
-    typeof charge.payment_intent === "string"
-      ? charge.payment_intent
-      : charge.payment_intent?.id;
-
-  if (!paymentIntentId) {
-    logger.warn(`charge=${charge.id} has no payment_intent — skipping`);
-    return { status: 200, body: { received: true, skipped: "no_payment_intent" } };
-  }
-
-  const { data: originalLedger, error: lookupErr } = await admin
-    .from("credit_ledger")
-    .select("user_id, delta")
-    .eq("stripe_payment_intent_id", paymentIntentId)
-    .eq("reason", "stripe_purchase")
-    .maybeSingle();
-
-  if (lookupErr) {
-    logger.error(`credit_ledger lookup failed for pi=${paymentIntentId}`, lookupErr);
-    return { status: 500, body: { error: "lookup_failed" } };
-  }
-
-  if (!originalLedger) {
-    logger.warn(
-      `refund for pi=${paymentIntentId} has no matching grant — acking without clawback`,
-    );
-    return { status: 200, body: { received: true, skipped: "no_matching_grant" } };
-  }
-
-  const refundedAmount = charge.amount_refunded ?? 0;
-  const proportion = charge.amount > 0 ? refundedAmount / charge.amount : 0;
-  const creditsToClaw = Math.ceil((originalLedger.delta as number) * proportion);
-
-  if (creditsToClaw <= 0) {
-    logger.info(`nothing to claw back (claw=${creditsToClaw})`);
-    return { status: 200, body: { received: true, clawed: 0 } };
-  }
-
-  const { error: refundErr } = await admin.rpc("grant_credits", {
-    p_user_id: originalLedger.user_id,
-    p_bucket: "paid",
-    p_amount: -creditsToClaw,
-    p_reason: "refund",
-    p_stripe_event_id: event.id,
-    p_payment_intent_id: paymentIntentId,
-    p_metadata: {
-      charge_id: charge.id,
-      refunded_cents: refundedAmount,
-    },
-  });
-
-  if (refundErr) {
-    logger.error(`refund grant failed`, refundErr);
-    return { status: 500, body: { error: "refund_failed" } };
-  }
-
-  logger.info(`clawed back ${creditsToClaw} credits from user=${originalLedger.user_id}`);
-  return { status: 200, body: { received: true, clawed: creditsToClaw } };
+  logger.info(`invoice ${inv.id} paid → user=${userId} slug=${slug}`);
+  return { status: 200, body: { received: true, plan: slug } };
 }

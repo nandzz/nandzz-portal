@@ -1,5 +1,4 @@
 import { getPublicPricing } from "@/lib/pricing";
-import { getFeatureFlags } from "@/lib/featureFlags";
 
 export const revalidate = 300;
 
@@ -14,10 +13,7 @@ function formatPrice(cents: number, currency: string): string {
 // Machine-readable pricing for AI agents comparing tools on a buyer's behalf.
 // Mirrors the human /pricing page but stays trivially parseable (no JS, no auth).
 export async function GET() {
-  const [{ plans, packs }, { ai: aiEnabled }] = await Promise.all([
-    getPublicPricing(),
-    getFeatureFlags(),
-  ]);
+  const { plans } = await getPublicPricing();
 
   const lines: string[] = ["# Nandzz pricing", ""];
 
@@ -47,38 +43,13 @@ export async function GET() {
       lines.push(`- Custom page style (colours, buttons, layout): ${plan.has_styling ? "Yes" : "No"}`);
       lines.push(`- Nandzz badge on the page: ${plan.hide_branding ? "Hidden" : "Shown"}`);
       lines.push(
-        `- Booking${aiEnabled ? " & AI Agent" : ""}: ${plan.has_widgets ? "Yes" : "No"}`
+        `- Booking: ${plan.has_widgets ? "Yes" : "No"}`
       );
-      if (aiEnabled) {
-        lines.push(
-          `- AI credits: ${
-            plan.monthly_credits > 0
-              ? `${plan.monthly_credits.toLocaleString("en-US")} per month`
-              : "None"
-          }`
-        );
-      }
       lines.push(`- MCP access (connect Claude): ${plan.has_mcp ? "Yes" : "No"}`);
       lines.push(`- Analytics: ${plan.has_analytics ? "Yes" : "No"}`);
       lines.push("");
     }
 
-    if (aiEnabled && packs.length > 0) {
-      lines.push("## Top-up AI credit packs");
-      lines.push(
-        "Available on paid plans. Purchased credits never expire and are used only after the monthly plan allowance runs out."
-      );
-      lines.push("");
-      for (const pack of packs) {
-        lines.push(
-          `- ${pack.name}: ${pack.credits.toLocaleString("en-US")} credits for ${formatPrice(
-            pack.price_cents,
-            pack.currency
-          )}`
-        );
-      }
-      lines.push("");
-    }
   }
 
   lines.push("---");

@@ -13,7 +13,6 @@ import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { getTranslations } from "@/lib/i18n/dictionaries";
 import { createClient } from "@/lib/supabase/server";
 import { getChromeProfile } from "@/features/analytics/server";
-import { getFeatureFlags } from "@/lib/featureFlags";
 import { getEntitlementsLookup } from "@/lib/plan";
 import { SIDEBAR_COLLAPSED_COOKIE } from "@/lib/layout/appShell";
 import { cookies } from "next/headers";
@@ -124,10 +123,9 @@ export default async function RootLayout({
   // instance each await is a Supabase round-trip, and chaining them was a
   // visible chunk of first-request latency.
   const supabase = await createClient();
-  const [initialLocale, { data: claimsData }, initialFlags, cookieStore] = await Promise.all([
+  const [initialLocale, { data: claimsData }, cookieStore] = await Promise.all([
     getCurrentLocale(),
     supabase.auth.getClaims(),
-    getFeatureFlags(),
     cookies(),
   ]);
   const initialUserId = claimsData?.claims?.sub ?? null;
@@ -174,7 +172,6 @@ export default async function RootLayout({
                 initialUserId={initialUserId}
                 initialProfile={initialProfile}
                 initialEntitlements={initialEntitlements}
-                initialFlags={initialFlags}
               >
                 <PostHogInit />
                 <AppChrome initialCollapsed={initialSidebarCollapsed}>{children}</AppChrome>

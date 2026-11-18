@@ -1,11 +1,10 @@
-// Stripe webhook → credit grant.
-// Runs as a Supabase edge function so credit grants survive Portal outages.
+// Stripe webhook → site plan state.
+// Runs as a Supabase edge function so plan updates survive Portal outages.
 // Register the function URL in Stripe Dashboard → Developers → Webhooks
 // per env; each env has its own signing secret.
 //   URL: https://<project-ref>.supabase.co/functions/v1/stripe-webhook
-//   Events: checkout.session.completed, charge.refunded  (credit packs),
-//           customer.subscription.created, customer.subscription.updated,
-//           customer.subscription.deleted, invoice.paid   (plan subscriptions)
+//   Events: customer.subscription.created, customer.subscription.updated,
+//           customer.subscription.deleted, invoice.paid
 //
 // Secrets (set with `supabase secrets set --project-ref <ref> ...`):
 //   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET

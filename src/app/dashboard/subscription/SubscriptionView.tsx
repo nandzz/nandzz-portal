@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Sparkles,
   Check,
-  History,
   LayoutGrid,
-  ChevronLeft,
-  ChevronRight,
   Lock,
   Layers,
   CalendarCheck,
@@ -19,19 +16,15 @@ import {
   BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
-import { BuyCreditsButton } from "./BuyCreditsButton";
 import { PlanCheckoutButton } from "./PlanCheckoutButton";
 import { ManageBillingButton } from "./ManageBillingButton";
 import { BillingIntervalToggle } from "./BillingIntervalToggle";
 import { WelcomePlanModal } from "./WelcomePlanModal";
-import type { CreditPack, CreditLedgerEntry, SubscriptionPlan } from "@/lib/types";
+import type { SubscriptionPlan } from "@/lib/types";
 import { getUserPlan } from "@/lib/plan";
-import { getFeatureFlags } from "@/lib/featureFlags";
 import { PageShell } from "@/components/layout/PageShell";
 import { getServerTranslations } from "@/lib/i18n/server";
 import type { Translations } from "@/lib/i18n/translations";
-
-const PAGE_SIZE = 25;
 
 function formatPrice(cents: number, currency: string): string {
   return new Intl.NumberFormat(undefined, {
@@ -90,36 +83,17 @@ export async function SubscriptionView({
   const userId = await getUserIdFromClaims(supabase);
   if (!userId) redirect("/login?redirect=/dashboard/subscription");
 
-  const page = Math.max(1, Number(params.page) || 1);
-  const offset = (page - 1) * PAGE_SIZE;
 
-  const [plan, { data: plans }, { data: packs }, { data: ledger, count }] = await Promise.all([
+  const [plan, { data: plans }] = await Promise.all([
     getUserPlan(userId),
     supabase
       .from("subscription_plans")
       .select("*")
       .eq("active", true)
       .order("sort_order", { ascending: true }),
-    supabase
-      .from("credit_packs")
-      .select("*")
-      .eq("active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("credit_ledger")
-      // The DB column is still named `balance_after_free`, but it now holds the
-      // plan-bucket balance — alias it so readers see `balance_after_plan`.
-      .select("*, balance_after_plan:balance_after_free", { count: "exact" })
-      .eq("user_id", userId)
-      // Reservation hold/release/refund rows are internal bookkeeping — the
-      // user-visible delta is captured by the corresponding usage or refund row.
-      .not("reason", "in", "(llm_reservation_hold,llm_reservation_release,llm_reservation_refund)")
-      .order("created_at", { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1),
   ]);
 
-  const [{ ai: aiEnabled }, t, welcomeUsername] = await Promise.all([
-    getFeatureFlags(),
+  const [t, welcomeUsername] = await Promise.all([
     getServerTranslations(),
     // Only the welcome modal needs it (Starter's "Style your page" link).
     welcome
@@ -149,8 +123,6 @@ export async function SubscriptionView({
   const currentPlanRow = subscriptionPlans.find((p) => p.slug === plan.slug);
   const currentSort = currentPlanRow?.sort_order ?? 0;
 
-  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
-
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -173,7 +145,7 @@ export async function SubscriptionView({
         return (
           <WelcomePlanModal
             planName={welcomePlan?.name ?? plan.name}
-            features={welcomePlan ? buildPlanFeatures(welcomePlan, aiEnabled, ts).filter((f) => f.ok).map((f) => f.title) : []}
+            features={welcomePlan ? buildPlanFeatures(welcomePlan, ts).filter((f) => f.ok).map((f) => f.title) : []}
             trialDays={welcome.trialDays}
             trialEnd={formatDate(welcome.trialEnd)}
             activated={plan.slug === welcome.planSlug}
@@ -190,7 +162,7 @@ export async function SubscriptionView({
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{ts.title}</h1>
             <p className="text-muted-foreground mt-0.5">
-              {aiEnabled ? ts.subtitleWithAi : ts.subtitle}
+              {ts.subtitle}
             </p>
           </div>
         </div>
@@ -322,7 +294,6 @@ export async function SubscriptionView({
                     <p className="font-semibold">{ts.onProTitle}</p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {ts.onProDesc}
-                      {aiEnabled && ts.onProDescAi}
                     </p>
                   </div>
                 </div>
@@ -422,7 +393,7 @@ export async function SubscriptionView({
                             {ts.everythingYouGet}
                           </p>
                           <ul className="mt-5 grid gap-x-6 gap-y-5 sm:grid-cols-2">
-                            {buildPlanFeatures(p, aiEnabled, ts).map((f) => (
+                            {buildPlanFeatures(p, ts).map((f) => (
                               <FeatureRow key={f.title} {...f} />
                             ))}
                           </ul>
@@ -496,12 +467,7 @@ export async function SubscriptionView({
                           <PlanFeature ok={p.has_styling}>{ts.customStyle}</PlanFeature>
                           <PlanFeature ok={p.hide_branding}>{ts.noBadge}</PlanFeature>
                           <PlanFeature ok={p.has_analytics}>{ts.analytics}</PlanFeature>
-                          <PlanFeature ok={p.has_widgets}>{aiEnabled ? ts.bookingAndAgent : ts.booking}</PlanFeature>
-                          {aiEnabled && (
-                            <PlanFeature ok={p.monthly_credits > 0}>
-                              {p.monthly_credits > 0 ? ts.aiCreditsPerMo.replace("{count}", p.monthly_credits.toLocaleString()) : ts.noAiCredits}
-                            </PlanFeature>
-                          )}
+                          <PlanFeature ok={p.has_widgets}>{ts.booking}</PlanFeature>
                           <PlanFeature ok={p.has_mcp}>{ts.mcpAccess}</PlanFeature>
                         </ul>
                         <div className="mt-auto">
@@ -557,171 +523,6 @@ export async function SubscriptionView({
           );
         })()}
 
-        {/* Credit balances — AI only */}
-        {aiEnabled && (
-        <div className="rounded-2xl border border-border/60 bg-card p-6 mb-8">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{ts.aiCredits}</p>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="rounded-lg bg-muted/40 border border-border/40 px-4 py-3">
-              <p className="text-xs text-muted-foreground">{ts.monthlyPlanCredits}</p>
-              <p className="font-semibold text-2xl mt-0.5">{plan.planCredits.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {periodEnd ? ts.resetsOn.replace("{date}", periodEnd) : ts.resetsEachPeriod}
-              </p>
-            </div>
-            <div className="rounded-lg bg-violet-50/40 dark:bg-violet-950/30 border border-violet-200/40 dark:border-violet-800/40 px-4 py-3">
-              <p className="text-xs text-violet-700/80 dark:text-violet-300/80">{ts.purchasedCredits}</p>
-              <p className="font-semibold text-2xl mt-0.5 text-violet-700 dark:text-violet-300">
-                {plan.paidCredits.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">{ts.neverExpires}</p>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-4">
-            {ts.creditsSpentNote}
-          </p>
-        </div>
-        )}
-
-        {/* Buy more credits — paid plans only. AI only. */}
-        {aiEnabled && (isPaid ? (
-          packs && packs.length > 0 ? (
-            <div className="mb-10">
-              <h2 className="text-lg font-semibold mb-4">{ts.buyMoreCredits}</h2>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {(packs as CreditPack[]).map((pack, idx) => (
-                  <div
-                    key={pack.id}
-                    className={`relative rounded-2xl border p-6 flex flex-col ${
-                      idx === 1
-                        ? "border-violet-500 bg-card shadow-lg shadow-violet-500/10"
-                        : "border-border/60 bg-card"
-                    }`}
-                  >
-                    {idx === 1 && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-600 px-3 py-0.5 text-[10px] font-semibold text-white">
-                          <Sparkles className="h-2.5 w-2.5" />
-                          {ts.bestValue}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-bold">{formatPrice(pack.price_cents, pack.currency)}</span>
-                      <span className="text-sm font-medium text-muted-foreground">{ts.oneTime}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{ts.creditsCount.replace("{count}", pack.credits.toLocaleString())}</p>
-                    <div className="mt-5">
-                      <BuyCreditsButton packId={pack.id} credits={pack.credits} highlighted={idx === 1} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                {ts.purchasedNeverExpireNote}
-              </p>
-            </div>
-          ) : null
-        ) : (
-          <div className="mb-10 rounded-2xl border border-violet-200 bg-violet-50/60 p-6 text-center dark:border-violet-900/50 dark:bg-violet-950/20">
-            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-900/40">
-              <Lock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-            </div>
-            <h2 className="text-lg font-semibold">{ts.upgradeToUseAi}</h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-              {ts.upgradeToUseAiDesc}
-            </p>
-          </div>
-        ))}
-
-        {/* Ledger — AI usage/credit activity only */}
-        {aiEnabled && (
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <History className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{ts.activity}</h2>
-          </div>
-          {ledger && ledger.length > 0 ? (
-            <>
-              <div className="rounded-xl border border-border/60 bg-card overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead>
-                    <tr className="border-b border-border/40 bg-muted/30">
-                      <th className="text-left font-medium text-xs text-muted-foreground px-4 py-2.5">{ts.colWhen}</th>
-                      <th className="text-left font-medium text-xs text-muted-foreground px-4 py-2.5">{ts.colReason}</th>
-                      <th className="text-left font-medium text-xs text-muted-foreground px-4 py-2.5">{ts.colBucket}</th>
-                      <th className="text-right font-medium text-xs text-muted-foreground px-4 py-2.5">{ts.colChange}</th>
-                      <th className="text-right font-medium text-xs text-muted-foreground px-4 py-2.5">{ts.colBalance}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(ledger as CreditLedgerEntry[]).map((entry) => (
-                      <tr key={entry.id} className="border-b border-border/30 last:border-0">
-                        <td className="px-4 py-2.5 text-muted-foreground text-xs">
-                          {new Date(entry.created_at).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="px-4 py-2.5 font-medium">{formatReason(entry.reason, ts)}</td>
-                        <td className="px-4 py-2.5 text-muted-foreground text-xs">
-                          {entry.bucket === "plan" ? ts.bucketMonthly : ts.bucketPurchased}
-                        </td>
-                        <td
-                          className={`px-4 py-2.5 text-right font-mono tabular-nums font-semibold ${
-                            entry.delta < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
-                          }`}
-                        >
-                          {entry.delta > 0 ? "+" : ""}
-                          {entry.delta.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-muted-foreground text-xs tabular-nums">
-                          {(entry.balance_after_plan + entry.balance_after_paid).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">{ts.pageOf.replace("{page}", String(page)).replace("{total}", String(totalPages))}</p>
-                  <div className="flex items-center gap-2">
-                    {page > 1 ? (
-                      <Link href={`/dashboard/subscription?page=${page - 1}`}>
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <ChevronLeft className="h-4 w-4" /> {ts.prev}
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button variant="outline" size="sm" className="gap-1" disabled>
-                        <ChevronLeft className="h-4 w-4" /> {ts.prev}
-                      </Button>
-                    )}
-                    {page < totalPages ? (
-                      <Link href={`/dashboard/subscription?page=${page + 1}`}>
-                        <Button variant="outline" size="sm" className="gap-1">
-                          {ts.next} <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button variant="outline" size="sm" className="gap-1" disabled>
-                        {ts.next} <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">{ts.noActivity}</p>
-          )}
-        </div>
-        )}
-
         <div className="pt-8">
           <Link href="/dashboard/contents">
             <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
@@ -759,7 +560,6 @@ type PlanFeatureItem = {
 // so the plan reads as value rather than a checklist of nouns.
 function buildPlanFeatures(
   p: SubscriptionPlan,
-  aiEnabled: boolean,
   ts: Translations["subscription"],
 ): PlanFeatureItem[] {
   const items: PlanFeatureItem[] = [
@@ -789,19 +589,11 @@ function buildPlanFeatures(
     },
     {
       icon: CalendarCheck,
-      title: aiEnabled ? ts.bookingAndAgent : ts.booking,
-      description: aiEnabled ? ts.bookingAgentDesc : ts.bookingDesc,
+      title: ts.booking,
+      description: ts.bookingDesc,
       ok: p.has_widgets,
     },
   ];
-  if (aiEnabled) {
-    items.push({
-      icon: Sparkles,
-      title: p.monthly_credits > 0 ? ts.aiCreditsTitle.replace("{count}", p.monthly_credits.toLocaleString()) : ts.noAiCredits,
-      description: ts.aiCreditsDesc,
-      ok: p.monthly_credits > 0,
-    });
-  }
   items.push(
     {
       icon: Plug,
@@ -858,19 +650,4 @@ function PlanFeature({ ok, children }: { ok: boolean; children: React.ReactNode 
       <span>{children}</span>
     </li>
   );
-}
-
-function formatReason(reason: string, ts: Translations["subscription"]): string {
-  const map: Record<string, string> = {
-    plan_refill: ts.reasonPlanRefill,
-    signup_grant: ts.reasonSignupGrant,
-    admin_grant: ts.reasonAdminGrant,
-    admin_revoke: ts.reasonAdminRevoke,
-    stripe_purchase: ts.reasonStripePurchase,
-    llm_agent_chat: ts.reasonLlmAgentChat,
-    llm_page_editor: ts.reasonLlmPageEditor,
-    refund: ts.reasonRefund,
-    backfill: ts.reasonBackfill,
-  };
-  return map[reason] ?? reason;
 }

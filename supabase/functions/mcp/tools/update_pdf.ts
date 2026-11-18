@@ -15,7 +15,7 @@ const MAX_PDF_BYTES = 10 * 1024 * 1024; // matches space-pdfs bucket limit
 export const updatePdfDef: ToolDefinition = {
   name: "update_pdf",
   description:
-    "Replace the PDF asset of an already-published space. Free (no credits). Provide space_id XOR url (the current pdf_url), plus content_base64 XOR source_url. Metadata is handled by update_space_metadata.",
+    "Replace the PDF asset of an already-published space. Provide space_id XOR url (the current pdf_url), plus content_base64 XOR source_url. Metadata is handled by update_space_metadata.",
   inputSchema: {
     type: "object",
     properties: {

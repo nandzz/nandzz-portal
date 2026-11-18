@@ -82,165 +82,6 @@ function makeAdmin(opts: FakeAdminOptions = {}): {
 
 // ---- Event factories --------------------------------------------------------
 
-function checkoutEvent(overrides: {
-  metadata?: Record<string, string> | null;
-  paymentIntent?: string | { id: string } | null;
-  sessionId?: string;
-  currency?: string;
-  eventId?: string;
-}): Stripe.Event {
-  const paymentIntent =
-    "paymentIntent" in overrides ? overrides.paymentIntent : "pi_test_123";
-  return {
-    id: overrides.eventId ?? "evt_test_checkout",
-    type: "checkout.session.completed",
-    livemode: false,
-    data: {
-      object: {
-        id: overrides.sessionId ?? "cs_test_123",
-        payment_intent: paymentIntent,
-        currency: overrides.currency ?? "eur",
-        metadata:
-          overrides.metadata === undefined
-            ? {
-                user_id: "user-1",
-                credit_pack_id: "pack-1",
-                credits: "500",
-                pack_name: "Starter",
-                pack_price_cents: "500",
-              }
-            : overrides.metadata ?? {},
-      } as unknown as Stripe.Checkout.Session,
-    },
-  } as unknown as Stripe.Event;
-}
-
-function refundEvent(overrides: {
-  paymentIntent?: string | { id: string } | null;
-  amount?: number;
-  amountRefunded?: number;
-  chargeId?: string;
-  eventId?: string;
-}): Stripe.Event {
-  const paymentIntent =
-    "paymentIntent" in overrides ? overrides.paymentIntent : "pi_test_123";
-  return {
-    id: overrides.eventId ?? "evt_test_refund",
-    type: "charge.refunded",
-    livemode: false,
-    data: {
-      object: {
-        id: overrides.chargeId ?? "ch_test_123",
-        payment_intent: paymentIntent,
-        amount: overrides.amount ?? 1500,
-        amount_refunded: overrides.amountRefunded ?? 1500,
-      } as unknown as Stripe.Charge,
-    },
-  } as unknown as Stripe.Event;
-}
-
-// ---- checkout.session.completed --------------------------------------------
-
-Deno.test("checkout: grants credits and calls grant_credits with the expected payload", async () => {
-  const { admin, rpcCalls } = makeAdmin();
-  const result = await handleStripeEvent(checkoutEvent({}), admin);
-
-  assertEquals(result.status, 200);
-  assertEquals(result.body.received, true);
-  assertEquals(result.body.granted, 500);
-
-  assertEquals(rpcCalls.length, 1);
-  assertEquals(rpcCalls[0].name, "grant_credits");
-  assertObjectMatch(rpcCalls[0].args, {
-    p_user_id: "user-1",
-    p_bucket: "paid",
-    p_amount: 500,
-    p_reason: "stripe_purchase",
-    p_stripe_event_id: "evt_test_checkout",
-    p_payment_intent_id: "pi_test_123",
-  });
-});
-
-Deno.test("checkout: skips with 200 when metadata is missing (e.g. a plan checkout)", async () => {
-  const { admin, rpcCalls } = makeAdmin();
-  const result = await handleStripeEvent(checkoutEvent({ metadata: {} }), admin);
-
-  assertEquals(result.status, 200);
-  assertEquals(result.body.skipped, "missing_metadata");
-  assertEquals(rpcCalls.length, 0, "no RPC should fire without credit-pack metadata");
-});
-
-Deno.test("checkout: returns 500 when grant_credits errors so Stripe retries", async () => {
-  const { admin, rpcCalls } = makeAdmin({ rpcError: { message: "db_down" } });
-  const result = await handleStripeEvent(checkoutEvent({}), admin);
-
-  assertEquals(result.status, 500);
-  assertEquals(result.body.error, "grant_failed");
-  assertEquals(rpcCalls.length, 1);
-});
-
-// ---- charge.refunded --------------------------------------------------------
-
-Deno.test("refund: acks with 200 when no matching grant is found", async () => {
-  const { admin, rpcCalls, lookupCalls } = makeAdmin({
-    lookups: { credit_ledger: { data: null, error: null } },
-  });
-  const result = await handleStripeEvent(refundEvent({}), admin);
-
-  assertEquals(result.status, 200);
-  assertEquals(result.body.skipped, "no_matching_grant");
-  assertEquals(lookupCalls.length, 1);
-  assertEquals(lookupCalls[0].table, "credit_ledger");
-  assertEquals(lookupCalls[0].filters, [
-    ["stripe_payment_intent_id", "pi_test_123"],
-    ["reason", "stripe_purchase"],
-  ]);
-  assertEquals(rpcCalls.length, 0);
-});
-
-Deno.test("refund: full refund claws back the full grant", async () => {
-  const { admin, rpcCalls } = makeAdmin({
-    lookups: { credit_ledger: { data: { user_id: "user-1", delta: 500 }, error: null } },
-  });
-  const result = await handleStripeEvent(
-    refundEvent({ amount: 1500, amountRefunded: 1500 }),
-    admin,
-  );
-
-  assertEquals(result.status, 200);
-  assertEquals(result.body.clawed, 500);
-  assertEquals(rpcCalls.length, 1);
-  assertObjectMatch(rpcCalls[0].args, {
-    p_user_id: "user-1",
-    p_bucket: "paid",
-    p_amount: -500,
-    p_reason: "refund",
-  });
-});
-
-Deno.test("refund: partial refund claws back proportionally, rounded up", async () => {
-  const { admin, rpcCalls } = makeAdmin({
-    lookups: { credit_ledger: { data: { user_id: "user-1", delta: 500 }, error: null } },
-  });
-  const result = await handleStripeEvent(
-    refundEvent({ amount: 1500, amountRefunded: 750 }),
-    admin,
-  );
-
-  assertEquals(result.status, 200);
-  assertEquals(result.body.clawed, 250);
-  assertEquals(rpcCalls[0].args.p_amount, -250);
-});
-
-Deno.test("refund: returns 500 when the credit_ledger lookup errors", async () => {
-  const { admin } = makeAdmin({
-    lookups: { credit_ledger: { data: null, error: { message: "db_down" } } },
-  });
-  const result = await handleStripeEvent(refundEvent({}), admin);
-  assertEquals(result.status, 500);
-  assertEquals(result.body.error, "lookup_failed");
-});
-
 // ---- customer.subscription.* (plan subscriptions) ---------------------------
 
 function subscriptionEvent(overrides: {
@@ -503,15 +344,15 @@ function invoiceEvent(overrides: {
   } as unknown as Stripe.Event;
 }
 
-Deno.test("invoice.paid: updates plan state and refills the monthly allowance", async () => {
+Deno.test("invoice.paid: updates plan state", async () => {
   const { admin, rpcCalls } = makeAdmin({
     lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
   });
   const result = await handleStripeEvent(invoiceEvent({}), admin);
 
   assertEquals(result.status, 200);
-  assertEquals(result.body.refilled, "pro");
-  assertEquals(rpcCalls.length, 2);
+  assertEquals(result.body.plan, "pro");
+  assertEquals(rpcCalls.length, 1);
   assertEquals(rpcCalls[0].name, "set_user_plan");
   assertObjectMatch(rpcCalls[0].args, {
     p_user_id: "user-1",
@@ -523,8 +364,6 @@ Deno.test("invoice.paid: updates plan state and refills the monthly allowance", 
     rpcCalls[0].args.p_period_end,
     new Date(1_702_700_000 * 1000).toISOString(),
   );
-  assertEquals(rpcCalls[1].name, "refill_plan_credits");
-  assertObjectMatch(rpcCalls[1].args, { p_user_id: "user-1", p_plan_slug: "pro" });
 });
 
 Deno.test("invoice.paid: skips when the price maps to no plan", async () => {
@@ -579,7 +418,7 @@ Deno.test("invoice.paid: resolves user_id from invoice.parent.subscription_detai
 
   const result = await handleStripeEvent(event, admin);
   assertEquals(result.status, 200);
-  assertEquals(result.body.refilled, "pro");
+  assertEquals(result.body.plan, "pro");
   assertEquals(lookupCalls[0].filters, [["or", "stripe_price_id.eq.price_pro,stripe_annual_price_id.eq.price_pro"]]);
   assertEquals(rpcCalls[0].name, "set_user_plan");
   assertEquals(rpcCalls[0].args.p_user_id, "user-7");
@@ -611,13 +450,12 @@ Deno.test("invoice.paid: legacy per-instance widget invoice (instance_id) is ign
   assertEquals(rpcCalls.length, 0);
 });
 
-Deno.test("invoice.paid: returns 500 when refill errors so Stripe retries", async () => {
+Deno.test("invoice.paid: returns 500 when set_user_plan errors so Stripe retries", async () => {
   const { admin } = makeAdmin({
     lookups: { subscription_plans: { data: { slug: "pro" }, error: null } },
     rpcError: { message: "db_down" },
   });
   const result = await handleStripeEvent(invoiceEvent({}), admin);
-  // set_user_plan is the first RPC and it errors first → plan_update_failed.
   assertEquals(result.status, 500);
   assertEquals(result.body.error, "plan_update_failed");
 });

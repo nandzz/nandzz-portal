@@ -26,7 +26,7 @@ export type PublishSpacePayload = {
 export type PublishSpaceError = {
   ok: false;
   // SPACE_LIMIT_REACHED ⇒ Free plan is at its space cap; the UI shows an
-  // upgrade prompt. Publishing itself is free (no credit charge).
+  // upgrade prompt.
   error: "SPACE_LIMIT_REACHED" | "UNAUTHENTICATED" | "FAILED";
   message?: string;
 };

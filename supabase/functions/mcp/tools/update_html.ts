@@ -14,7 +14,7 @@ const MAX_HTML_BYTES = 2 * 1024 * 1024; // 2 MB — matches publish_html
 export const updateHtmlDef: ToolDefinition = {
   name: "update_html",
   description:
-    "Replace the HTML asset of an already-published space. Free (no credits). Provide space_id XOR url (the current html_url). Metadata (title/visibility/hashtags) is handled by update_space_metadata.",
+    "Replace the HTML asset of an already-published space. Provide space_id XOR url (the current html_url). Metadata (title/visibility/hashtags) is handled by update_space_metadata.",
   inputSchema: {
     type: "object",
     required: ["html"],

@@ -11,7 +11,7 @@ import type {
 // `subscription_plans` catalog is seeded, or when a profile points at a slug
 // that has no matching (active) plan row. Mirrors the product spec:
 // 25 spaces, no widgets, no MCP, no analytics, no styling, Nandzz badge shown,
-// no Google review button, zero AI credits.
+// no Google review button.
 const FREE_FALLBACK: { name: string; entitlements: PlanEntitlements } = {
   name: "Free",
   entitlements: {
@@ -22,7 +22,6 @@ const FREE_FALLBACK: { name: string; entitlements: PlanEntitlements } = {
     hasStyling: false,
     hideBranding: false,
     hasGoogleReview: false,
-    monthlyCredits: 0,
   },
 };
 
@@ -35,7 +34,6 @@ function entitlementsFromPlan(plan: SubscriptionPlan): PlanEntitlements {
     hasStyling: plan.has_styling ?? false,
     hideBranding: plan.hide_branding ?? false,
     hasGoogleReview: plan.has_google_review ?? false,
-    monthlyCredits: plan.monthly_credits,
   };
 }
 
@@ -49,8 +47,6 @@ function withDemoPerks(base: PlanEntitlements, isDemo: boolean | null | undefine
 type ProfilePlanRow = {
   plan_slug: string | null;
   plan_status: string | null;
-  plan_credits: number | null;
-  paid_credits: number | null;
   plan_current_period_end: string | null;
   plan_cancel_at_period_end: boolean | null;
   comp_expires_at: string | null;
@@ -69,8 +65,6 @@ function resolve(
     slug,
     name,
     status: profile?.plan_status ?? null,
-    planCredits: profile?.plan_credits ?? 0,
-    paidCredits: profile?.paid_credits ?? 0,
     periodEnd: profile?.plan_current_period_end ?? null,
     cancelAtPeriodEnd: profile?.plan_cancel_at_period_end ?? false,
     compExpiresAt: profile?.comp_expires_at ?? null,
@@ -111,7 +105,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   const [{ data: profile }, plansBySlug] = await Promise.all([
     admin
       .from("profiles")
-      .select("plan_slug, plan_status, plan_credits, paid_credits, plan_current_period_end, plan_cancel_at_period_end, comp_expires_at, is_demo")
+      .select("plan_slug, plan_status, plan_current_period_end, plan_cancel_at_period_end, comp_expires_at, is_demo")
       .eq("id", userId)
       .maybeSingle(),
     loadPlansBySlug(admin),

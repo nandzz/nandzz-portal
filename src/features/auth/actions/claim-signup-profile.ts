@@ -14,9 +14,7 @@ export type ClaimSignupProfileResult =
 
 // Claims the username/profile row for a freshly-signed-in user (the
 // setup-username step, primarily OAuth signups). `claim_signup_profile` is a
-// SECURITY DEFINER RPC that inserts the profile AND writes the welcome-credit
-// grant in one call, so OAuth signups get the same signup_credit_grant that
-// email/password signups get via the handle_new_user trigger.
+// SECURITY DEFINER RPC that inserts the profile row.
 //
 // This is a pure data write, not a session mutation — it reads the already-set
 // cookie session via getUser (defense-in-depth on top of the RPC's own auth.uid

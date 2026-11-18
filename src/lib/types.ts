@@ -82,11 +82,9 @@ export type Profile = {
   category: string | null;
   created_at: string;
   stripe_customer_id?: string | null;
-  paid_credits?: number | null;
   // Site-wide subscription plan (replaces the old free_space_credits / plan_tier model).
   plan_slug?: PlanSlug | null;
   plan_status?: string | null;
-  plan_credits?: number | null;
   plan_stripe_subscription_id?: string | null;
   plan_current_period_end?: string | null;
   /**
@@ -109,40 +107,6 @@ export type Profile = {
   show_links?: boolean | null;
 };
 
-// Credits are now LLM-only. The "plan" bucket is the monthly plan allowance
-// (resets each period); "paid" is purchased top-up credits (never expire).
-export type CreditBucket = "plan" | "paid";
-
-export type CreditLedgerEntry = {
-  id: number;
-  user_id: string;
-  delta: number;
-  bucket: CreditBucket;
-  reason: string;
-  // Bucket balances after this entry. `balance_after_plan` follows the old
-  // free-bucket rename (free_space → plan).
-  balance_after_plan: number;
-  balance_after_paid: number;
-  stripe_event_id: string | null;
-  stripe_payment_intent_id: string | null;
-  related_entity_type: string | null;
-  related_entity_id: string | null;
-  metadata: Record<string, unknown>;
-  created_at: string;
-};
-
-export type CreditPack = {
-  id: string;
-  stripe_product_id: string | null;
-  stripe_price_id: string | null;
-  name: string;
-  credits: number;
-  price_cents: number;
-  currency: string;
-  sort_order: number;
-  active: boolean;
-};
-
 // ── Subscription plans ───────────────────────────────────────────────────────
 
 // The catalog has exactly two slugs: `free` and the single paid plan `pro`.
@@ -161,7 +125,6 @@ export type SubscriptionPlan = {
   annual_price_cents: number | null;
   currency: string;
   billing_interval: "month" | "year";
-  monthly_credits: number;
   trial_days: number; // 0 ⇒ no trial
   space_limit: number | null; // null ⇒ unlimited
   has_widgets: boolean;
@@ -187,7 +150,6 @@ export type PlanEntitlements = {
   hasStyling: boolean;
   hideBranding: boolean;
   hasGoogleReview: boolean;
-  monthlyCredits: number;
 };
 
 // A user's resolved plan (profile plan_* fields joined to subscription_plans).
@@ -195,8 +157,6 @@ export type UserPlan = {
   slug: PlanSlug;
   name: string;
   status: string | null;
-  planCredits: number; // monthly allowance balance
-  paidCredits: number; // purchased, never-expiring balance
   periodEnd: string | null;
   // Stripe subscription is set to cancel at periodEnd (cancel_at_period_end).
   // status stays "active" until then, so this is what distinguishes a winding-
@@ -338,7 +298,6 @@ export type WidgetCatalogEntry = {
   trial_days: number;
   active: boolean;
   sort_order: number;
-  monthly_credit_limit: number;
 };
 
 export type WidgetSubscriptionStatus =

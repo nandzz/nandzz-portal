@@ -6,7 +6,7 @@ import {
 import { publishImage, publishImageDef } from "../tools/publish_image.ts";
 import { makeCtx, publishOk } from "./fakes.ts";
 
-const okRpc = { publish_space_tx: publishOk("space-1", 90, 0) };
+const okRpc = { publish_space_tx: publishOk("space-1") };
 const smallPngBase64 = btoa("\x89PNG\r\n\x1a\n");
 
 Deno.test("publish_image: base64 + media_type uploads to space-images", async () => {

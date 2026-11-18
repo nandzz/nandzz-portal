@@ -59,7 +59,7 @@ Deno.test("decodeBase64: tolerates whitespace/newlines", () => {
 // called with exactly p_user_id / p_space_payload / p_client_request_id.
 Deno.test("publishSpace: calls publish_space_tx with only the 3 expected args", async () => {
   const { ctx, rpcCalls } = makeCtx({
-    rpc: { publish_space_tx: publishOk("space-xyz", 100, 5) },
+    rpc: { publish_space_tx: publishOk("space-xyz") },
   });
 
   const res = await publishSpace(ctx, { title: "t", is_public: true });
@@ -76,8 +76,6 @@ Deno.test("publishSpace: calls publish_space_tx with only the 3 expected args", 
   assert(typeof args.p_client_request_id === "string");
 
   assertEquals(res.spaceId, "space-xyz");
-  assertEquals(res.planCredits, 100);
-  assertEquals(res.paidCredits, 5);
 });
 
 Deno.test("publishSpace: surfaces SPACE_LIMIT_REACHED as a friendly message", async () => {
@@ -93,10 +91,10 @@ Deno.test("publishSpace: surfaces SPACE_LIMIT_REACHED as a friendly message", as
 
 Deno.test("publishSpace: unwraps single-row array from RPC", async () => {
   const { ctx } = makeCtx({
-    rpc: { publish_space_tx: publishOk("sp-1", 42, 7) },
+    rpc: { publish_space_tx: publishOk("sp-1") },
   });
   const r = await publishSpace(ctx, {});
-  assertEquals(r, { spaceId: "sp-1", planCredits: 42, paidCredits: 7 });
+  assertEquals(r, { spaceId: "sp-1" });
 });
 
 // ─── attachToCollection ────────────────────────────────────────────────────

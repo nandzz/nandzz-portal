@@ -6,7 +6,7 @@ import {
 import { publishPdf } from "../tools/publish_pdf.ts";
 import { makeCtx, publishOk } from "./fakes.ts";
 
-const okRpc = { publish_space_tx: publishOk("space-1", 90, 0) };
+const okRpc = { publish_space_tx: publishOk("space-1") };
 // Minimal 4-byte "PDF" — just needs to survive base64 round-trip.
 const smallPdfBase64 = btoa("%PDF");
 

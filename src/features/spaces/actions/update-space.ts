@@ -12,7 +12,7 @@ export type UpdateSpaceResult =
     };
 
 // In-place edit of an existing space row (markdown save, HTML preview refresh,
-// and the content-builder edit path). Edits don't cost credits, so this stays a
+// and the content-builder edit path). This stays a
 // plain RLS-guarded update rather than going through `publish_space_tx`. RLS
 // ensures the caller can only update rows they own; the `auth.getUser()` check
 // is defense-in-depth.

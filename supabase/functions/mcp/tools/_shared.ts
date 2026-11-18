@@ -317,15 +317,13 @@ export async function uploadToBucket(
   return { path, publicUrl: data.publicUrl };
 }
 
-// Insert the space row atomically via the publish_space_tx RPC. Publishing is
-// free now — the RPC only enforces the caller's plan space_limit and returns
-// the user's current AI credit balances (plan_credits / paid_credits), which it
-// does not change. A SPACE_LIMIT_REACHED error means the free-plan 25-space cap
+// Insert the space row atomically via the publish_space_tx RPC. The RPC
+// enforces the caller's plan space_limit. A SPACE_LIMIT_REACHED error means the free-plan 25-space cap
 // (or another plan's cap) was hit.
 export async function publishSpace(
   ctx: Ctx,
   payload: Record<string, unknown>
-): Promise<{ spaceId: string; planCredits: number; paidCredits: number }> {
+): Promise<{ spaceId: string }> {
   const { data, error } = await ctx.admin.rpc("publish_space_tx", {
     p_user_id: ctx.userId,
     p_space_payload: payload,
@@ -340,11 +338,7 @@ export async function publishSpace(
     throw new Error(`Publish failed: ${error.message}`);
   }
   const row = Array.isArray(data) ? data[0] : data;
-  return {
-    spaceId: row.space_id as string,
-    planCredits: row.plan_credits as number,
-    paidCredits: row.paid_credits as number,
-  };
+  return { spaceId: row.space_id as string };
 }
 
 export async function attachToCollection(ctx: Ctx, spaceId: string, collectionId: string): Promise<void> {
@@ -489,7 +483,6 @@ export function successResult(opts: {
   spaceUrl: string;
   visibility: "private" | "public";
   collectionAttached: string | null;
-  remainingCredits: { plan: number; paid: number };
   title: string;
 }): ToolResult {
   const parts: string[] = [
@@ -498,7 +491,6 @@ export function successResult(opts: {
     `Space ID: ${opts.spaceId}`,
   ];
   if (opts.collectionAttached) parts.push(`Added to collection ${opts.collectionAttached}.`);
-  parts.push(`AI credits — plan: ${opts.remainingCredits.plan}, paid: ${opts.remainingCredits.paid}.`);
   return {
     content: [{ type: "text", text: parts.join("\n") }],
     structuredContent: {
@@ -506,7 +498,6 @@ export function successResult(opts: {
       space_url: opts.spaceUrl,
       visibility: opts.visibility,
       collection_id: opts.collectionAttached,
-      remaining_credits: opts.remainingCredits,
     },
   };
 }

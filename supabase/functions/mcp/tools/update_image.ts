@@ -26,7 +26,7 @@ function extFor(contentType: string): string {
 export const updateImageDef: ToolDefinition = {
   name: "update_image",
   description:
-    "Replace the image asset of an already-published space. Free (no credits). Provide space_id XOR url (the current image_url), plus content_base64 (with media_type) XOR source_url. Metadata is handled by update_space_metadata. Note: preview_image_url is NOT touched by this tool.",
+    "Replace the image asset of an already-published space. Provide space_id XOR url (the current image_url), plus content_base64 (with media_type) XOR source_url. Metadata is handled by update_space_metadata. Note: preview_image_url is NOT touched by this tool.",
   inputSchema: {
     type: "object",
     properties: {

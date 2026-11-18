@@ -77,7 +77,7 @@ export const termsIt: LegalDocument = {
             <li>interagire con altri utenti, ad esempio salvando contenuti in raccolte e prenotando appuntamenti</li>
           </Ul>
           <P>
-            Alcune funzioni sono gratuite, altre richiedono un piano a pagamento o crediti. Cosa include ogni
+            Alcune funzioni sono gratuite, altre richiedono un piano a pagamento. Cosa include ogni
             piano è indicato nella <A href="/pricing">pagina prezzi</A> e al checkout.
           </P>
           <P>
@@ -162,7 +162,7 @@ export const termsIt: LegalDocument = {
     },
     {
       id: "payments",
-      title: "Piani, prove gratuite, crediti e pagamenti",
+      title: "Piani, prove gratuite e pagamenti",
       body: (
         <>
           <P>
@@ -182,25 +182,6 @@ export const termsIt: LegalDocument = {
             indicati al checkout. Il primo addebito avviene alla fine della prova, salvo disdetta prima. Ogni
             account può usare una sola prova.
           </P>
-          <P>
-            <B>Crediti.</B> Alcune funzioni, come l&apos;uso dell&apos;IA, consumano crediti.
-          </P>
-          <Ul>
-            <li>
-              I <B>crediti del piano</B> sono inclusi in un piano. Si azzerano a ogni periodo e non si
-              accumulano.
-            </li>
-            <li>
-              I <B>crediti acquistati</B> non scadono finché l&apos;account esiste.
-            </li>
-            <li>
-              I crediti non hanno valore monetario. Non sono cedibili e si usano solo su Nandzz.
-            </li>
-            <li>
-              I crediti non usati si perdono con la cancellazione dell&apos;account, salvo i rimborsi dovuti
-              secondo la sezione 6 o la legge inderogabile.
-            </li>
-          </Ul>
           <P>
             <B>Pagamenti non riusciti.</B> Se un rinnovo non va a buon fine, possiamo ritentare l&apos;addebito
             e, dopo un ragionevole periodo di tolleranza, passare l&apos;account al piano gratuito. I tuoi
@@ -238,26 +219,13 @@ export const termsIt: LegalDocument = {
                 </li>
               </Ul>
             </li>
-            <li>
-              <B>Pacchetti di crediti (contenuto digitale).</B> I crediti vengono accreditati subito.
-              <Ul>
-                <li>
-                  Al checkout chiedi espressamente la fornitura immediata e riconosci di <B>perdere il diritto di
-                  recesso</B> una volta accreditati i crediti (art. 59, c. 1, lett. o) Codice del Consumo).
-                </li>
-                <li>
-                  Se non hai usato alcun credito del pacchetto, scrivici entro 14 giorni e ti rimborseremo
-                  comunque, per cortesia commerciale.
-                </li>
-              </Ul>
-            </li>
           </Ul>
           <P>
             Per recedere, invia una dichiarazione esplicita a <Mail to={C.emails.support} /> dall&apos;email del
             tuo account. Puoi usare questo modello:
           </P>
           <P>
-            &quot;Con la presente comunico il recesso dal contratto relativo a [piano/pacchetto crediti],
+            &quot;Con la presente comunico il recesso dal contratto relativo a [piano],
             ordinato il [data]. Nome, email dell&apos;account, data.&quot;
           </P>
           <P>

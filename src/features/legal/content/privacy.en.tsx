@@ -90,7 +90,7 @@ export const privacyEn: LegalDocument = {
               ],
               [
                 <B key="a">Payments and invoicing</B>,
-                "Name, email, billing address, plan, transactions, credit history. Card data stays with Stripe.",
+                "Name, email, billing address, plan, transactions. Card data stays with Stripe.",
                 "Contract; legal obligation (tax and accounting, Art. 6(1)(c))",
                 "10 years, as required by Italian accounting law (Art. 2220 Civil Code)",
               ],

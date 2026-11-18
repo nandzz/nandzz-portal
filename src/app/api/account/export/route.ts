@@ -6,7 +6,7 @@ import { buildAccountExport, EXPORT_SOURCES } from "@/lib/account/export";
 // GDPR Arts. 15 & 20 — self-serve copy of the caller's personal data as JSON.
 // Authenticates with the session, then reads with the admin client filtered
 // strictly by the caller's id (some tables have no user-facing SELECT policy,
-// e.g. credit_ledger).
+// e.g. widget_bookings).
 export async function GET() {
   const supabase = await createClient();
   const {

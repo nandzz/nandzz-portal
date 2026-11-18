@@ -14,7 +14,6 @@ export const EXPORT_SOURCES: ExportSource[] = [
   { key: "bookings_received", table: "widget_bookings", column: "owner_user_id" },
   { key: "bookings_made", table: "widget_bookings", column: "created_by_user_id" },
   { key: "agent_documents", table: "agent_documents", column: "user_id" },
-  { key: "credit_ledger", table: "credit_ledger", column: "user_id" },
   { key: "legal_acceptances", table: "legal_acceptances", column: "user_id" },
 ];
 

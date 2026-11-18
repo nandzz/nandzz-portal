@@ -61,7 +61,7 @@ export const publishPdf: ToolHandler = async (args, ctx) => {
   }
 
   const asset = await uploadToBucket(ctx, "space-pdfs", bytes, "file.pdf", "application/pdf");
-  const { spaceId, planCredits, paidCredits } = await publishSpace(ctx, {
+  const { spaceId } = await publishSpace(ctx, {
     title,
     description: a.description ?? null,
     pdf_url: asset.publicUrl,
@@ -77,7 +77,6 @@ export const publishPdf: ToolHandler = async (args, ctx) => {
     spaceUrl: buildSpaceUrl(username, spaceId),
     visibility,
     collectionAttached: a.collection_id ?? null,
-    remainingCredits: { plan: planCredits, paid: paidCredits },
     title,
   });
 };

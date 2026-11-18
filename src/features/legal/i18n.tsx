@@ -56,7 +56,7 @@ const en: LegalUi = {
   exportButton: "Download my data",
   exportError: "Export failed. Please try again.",
   deleteConsequences:
-    "Any active subscription is cancelled immediately and unused credits are lost. Download your data first if you want a copy.",
+    "Any active subscription is cancelled immediately. Download your data first if you want a copy.",
   supportTitle: "Support access",
   supportDesc: "Let the Nandzz team edit your profile, content and booking setup for 7 days to help you configure your account. Every change is logged and you can revoke access at any time.",
   supportGrant: "Allow for 7 days",
@@ -87,7 +87,7 @@ const it: LegalUi = {
   exportButton: "Scarica i miei dati",
   exportError: "Esportazione non riuscita. Riprova.",
   deleteConsequences:
-    "Eventuali abbonamenti attivi vengono annullati subito e i crediti non usati vanno persi. Se vuoi una copia, scarica prima i tuoi dati.",
+    "Eventuali abbonamenti attivi vengono annullati subito. Se vuoi una copia, scarica prima i tuoi dati.",
   supportTitle: "Accesso assistenza",
   supportDesc: "Consenti al team Nandzz di modificare profilo, contenuti e prenotazioni per 7 giorni per aiutarti a configurare l'account. Ogni modifica viene registrata e puoi revocare l'accesso in qualsiasi momento.",
   supportGrant: "Consenti per 7 giorni",
@@ -118,7 +118,7 @@ const pt: LegalUi = {
   exportButton: "Baixar meus dados",
   exportError: "Falha na exportação. Tente novamente.",
   deleteConsequences:
-    "Qualquer assinatura ativa é cancelada imediatamente e os créditos não usados são perdidos. Baixe seus dados antes, se quiser uma cópia.",
+    "Qualquer assinatura ativa é cancelada imediatamente. Baixe seus dados antes, se quiser uma cópia.",
   supportTitle: "Acesso do suporte",
   supportDesc: "Permita que a equipe Nandzz edite seu perfil, conteúdos e agendamentos por 7 dias para ajudar a configurar sua conta. Toda alteração é registrada e você pode revogar o acesso a qualquer momento.",
   supportGrant: "Permitir por 7 dias",
@@ -149,7 +149,7 @@ const fr: LegalUi = {
   exportButton: "Télécharger mes données",
   exportError: "L'export a échoué. Réessayez.",
   deleteConsequences:
-    "Tout abonnement actif est annulé immédiatement et les crédits non utilisés sont perdus. Téléchargez d'abord vos données si vous en voulez une copie.",
+    "Tout abonnement actif est annulé immédiatement. Téléchargez d'abord vos données si vous en voulez une copie.",
   supportTitle: "Accès support",
   supportDesc: "Autorisez l'équipe Nandzz à modifier votre profil, vos contenus et vos réservations pendant 7 jours pour vous aider à configurer votre compte. Chaque modification est journalisée et vous pouvez révoquer l'accès à tout moment.",
   supportGrant: "Autoriser 7 jours",
@@ -180,7 +180,7 @@ const es: LegalUi = {
   exportButton: "Descargar mis datos",
   exportError: "La exportación falló. Inténtalo de nuevo.",
   deleteConsequences:
-    "Cualquier suscripción activa se cancela de inmediato y los créditos no usados se pierden. Descarga tus datos antes si quieres una copia.",
+    "Cualquier suscripción activa se cancela de inmediato. Descarga tus datos antes si quieres una copia.",
   supportTitle: "Acceso de soporte",
   supportDesc: "Permite que el equipo de Nandzz edite tu perfil, contenidos y reservas durante 7 días para ayudarte a configurar tu cuenta. Cada cambio queda registrado y puedes revocar el acceso en cualquier momento.",
   supportGrant: "Permitir 7 días",
@@ -211,7 +211,7 @@ const de: LegalUi = {
   exportButton: "Meine Daten herunterladen",
   exportError: "Export fehlgeschlagen. Bitte erneut versuchen.",
   deleteConsequences:
-    "Aktive Abonnements werden sofort gekündigt und ungenutzte Credits verfallen. Lade vorher deine Daten herunter, wenn du eine Kopie möchtest.",
+    "Aktive Abonnements werden sofort gekündigt. Lade vorher deine Daten herunter, wenn du eine Kopie möchtest.",
   supportTitle: "Support-Zugriff",
   supportDesc: "Erlaube dem Nandzz-Team, dein Profil, deine Inhalte und Buchungen 7 Tage lang zu bearbeiten, um dein Konto einzurichten. Jede Änderung wird protokolliert und du kannst den Zugriff jederzeit widerrufen.",
   supportGrant: "7 Tage erlauben",
@@ -241,7 +241,7 @@ const ja: LegalUi = {
   exportButton: "データをダウンロード",
   exportError: "エクスポートに失敗しました。もう一度お試しください。",
   deleteConsequences:
-    "有効なサブスクリプションは直ちに解約され、未使用のクレジットは失われます。コピーが必要な場合は先にデータをダウンロードしてください。",
+    "有効なサブスクリプションは直ちに解約されます。コピーが必要な場合は先にデータをダウンロードしてください。",
   supportTitle: "サポートアクセス",
   supportDesc: "アカウント設定をお手伝いするため、Nandzzチームが7日間プロフィール・コンテンツ・予約設定を編集できるようにします。すべての変更は記録され、いつでもアクセスを取り消せます。",
   supportGrant: "7日間許可する",

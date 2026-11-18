@@ -11,7 +11,6 @@ import {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, PlanEntitlements } from "@/lib/types";
-import { DEFAULT_FLAGS, type FeatureFlags } from "@/lib/flags";
 
 // Free-plan entitlements — the safe default while loading and the fallback when
 // the catalog is unseeded. Mirrors FREE_FALLBACK in lib/plan.ts.
@@ -23,15 +22,12 @@ export const FREE_ENTITLEMENTS: PlanEntitlements = {
   hasStyling: false,
   hideBranding: false,
   hasGoogleReview: false,
-  monthlyCredits: 0,
 };
 
 type AuthContextValue = {
   userId: string | null;
   profile: Profile | null;
   entitlements: PlanEntitlements;
-  /** Runtime, admin-controlled flags (e.g. the AI master switch). */
-  flags: FeatureFlags;
   /** Re-reads the signed-in user's profile row + plan entitlements. */
   refetchProfile: () => Promise<void>;
 };
@@ -44,9 +40,6 @@ interface AuthProviderProps {
   /** Plan gating resolved server-side for `initialProfile`, so plan-gated nav
       (Analytics, MCP, widgets) renders on first paint instead of popping in. */
   initialEntitlements?: PlanEntitlements;
-  /** Resolved server-side from `app_settings` and seeded so the chrome renders
-      the right surfaces on first paint (no flash, no client round-trip). */
-  initialFlags?: FeatureFlags;
   children: React.ReactNode;
 }
 
@@ -61,14 +54,11 @@ interface AuthProviderProps {
 // Lives OUTSIDE `components/` (like `auth.ts` / `realtime.ts`) so it can touch
 // `@/lib/supabase/*` directly without tripping the `no-restricted-imports`
 // guardrail that applies to `src/features/*/components/**`.
-export function AuthProvider({ initialUserId, initialProfile, initialEntitlements, initialFlags, children }: AuthProviderProps) {
+export function AuthProvider({ initialUserId, initialProfile, initialEntitlements, children }: AuthProviderProps) {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(initialUserId);
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [entitlements, setEntitlements] = useState<PlanEntitlements>(initialEntitlements ?? FREE_ENTITLEMENTS);
-  // Flags are server-resolved and stable for the page's lifetime, so they're
-  // held as-is (no refetch); default OFF until the server seeds them.
-  const flags = initialFlags ?? DEFAULT_FLAGS;
 
   // The user id the currently-held `profile` was fetched (or SSR-seeded) for.
   // Lets the first INITIAL_SESSION event below skip re-fetching the profile
@@ -86,7 +76,7 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
       const slug = planSlug ?? "free";
       const { data: plan } = await supabase
         .from("subscription_plans")
-        .select("has_widgets, has_mcp, has_analytics, has_styling, hide_branding, has_google_review, space_limit, monthly_credits")
+        .select("has_widgets, has_mcp, has_analytics, has_styling, hide_branding, has_google_review, space_limit")
         .eq("slug", slug)
         .maybeSingle();
       if (!plan) return FREE_ENTITLEMENTS;
@@ -98,7 +88,6 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
         hasStyling: !!plan.has_styling,
         hideBranding: !!plan.hide_branding,
         hasGoogleReview: !!plan.has_google_review,
-        monthlyCredits: plan.monthly_credits ?? 0,
       };
     },
     [supabase]
@@ -196,8 +185,8 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
   }, [userId, loadForUser]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ userId, profile, entitlements, flags, refetchProfile }),
-    [userId, profile, entitlements, flags, refetchProfile]
+    () => ({ userId, profile, entitlements, refetchProfile }),
+    [userId, profile, entitlements, refetchProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -209,9 +198,4 @@ export function useAuth(): AuthContextValue {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return ctx;
-}
-
-/** Convenience accessor for the runtime feature flags. */
-export function useFeatureFlags(): FeatureFlags {
-  return useAuth().flags;
 }

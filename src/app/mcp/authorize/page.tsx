@@ -123,8 +123,8 @@ export default async function AuthorizePage({
         </div>
 
         <p className="mt-4 text-xs text-neutral-500 dark:text-neutral-500">
-          Signed in as <span className="font-mono">{user.email}</span>. Publishes cost credits from your
-          Nandzz balance. You can revoke access anytime from Settings.
+          Signed in as <span className="font-mono">{user.email}</span>. You can revoke access anytime
+          from Settings.
         </p>
 
         <form method="POST" action="/api/mcp/oauth/consent" className="mt-6 flex gap-3">

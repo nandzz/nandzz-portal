@@ -9,8 +9,8 @@ import type { Profile } from "@/lib/types";
 
 // Columns safe to render on public profile surfaces. The admin client bypasses
 // RLS and the row is handed to Client Components (serialized into the HTML for
-// every visitor), so NEVER `select("*")` here: billing (stripe_*, plan_*,
-// credits), is_admin, is_demo, support access, locale, etc. must stay private.
+// every visitor), so NEVER `select("*")` here: billing (stripe_*, plan_*),
+// is_admin, is_demo, support access, locale, etc. must stay private.
 export const PUBLIC_PROFILE_COLUMNS = [
   "id",
   "username",

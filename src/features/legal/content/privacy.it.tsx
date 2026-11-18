@@ -90,7 +90,7 @@ export const privacyIt: LegalDocument = {
               ],
               [
                 <B key="a">Pagamenti e fatturazione</B>,
-                "Nome, email, indirizzo di fatturazione, piano, transazioni, storico dei crediti. I dati della carta restano a Stripe.",
+                "Nome, email, indirizzo di fatturazione, piano, transazioni. I dati della carta restano a Stripe.",
                 "Contratto; obbligo di legge in materia fiscale e contabile (art. 6.1.c)",
                 "10 anni (art. 2220 c.c.)",
               ],

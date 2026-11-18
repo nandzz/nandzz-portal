@@ -8,7 +8,7 @@ import type { ToolResult } from "./types.ts";
 export const updateSpaceMetadataDef: ToolDefinition = {
   name: "update_space_metadata",
   description:
-    "Update metadata (title, description, hashtags, visibility) of an already-published space. Free (no credits). Provide space_id XOR url (any of html_url/pdf_url/image_url) plus at least one field to change. To clear description pass null; to clear hashtags pass [].",
+    "Update metadata (title, description, hashtags, visibility) of an already-published space. Provide space_id XOR url (any of html_url/pdf_url/image_url) plus at least one field to change. To clear description pass null; to clear hashtags pass [].",
   inputSchema: {
     type: "object",
     properties: {

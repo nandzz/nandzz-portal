@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plug, Sparkles, Coins, Shield, FileText, Image as ImageIcon, FileCode2, FolderKanban, ShieldCheck, Pencil, Tag } from "lucide-react";
+import { Plug, Sparkles, Shield, FileText, Image as ImageIcon, FileCode2, FolderKanban, ShieldCheck, Pencil, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { getUserEntitlements } from "@/lib/plan";
@@ -154,14 +154,7 @@ export default async function McpConnectPage() {
         </section>
 
         {/* Fine print */}
-        <section className="grid gap-3 sm:grid-cols-2">
-          <InfoCard
-            icon={Coins}
-            title={t.mcp.creditsTitle}
-            body={t.mcp.creditsBody}
-            href="/dashboard/subscription"
-            hrefLabel={t.mcp.viewBalance}
-          />
+        <section className="grid gap-3">
           <InfoCard
             icon={Shield}
             title={t.mcp.controlTitle}

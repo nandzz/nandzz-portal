@@ -7,7 +7,7 @@ import {
 import { publishHtml } from "../tools/publish_html.ts";
 import { makeCtx, publishOk } from "./fakes.ts";
 
-const okRpc = { publish_space_tx: publishOk("space-1", 90, 0) };
+const okRpc = { publish_space_tx: publishOk("space-1") };
 
 Deno.test("publish_html: uploads html and calls publish_space_tx", async () => {
   const { ctx, rpcCalls, storageUploads } = makeCtx({ rpc: okRpc });
@@ -38,7 +38,6 @@ Deno.test("publish_html: uploads html and calls publish_space_tx", async () => {
 
   assertEquals(res.structuredContent?.visibility, "public");
   assertEquals(res.structuredContent?.space_id, "space-1");
-  assertEquals(res.structuredContent?.remaining_credits, { plan: 90, paid: 0 });
   // The response must return the Portal space URL (which enforces is_public),
   // NOT the raw Supabase storage URL (which is publicly fetchable and would
   // leak private assets).

@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Minus, HelpCircle, ArrowRight, Sparkles, Layers } from "lucide-react";
+import { Check, Minus, HelpCircle, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { CreditPack, SubscriptionPlan } from "@/lib/types";
+import type { SubscriptionPlan } from "@/lib/types";
 import type { PricingFaq } from "./faqs";
 
 function formatPrice(cents: number, currency: string): string {
@@ -28,14 +28,10 @@ function formatPriceDecimals(cents: number, currency: string): string {
 
 export function PricingClient({
   plans,
-  packs,
   faqs,
-  aiEnabled,
 }: {
   plans: SubscriptionPlan[];
-  packs: CreditPack[];
   faqs: PricingFaq[];
-  aiEnabled: boolean;
 }) {
   // Billing cadence toggle — only meaningful when at least one paid plan has an
   // annual price configured (populated by the admin "Sync to Stripe").
@@ -75,9 +71,7 @@ export function PricingClient({
           <span className="text-violet-600">Every tool.</span>
         </h1>
         <p className="mt-5 text-lg text-muted-foreground max-w-md mx-auto">
-          {aiEnabled
-            ? "Start free. Make the page yours with Starter, add Booking and AI Agent with Pro."
-            : "Start free. Make the page yours with Starter, add Booking with Pro."}
+          Start free. Make the page yours with Starter, add Booking with Pro.
         </p>
       </section>
 
@@ -193,15 +187,8 @@ export function PricingClient({
                     <Feature ok={plan.hide_branding}>No Nandzz badge</Feature>
                     <Feature ok={plan.has_analytics}>Analytics</Feature>
                     <Feature ok={plan.has_widgets}>
-                      {aiEnabled ? "Booking & AI Agent" : "Booking"}
+                      Booking
                     </Feature>
-                    {aiEnabled && (
-                      <Feature ok={plan.monthly_credits > 0}>
-                        {plan.monthly_credits > 0
-                          ? `${plan.monthly_credits.toLocaleString()} AI credits / month`
-                          : "No AI credits"}
-                      </Feature>
-                    )}
                     <Feature ok={plan.has_mcp}>MCP access (connect Claude)</Feature>
                   </ul>
 
@@ -225,30 +212,6 @@ export function PricingClient({
           </p>
         )}
 
-        {packs.length > 0 && (
-          <div className="mt-10 rounded-2xl border border-border/40 bg-muted/30 px-6 py-5 max-w-2xl mx-auto">
-            <div className="flex items-start gap-3">
-              <Layers className="h-5 w-5 text-violet-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold">Need more AI credits?</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  On a paid plan you can buy top-up credit packs (from{" "}
-                  {formatPrice(
-                    Math.min(...packs.map((p) => p.price_cents)),
-                    packs[0].currency
-                  )}
-                  ) any time. Top-up credits never expire and are used only after your monthly allowance.
-                </p>
-                <Link
-                  href="/dashboard/subscription"
-                  className="text-xs font-semibold text-violet-600 dark:text-violet-400 mt-2 inline-flex items-center gap-1 hover:underline"
-                >
-                  Manage your subscription →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
       {/* FAQ */}

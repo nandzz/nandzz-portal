@@ -44,26 +44,6 @@ export default function SubscriptionLoading() {
           ))}
         </div>
       </div>
-
-      {/* Credit balances */}
-      <div className="rounded-2xl border border-border/60 bg-card p-6 mb-8">
-        <div className="mb-3 h-3 w-20 rounded bg-muted animate-pulse" />
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-24 rounded-lg bg-muted animate-pulse" />
-          <div className="h-24 rounded-lg bg-muted animate-pulse" />
-        </div>
-      </div>
-
-      {/* Activity */}
-      <div className="mb-4 h-6 w-24 rounded bg-muted animate-pulse" />
-      <div className="rounded-xl border border-border/60 bg-card divide-y divide-border/30">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between px-4 py-3">
-            <div className="h-4 w-40 rounded bg-muted animate-pulse" />
-            <div className="h-4 w-16 rounded bg-muted animate-pulse" />
-          </div>
-        ))}
-      </div>
     </PageShell>
   );
 }

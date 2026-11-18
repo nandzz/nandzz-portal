@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { getPublicPricing } from "@/lib/pricing";
 import { PricingClient } from "./PricingClient";
-import { pricingFaqsFor } from "./faqs";
-import type { CreditPack, SubscriptionPlan } from "@/lib/types";
+import { pricingFaqs } from "./faqs";
+import type { SubscriptionPlan } from "@/lib/types";
 import { getServerTranslations } from "@/lib/i18n/server";
-import { getFeatureFlags } from "@/lib/featureFlags";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerTranslations();
@@ -27,12 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PricingPage() {
-  const [{ plans, packs }, { ai: aiEnabled }] = await Promise.all([
-    getPublicPricing(),
-    getFeatureFlags(),
-  ]);
+  const { plans } = await getPublicPricing();
 
-  const faqs = pricingFaqsFor(aiEnabled);
+  const faqs = pricingFaqs;
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -51,9 +47,7 @@ export default async function PricingPage() {
       />
       <PricingClient
         plans={(plans ?? []) as SubscriptionPlan[]}
-        packs={aiEnabled ? ((packs ?? []) as CreditPack[]) : []}
         faqs={faqs}
-        aiEnabled={aiEnabled}
       />
     </>
   );

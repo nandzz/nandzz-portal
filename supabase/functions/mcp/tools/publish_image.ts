@@ -113,7 +113,7 @@ export const publishImage: ToolHandler = async (args, ctx) => {
   }
 
   const asset = await uploadToBucket(ctx, "space-images", bytes, `image.${extFor(contentType)}`, contentType);
-  const { spaceId, planCredits, paidCredits } = await publishSpace(ctx, {
+  const { spaceId } = await publishSpace(ctx, {
     title,
     description: a.description ?? null,
     image_url: asset.publicUrl,
@@ -130,7 +130,6 @@ export const publishImage: ToolHandler = async (args, ctx) => {
     spaceUrl: buildSpaceUrl(username, spaceId),
     visibility,
     collectionAttached: a.collection_id ?? null,
-    remainingCredits: { plan: planCredits, paid: paidCredits },
     title,
   });
 };

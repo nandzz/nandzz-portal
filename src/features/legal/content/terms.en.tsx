@@ -76,7 +76,7 @@ export const termsEn: LegalDocument = {
             <li>connect with other users, for example by saving content to collections and booking appointments</li>
           </Ul>
           <P>
-            Some features are free and others need a paid plan or credits. What each plan includes is shown on
+            Some features are free and others need a paid plan. What each plan includes is shown on
             our <A href="/pricing">pricing page</A> and at checkout.
           </P>
           <P>
@@ -160,7 +160,7 @@ export const termsEn: LegalDocument = {
     },
     {
       id: "payments",
-      title: "Plans, trials, credits and payments",
+      title: "Plans, trials and payments",
       body: (
         <>
           <P>
@@ -180,25 +180,6 @@ export const termsEn: LegalDocument = {
             shown at checkout. The first payment is taken when the trial ends unless you cancel before. Each
             account can use one trial.
           </P>
-          <P>
-            <B>Credits.</B> Some features, like AI usage, consume credits.
-          </P>
-          <Ul>
-            <li>
-              <B>Plan credits</B> are included with a plan. They reset at each billing period and do not roll
-              over.
-            </li>
-            <li>
-              <B>Purchased credits</B> do not expire while your account exists.
-            </li>
-            <li>
-              Credits have no cash value. They are not transferable and can only be used on Nandzz.
-            </li>
-            <li>
-              Unused credits are lost when you delete your account, except where a refund is due under
-              section 6 or mandatory law.
-            </li>
-          </Ul>
           <P>
             <B>Failed payments.</B> If a renewal payment fails, we may retry it and downgrade the account to the
             free plan after a reasonable grace period. Your content stays available on the free plan, within
@@ -235,27 +216,13 @@ export const termsEn: LegalDocument = {
                 </li>
               </Ul>
             </li>
-            <li>
-              <B>Credit packs (digital content).</B> Credits are delivered to your account immediately.
-              <Ul>
-                <li>
-                  At checkout you expressly request immediate delivery and acknowledge that you{" "}
-                  <B>lose your right of withdrawal</B> once the credits are credited (Art. 59(1)(o) Consumer
-                  Code).
-                </li>
-                <li>
-                  If you have not used any credits from the pack, write to us within 14 days and we will still
-                  refund it as a courtesy.
-                </li>
-              </Ul>
-            </li>
           </Ul>
           <P>
             To withdraw, send a clear statement to <Mail to={C.emails.support} /> from your account email. You
             may use this model:
           </P>
           <P>
-            &quot;I hereby give notice that I withdraw from my contract for [plan/credit pack], ordered on
+            &quot;I hereby give notice that I withdraw from my contract for [plan], ordered on
             [date]. Name, account email, date.&quot;
           </P>
           <P>

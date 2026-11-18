@@ -83,10 +83,7 @@ function SetupUsernameForm() {
     }
 
     try {
-      // claim_signup_profile inserts the profile AND writes the welcome-credit
-      // grant in one SECURITY DEFINER call, so OAuth signups get the same
-      // signup_credit_grant from app_settings that email/password signups get
-      // via the handle_new_user trigger.
+      // claim_signup_profile inserts the profile in one SECURITY DEFINER call.
       const result = await claimSignupProfile({
         username: trimmed,
         displayName: displayName.trim() || null,

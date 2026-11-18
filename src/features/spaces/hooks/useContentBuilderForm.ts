@@ -310,7 +310,7 @@ export function useContentBuilderForm({
       };
 
       if (isEditing && space) {
-        // Edits don't cost credits — a plain RLS-guarded update action, not
+        // Edits are a plain RLS-guarded update action, not
         // publish_space_tx. user_id stays on the row from creation; no need to
         // re-send it.
         const { user_id: _omit, ...updatePayload } = spaceData;
@@ -321,7 +321,7 @@ export function useContentBuilderForm({
         router.push(collectionId ? `/dashboard/collections/${collectionId}` : "/dashboard/contents");
         return;
       } else {
-        // First-time publish goes through the server action so credits are deducted atomically.
+        // First-time publish goes through the server action (space cap enforced atomically).
         // On success the action calls redirect() — nothing is returned, and control
         // won't reach the code below because Next.js navigates before resolving.
         const { user_id: _omit, ...publishPayload } = spaceData;
