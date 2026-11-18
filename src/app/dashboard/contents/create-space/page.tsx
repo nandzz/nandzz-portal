@@ -25,8 +25,6 @@ export default async function CreateSpacePage({
   const { collectionId } = await searchParams;
   const t = await getServerTranslations();
 
-  const creatableTypes = CREATABLE_TYPES;
-
   return (
     <div className="relative min-h-[calc(100vh-8rem)]">
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -47,7 +45,7 @@ export default async function CreateSpacePage({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {creatableTypes.map(({ id, icon: Icon }) => (
+              {CREATABLE_TYPES.map(({ id, icon: Icon }) => (
                 <Link
                   key={id}
                   href={

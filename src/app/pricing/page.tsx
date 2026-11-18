@@ -28,11 +28,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PricingPage() {
   const { plans } = await getPublicPricing();
 
-  const faqs = pricingFaqs;
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqs.map((item) => ({
+    mainEntity: pricingFaqs.map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: { "@type": "Answer", text: item.a },
@@ -47,7 +46,7 @@ export default async function PricingPage() {
       />
       <PricingClient
         plans={(plans ?? []) as SubscriptionPlan[]}
-        faqs={faqs}
+        faqs={pricingFaqs}
       />
     </>
   );

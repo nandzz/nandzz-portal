@@ -80,6 +80,8 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
   } | null>(null);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
   const [pickedSlot, setPickedSlot] = useState<Slot | null>(null);
+  // Bumped after a booking so the booked time drops out of the free slots.
+  const [reload, setReload] = useState(0);
   const service = services.find((s) => s.id === serviceId) ?? null;
   const eligibleStaff = useMemo(
     () => (service ? eligibleStaffForServices(staff, [service]) : []),
@@ -104,6 +106,8 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
     if (locationId) params.set("location_id", locationId);
     return params.toString();
   }, [serviceId, staffId, locationId]);
+  // Tags a fetch result; also changes after a booking to force a refetch.
+  const fetchKey = `${query}#${reload}`;
 
   useEffect(() => {
     if (!serviceId) return;
@@ -122,7 +126,7 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
     }
     Promise.all(chunks)
       .then((parts) => {
-        if (!cancelled) setResult({ query, slots: parts.flat(), error: false });
+        if (!cancelled) setResult({ query: fetchKey, slots: parts.flat(), error: false });
       })
       .catch((e: unknown) => {
         // The route 404s when the widget is turned off and 402s when the plan
@@ -130,14 +134,14 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
         const status = e instanceof Error ? e.message : "";
         const error =
           status === "402" ? "plan" : status === "404" ? "disabled" : "failed";
-        if (!cancelled) setResult({ query, slots: [], error });
+        if (!cancelled) setResult({ query: fetchKey, slots: [], error });
       });
     return () => {
       cancelled = true;
     };
-  }, [instanceId, serviceId, query, today, windowDays]);
+  }, [instanceId, serviceId, query, fetchKey, today, windowDays]);
 
-  const loading = !!serviceId && result?.query !== query;
+  const loading = !!serviceId && result?.query !== fetchKey;
   const slots = useMemo(
     () => (loading ? [] : (result?.slots ?? [])),
     [loading, result],
@@ -214,9 +218,8 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
   );
   const label = (key: string) => fmt.day.format(new Date(`${key}T12:00:00Z`));
 
-  const slot = pickedSlot;
   // The details column shows once a time is picked.
-  const showSide = !!slot;
+  const showSide = !!pickedSlot;
 
   // The active day's free times, grouped by part of day.
   function renderTimes() {
@@ -268,7 +271,7 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
                   )}
                 >
                   {g.slots.map((s) => {
-                    const active = slot?.start === s.start;
+                    const active = pickedSlot?.start === s.start;
                     return (
                       <button
                         key={s.start}
@@ -493,16 +496,19 @@ function AvailabilityBody({ scope }: { scope: AvailabilityScope }) {
         </div>
 
         {/* Booking details */}
-        {slot && (
+        {pickedSlot && (
           <DetailsPanel
+            // Fresh form (and no stale "Booked" view) for every picked time.
+            key={`${pickedSlot.start}|${serviceId}|${staffId}`}
             instanceId={instanceId}
             locationId={locationId}
             serviceId={service?.id ?? null}
             serviceName={service?.name ?? null}
             staffId={staffId}
             staffName={staff.find((m) => m.id === staffId)?.name ?? null}
-            slot={slot}
-            slotLabel={`${label(fmt.key.format(new Date(slot.start)))}, ${fmt.time.format(new Date(slot.start))}`}
+            slot={pickedSlot}
+            slotLabel={`${label(fmt.key.format(new Date(pickedSlot.start)))}, ${fmt.time.format(new Date(pickedSlot.start))}`}
+            onBooked={() => setReload((n) => n + 1)}
             onNewCall={() => setPickedSlot(null)}
           />
         )}
@@ -521,6 +527,7 @@ function DetailsPanel({
   staffId,
   slot,
   slotLabel,
+  onBooked,
   onNewCall,
 }: {
   instanceId: string;
@@ -531,6 +538,7 @@ function DetailsPanel({
   staffId: string;
   slot: Slot;
   slotLabel: string;
+  onBooked: () => void;
   onNewCall: () => void;
 }) {
   const { t } = useLanguage();
@@ -576,6 +584,7 @@ function DetailsPanel({
         return;
       }
       setBooked(true);
+      onBooked();
     } catch {
       setError(t.booking.errorBookingFailed);
     } finally {

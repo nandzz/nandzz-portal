@@ -55,7 +55,6 @@ export type SubscriptionSearchParams = {
   canceled?: string;
   // Set by plan-checkout after swapping the price on an existing subscription.
   switched?: string;
-  page?: string;
   interval?: string;
 };
 
