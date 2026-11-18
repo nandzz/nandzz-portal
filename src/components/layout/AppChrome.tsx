@@ -12,6 +12,12 @@ import { useChrome } from "@/contexts/ChromeContext";
 
 // Post-signup "business or client?" prompt; loaded lazily since it only ever
 // opens once per account.
+// App-wide booking alert (new / cancelled / rescheduled); lazy since only
+// signed-in owners subscribe.
+const BookingAlerts = dynamic(() =>
+  import("@/features/booking/components/BookingAlerts").then((m) => m.BookingAlerts),
+);
+
 const WelcomeAccountTypeDialog = dynamic(() =>
   import("@/features/profile/components/WelcomeAccountTypeDialog").then((m) => m.WelcomeAccountTypeDialog),
 );
@@ -153,6 +159,7 @@ export function AppChrome({ initialCollapsed, children }: AppChromeProps) {
           post-signup onboarding. */}
       {!isVisitorProfile && !isVisitorImmersive && !isVisitorHome && !onWidgetPage && !onBareAuthPage && !onAuthPage && !previewing && <MobileTabBar />}
       {userId && !previewing && <WelcomeAccountTypeDialog />}
+      {userId && !previewing && !onWidgetPage && <BookingAlerts userId={userId} />}
 
       {/* The lone Nandzz affordance on a clean, logged-out profile page:
           a floating "Sign in / Create your page" pill. */}

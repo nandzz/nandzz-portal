@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useId, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, CalendarDays, Clock, Sparkles } from "lucide-react";
+import { Bell, CalendarClock, CalendarDays, CalendarX2, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -29,7 +29,7 @@ function relativeTime(dateStr: string, locale: Locale): string {
   return new Date(dateStr).toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
-function appointmentTime(startsAt: string, locale: Locale): string {
+function appointmentTime(startsAt: string, locale: Locale, timeZone?: string): string {
   try {
     return new Intl.DateTimeFormat(locale, {
       weekday: "short",
@@ -37,6 +37,7 @@ function appointmentTime(startsAt: string, locale: Locale): string {
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone,
     }).format(new Date(startsAt));
   } catch {
     return "";
@@ -68,6 +69,8 @@ function initials(name: string): string {
 
 const KIND_STYLE = {
   booking: { icon: CalendarDays, tint: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300", badge: "bg-emerald-500" },
+  rescheduled: { icon: CalendarClock, tint: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300", badge: "bg-amber-500" },
+  cancelled: { icon: CalendarX2, tint: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300", badge: "bg-rose-500" },
   ai: { icon: Sparkles, tint: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300", badge: "bg-violet-500" },
 } as const;
 
@@ -92,19 +95,38 @@ function describe(n: Notification, t: T, locale: Locale): NotificationView {
         ) : null,
       };
     }
-    case "new_booking": {
-      const { customer_name, service_name, starts_at } = n.payload as {
+    case "new_booking":
+    case "booking_cancelled":
+    case "booking_rescheduled": {
+      const { customer_name, service_name, starts_at, timezone } = n.payload as {
         customer_name: string;
         service_name: string;
         starts_at?: string;
+        timezone?: string;
       };
-      const when = starts_at ? appointmentTime(starts_at, locale) : "";
+      const when = starts_at ? appointmentTime(starts_at, locale, timezone) : "";
+      const kind = n.type === "booking_cancelled" ? "cancelled" : n.type === "booking_rescheduled" ? "rescheduled" : "booking";
+      const template =
+        n.type === "booking_cancelled"
+          ? t.notifications.bookingCancelled
+          : n.type === "booking_rescheduled"
+            ? t.notifications.bookingRescheduled
+            : t.notifications.newBooking;
       return {
-        kind: "booking",
+        kind,
         actor: customer_name,
-        text: fill(t.notifications.newBooking, { name: customer_name, service: service_name }),
+        text: fill(template, { name: customer_name, service: service_name }),
         detail: when ? (
-          <span className="inline-flex w-fit items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/15 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-400/20">
+          <span
+            className={cn(
+              "inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset",
+              kind === "cancelled"
+                ? "bg-rose-50 text-rose-700 line-through ring-rose-600/15 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-400/20"
+                : kind === "rescheduled"
+                  ? "bg-amber-50 text-amber-700 ring-amber-600/15 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-400/20"
+                  : "bg-emerald-50 text-emerald-700 ring-emerald-600/15 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-400/20"
+            )}
+          >
             <Clock className="h-3 w-3" />
             {when}
           </span>
@@ -241,7 +263,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                   key={n.id}
                   type="button"
                   onClick={() => {
-                    if (n.type === "new_booking") {
+                    if (n.type !== "ai_edit_ready") {
                       // Booking is a single per-owner feature now, so the received
                       // appointments live at a fixed path (no instance id).
                       router.push("/dashboard/booking/bookings");

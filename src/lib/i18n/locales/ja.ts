@@ -374,6 +374,9 @@ export const ja: Translations = {
     empty: "通知はまだありません",
     aiEditReady: "「{title}」のAI編集が完了しました",
     newBooking: "{name}様から{service}の新しい予約が入りました",
+    bookingCancelled: "{name}様が{service}の予約をキャンセルしました",
+    bookingRescheduled: "{name}様が{service}の予約を変更しました",
+    previousTime: "変更前: {when}",
     dismiss: "閉じる",
   },
   error: {

@@ -545,6 +545,9 @@ export type Translations = {
     empty: string;
     aiEditReady: string;
     newBooking: string;
+    bookingCancelled: string;
+    bookingRescheduled: string;
+    previousTime: string;
     dismiss: string;
   };
   error: {

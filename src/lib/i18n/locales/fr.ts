@@ -374,6 +374,9 @@ export const fr: Translations = {
     empty: "Aucune notification pour l'instant",
     aiEditReady: "Modification IA prête pour \"{title}\"",
     newBooking: "Nouvelle réservation de {name} pour {service}",
+    bookingCancelled: "{name} a annulé sa réservation pour {service}",
+    bookingRescheduled: "{name} a déplacé sa réservation pour {service}",
+    previousTime: "avant : {when}",
     dismiss: "Ignorer",
   },
   error: {

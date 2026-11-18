@@ -294,7 +294,9 @@ export type CollectionSpace = {
   created_at: string;
 };
 
-export type NotificationType = 'ai_edit_ready' | 'new_booking';
+export type NotificationType = 'ai_edit_ready' | 'new_booking' | 'booking_cancelled' | 'booking_rescheduled';
+
+export const BOOKING_NOTIFICATION_TYPES = ['new_booking', 'booking_cancelled', 'booking_rescheduled'] as const;
 
 export type NotificationPayload = {
   space_id: string;
@@ -308,6 +310,10 @@ export type NotificationPayload = {
   customer_name: string;
   service_name: string;
   starts_at: string;
+  // Booked location's IANA zone (added 2026-11-18; older rows lack it).
+  timezone?: string;
+  // Reschedules only: the slot before the move.
+  previous_starts_at?: string | null;
 };
 
 export type Notification = {

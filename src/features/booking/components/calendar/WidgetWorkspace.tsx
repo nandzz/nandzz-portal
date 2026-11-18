@@ -16,36 +16,24 @@ import { ClaimWelcomeGuide } from "@/features/booking/components/calendar/today/
 import { WidgetOverview } from "@/features/booking/components/calendar/WidgetOverview";
 import { WidgetBookings } from "@/features/booking/components/calendar/WidgetBookings";
 import { WidgetCustomers } from "@/features/booking/components/calendar/WidgetCustomers";
-import { NewBookingBanner } from "@/features/booking/components/calendar/NewBookingBanner";
 import { useWidgetDashboard, type InitialDashboard } from "@/features/booking/components/calendar/useWidgetDashboard";
-import { playBookingChime } from "@/features/booking/chime";
 import { tabFromSegment, segmentFromTab } from "@/features/booking/widgetTabs";
-import type { CalendarConfig, WidgetBooking } from "@/lib/types";
+import type { CalendarConfig } from "@/lib/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 // Live-count new confirmed bookings whose start falls on "today" in the widget's
 // timezone and is still upcoming. Subscribes to INSERTs on widget_bookings for
 // this instance; RLS scopes delivery to the owner. Returns the running count,
-// a reset(), and refreshes the server-rendered dashboard on each new booking.
-// `onConfirmedBooking` reuses this same subscription to surface every new
-// confirmed booking (not just "today") to the caller for a chime + banner —
-// deliberately not a second realtime channel on the same table/filter.
+// a reset(), and refreshes the server-rendered dashboard on each new booking
+// and on every update (cancel / reschedule). The chime + banner live app-wide
+// in BookingAlerts (fed by the notifications table), not here.
 function useNewBookingsToday(
   instanceId: string,
   timezone: string,
-  onRefresh: () => void,
-  onConfirmedBooking?: (booking: WidgetBooking) => void
+  onRefresh: () => void
 ): [number, () => void] {
   const [newToday, setNewToday] = useState(0);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Ref so the effect below doesn't need to resubscribe when the callback
-  // identity changes across renders. Updated in an effect (not during
-  // render) since writing a ref while rendering isn't allowed.
-  const onConfirmedBookingRef = useRef(onConfirmedBooking);
-  useEffect(() => {
-    onConfirmedBookingRef.current = onConfirmedBooking;
-  }, [onConfirmedBooking]);
-
   useEffect(() => {
     // Same-day check anchored to the widget's IANA timezone (en-CA => YYYY-MM-DD).
     const dayFmt = new Intl.DateTimeFormat("en-CA", {
@@ -73,10 +61,10 @@ function useNewBookingsToday(
           startsMs >= now &&
           dayFmt.format(new Date(startsMs)) === dayFmt.format(new Date(now));
         if (isTodayUpcoming) setNewToday((c) => c + 1);
-        if (row.status === "confirmed") onConfirmedBookingRef.current?.(row);
         // Any new booking is relevant to the Bookings list / overview tiles.
         scheduleRefresh();
       },
+      onUpdate: () => scheduleRefresh(),
     });
 
     return () => {
@@ -149,20 +137,6 @@ export function WidgetWorkspace({
   // edit and PATCH the same object instead of two divergent snapshots.
   const controller = useCalendarConfig(instanceId, config, enabled);
 
-  // Single live booking alert (chime + banner) — stays on screen until the
-  // owner dismisses it or another booking arrives and replaces it. No
-  // auto-dismiss timer: a booking notification shouldn't disappear unseen.
-  const [bookingAlert, setBookingAlert] = useState<WidgetBooking | null>(null);
-  const handleConfirmedBooking = useCallback((booking: WidgetBooking) => {
-    setBookingAlert(booking);
-    // Sound only while the owner is actually looking at this tab; a
-    // backgrounded tab relies on the notification-bell entry instead.
-    playBookingChime();
-  }, []);
-  const dismissBookingAlert = useCallback(() => {
-    setBookingAlert(null);
-  }, []);
-
   // Which location the Staff tab and the Settings studio's Services/
   // Availability sections are scoped to — shared here so both stay in sync.
   // `selectedLocationId` only records an explicit pick; `currentLocationId` is
@@ -226,8 +200,7 @@ export function WidgetWorkspace({
   const [newToday, resetNewToday] = useNewBookingsToday(
     instanceId,
     config.timezone,
-    dash.refetchAll,
-    handleConfirmedBooking
+    dash.refetchAll
   );
 
   // Stable "now" anchor for the children's chronological tags across this mount.
@@ -274,22 +247,6 @@ export function WidgetWorkspace({
     [resetNewToday, basePath]
   );
 
-  // Clicking the banner jumps straight to the Bookings tab and clears the
-  // alert (the badge count still tracks "today" separately via resetNewToday).
-  const handleOpenBookingAlert = useCallback(() => {
-    handleTabChange("bookings");
-    dismissBookingAlert();
-  }, [handleTabChange, dismissBookingAlert]);
-
-  const bookingBanner = (
-    <NewBookingBanner
-      booking={bookingAlert}
-      timezone={effectiveTimezone}
-      onOpen={handleOpenBookingAlert}
-      onDismiss={dismissBookingAlert}
-    />
-  );
-
   if (!locationConfirmed) {
     // Zero locations ⇒ the empty state below IS the "create a locale" prompt.
     // Browsing to "manage" from the picker reuses the same full roster view.
@@ -316,14 +273,12 @@ export function WidgetWorkspace({
               router.refresh();
             }}
           />
-          {bookingBanner}
         </div>
       );
     }
     return (
       <>
         <LocationGate locations={locations} onSelect={pickLocation} onManage={() => setMode("manage")} />
-        {bookingBanner}
       </>
     );
   }
@@ -446,7 +401,6 @@ export function WidgetWorkspace({
           <ServicesManager controller={controller} currentLocationId={currentLocationId} />
         </TabsContent>
       </Tabs>
-      {bookingBanner}
     </>
   );
 }
