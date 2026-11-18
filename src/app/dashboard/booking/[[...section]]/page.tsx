@@ -52,7 +52,7 @@ export default async function BookingDashboardPage({
   if (!userId) redirect("/login");
 
   // Business-only feature: personal accounts can't reach it by direct URL.
-  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
+  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/bookings");
 
   // The tab lives in the path as a single segment; anything deeper, or an
   // unknown segment, isn't a real route.

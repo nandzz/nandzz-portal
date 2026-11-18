@@ -14,7 +14,7 @@ export default async function BrandLayout({
   const supabase = await createClient();
   const userId = await getUserIdFromClaims(supabase);
   if (!userId) redirect("/login");
-  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
+  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/bookings");
 
   return <>{children}</>;
 }

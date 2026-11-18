@@ -12,7 +12,7 @@ export type Slide = {
 export const SLIDES: Slide[] = [
   { kind: "hero", steps: 1, stepMs: 6500, compactStepMs: 4000 },
   { kind: "anatomy", steps: 4, stepMs: 2400, compactStepMs: 1600, annotated: true },
-  { kind: "content", steps: 4, stepMs: 2400, compactStepMs: 1600, annotated: true },
+  { kind: "content", steps: 3, stepMs: 2400, compactStepMs: 1600, annotated: true },
   // Booking's taps are timed off the step (see BookingScreen): the first step's
   // Continue has to land after its service tap, so it can't go much lower.
   { kind: "booking", steps: 5, stepMs: 2600, compactStepMs: 2300 },
@@ -34,7 +34,7 @@ export function slideDuration(slide: Slide, compact: boolean) {
 // Callout anchors per annotated slide, one per step (matches `data-anchor`).
 export const ANCHORS: Partial<Record<SlideKind, string[]>> = {
   anatomy: ["profile", "book", "address", "gallery"],
-  content: ["socials", "publications", "links", "follow"],
+  content: ["socials", "publications", "links"],
 };
 
 // Phone design size (px). Screens are laid out at this fixed size so callout

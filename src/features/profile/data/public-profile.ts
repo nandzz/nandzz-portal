@@ -33,8 +33,6 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "social_links",
   "address",
   "created_at",
-  "followers_count",
-  "following_count",
   "agent_enabled",
   "agent_suggested_questions",
   "gallery_layout",
@@ -45,7 +43,6 @@ export const PUBLIC_PROFILE_COLUMNS = [
   "show_contents",
   "show_gallery",
   "show_links",
-  "show_follow_counts",
 ].join(",");
 
 // Style columns that only render when the owner's plan has `hasStyling`

@@ -125,12 +125,6 @@ export const updateBrandSchema = z.object({
   brandDescription: z.string().max(500).nullable(),
 });
 
-export const followListSchema = z.object({
-  profileId: z.uuid(),
-  type: z.enum(["followers", "following"]),
-  offset: z.number().int().min(0),
-});
-
 export const galleryPageSchema = z.object({
   profileId: z.uuid(),
   page: z.number().int().min(1),
@@ -140,10 +134,6 @@ export const galleryPageSchema = z.object({
 // Kept in lockstep with SectionId in @/lib/spaces/content-types.
 export const setSectionVisibilitySchema = z.object({
   section: z.enum(["informative", "gallery", "links"]),
-  value: z.boolean(),
-});
-
-export const setFollowCountsVisibilitySchema = z.object({
   value: z.boolean(),
 });
 

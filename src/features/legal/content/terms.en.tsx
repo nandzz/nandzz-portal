@@ -73,7 +73,7 @@ export const termsEn: LegalDocument = {
             <li>create a public page under your username</li>
             <li>publish content on it, such as web pages, files, gallery items and links</li>
             <li>offer features on it, such as online appointment booking</li>
-            <li>connect with other users, for example by following pages, saving content to collections and booking appointments</li>
+            <li>connect with other users, for example by saving content to collections and booking appointments</li>
           </Ul>
           <P>
             Some features are free and others need a paid plan or credits. What each plan includes is shown on

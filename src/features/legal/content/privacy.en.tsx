@@ -84,7 +84,7 @@ export const privacyEn: LegalDocument = {
               ],
               [
                 <B key="a">Your public page and content</B>,
-                "Profile details, bio, avatar, branding, business address, published content, links, gallery, comments, likes and follows",
+                "Profile details, bio, avatar, branding, business address, published content, links, gallery, comments and likes",
                 "Contract (Art. 6(1)(b))",
                 "Until you delete it or your account",
               ],

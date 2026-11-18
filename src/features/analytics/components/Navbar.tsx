@@ -100,14 +100,6 @@ export function Navbar() {
                 {t.nav.pricing}
               </Link>
             )}
-            {userId && !isBusiness && (
-              <Link
-                href="/dashboard/feed"
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                {t.nav.feed}
-              </Link>
-            )}
             {userId && (
               <Link
                 href="/dashboard/contents/create-space"

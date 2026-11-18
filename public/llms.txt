@@ -6,7 +6,7 @@
 
 ## What Nandzz is
 
-- A link-in-bio page with online booking: businesses publish one branded page, and clients book appointments from it (they can also follow pages and save content to collections).
+- A link-in-bio page with online booking: businesses publish one branded page, and clients book appointments from it (they can also save content to collections).
 - A branded public page at `nandzz.com/[handle]` that works as a link-in-bio destination and a lightweight business site.
 - Features you add to that page: **Booking** (24/7 appointments with staff and availability), **Content** (publish pages, PDFs, and interactive tools), **Gallery** (images), and **Links** (all your links in one place).
 - **MCP access** so tools like Claude can connect to a page.

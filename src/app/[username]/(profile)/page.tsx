@@ -25,7 +25,7 @@ import { getProfileWidgets } from "@/features/booking/server";
 import type { WidgetInstanceWithCatalog, Space } from "@/lib/types";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { buildProfileJsonLd, profileMetaDescription } from "@/features/profile/domain/seo";
-import { getIsFollowing, getLikedSpaceIds } from "@/features/social/server";
+import { getLikedSpaceIds } from "@/features/social/server";
 import { getSavedSpaceIds } from "@/features/collections/server";
 import { PageShell } from "@/components/layout/PageShell";
 import { ReportLink } from "@/features/legal/components/ReportLink";
@@ -180,28 +180,17 @@ export default async function ProfilePage({
 
   let likedSpaceIds: string[] = [];
   let savedSpaceIds: string[] = [];
-  let isFollowing = false;
 
   if (user) {
     const allSpaceIds = [...(spaces ?? []), ...(galleryImages ?? [])].map(s => s.id);
     const hasSpaces = allSpaceIds.length > 0;
-    [isFollowing, likedSpaceIds, savedSpaceIds] = await Promise.all([
-      user.id !== profile.id
-        ? getIsFollowing(supabase, user.id, profile.id)
-        : Promise.resolve(false),
+    [likedSpaceIds, savedSpaceIds] = await Promise.all([
       hasSpaces ? getLikedSpaceIds(supabase, user.id, allSpaceIds) : Promise.resolve([]),
       hasSpaces ? getSavedSpaceIds(supabase, user.id, allSpaceIds) : Promise.resolve([]),
     ]);
   }
 
   const isOwner = user?.id === profile.id;
-  // Follower/following counts are hidden by default (owner opts in from
-  // Settings). When hidden, strip them before the row is serialized to the
-  // client so visitors never receive them — the owner always sees their own.
-  const viewProfile =
-    profile.show_follow_counts || isOwner
-      ? profile
-      : { ...profile, followers_count: null, following_count: null };
   const hasContents = (spaces?.length ?? 0) > 0;
   const hasLinks = (linkSpaces?.length ?? 0) > 0;
   const hasGallery = (galleryImages?.length ?? 0) > 0;
@@ -249,15 +238,14 @@ export default async function ProfilePage({
         profileId={profile.id}
         username={profile.username}
         displayName={profile.display_name || profile.username}
-        profile={viewProfile}
+        profile={profile}
       />
 
       <PageShell width="wide">
         <ProfileHeader
-          profile={viewProfile}
+          profile={profile}
           isOwner={isOwner}
           currentUserId={user?.id ?? null}
-          isFollowing={isFollowing}
           widgets={widgets}
         />
         <ProfileSections
@@ -270,7 +258,7 @@ export default async function ProfilePage({
               <ProfileGallery
                 images={galleryImages || []}
                 totalCount={totalGalleryCount ?? galleryImages?.length ?? 0}
-                profile={viewProfile}
+                profile={profile}
                 isOwner={isOwner}
                 initialLayout={resolveGalleryLayout(profile)}
                 initialCaptionStyle={resolveGalleryCaptionStyle(profile)}
@@ -281,7 +269,7 @@ export default async function ProfilePage({
               <ProfileContent
                 spaces={spaces || []}
                 totalCount={totalSpaceCount ?? spaces?.length ?? 0}
-                profile={viewProfile}
+                profile={profile}
                 isOwner={isOwner}
                 initialLayout={resolveContentsLayout(profile)}
                 likedSpaceIds={likedSpaceIds}
@@ -293,7 +281,7 @@ export default async function ProfilePage({
               <ProfileLinks
                 links={linkSpaces || []}
                 totalCount={totalLinkCount ?? linkSpaces?.length ?? 0}
-                profile={viewProfile}
+                profile={profile}
                 isOwner={isOwner}
                 initialLayout={resolveLinksLayout(profile)}
               />

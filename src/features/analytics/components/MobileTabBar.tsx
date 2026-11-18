@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { BarChart3, Home, LayoutGrid, LogIn, Rss, Calendar, CalendarDays, User } from "lucide-react";
+import { BarChart3, Home, LayoutGrid, LogIn, Calendar, CalendarDays, User } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChrome } from "@/contexts/ChromeContext";
@@ -73,7 +73,6 @@ function getAuthTabDefs(isBusiness: boolean, profileHref: string): TabDef[] {
   }
 
   return [
-    { href: "/dashboard/feed", labelKey: "feed", icon: Rss, isActive: (p) => p.startsWith("/dashboard/feed") },
     spacesTab,
     bookingsTab,
     profileTab,

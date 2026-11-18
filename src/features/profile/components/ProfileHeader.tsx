@@ -7,8 +7,6 @@ import { avatarImageProps } from "@/lib/avatarImage";
 import { Camera, Share2 } from "lucide-react";
 import type { Profile, SocialLinksStyle, WidgetInstanceWithCatalog } from "@/lib/types";
 import { SocialLinkButtons, buildSocialLinks, resolveSocialLinksStyle } from "./SocialLinkButtons";
-import { FollowButton } from "@/features/social/components/FollowButton";
-import { FollowersDialog } from "./FollowersDialog";
 import { AddressMenu } from "./AddressMenu";
 import { WidgetStrip } from "./WidgetStrip";
 import { uploadAvatar } from "../storage";
@@ -42,7 +40,6 @@ interface ProfileHeaderProps {
   profile: Profile;
   isOwner?: boolean;
   currentUserId?: string | null;
-  isFollowing?: boolean;
   widgets?: WidgetInstanceWithCatalog[];
   // Style props are fallbacks for use outside a ProfileStyleRoot; on the profile
   // page the live (owner-editable) style from context wins.
@@ -54,7 +51,7 @@ interface ProfileHeaderProps {
   socialLinksStyle?: SocialLinksStyle | null;
 }
 
-export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = false, widgets = [], buttonColor: buttonColorProp = null, textColor: textColorProp = null, socialLinksStyle: socialLinksStyleProp = null }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, isOwner, currentUserId, widgets = [], buttonColor: buttonColorProp = null, textColor: textColorProp = null, socialLinksStyle: socialLinksStyleProp = null }: ProfileHeaderProps) {
   const { t } = useLanguage();
   const live = useProfileStyle()?.style;
   const buttonColor = live ? live.buttonColor : buttonColorProp;
@@ -71,8 +68,6 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
 
   // Lets the loading skeleton match this layout on the next visit.
   useEffect(() => { rememberHeaderLayout(profile.username, headerLayout); }, [profile.username, headerLayout]);
-  // Hidden by default; the owner always sees their own counts.
-  const showFollowCounts = isOwner || !!profile.show_follow_counts;
 
   // Visitors get Share in the header's action row; the owner has it in their
   // toolbar, so it only shows for them in Preview.
@@ -285,35 +280,6 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
     />
   );
 
-  // Nothing to show for most visitors (counts are opt-in): skip the row so it
-  // doesn't leave an empty gap above the links.
-  const showCountsRow = showFollowCounts || (!isOwner && !!currentUserId && !!profile.show_follow_counts);
-  const counts = showCountsRow && (
-    <div className="mt-4 flex items-center gap-5">
-      {showFollowCounts && (
-        <>
-          <FollowersDialog profileId={profile.id} type="followers" count={profile.followers_count ?? 0}>
-            <div className="flex items-center gap-1.5 text-sm">
-              <span className="font-semibold" style={textStyle}>{profile.followers_count ?? 0}</span>
-              <span className="text-muted-foreground" style={textMutedStyle}>{(profile.followers_count ?? 0) === 1 ? t.profile.follower : t.profile.followers}</span>
-            </div>
-          </FollowersDialog>
-          <FollowersDialog profileId={profile.id} type="following" count={profile.following_count ?? 0}>
-            <div className="flex items-center gap-1.5 text-sm">
-              <span className="font-semibold" style={textStyle}>{profile.following_count ?? 0}</span>
-              <span className="text-muted-foreground" style={textMutedStyle}>{t.profile.following}</span>
-            </div>
-          </FollowersDialog>
-        </>
-      )}
-      {/* Following is opt-in: the button only appears when the owner turned
-          on Settings → follow counts. */}
-      {!isOwner && currentUserId && profile.show_follow_counts && (
-        <FollowButton profileId={profile.id} initialIsFollowing={isFollowing} />
-      )}
-    </div>
-  );
-
   const socialLinks = (align: "center" | "start") =>
     links.length > 0 && (
       <SocialLinkButtons
@@ -325,14 +291,13 @@ export function ProfileHeader({ profile, isOwner, currentUserId, isFollowing = f
       />
     );
 
-  // Bio → address → counts → links, with the CTA in its chosen slot. Shared by
+  // Bio → address → links, with the CTA in its chosen slot. Shared by
   // every layout; hero renders the identity part on the cover instead.
   const details = (align: "center" | "start") => (
     <>
       {bio}
       {bookingPlacement === "description" && widgetStrip("mt-4", align)}
       {address}
-      {counts}
       {socialLinks(align)}
       {bookingPlacement === "social" && widgetStrip("mt-5", align)}
     </>

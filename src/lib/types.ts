@@ -95,8 +95,6 @@ export type Profile = {
    */
   hide_branding?: boolean;
   is_admin?: boolean | null;
-  followers_count?: number | null;
-  following_count?: number | null;
   agent_enabled?: boolean | null;
   agent_suggested_questions?: string[] | null;
   logo_url?: string | null;
@@ -111,7 +109,6 @@ export type Profile = {
   show_contents?: boolean | null;
   show_gallery?: boolean | null;
   show_links?: boolean | null;
-  show_follow_counts?: boolean | null;
 };
 
 // Credits are now LLM-only. The "plan" bucket is the monthly plan allowance

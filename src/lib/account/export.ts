@@ -9,8 +9,6 @@ export const EXPORT_SOURCES: ExportSource[] = [
   { key: "spaces", table: "spaces", column: "user_id" },
   { key: "collections", table: "collections", column: "user_id" },
   { key: "likes", table: "space_likes", column: "user_id" },
-  { key: "following", table: "user_follows", column: "follower_id" },
-  { key: "followers", table: "user_follows", column: "following_id" },
   { key: "notifications", table: "notifications", column: "user_id" },
   { key: "widgets", table: "widget_instances", column: "user_id" },
   { key: "bookings_received", table: "widget_bookings", column: "owner_user_id" },

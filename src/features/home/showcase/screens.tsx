@@ -18,7 +18,6 @@ import {
   Share2,
   Sparkles,
   Tag,
-  UserPlus,
   X,
 } from "lucide-react";
 import { InstagramIcon, YoutubeIcon } from "@/components/icons/BrandIcons";
@@ -30,7 +29,7 @@ import { EASE_OUT, TAP_LAND, TapRing, StatusBar, still, useReduceMotion } from "
 // Every screen mirrors a real Nandzz surface — keep them truthful:
 //   profile  → src/app/[username]/(profile)/page.tsx + ProfileHeader (header
 //              order: avatar · name · @handle · [book] · bio · [book] · address ·
-//              followers · social links · [book]), then Gallery / Publications /
+//              social links · [book]), then Gallery / Publications /
 //              Links sections. There is NO services list on the public profile.
 //   booking  → Book now opens /[username]/booking (CalendarBookingFlow):
 //              service (multi) → specialist → date & time → details → done.
@@ -233,13 +232,11 @@ type Business = {
   hue: number;
   bio?: string;
   address?: string; // AddressMenu shows the city only
-  stats: [string, string];
 };
 
 function ProfileTop({
   b,
   mock,
-  follow,
   socials,
   socialLayout,
   booking,
@@ -248,7 +245,6 @@ function ProfileTop({
 }: {
   b: Business;
   mock: Mock;
-  follow?: boolean; // Follow shows to signed-in visitors only
   socials: SocialKey[];
   socialLayout: SocialLayout;
   booking: BookingVariant;
@@ -277,23 +273,6 @@ function ProfileTop({
           {b.address}
         </span>
       )}
-      <div className="mt-3 flex items-center gap-3.5 text-[10px]">
-        <span>
-          <b className="font-semibold">{b.stats[0]}</b> <span className="text-(--s-muted)">{mock.followers}</span>
-        </span>
-        <span>
-          <b className="font-semibold">{b.stats[1]}</b> <span className="text-(--s-muted)">{mock.following}</span>
-        </span>
-        {follow && (
-          <span
-            data-anchor="follow"
-            className="inline-flex items-center gap-1 rounded-full bg-(--s-text) px-2.5 py-1 text-[10px] font-semibold text-(--s-bg)"
-          >
-            <UserPlus className="h-3 w-3" />
-            {mock.follow}
-          </span>
-        )}
-      </div>
       <SocialRow keys={socials} layout={socialLayout} anchor="socials" />
       {placement === "social" && book("mt-3.5")}
     </div>
@@ -403,7 +382,7 @@ export function HeroScreen({ scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
-        b={{ name: "Velora Studio", handle: "velorastudio", avatar: "velora-avatar", hue: 40, address: "Milano", stats: ["12.8k", "840"] }}
+        b={{ name: "Velora Studio", handle: "velorastudio", avatar: "velora-avatar", hue: 40, address: "Milano" }}
         mock={mock}
         socials={["website", "instagram", "email", "whatsapp"]}
         socialLayout="icons"
@@ -432,7 +411,6 @@ export function AnatomyScreen({ scrollY, rootRef, mock }: ScreenProps) {
           hue: 220,
           bio: mock.barberBio,
           address: "Milano",
-          stats: ["3.2k", "410"],
         }}
         mock={mock}
         socials={["instagram", "email", "whatsapp"]}
@@ -454,9 +432,8 @@ export function ContentScreen({ scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
-        b={{ name: "Ink & Pine", handle: "inkandpine", avatar: "ink-avatar", hue: 150, bio: mock.inkBio, stats: ["5.1k", "260"] }}
+        b={{ name: "Ink & Pine", handle: "inkandpine", avatar: "ink-avatar", hue: 150, bio: mock.inkBio }}
         mock={mock}
-        follow
         socials={["instagram", "email", "whatsapp"]}
         socialLayout="stack"
         booking="outline"
@@ -856,7 +833,7 @@ export function BookingScreen({
       overlay={page}
     >
       <ProfileTop
-        b={{ name: "Forma Physio", handle: "formaphysio", avatar: "physio-avatar", hue: 170, bio: mock.physioBio, address: "Bologna", stats: ["1.9k", "214"] }}
+        b={{ name: "Forma Physio", handle: "formaphysio", avatar: "physio-avatar", hue: 170, bio: mock.physioBio, address: "Bologna" }}
         mock={mock}
         socials={["website", "instagram", "whatsapp"]}
         socialLayout="icons"
@@ -1096,7 +1073,7 @@ export function StyleScreen({ step, scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot vars={vars} scrollY={scrollY} rootRef={rootRef} overlay={sheet}>
       <ProfileTop
-        b={{ name: "Bloom Nails", handle: "bloomnails", avatar: "bloom-avatar", hue: 350, bio: mock.bloomBio, address: "Torino", stats: ["2.4k", "318"] }}
+        b={{ name: "Bloom Nails", handle: "bloomnails", avatar: "bloom-avatar", hue: 350, bio: mock.bloomBio, address: "Torino" }}
         mock={mock}
         socials={["instagram", "email", "whatsapp"]}
         socialLayout={level >= 4 ? "chips" : "icons"}
@@ -1114,7 +1091,7 @@ export function LinksScreen({ scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot vars={SAGE} scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
-        b={{ name: "Sole Yoga", handle: "soleyoga", avatar: "yoga-avatar", hue: 120, bio: mock.yogaBio, stats: ["1.1k", "190"] }}
+        b={{ name: "Sole Yoga", handle: "soleyoga", avatar: "yoga-avatar", hue: 120, bio: mock.yogaBio }}
         mock={mock}
         socials={["instagram", "email", "youtube", "whatsapp"]}
         socialLayout="stack"
@@ -1133,7 +1110,7 @@ export function GalleryScreen({ scrollY, rootRef, mock }: ScreenProps) {
   return (
     <ScreenRoot vars={NOIR} scrollY={scrollY} rootRef={rootRef}>
       <ProfileTop
-        b={{ name: "Atelier Rosa", handle: "atelierrosa", avatar: "rosa-avatar", hue: 20, bio: mock.rosaBio, stats: ["9.7k", "502"] }}
+        b={{ name: "Atelier Rosa", handle: "atelierrosa", avatar: "rosa-avatar", hue: 20, bio: mock.rosaBio }}
         mock={mock}
         socials={["website", "instagram", "email"]}
         socialLayout="minimal"

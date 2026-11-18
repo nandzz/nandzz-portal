@@ -12,7 +12,7 @@ export async function WhatsAppChannelPage() {
   const supabase = await createClient();
   const userId = await getUserIdFromClaims(supabase);
   if (!userId) redirect("/login");
-  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
+  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/bookings");
 
   return (
     <PageShell width="content">

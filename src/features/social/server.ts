@@ -3,11 +3,5 @@
 export {
   getSpaceLiked,
   getLikedSpaceIds,
-  getAllLikedSpaceIds,
   getSpaceLikesCount,
-  getFollowingIds,
-  getIsFollowing,
-  getFollowingFeedPage,
-  getFollowsAnyone,
 } from "./data/social";
-export type { FeedCursor } from "./data/social";

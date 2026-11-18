@@ -36,7 +36,7 @@ export default async function AnalyticsDashboardPage({
 
   // Business-only section (matches the nav gating): personal accounts can't
   // reach Analytics by direct URL.
-  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
+  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/bookings");
 
   const entitlements = await getUserEntitlements(userId);
   const t = await getServerTranslations();

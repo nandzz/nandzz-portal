@@ -43,9 +43,6 @@ export type ShowcaseCopy = {
   mock: {
     // Public profile
     bookNow: string;
-    follow: string;
-    followers: string;
-    following: string;
     gallery: string;
     publications: string;
     links: string;
@@ -208,7 +205,6 @@ export type Translations = {
   nav: {
     explore: string;
     pricing: string;
-    feed: string;
     create: string;
     mySpaces: string;
     myCollections: string;
@@ -227,8 +223,6 @@ export type Translations = {
     createSpace: string;
     mcp: string;
     bookings: string;
-    followers: string;
-    following: string;
     analytics: string;
     groupAccount: string;
     groupBusiness: string;
@@ -344,16 +338,6 @@ export type Translations = {
     searchPlaceholder: string;
     clearSearch: string;
   };
-  feed: {
-    title: string;
-    subtitle: string;
-    emptyTitle: string;
-    emptyDesc: string;
-    exploreCreators: string;
-    noPublic: string;
-    previous: string;
-    next: string;
-  };
   collections: {
     title: string;
     subtitle: string;
@@ -449,8 +433,6 @@ export type Translations = {
     preferencesDesc: string;
     languageLabel: string;
     languageHint: string;
-    followCountsLabel: string;
-    followCountsHint: string;
     usernameTitle: string;
     usernameDesc: string;
     usernameSave: string;
@@ -530,12 +512,10 @@ export type Translations = {
     home: string;
     explore: string;
     signIn: string;
-    feed: string;
     create: string;
     spaces: string;
     profile: string;
     bookings: string;
-    following: string;
     booking: string;
     analytics: string;
     shortcuts: string;
@@ -904,16 +884,6 @@ export type Translations = {
     addressCopy: string;
     addressCopied: string;
     addressShare: string;
-    follower: string;
-    followers: string;
-    following: string;
-    followersTitle: string;
-    followingTitle: string;
-    follow: string;
-    followingBtn: string;
-    loadingUsers: string;
-    noFollowers: string;
-    noFollowing: string;
     loadMore: string;
     seeMore: string;
     contentsTitle: string;
@@ -934,8 +904,6 @@ export type Translations = {
     captionGradient: string;
     captionHover: string;
     captionCard: string;
-    followersPageSubtitle: string;
-    followingPageSubtitle: string;
     bookingPosition: string;
     bookingPositionUsername: string;
     bookingPositionDescription: string;
@@ -2014,8 +1982,6 @@ export type Translations = {
     privacyDescription: string;
     termsTitle: string;
     termsDescription: string;
-    feedTitle: string;
-    feedDescription: string;
     pricingTitle: string;
     pricingDescription: string;
     pricingShortDescription: string;

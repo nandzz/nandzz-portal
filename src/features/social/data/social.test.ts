@@ -3,10 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getSpaceLiked,
   getLikedSpaceIds,
-  getAllLikedSpaceIds,
   getSpaceLikesCount,
-  getFollowingIds,
-  getIsFollowing,
 } from "./social";
 
 // Minimal chainable Supabase stub: every filter method returns the builder, and
@@ -51,13 +48,6 @@ describe("getLikedSpaceIds", () => {
   });
 });
 
-describe("getAllLikedSpaceIds", () => {
-  it("maps every liked row for the user", async () => {
-    const { supabase } = stub({ data: [{ space_id: "x" }] });
-    expect(await getAllLikedSpaceIds(supabase, "user_1")).toEqual(["x"]);
-  });
-});
-
 describe("getSpaceLikesCount", () => {
   it("returns the exact count", async () => {
     const { supabase } = stub({ count: 7 });
@@ -66,23 +56,5 @@ describe("getSpaceLikesCount", () => {
   it("defaults to 0 when count is null", async () => {
     const { supabase } = stub({ count: null });
     expect(await getSpaceLikesCount(supabase, "space_1")).toBe(0);
-  });
-});
-
-describe("getFollowingIds", () => {
-  it("maps rows to following ids", async () => {
-    const { supabase } = stub({ data: [{ following_id: "p1" }, { following_id: "p2" }] });
-    expect(await getFollowingIds(supabase, "user_1")).toEqual(["p1", "p2"]);
-  });
-});
-
-describe("getIsFollowing", () => {
-  it("true when a follow row exists", async () => {
-    const { supabase } = stub({ data: { id: "f1" } });
-    expect(await getIsFollowing(supabase, "user_1", "p1")).toBe(true);
-  });
-  it("false when none", async () => {
-    const { supabase } = stub({ data: null });
-    expect(await getIsFollowing(supabase, "user_1", "p1")).toBe(false);
   });
 });

@@ -84,7 +84,7 @@ export const privacyIt: LegalDocument = {
               ],
               [
                 <B key="a">Pagina pubblica e contenuti</B>,
-                "Dati del profilo, bio, avatar, branding, indirizzo dell'attività, contenuti pubblicati, link, galleria, commenti, like e follower",
+                "Dati del profilo, bio, avatar, branding, indirizzo dell'attività, contenuti pubblicati, link, galleria, commenti e like",
                 "Contratto (art. 6.1.b)",
                 "Fino alla cancellazione da parte tua o alla chiusura dell'account",
               ],

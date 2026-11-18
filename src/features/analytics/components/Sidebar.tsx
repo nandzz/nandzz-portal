@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   PanelLeftClose,
   PanelLeftOpen,
-  Rss,
   LayoutGrid,
   CalendarDays,
   CreditCard,
@@ -21,8 +20,6 @@ import {
   LogOut,
   User,
   Calendar,
-  Users,
-  UserPlus,
   BarChart3,
   Briefcase,
   Bot,
@@ -86,18 +83,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navGroups: NavGroup[] = useMemo(() => {
     // Account
     const account: NavItem[] = [
-      // Feed is a personal-account capability: a business gets followed rather
-      // than following creators, so it has no feed.
-      ...(!isBusiness
-        ? [
-            {
-              href: "/dashboard/feed",
-              label: t.nav.feed,
-              icon: Rss,
-              isActive: (p: string) => p.startsWith("/dashboard/feed"),
-            },
-          ]
-        : []),
       {
         href: "/dashboard/contents",
         label: t.nav.mySpaces,
@@ -117,18 +102,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             },
           ]
         : []),
-      {
-        href: "/dashboard/followers",
-        label: t.nav.followers,
-        icon: Users,
-        isActive: (p) => p.startsWith("/dashboard/followers"),
-      },
-      {
-        href: "/dashboard/following",
-        label: t.nav.following,
-        icon: UserPlus,
-        isActive: (p) => p.startsWith("/dashboard/following"),
-      },
     ];
 
     // Business — only for business accounts. Personal accounts get a compact

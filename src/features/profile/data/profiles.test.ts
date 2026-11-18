@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getMyProfile, getFollowList, getPublicImageSpaces } from "./profiles";
+import { getMyProfile, getPublicImageSpaces } from "./profiles";
 
 // Chainable Supabase stub: filter methods return the builder; the builder
 // resolves (awaited, or via single) to `result`. Mirrors the collections tests.
@@ -23,26 +23,6 @@ describe("getMyProfile", () => {
     expect(await getMyProfile(supabase, "u1")).toEqual({ id: "u1", username: "a" });
     const none = stub({ data: null });
     expect(await getMyProfile(none.supabase, "u1")).toBeNull();
-  });
-});
-
-describe("getFollowList", () => {
-  it("unwraps the FK-hinted embed and drops null joins", async () => {
-    const { supabase } = stub({
-      data: [
-        { profiles: { id: "u1", username: "a", display_name: null, avatar_url: null } },
-        { profiles: null },
-      ],
-    });
-    expect(await getFollowList(supabase, "p1", "followers", 0, 19)).toEqual({
-      users: [{ id: "u1", username: "a", display_name: null, avatar_url: null }],
-      rowCount: 2,
-    });
-  });
-
-  it("returns [] when there are no rows", async () => {
-    const { supabase } = stub({ data: null });
-    expect(await getFollowList(supabase, "p1", "following", 0, 19)).toEqual({ users: [], rowCount: 0 });
   });
 });
 

@@ -15,7 +15,7 @@ export default async function BookingSettingsPage() {
   if (!userId) redirect("/login");
 
   // Business-only feature: personal accounts can't reach it by direct URL.
-  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/feed");
+  if ((await getAccountType(supabase, userId)) !== "business") redirect("/dashboard/bookings");
 
   const widget = await getOrCreateOwnerCalendar(userId);
   if (!widget) notFound();

@@ -74,7 +74,7 @@ export const termsIt: LegalDocument = {
             <li>creare una pagina pubblica con il tuo username</li>
             <li>pubblicarvi contenuti, come pagine web, file, elementi di galleria e link</li>
             <li>offrire funzioni, come la prenotazione online di appuntamenti</li>
-            <li>interagire con altri utenti, ad esempio seguendo pagine, salvando contenuti in raccolte e prenotando appuntamenti</li>
+            <li>interagire con altri utenti, ad esempio salvando contenuti in raccolte e prenotando appuntamenti</li>
           </Ul>
           <P>
             Alcune funzioni sono gratuite, altre richiedono un piano a pagamento o crediti. Cosa include ogni
