@@ -18,6 +18,7 @@ function pendingClaimPath(request: NextRequest): string | null {
   return code ? `/claim?code=${encodeURIComponent(code)}` : null;
 }
 const POST_SETUP_PATH = "/dashboard/contents";
+const EMBED_PATH_RE = /^\/[^/]+\/booking\/embed\/?$/;
 
 export async function proxy(request: NextRequest) {
   // When Supabase rejects an email link's redirect target it falls back to the
@@ -34,13 +35,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Booking embed on a business's website: the iframe can't rely on our
+  // language cookie (third-party cookies are blocked), so the snippet passes
+  // `?lang=` and we feed it to this request as if the cookie were set. Nothing
+  // is persisted — the visitor's own nandzz.com language is untouched.
+  const embedLang = EMBED_PATH_RE.test(request.nextUrl.pathname)
+    ? request.nextUrl.searchParams.get("lang")
+    : null;
+  const forcedLang =
+    embedLang && SUPPORTED_LOCALES.includes(embedLang as Locale) ? (embedLang as Locale) : null;
+  if (forcedLang) request.cookies.set(LANG_COOKIE, forcedLang);
+
   let supabaseResponse = NextResponse.next({
     request,
   });
 
   // Set language cookie from Accept-Language header if not already set
   const existingLang = request.cookies.get(LANG_COOKIE)?.value;
-  if (!existingLang || !SUPPORTED_LOCALES.includes(existingLang as Locale)) {
+  if (!forcedLang && (!existingLang || !SUPPORTED_LOCALES.includes(existingLang as Locale))) {
     const acceptLang = request.headers.get("accept-language") || "en";
     const detectedLang = detectLocale(acceptLang);
     supabaseResponse.cookies.set(LANG_COOKIE, detectedLang, {

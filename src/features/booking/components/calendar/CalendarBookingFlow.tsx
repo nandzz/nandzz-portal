@@ -70,6 +70,11 @@ interface Props {
   isDemo?: boolean;
   initialServiceId?: string;
   onBooked?: (manageUrl: string) => void;
+  // Rendered inside an iframe on the business's own website. Third-party
+  // cookies are blocked there, so sign-in can't work: the "sign in to book
+  // faster" prompt is hidden (guest booking only) and links leaving the flow
+  // open in a new tab instead of navigating the iframe.
+  embedded?: boolean;
 }
 
 type Step = "location" | "service" | "slot" | "staff" | "details" | "done";
@@ -91,6 +96,7 @@ export function CalendarBookingFlow({
   isDemo = false,
   initialServiceId,
   onBooked,
+  embedded = false,
 }: Props) {
   const { t, locale } = useLanguage();
 
@@ -1018,7 +1024,7 @@ export function CalendarBookingFlow({
                 {t.booking.notYou}
               </button>
             </div>
-          ) : (
+          ) : embedded ? null : (
             <button
               type="button"
               onClick={() => {
@@ -1250,6 +1256,7 @@ export function CalendarBookingFlow({
           {viewer && (
             <Link
               href="/dashboard/bookings"
+              target={embedded ? "_blank" : undefined}
               className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               {t.booking.viewMyBookings}
@@ -1258,6 +1265,8 @@ export function CalendarBookingFlow({
           {manageUrl && (
             <a
               href={manageUrl}
+              target={embedded ? "_blank" : undefined}
+              rel={embedded ? "noopener" : undefined}
               className="inline-block text-sm font-medium text-emerald-600 hover:underline"
             >
               {t.booking.manageBookingLink}

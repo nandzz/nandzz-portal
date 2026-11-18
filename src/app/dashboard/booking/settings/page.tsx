@@ -2,14 +2,26 @@ export const dynamic = "force-dynamic";
 
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Eye, Globe } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { getAccountType } from "@/lib/account/server";
 import { getOrCreateOwnerCalendar } from "@/features/booking/server";
-import { renderWidgetIcon, WidgetInstanceSettings } from "@/features/booking";
+import { renderWidgetIcon, WidgetInstanceSettings, WebsiteEmbedCard } from "@/features/booking";
 import { getServerTranslations } from "@/lib/i18n/server";
 
-export default async function BookingSettingsPage() {
+const SECTIONS = ["visibility", "website"] as const;
+type Section = (typeof SECTIONS)[number];
+
+export default async function BookingSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
+  // `?section=website` deep-links a tab (e.g. from the guide or an email).
+  const { section } = await searchParams;
+  const initialSection: Section = SECTIONS.includes(section as Section) ? (section as Section) : "visibility";
+
   const supabase = await createClient();
   const userId = await getUserIdFromClaims(supabase);
   if (!userId) redirect("/login");
@@ -20,7 +32,10 @@ export default async function BookingSettingsPage() {
   const widget = await getOrCreateOwnerCalendar(userId);
   if (!widget) notFound();
 
-  const t = await getServerTranslations();
+  const [t, { data: profile }] = await Promise.all([
+    getServerTranslations(),
+    supabase.from("profiles").select("username").eq("id", userId).maybeSingle(),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -41,11 +56,30 @@ export default async function BookingSettingsPage() {
         </div>
       </div>
 
-      <WidgetInstanceSettings
-        instanceId={widget.id}
-        hasAccess={widget.has_access}
-        initialEnabled={widget.enabled}
-      />
+      <Tabs defaultValue={initialSection} className="gap-6">
+        <TabsList className="w-full">
+          <TabsTrigger value="visibility" className="flex-1 gap-2">
+            <Eye className="h-4 w-4" /> {t.booking.sectionVisibility}
+          </TabsTrigger>
+          <TabsTrigger value="website" className="flex-1 gap-2">
+            <Globe className="h-4 w-4" /> {t.booking.embedTab}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visibility">
+          <WidgetInstanceSettings
+            instanceId={widget.id}
+            hasAccess={widget.has_access}
+            initialEnabled={widget.enabled}
+          />
+        </TabsContent>
+
+        <TabsContent value="website">
+          {profile?.username && (
+            <WebsiteEmbedCard username={profile.username} live={widget.has_access && widget.enabled} />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
