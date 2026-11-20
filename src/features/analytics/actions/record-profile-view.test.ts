@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 let mockUser: { id: string } | null;
 let insertError: { code?: string; message: string } | null;
 let insertedRow: Record<string, unknown> | undefined;
+let upsertOpts: Record<string, unknown> | undefined;
 let reqHeaders: Record<string, string>;
 
 vi.mock("next/headers", () => ({
@@ -18,8 +19,9 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from: () => ({
-      insert: async (row: Record<string, unknown>) => {
+      upsert: async (row: Record<string, unknown>, opts: Record<string, unknown>) => {
         insertedRow = row;
+        upsertOpts = opts;
         return { error: insertError };
       },
     }),
@@ -35,6 +37,7 @@ beforeEach(() => {
   mockUser = null;
   insertError = null;
   insertedRow = undefined;
+  upsertOpts = undefined;
   reqHeaders = { "user-agent": "Mozilla/5.0", "x-forwarded-for": "1.1.1.1, 2.2.2.2" };
 });
 
@@ -69,8 +72,14 @@ describe("recordProfileView", () => {
     expect(insertedRow!.visitor_key).toBe(a);
   });
 
-  it("treats the daily dedup violation as success", async () => {
-    insertError = { code: "23505", message: "dup" };
+  it("dedups repeat visits the same day with ON CONFLICT DO NOTHING", async () => {
     expect(await recordProfileView(PROFILE_ID)).toEqual({ ok: true });
+    expect(upsertOpts).toEqual({ onConflict: "profile_id,visitor_key,viewed_date", ignoreDuplicates: true });
+  });
+
+  it("returns FAILED on a real write error", async () => {
+    insertError = { code: "42501", message: "denied" };
+    const res = await recordProfileView(PROFILE_ID);
+    expect(res).toEqual({ ok: false, error: "FAILED", message: "denied" });
   });
 });

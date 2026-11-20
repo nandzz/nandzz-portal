@@ -738,7 +738,7 @@ export const ja: Translations = {
   },
   contentTypes: {
     aiLabel: "AI生成",
-    aiDescription: "AIで生成する",
+    aiDescription: "以前のAIエディターで作成したページ",
     pdfLabel: "PDF",
     pdfDescription: "PDFドキュメントをアップロード",
     notesLabel: "ノート",

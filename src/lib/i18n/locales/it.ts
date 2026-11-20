@@ -738,7 +738,7 @@ export const it: Translations = {
   },
   contentTypes: {
     aiLabel: "Generato con IA",
-    aiDescription: "Genera con IA",
+    aiDescription: "Pagina precedente creata con l'editor IA",
     pdfLabel: "PDF",
     pdfDescription: "Carica un documento PDF",
     notesLabel: "Note",

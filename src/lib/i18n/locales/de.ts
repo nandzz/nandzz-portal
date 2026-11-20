@@ -738,7 +738,7 @@ export const de: Translations = {
   },
   contentTypes: {
     aiLabel: "KI-generiert",
-    aiDescription: "Mit KI erstellen",
+    aiDescription: "Ältere, mit dem KI-Editor erstellte Seite",
     pdfLabel: "PDF",
     pdfDescription: "Ein PDF-Dokument hochladen",
     notesLabel: "Notizen",

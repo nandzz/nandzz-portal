@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 let mockUser: { id: string } | null;
 let insertError: { code?: string; message: string } | null;
 let insertedRow: Record<string, unknown> | undefined;
+// Row the "already counted today" lookup finds (null = first view today).
+let existingRow: { id: string } | null;
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -13,6 +15,14 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from: () => ({
+      select: () => {
+        const chain = {
+          eq: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => ({ data: existingRow }),
+        };
+        return chain;
+      },
       insert: async (row: Record<string, unknown>) => {
         insertedRow = row;
         return { error: insertError };
@@ -30,6 +40,7 @@ beforeEach(() => {
   mockUser = { id: "viewer_1" };
   insertError = null;
   insertedRow = undefined;
+  existingRow = null;
 });
 
 describe("recordSpaceView", () => {
@@ -47,6 +58,12 @@ describe("recordSpaceView", () => {
       ok: false,
       error: "OWNER",
     });
+    expect(insertedRow).toBeUndefined();
+  });
+
+  it("skips the insert when the visitor was already counted today", async () => {
+    existingRow = { id: "view_1" };
+    expect(await recordSpaceView(SPACE_ID, OWNER_ID)).toEqual({ ok: true });
     expect(insertedRow).toBeUndefined();
   });
 
