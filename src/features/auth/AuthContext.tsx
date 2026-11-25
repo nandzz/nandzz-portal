@@ -10,7 +10,28 @@ import {
   useState,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { FEATURES } from "@/lib/flags";
 import type { Profile, PlanEntitlements } from "@/lib/types";
+
+// `subscription_plans.has_orders` exists only where the Orders migration ran
+// (dev). Selecting it on a DB without the column fails the whole query and
+// drops every user to Free, so it's only requested where FEATURES.orders is on
+// (dev builds; inlined at build time). Remove the gate at the Orders go-live,
+// after db:push:prod.
+const PLAN_COLUMNS: string = FEATURES.orders
+  ? "has_widgets, has_mcp, has_analytics, has_styling, hide_branding, has_google_review, has_orders, space_limit"
+  : "has_widgets, has_mcp, has_analytics, has_styling, hide_branding, has_google_review, space_limit";
+
+type PlanRow = {
+  has_widgets: boolean;
+  has_mcp: boolean;
+  has_analytics: boolean;
+  has_styling: boolean;
+  hide_branding: boolean;
+  has_google_review: boolean;
+  has_orders?: boolean;
+  space_limit: number | null;
+};
 
 // Free-plan entitlements — the safe default while loading and the fallback when
 // the catalog is unseeded. Mirrors FREE_FALLBACK in lib/plan.ts.
@@ -22,6 +43,7 @@ export const FREE_ENTITLEMENTS: PlanEntitlements = {
   hasStyling: false,
   hideBranding: false,
   hasGoogleReview: false,
+  hasOrders: false,
 };
 
 type AuthContextValue = {
@@ -74,11 +96,10 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
   const fetchEntitlementsForSlug = useCallback(
     async (planSlug: string | null | undefined): Promise<PlanEntitlements> => {
       const slug = planSlug ?? "free";
-      const { data: plan } = await supabase
-        .from("subscription_plans")
-        .select("has_widgets, has_mcp, has_analytics, has_styling, hide_branding, has_google_review, space_limit")
-        .eq("slug", slug)
-        .maybeSingle();
+      const { data } = await supabase.from("subscription_plans").select(PLAN_COLUMNS).eq("slug", slug).maybeSingle();
+      // The column list is picked at build time, so the typed select parser
+      // can't infer the row; this is its shape.
+      const plan = data as unknown as PlanRow | null;
       if (!plan) return FREE_ENTITLEMENTS;
       return {
         spaceLimit: plan.space_limit,
@@ -88,6 +109,7 @@ export function AuthProvider({ initialUserId, initialProfile, initialEntitlement
         hasStyling: !!plan.has_styling,
         hideBranding: !!plan.hide_branding,
         hasGoogleReview: !!plan.has_google_review,
+        hasOrders: FEATURES.orders && !!plan.has_orders,
       };
     },
     [supabase]

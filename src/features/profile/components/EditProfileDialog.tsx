@@ -35,15 +35,13 @@ import {
 } from "@/components/icons/BrandIcons";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import {
-  PHONE_COUNTRIES,
   dialForRegion,
   inferPhoneRegion,
   isPossiblePhoneNumber,
-  regionName,
-  regionToFlag,
   splitE164,
   toE164,
 } from "@/features/booking/domain/phone";
+import { PhoneCountrySelect } from "@/features/booking/components/PhoneCountrySelect";
 
 const LIMITS = {
   displayName: 50,
@@ -102,13 +100,6 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
   );
   const [whatsappNational, setWhatsappNational] = useState(() =>
     profile.social_links?.whatsapp ? splitE164(profile.social_links.whatsapp).national : ""
-  );
-  const phoneCountryOptions = useMemo(
-    () =>
-      [...PHONE_COUNTRIES].sort((a, b) =>
-        regionName(a.region, locale).localeCompare(regionName(b.region, locale), locale)
-      ),
-    [locale]
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -364,21 +355,12 @@ export function EditProfileDialog({ onClose, profile }: EditProfileDialogProps) 
                 </div>
                 <div className={`flex items-center gap-0 flex-1 min-w-0 rounded-md border bg-background overflow-hidden transition-colors ${invalidRing("whatsapp")}`}>
                   {/* Country dial-code selector in place of the static prefix. */}
-                  <div className="relative shrink-0 h-9 border-r border-border/60 bg-muted/50">
-                    <select
-                      aria-label={t.booking.phoneCountryAria}
-                      value={whatsappRegion}
-                      onChange={(e) => setWhatsappRegion(e.target.value)}
-                      className="h-full appearance-none bg-transparent pl-3 pr-7 text-base sm:text-xs text-muted-foreground focus:outline-none cursor-pointer"
-                    >
-                      {phoneCountryOptions.map((c) => (
-                        <option key={c.region} value={c.region}>
-                          {regionToFlag(c.region)} +{c.dial}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                  <PhoneCountrySelect
+                    value={whatsappRegion}
+                    onChange={setWhatsappRegion}
+                    wrapperClassName="h-9 border-r border-border/60 bg-muted/50"
+                    className="text-base text-muted-foreground sm:text-xs"
+                  />
                   <Input
                     type="tel"
                     inputMode="tel"

@@ -1,7 +1,5 @@
 "use client";
 
-import { Dialog } from "@/components/ui/dialog";
-import { Sheet, useSheetLayout } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -29,44 +27,8 @@ export function relativeTime(iso: string, now: number, locale: string): string {
   return rtf.format(Math.round(diff / 1440), "day");
 }
 
-/** Bottom sheet below `sm`, centered dialog above — the owner-panel convention. */
-export function ResponsivePanel({
-  open,
-  onClose,
-  title,
-  children,
-  footer,
-}: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  /** Sticky action bar (pinned to the sheet's bottom on phones). */
-  footer?: React.ReactNode;
-}) {
-  const sheet = useSheetLayout();
-  if (sheet) {
-    return (
-      <Sheet open={open} onOpenChange={(next) => !next && onClose()} aria-label={title} className="max-h-[85dvh]">
-        <div className="px-5 pb-2 pt-1">
-          <h2 className="text-base font-semibold">{title}</h2>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>
-        {footer && (
-          <div className="border-t border-border/60 bg-background px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-            {footer}
-          </div>
-        )}
-      </Sheet>
-    );
-  }
-  return (
-    <Dialog open={open} onClose={onClose} title={title} maxWidthClass="max-w-lg">
-      <div className="max-h-[60vh] overflow-y-auto">{children}</div>
-      {footer && <div className="mt-5 border-t border-border/60 pt-4">{footer}</div>}
-    </Dialog>
-  );
-}
+// Moved to components/ui so Orders shares it; re-exported for My Agent's imports.
+export { ResponsivePanel } from "@/components/ui/responsive-panel";
 
 /** Pill-style segmented control. Scales to a handful of options. */
 export function Segmented<T extends string>({

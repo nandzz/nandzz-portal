@@ -48,6 +48,8 @@ const nextConfig: NextConfig = {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     // Drives FEATURES.businessAgent (My Agent, dev only) — see src/lib/flags.ts.
     BUSINESS_AGENT_ENABLED: IS_DEV_ENV ? "1" : "0",
+    // Drives FEATURES.orders (Orders / encomendas, dev only) — see src/lib/flags.ts.
+    ORDERS_ENABLED: IS_DEV_ENV ? "1" : "0",
   },
   images: {
     // Default is 4h. Every image the optimizer sees is either at a unique path

@@ -19,4 +19,7 @@ export const FEATURES = {
   // as a literal, so prod builds dead-code-eliminate every gated import (the
   // `.includes()` in IS_DEV_ENV can't be folded by the bundler).
   businessAgent: process.env.BUSINESS_AGENT_ENABLED === "1",
+  // Orders (encomendas: products + order dashboard). Dev only until go-live;
+  // same inlining trick as businessAgent (ORDERS_ENABLED from next.config.ts).
+  orders: process.env.ORDERS_ENABLED === "1",
 };

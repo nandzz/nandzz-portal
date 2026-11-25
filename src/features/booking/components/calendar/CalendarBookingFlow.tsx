@@ -2,23 +2,21 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { CalendarDays, Clock, Loader2, Check, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles, Tag, MapPin, Info } from "lucide-react";
+import { CalendarDays, Clock, Loader2, Check, ChevronLeft, ChevronRight, Pencil, Sparkles, Tag, MapPin, Info } from "lucide-react";
 import type { CalendarCategory, CalendarService, Location, StaffMember } from "@/lib/types";
 import { eligibleStaffForService, todayInZone, type Slot } from "@/features/booking/domain/calendar";
 import { AUTH_RETURN_TO_KEY } from "@/lib/layout/appShell";
 import { BOOKING_ERROR_KEYS } from "@/features/booking/domain/booking-errors";
 import {
-  PHONE_COUNTRIES,
   dialForRegion,
   inferPhoneRegion,
   regionForTimeZone,
   isPossiblePhoneNumber,
   isValidEmail,
-  regionName,
-  regionToFlag,
   splitE164,
   toE164,
 } from "@/features/booking/domain/phone";
+import { PhoneCountrySelect } from "@/features/booking/components/PhoneCountrySelect";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MonthCalendar, CalendarSkeleton } from "./MonthCalendar";
 import { AuthModal, type AuthResult } from "@/features/auth";
@@ -675,15 +673,6 @@ export function CalendarBookingFlow({
   const emailFormatBad = form.email.trim() !== "" && !isValidEmail(form.email);
   const phoneFormatBad = form.phone.trim() !== "" && !isPossiblePhoneNumber(form.phone);
 
-  // Country options for the phone prefix, sorted by their localized name so the
-  // list reads naturally in the visitor's language.
-  const phoneCountryOptions = useMemo(
-    () =>
-      [...PHONE_COUNTRIES].sort((a, b) =>
-        regionName(a.region, locale).localeCompare(regionName(b.region, locale), locale)
-      ),
-    [locale]
-  );
 
   const back = () => {
     setError(null);
@@ -1143,21 +1132,11 @@ export function CalendarBookingFlow({
             <div className="flex gap-2">
               {/* Country dial-code prefix — defaulted from the visitor's inferred
                   region, so the common case needs no interaction. */}
-              <div className="relative shrink-0">
-                <select
-                  aria-label={t.booking.phoneCountryAria}
-                  value={phoneRegion}
-                  onChange={(e) => setPhoneRegion(e.target.value)}
-                  className="h-full appearance-none rounded-lg border border-border bg-background py-2 pl-3 pr-7 text-sm"
-                >
-                  {phoneCountryOptions.map((c) => (
-                    <option key={c.region} value={c.region}>
-                      {regionToFlag(c.region)} +{c.dial}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              </div>
+              <PhoneCountrySelect
+                value={phoneRegion}
+                onChange={setPhoneRegion}
+                className="rounded-lg border border-border bg-background py-2 text-sm"
+              />
               <input
                 className={`w-full rounded-lg border bg-background px-3 py-2 text-sm ${
                   touchedPhone && phoneFormatBad ? "border-red-400 dark:border-red-500" : "border-border"

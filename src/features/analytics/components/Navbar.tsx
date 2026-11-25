@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Plug, CalendarDays, BarChart3, Palette, Briefcase, Plus, Bot } from "lucide-react";
+import { Moon, Sun, Menu, User, UserPlus, Settings, LogOut, CreditCard, Plug, CalendarDays, BarChart3, Palette, Briefcase, Plus, Bot, ShoppingBag } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -328,6 +328,12 @@ export function Navbar() {
                             <DropdownMenuItem render={<Link href="/dashboard/my-agent" />} className="gap-2">
                               <Bot aria-hidden className="h-4 w-4 text-muted-foreground" />
                               My Agent
+                            </DropdownMenuItem>
+                          )}
+                          {FEATURES.orders && (
+                            <DropdownMenuItem render={<Link href="/dashboard/orders" />} className="gap-2">
+                              <ShoppingBag aria-hidden className="h-4 w-4 text-muted-foreground" />
+                              {t.nav.orders}
                             </DropdownMenuItem>
                           )}
                           {FEATURES.brand && (

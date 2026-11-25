@@ -23,6 +23,7 @@ import {
   BarChart3,
   Briefcase,
   Bot,
+  ShoppingBag,
 } from "lucide-react";
 import { FEATURES } from "@/lib/flags";
 import { NotificationBell } from "./NotificationBell";
@@ -128,6 +129,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         label: "My Agent",
         icon: Bot,
         isActive: (p) => p.startsWith("/dashboard/my-agent"),
+      });
+    }
+    // Orders (products + encomendas). Dev environments only until go-live.
+    if (isBusiness && FEATURES.orders) {
+      business.push({
+        href: "/dashboard/orders",
+        label: t.nav.orders,
+        icon: ShoppingBag,
+        isActive: (p) => p.startsWith("/dashboard/orders"),
       });
     }
     if (isBusiness && FEATURES.brand) {

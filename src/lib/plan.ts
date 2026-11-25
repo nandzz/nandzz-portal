@@ -22,6 +22,7 @@ const FREE_FALLBACK: { name: string; entitlements: PlanEntitlements } = {
     hasStyling: false,
     hideBranding: false,
     hasGoogleReview: false,
+    hasOrders: false,
   },
 };
 
@@ -34,14 +35,15 @@ function entitlementsFromPlan(plan: SubscriptionPlan): PlanEntitlements {
     hasStyling: plan.has_styling ?? false,
     hideBranding: plan.hide_branding ?? false,
     hasGoogleReview: plan.has_google_review ?? false,
+    hasOrders: plan.has_orders ?? false,
   };
 }
 
-// Unclaimed demo profiles get booking (widgets) and styling as demo perks,
-// independent of plan — mirrors user_has_entitlement('widgets'|'styling') in the
+// Unclaimed demo profiles get booking (widgets), styling and orders as demo perks,
+// independent of plan — mirrors user_has_entitlement('widgets'|'styling'|'orders') in the
 // DB. Demos are admin-built pitches, so they must render fully styled.
 function withDemoPerks(base: PlanEntitlements, isDemo: boolean | null | undefined): PlanEntitlements {
-  return isDemo ? { ...base, hasWidgets: true, hasStyling: true } : base;
+  return isDemo ? { ...base, hasWidgets: true, hasStyling: true, hasOrders: true } : base;
 }
 
 type ProfilePlanRow = {

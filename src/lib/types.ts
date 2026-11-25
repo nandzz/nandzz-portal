@@ -133,6 +133,9 @@ export type SubscriptionPlan = {
   has_styling: boolean; // custom colours, button style, Brand page, caption styles
   hide_branding: boolean; // hides the Nandzz "Create your page" badge
   has_google_review: boolean;
+  has_orders: boolean; // Orders (encomendas): products + order dashboard
+  orders_product_limit: number | null; // null ⇒ unlimited
+  orders_monthly_limit: number | null; // null ⇒ unlimited
   active: boolean;
   sort_order: number;
   stripe_product_id: string | null;
@@ -150,6 +153,7 @@ export type PlanEntitlements = {
   hasStyling: boolean;
   hideBranding: boolean;
   hasGoogleReview: boolean;
+  hasOrders: boolean;
 };
 
 // A user's resolved plan (profile plan_* fields joined to subscription_plans).
