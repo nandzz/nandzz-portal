@@ -1318,6 +1318,11 @@ export type Translations = {
     limitReachedWhatsapp: string;
     limitReachedWhatsappMessage: string;
     limitReachedProfile: string;
+    limitBannerNearTitle: string;
+    limitBannerNearBody: string;
+    limitBannerReachedTitle: string;
+    limitBannerReachedBody: string;
+    limitBannerUpgrade: string;
     errorGeneric: string;
     yourBooking: string;
     withBusiness: string;

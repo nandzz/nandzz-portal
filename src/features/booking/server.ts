@@ -10,4 +10,5 @@ export {
   ownerHasWidgetAccess,
   getWidgetCatalog,
   isBookingLimitReached,
+  getBookingLimitStatus,
 } from "./data/widgets";

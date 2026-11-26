@@ -6,7 +6,8 @@ import Link from "next/link";
 import { createClient, getUserIdFromClaims } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAccountType } from "@/lib/account/server";
-import { getOrCreateOwnerCalendar } from "@/features/booking/server";
+import { getOrCreateOwnerCalendar, getBookingLimitStatus } from "@/features/booking/server";
+import { BookingLimitBanner } from "@/features/booking/components/BookingLimitBanner";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
 import { renderWidgetIcon, WidgetWorkspace, BookingActivationBanner } from "@/features/booking";
@@ -64,11 +65,12 @@ export default async function BookingDashboardPage({
   if (!widget) notFound();
 
   const admin = createAdminClient();
-  const [t, locale, { data: profile }, { data: recentClaim }] = await Promise.all([
+  const [t, locale, { data: profile }, { data: recentClaim }, bookingLimit] = await Promise.all([
     getServerTranslations(),
     getCurrentLocale(),
     admin.from("profiles").select("username, display_name, address").eq("id", userId).maybeSingle(),
     fetchRecentClaim(admin, userId),
+    getBookingLimitStatus(userId),
   ]);
   // No location yet ⇒ first-run setup: the header explains the page instead of
   // reporting a live status, and settings stay out of the way until it's done.
@@ -120,6 +122,8 @@ export default async function BookingDashboardPage({
         enabled={widget.enabled}
         username={profile?.username ?? undefined}
       />
+
+      <BookingLimitBanner t={t} locale={locale} {...bookingLimit} />
 
       <CalendarWorkspaceLoader
         instanceId={widget.id}
