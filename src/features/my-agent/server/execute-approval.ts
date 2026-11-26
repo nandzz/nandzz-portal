@@ -109,8 +109,10 @@ async function createBooking(admin: Admin, a: ClaimedApproval): Promise<ExecuteO
   });
   if (!plan.ok) return planFailure(plan.reason);
 
+  // The owner approved this booking, so it's exempt from the plan's monthly
+  // public-link cap: create_agent_booking_tx = create_booking_tx + that exemption.
   const { data: booking, error } = await admin
-    .rpc("create_booking_tx", {
+    .rpc("create_agent_booking_tx", {
       p_instance_id: instanceId,
       p_service_id: service_ids[0],
       p_service_ids: service_ids,
