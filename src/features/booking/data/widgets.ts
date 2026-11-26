@@ -190,3 +190,18 @@ export async function getWidgetCatalog(): Promise<WidgetCatalogEntry[]> {
     .order("sort_order", { ascending: true });
   return (data ?? []) as WidgetCatalogEntry[];
 }
+
+// Monthly cap on customer bookings (plan `monthly_booking_limit`, set in admin).
+// When reached, the public booking button/link are switched off; the owner can
+// still add bookings from the dashboard. Fails open (not reached) on error.
+export async function isBookingLimitReached(ownerId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .rpc("booking_limit_status", { p_owner: ownerId })
+    .maybeSingle<{ limit_count: number | null; used_count: number; reached: boolean }>();
+  if (error) {
+    console.error("[booking_limit_status] failed:", error);
+    return false;
+  }
+  return data?.reached === true;
+}

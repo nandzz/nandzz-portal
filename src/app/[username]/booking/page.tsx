@@ -5,7 +5,8 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { fetchPublicProfile, getIsDemoProfile, redirectFromPreviousUsername } from "@/features/profile/server";
-import { getPublicCalendar } from "@/features/booking/server";
+import { getPublicCalendar, isBookingLimitReached } from "@/features/booking/server";
+import { BookingLimitReached } from "@/features/booking/components/BookingLimitReached";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
 import { isWhatsAppReminderLive } from "@/features/booking/domain/whatsapp-reminder";
@@ -87,6 +88,9 @@ export default async function WidgetPage({
   if (!profile) await redirectFromPreviousUsername(username, "/booking");
   if (!profile || !widget) notFound();
 
+  // Plan's monthly booking cap reached → the link shows a WhatsApp contact card.
+  const limitReached = await isBookingLimitReached(profile.id);
+
   const displayName = profile.display_name || profile.username;
   const heading = widgetHeading(t, widget.catalog.slug, widget.catalog.name, displayName);
   const config = normalizeCalendarConfig(widget.config);
@@ -139,7 +143,14 @@ export default async function WidgetPage({
       {/* Widget body — the booking flow, lifted onto a card. */}
       <main className="mx-auto w-full max-w-lg px-4 pb-16 pt-8">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both motion-reduce:animate-none">
-          {widget.catalog.slug === "calendar" ? (
+          {limitReached ? (
+            <BookingLimitReached
+              t={t}
+              businessName={displayName}
+              whatsapp={profile.social_links?.whatsapp || config.whatsapp_contact_phone}
+              profileHref={`/${username}`}
+            />
+          ) : widget.catalog.slug === "calendar" ? (
             <CalendarBookingFlow
               instanceId={widget.id}
               locations={config.locations}

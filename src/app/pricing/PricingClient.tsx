@@ -184,10 +184,11 @@ export function PricingClient({
                     </Feature>
                     <Feature ok>Content, gallery &amp; links sections</Feature>
                     <Feature ok={plan.has_styling}>Custom page style</Feature>
-                    <Feature ok={plan.hide_branding}>No Nandzz badge</Feature>
                     <Feature ok={plan.has_analytics}>Analytics</Feature>
                     <Feature ok={plan.has_widgets}>
-                      Booking
+                      {plan.has_widgets && plan.monthly_booking_limit != null
+                        ? `Booking (up to ${plan.monthly_booking_limit}/month)`
+                        : "Booking"}
                     </Feature>
                     <Feature ok={plan.has_mcp}>MCP access (connect Claude)</Feature>
                   </ul>

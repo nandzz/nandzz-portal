@@ -752,6 +752,7 @@ export type Translations = {
     customStyleDesc: string;
     noBadge: string;
     noBadgeDesc: string;
+    bookingMonthlyLimit: string;
     planSwitchedMsg: string;
     switchPlanTitle: string;
     switchPlanDesc: string;
@@ -1311,6 +1312,12 @@ export type Translations = {
     errorStaffUnavailable: string;
     errorSlotTaken: string;
     errorSlotPast: string;
+    errorLimitReached: string;
+    limitReachedTitle: string;
+    limitReachedBody: string;
+    limitReachedWhatsapp: string;
+    limitReachedWhatsappMessage: string;
+    limitReachedProfile: string;
     errorGeneric: string;
     yourBooking: string;
     withBusiness: string;

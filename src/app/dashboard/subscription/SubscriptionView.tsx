@@ -13,7 +13,6 @@ import {
   BarChart3,
   ShieldCheck,
   Palette,
-  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 import { PlanCheckoutButton } from "./PlanCheckoutButton";
@@ -464,9 +463,8 @@ export async function SubscriptionView({
                         <ul className="mt-4 mb-6 space-y-2 text-sm flex-1">
                           <PlanFeature ok>{p.space_limit === null ? ts.unlimitedSpaces : ts.spacesCount.replace("{count}", String(p.space_limit))}</PlanFeature>
                           <PlanFeature ok={p.has_styling}>{ts.customStyle}</PlanFeature>
-                          <PlanFeature ok={p.hide_branding}>{ts.noBadge}</PlanFeature>
                           <PlanFeature ok={p.has_analytics}>{ts.analytics}</PlanFeature>
-                          <PlanFeature ok={p.has_widgets}>{ts.booking}</PlanFeature>
+                          <PlanFeature ok={p.has_widgets}>{bookingTitle(p, ts)}</PlanFeature>
                           <PlanFeature ok={p.has_mcp}>{ts.mcpAccess}</PlanFeature>
                         </ul>
                         <div className="mt-auto">
@@ -557,6 +555,13 @@ type PlanFeatureItem = {
 // The rich, described feature set shown on the single-plan showcase card. Each
 // row pairs the capability with a plain-language "what you can do with it" line,
 // so the plan reads as value rather than a checklist of nouns.
+// "Booking" or "Booking · up to 200/month" when the plan caps customer bookings.
+function bookingTitle(p: SubscriptionPlan, ts: Translations["subscription"]): string {
+  return p.has_widgets && p.monthly_booking_limit != null
+    ? `${ts.booking} · ${ts.bookingMonthlyLimit.replace("{count}", String(p.monthly_booking_limit))}`
+    : ts.booking;
+}
+
 function buildPlanFeatures(
   p: SubscriptionPlan,
   ts: Translations["subscription"],
@@ -575,12 +580,6 @@ function buildPlanFeatures(
       ok: p.has_styling,
     },
     {
-      icon: BadgeCheck,
-      title: ts.noBadge,
-      description: ts.noBadgeDesc,
-      ok: p.hide_branding,
-    },
-    {
       icon: BarChart3,
       title: ts.analytics,
       description: ts.analyticsDesc,
@@ -588,7 +587,7 @@ function buildPlanFeatures(
     },
     {
       icon: CalendarCheck,
-      title: ts.booking,
+      title: bookingTitle(p, ts),
       description: ts.bookingDesc,
       ok: p.has_widgets,
     },

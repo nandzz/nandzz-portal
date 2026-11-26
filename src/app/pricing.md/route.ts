@@ -41,9 +41,8 @@ export async function GET() {
       );
       lines.push(`- Content, gallery & links sections: Yes`);
       lines.push(`- Custom page style (colours, buttons, layout): ${plan.has_styling ? "Yes" : "No"}`);
-      lines.push(`- Nandzz badge on the page: ${plan.hide_branding ? "Hidden" : "Shown"}`);
       lines.push(
-        `- Booking: ${plan.has_widgets ? "Yes" : "No"}`
+        `- Booking: ${plan.has_widgets ? (plan.monthly_booking_limit != null ? `Yes (up to ${plan.monthly_booking_limit} bookings/month)` : "Yes") : "No"}`
       );
       lines.push(`- MCP access (connect Claude): ${plan.has_mcp ? "Yes" : "No"}`);
       lines.push(`- Analytics: ${plan.has_analytics ? "Yes" : "No"}`);

@@ -131,7 +131,8 @@ export type SubscriptionPlan = {
   has_mcp: boolean;
   has_analytics: boolean;
   has_styling: boolean; // custom colours, button style, Brand page, caption styles
-  hide_branding: boolean; // hides the Nandzz "Create your page" badge
+  hide_branding: boolean; // hides "Powered by Nandzz" on the booking embed
+  monthly_booking_limit: number | null; // customer bookings/month via the public link; null ⇒ unlimited
   has_google_review: boolean;
   has_orders: boolean; // Orders (encomendas): products + order dashboard
   orders_product_limit: number | null; // null ⇒ unlimited

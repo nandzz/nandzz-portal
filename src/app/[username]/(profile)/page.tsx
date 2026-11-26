@@ -21,7 +21,7 @@ import {
   resolveSectionOrder,
 } from "@/lib/gallery/layouts";
 import { FEATURES } from "@/lib/flags";
-import { getProfileWidgets } from "@/features/booking/server";
+import { getProfileWidgets, isBookingLimitReached } from "@/features/booking/server";
 import type { WidgetInstanceWithCatalog, Space } from "@/lib/types";
 import { getServerTranslations, getCurrentLocale } from "@/lib/i18n/server";
 import { buildProfileJsonLd, profileMetaDescription } from "@/features/profile/domain/seo";
@@ -132,7 +132,8 @@ export default async function ProfilePage({
     { data: linkSpaces, count: totalLinkCount },
     { data: galleryImages, count: totalGalleryCount },
     { data: { user } },
-    widgets,
+    allWidgets,
+    bookingLimitReached,
   ] = await Promise.all([
     // Publications: informative content only (everything non-image, non-link).
     showContents
@@ -176,6 +177,7 @@ export default async function ProfilePage({
     FEATURES.widgets
       ? getProfileWidgets(profile.id)
       : Promise.resolve([] as WidgetInstanceWithCatalog[]),
+    FEATURES.widgets ? isBookingLimitReached(profile.id) : Promise.resolve(false),
   ]);
 
   let likedSpaceIds: string[] = [];
@@ -191,6 +193,12 @@ export default async function ProfilePage({
   }
 
   const isOwner = user?.id === profile.id;
+  // Monthly booking cap reached: visitors no longer see the booking button /
+  // calendar (the link shows a WhatsApp card). The owner still sees it.
+  const widgets =
+    bookingLimitReached && !isOwner
+      ? allWidgets.filter((w) => w.catalog.slug !== "calendar")
+      : allWidgets;
   const hasContents = (spaces?.length ?? 0) > 0;
   const hasLinks = (linkSpaces?.length ?? 0) > 0;
   const hasGallery = (galleryImages?.length ?? 0) > 0;

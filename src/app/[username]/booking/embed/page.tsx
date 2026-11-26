@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchPublicProfile, getIsDemoProfile } from "@/features/profile/server";
-import { getPublicCalendar } from "@/features/booking/server";
+import { getPublicCalendar, isBookingLimitReached } from "@/features/booking/server";
+import { BookingLimitReached } from "@/features/booking/components/BookingLimitReached";
 import { normalizeCalendarConfig } from "@/features/booking/domain/calendar";
 import { currencySymbol } from "@/features/booking/domain/messages";
 import { isWhatsAppReminderLive } from "@/features/booking/domain/whatsapp-reminder";
@@ -37,18 +38,32 @@ export default async function BookingEmbedPage({
 
   // Same gate as the public booking page: the widget must be live (enabled +
   // entitled by the owner's plan).
-  const [widget, t, whatsappLive, isDemo, entitlements] = await Promise.all([
+  const [widget, t, whatsappLive, isDemo, entitlements, limitReached] = await Promise.all([
     getPublicCalendar(profile.id),
     getServerTranslations(),
     isWhatsAppReminderLive(),
     getIsDemoProfile(username),
     getUserEntitlements(profile.id),
+    isBookingLimitReached(profile.id),
   ]);
   if (!widget || widget.catalog.slug !== "calendar") notFound();
 
   const config = normalizeCalendarConfig(widget.config);
   const displayName = profile.display_name || profile.username;
   const theme = query.theme === "dark" ? "dark" : "light";
+
+  // Monthly booking cap reached: no flow, just the WhatsApp contact card.
+  if (limitReached) {
+    return (
+      <div className={`${theme} bg-transparent text-foreground`} style={{ colorScheme: theme }}>
+        <BookingLimitReached
+          t={t}
+          businessName={displayName}
+          whatsapp={profile.social_links?.whatsapp || config.whatsapp_contact_phone}
+        />
+      </div>
+    );
+  }
   const mode = query.mode === "popup" ? "popup" : "inline";
 
   return (

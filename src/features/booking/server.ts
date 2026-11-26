@@ -9,4 +9,5 @@ export {
   getOrCreateOwnerCalendar,
   ownerHasWidgetAccess,
   getWidgetCatalog,
+  isBookingLimitReached,
 } from "./data/widgets";
